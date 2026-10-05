@@ -955,6 +955,29 @@
 
     <!-- ================= संपूर्ण और विस्तृत जावास्क्रिप्ट लॉजिक ================= -->
     <script>
+        
+  // 1. Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I",
+    authDomain: "radhe-krishna-online-booking.firebaseapp.com",
+    projectId: "radhe-krishna-online-booking",
+    storageBucket: "radhe-krishna-online-booking.appspot.com",
+    messagingSenderId: "1010400653483",
+    appId: "1:1010400653483:web:fb2a78ec593b3c2888c7ee",
+    measurementId: "G-8FC58T5YNF"
+  };
+
+  // 2. Initialize Firebase safely
+  if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+  } else {
+      firebase.app(); // if already initialized, use current app
+  }
+
+  // 3. Database Reference
+  const db = firebase.database();
+  console.log("Firebase Connected Successfully for Radhe Krishna Rent House!")
+    
         let cartItemsList = [];
         let dispatchCommonCart = [];
         let activeDispatchBookingId = null;
