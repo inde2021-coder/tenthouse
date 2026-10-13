@@ -834,6 +834,94 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
 @media(prefers-reduced-motion:reduce){#view-login .card-box,#view-login .card-box:before,#view-login .card-box:after,#view-login .card-box h2,#view-login .shop-logo-icon,#view-login #loginSubmitBtn{animation:none!important;transition:none!important}#view-login #loginRoleAdminBtn:hover,#view-login #loginRoleVendorBtn:hover,#view-login #loginSubmitBtn:hover,#view-login #openSecuritySettingsBtn:hover{transform:none!important}}
 </style>
 
+<style id="rk-deep-audit-polish">
+/* Deep-audit patch: prevent harmless camera/video play interruptions from
+   being shown as a fatal startup error; keep genuine errors visible. */
+/* Consistent, accessible checkbox appearance throughout the application. */
+input[type="checkbox"]{
+  -webkit-appearance:none!important; appearance:none!important;
+  width:20px!important; height:20px!important; min-width:20px!important;
+  margin:0 7px 0 0!important; vertical-align:middle!important;
+  display:inline-grid!important; place-content:center!important;
+  border:1.5px solid #a9bac7!important; border-radius:5px!important;
+  background:#fff!important; box-shadow:0 1px 2px rgba(30,55,75,.08)!important;
+  accent-color:#167e78!important; cursor:pointer!important;
+}
+input[type="checkbox"]::before{
+  content:""; width:10px; height:6px;
+  border-left:2px solid #fff; border-bottom:2px solid #fff;
+  transform:rotate(-45deg) scale(0); transform-origin:center;
+  transition:transform .12s ease-in-out;
+}
+input[type="checkbox"]:checked{background:#167e78!important;border-color:#167e78!important;}
+input[type="checkbox"]:checked::before{transform:rotate(-45deg) scale(1);}
+input[type="checkbox"]:focus-visible{outline:3px solid rgba(22,126,120,.25)!important;outline-offset:2px!important;}
+input[type="checkbox"]:disabled{opacity:.55!important;cursor:not-allowed!important;}
+label:has(input[type="checkbox"]){display:inline-flex;align-items:center;gap:2px;line-height:1.45;}
+/* Replace the muddy navy panel behind dispatch checkboxes with a light, neutral surface. */
+div:has(> label > #dispatchSingleRent){
+  background:rgba(255,255,255,.68)!important;
+  border:1px solid rgba(133,164,183,.30)!important;
+  border-radius:13px!important;
+  box-shadow:0 5px 18px rgba(54,91,116,.06),inset 0 1px rgba(255,255,255,.92)!important;
+  -webkit-backdrop-filter:blur(12px)!important;backdrop-filter:blur(12px)!important;
+  flex-wrap:wrap!important;gap:12px 20px!important;
+}
+div:has(> label > #dispatchSingleRent) label{color:#304b60!important;font-weight:700!important;}
+.inline-check-label{color:#304b60!important;background:rgba(255,255,255,.52)!important;border:1px solid rgba(133,164,183,.24)!important;border-radius:10px!important;padding:8px 10px!important;}
+@media(max-width:600px){
+  div:has(> label > #dispatchSingleRent){align-items:flex-start!important;padding:12px!important;}
+  div:has(> label > #dispatchSingleRent) label{min-height:30px;}
+}
+@media(prefers-reduced-motion:reduce){input[type="checkbox"]::before{transition:none!important;}}
+</style>
+
+<style id="rk-atelier-luxe-v2">
+/* Atelier Luxe: a distinct midnight-ink, champagne, jade and sapphire design language */
+:root{
+ --lux-ink:#101828; --lux-panel:rgba(255,255,255,.82); --lux-line:rgba(124,145,170,.28);
+ --lux-gold:#c69b52; --lux-jade:#087f72; --lux-blue:#315fce; --lux-violet:#7854c7;
+ --lux-coral:#c44d69; --lux-text:#26364a; --lux-muted:#607187;
+ --lux-glass:linear-gradient(145deg,rgba(255,255,255,.88),rgba(235,242,250,.66));
+}
+html,body{font-family:Inter,"Aptos", "Segoe UI", "Noto Sans Devanagari", sans-serif!important;background:#e9eef5!important;color:var(--lux-text)!important}
+body{background:radial-gradient(ellipse at 8% 0%,rgba(91,125,210,.20),transparent 33%),radial-gradient(ellipse at 95% 12%,rgba(13,148,136,.16),transparent 30%),radial-gradient(ellipse at 65% 100%,rgba(198,155,82,.16),transparent 35%),linear-gradient(135deg,#edf1f7,#e6edf4 48%,#f3eee7)!important}
+.app-view,.content-area{background:transparent!important;color:var(--lux-text)!important}
+.admin-container{background:transparent!important}
+.top-header{background:linear-gradient(120deg,rgba(17,31,54,.97),rgba(29,47,77,.94) 55%,rgba(17,74,77,.94))!important;color:#f8fbff!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:0 0 20px 20px!important;box-shadow:0 12px 34px rgba(24,39,68,.20),inset 0 1px rgba(255,255,255,.22)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important}
+.shop-brand-title{background:linear-gradient(100deg,#fff2c9,#e6c178 42%,#bcebe5 78%,#f5f8ff);-webkit-background-clip:text;background-clip:text;color:transparent!important;text-shadow:0 2px 18px rgba(198,155,82,.15)!important}
+.admin-tab-pane,.setting-box,.stat-card,.cust-detail-card,.customer-stock-card,.customer-payment-card,.table-container,.table-responsive,.content-card,.panel,.panel-card,.section-card,.dashboard-card,.booking-card,.inventory-card,.form-section,.modal-content,#view-customer-portal>div,.card-box{
+ background:var(--lux-glass)!important;border:1px solid rgba(255,255,255,.82)!important;border-radius:18px!important;box-shadow:0 12px 30px rgba(34,52,78,.09),inset 0 1px 0 rgba(255,255,255,.95)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;color:var(--lux-text)!important}
+.admin-tab-pane{margin:10px auto!important}
+h1,h2,h3,h4,h5{letter-spacing:-.025em!important;font-weight:850!important}
+.admin-tab-pane h2,.setting-box h2{background:linear-gradient(100deg,#234a9b 0%,#087f72 38%,#a36c22 70%,#7854c7 100%);-webkit-background-clip:text;background-clip:text;color:transparent!important;border-bottom:1px solid rgba(49,95,206,.18)!important;padding-bottom:12px!important}
+h3{color:#087f72!important}h4{color:#a36c22!important}h5{color:#7854c7!important}
+p{color:#52647a!important}small,.help-text,.config-note,.customer-field-help,.setting-content-body p{color:#68788c!important}
+label{color:#315f9c!important;font-weight:750!important}
+th,.data-table th{color:#fff!important;background:linear-gradient(120deg,#263b60,#315f79)!important}
+td{color:#304158!important}
+strong,b{color:#294e8d!important}
+/* Category-colored, glassy 3D buttons: distinct jewel colors rather than one flat blue */
+.btn-primary,.nav-btn.active-nav{background:linear-gradient(145deg,rgba(93,139,255,.96),rgba(43,77,177,.98))!important;color:#fff!important;border:1px solid rgba(255,255,255,.68)!important;box-shadow:0 7px 0 #243e86,0 12px 24px rgba(49,95,206,.27),inset 0 1px 1px rgba(255,255,255,.82)!important}
+.btn-success,.btn-wa{background:linear-gradient(145deg,rgba(38,190,157,.98),rgba(4,111,97,.98))!important;color:#fff!important;border:1px solid rgba(255,255,255,.7)!important;box-shadow:0 7px 0 #07594f,0 12px 24px rgba(8,127,114,.22),inset 0 1px rgba(255,255,255,.8)!important}
+.btn-warning{background:linear-gradient(145deg,#ffe09a,#c58a28)!important;color:#49300b!important;border:1px solid rgba(255,255,255,.8)!important;box-shadow:0 7px 0 #94631b,0 12px 22px rgba(198,155,82,.25),inset 0 1px rgba(255,255,255,.9)!important}
+.btn-danger{background:linear-gradient(145deg,#f18aa0,#b92e51)!important;color:#fff!important;border:1px solid rgba(255,255,255,.75)!important;box-shadow:0 6px 0 #82213a,0 11px 20px rgba(196,77,105,.22),inset 0 1px rgba(255,255,255,.8)!important}
+.btn-purple{background:linear-gradient(145deg,#b39aff,#6943b4)!important;color:#fff!important;border:1px solid rgba(255,255,255,.75)!important;box-shadow:0 7px 0 #482d82,0 12px 22px rgba(120,84,199,.25),inset 0 1px rgba(255,255,255,.85)!important}
+.btn-secondary,.nav-btn{background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(220,229,240,.96))!important;color:#34445c!important;border:1px solid rgba(255,255,255,.95)!important;box-shadow:0 5px 0 #aab7c8,0 9px 18px rgba(31,48,72,.12),inset 0 1px rgba(255,255,255,.98)!important}
+button,.btn-primary,.btn-success,.btn-warning,.btn-danger,.btn-purple,.btn-secondary,.btn-wa,.nav-btn{position:relative;overflow:hidden;transition:transform .18s ease,filter .18s ease,box-shadow .18s ease!important;font-weight:800!important;text-shadow:0 1px 1px rgba(0,0,0,.12)}
+button:before,.btn-primary:before,.btn-success:before,.btn-warning:before,.btn-danger:before,.btn-purple:before,.btn-secondary:before,.btn-wa:before{content:"";position:absolute;inset:1px 1px auto;height:48%;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));pointer-events:none}
+button:hover,.btn-primary:hover,.btn-success:hover,.btn-warning:hover,.btn-danger:hover,.btn-purple:hover,.btn-secondary:hover,.btn-wa:hover{filter:brightness(1.045) saturate(1.08)!important;transform:translateY(-2px)!important}
+button:active,.btn-primary:active,.btn-success:active,.btn-warning:active,.btn-danger:active,.btn-purple:active,.btn-secondary:active,.btn-wa:active{transform:translateY(3px)!important;box-shadow:0 2px 0 rgba(32,47,72,.55),inset 0 2px 5px rgba(0,0,0,.12)!important}
+.form-control,input,select,textarea{background:rgba(255,255,255,.92)!important;color:#26364a!important;border:1px solid #c4d0df!important;border-radius:12px!important;box-shadow:inset 0 2px 4px rgba(33,52,78,.04)!important}
+.form-control:focus,input:focus,select:focus,textarea:focus{border-color:#5685df!important;box-shadow:0 0 0 3px rgba(49,95,206,.14),0 0 18px rgba(49,95,206,.10)!important}
+input::placeholder,textarea::placeholder{color:#8a98aa!important;opacity:1!important}
+.nav-row,.nav-tabs,.admin-nav,.sidebar,.nav-menu{background:rgba(223,231,241,.78)!important;border:1px solid rgba(255,255,255,.85)!important;border-radius:14px!important;box-shadow:inset 0 1px rgba(255,255,255,.9)!important;backdrop-filter:blur(12px)!important}
+.nav-btn.active-nav{color:#fff!important}
+hr{border-color:rgba(104,126,154,.22)!important}
+@media(max-width:700px){.content-area{padding:9px!important}.admin-tab-pane{padding:13px!important;border-radius:15px!important}.top-header{border-radius:0 0 15px 15px!important}.btn-primary,.btn-success,.btn-warning,.btn-danger,.btn-purple,.btn-secondary,.btn-wa{min-height:42px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+</style>
+
 </head>
 <body>
     <div id="runtimeDiagnosticBanner" style="display:none;position:fixed;left:8px;right:8px;top:8px;z-index:1000000;background:#7f1d1d;color:#fff;padding:12px;border-radius:10px;font:14px/1.5 sans-serif;box-shadow:0 4px 18px #0008;overflow-wrap:anywhere;"></div>
@@ -846,7 +934,19 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
           el.textContent='सॉफ्टवेयर शुरू होने में समस्या: '+String(message||'अज्ञात त्रुटि')+' | यदि यह फाइल मोबाइल के File Preview में खुली है, तो Chrome में खोलें और Firebase Login के लिए HTTPS वेबसाइट पर होस्ट करें।';
         }
         window.addEventListener('error',function(e){showRuntimeProblem(e.message||'JavaScript error');});
-        window.addEventListener('unhandledrejection',function(e){var r=e.reason;showRuntimeProblem(r&&(r.message||r.code)||'अनहैंडल्ड अनुरोध त्रुटि');});
+        window.addEventListener('unhandledrejection',function(e){
+          var r=e.reason;
+          var msg=String((r&&(r.message||r.code))||r||'');
+          // Camera/video libraries can reject play() when a scanner is stopped,
+          // a video node is replaced, or autoplay is blocked. These are expected
+          // browser lifecycle events, not a fatal application startup error.
+          if ((r && (r.name==='AbortError' || r.name==='NotAllowedError')) ||
+              /play\(\) request was interrupted|the media was removed from the document|interrupted by a call to pause\(\)|autoplay.*not allowed/i.test(msg)) {
+            if (e && typeof e.preventDefault==='function') e.preventDefault();
+            return;
+          }
+          showRuntimeProblem(msg||'अनहैंडल्ड अनुरोध त्रुटि');
+        });
         window.addEventListener('load',function(){
           if(location.protocol==='file:'){
             var el=document.getElementById('runtimeDiagnosticBanner');
@@ -894,8 +994,6 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
             </div>
             <div id="loginStatus" role="status" aria-live="polite" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;overflow-wrap:anywhere;"></div>
             <button id="loginSubmitBtn" type="button" onclick="window.executeLogin()" class="btn-primary" style="margin-top:10px;">🔐 एडमिन लॉगिन</button>
-            <button type="button" id="openSecuritySettingsBtn" class="btn-secondary" onclick="window.openSecuritySettings()" style="margin-top:10px;">⚙️ पासवर्ड सेटअप / सुरक्षा सेटिंग्स</button>
-            <p style="font-size:11px;color:#64748b;margin-top:12px;line-height:1.5;">पहली बार पासवर्ड सेट करने या सुरक्षा बदलने के लिए सुरक्षा सेटिंग्स खोलें। इन्हें भूलने पर लोकल डेटा मिटाए बिना रिकवरी संभव नहीं हो सकती।</p>
 
         </div>
     </div>
@@ -1906,14 +2004,9 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
   // Firebase web configuration supplied for radhe-krishna-online.
   // Web API keys are public identifiers; Firestore Rules and Auth claims must enforce access.
   // Cloud Firestore is used; no Realtime Database URL is required.
-  // Safe storage access: if the browser blocks localStorage, the main script must still start.
-  const safeStorageGet = (key, fallback = '') => {
-    try { return localStorage.getItem(key) || fallback; }
-    catch (storageError) { console.warn('Local storage unavailable for', key, storageError); return fallback; }
-  };
-  const savedFbApiKey = safeStorageGet('fbApiKey', 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8');
-  const savedFbCollectionName = safeStorageGet('fbCollectionName', 'appData');
-  const savedFbProjectId = safeStorageGet('fbProjectId', 'radhe-krishna-online');
+  const savedFbApiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
+  const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
+  const savedFbProjectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
   const firebaseConfig = {
     apiKey: savedFbApiKey,
     authDomain: `${savedFbProjectId}.firebaseapp.com`,
@@ -2435,22 +2528,126 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
         }
         window.switchAppView = switchAppView;
 
+        // Desktop-like multi-window workspace for Admin pages.
+        const rkOpenWindows = new Set();
+        let rkWindowZ = 40;
+        let rkActiveWindowId = '';
+        function rkWindowTitle(pane) {
+            const h = pane.querySelector('h2, h3');
+            return (h && h.textContent.trim()) || pane.getAttribute('aria-label') || pane.id.replace(/^tab-/, '').replace(/-/g, ' ');
+        }
+        function rkEnsureWindowControls(pane) {
+            if (!pane || pane.dataset.rkWindowReady === '1') return;
+            pane.dataset.rkWindowReady = '1';
+            pane.classList.add('rk-window');
+            const bar = document.createElement('div');
+            bar.className = 'rk-window-titlebar';
+            const title = document.createElement('div');
+            title.className = 'rk-window-title';
+            title.textContent = rkWindowTitle(pane);
+            title.title = title.textContent;
+            const controls = document.createElement('div');
+            controls.className = 'rk-window-controls';
+            const min = document.createElement('button');
+            min.type = 'button'; min.className = 'rk-window-control'; min.textContent = '—';
+            min.title = 'मिनिमाइज़'; min.setAttribute('aria-label', 'मिनिमाइज़ पेज');
+            min.addEventListener('click', e => { e.stopPropagation(); rkMinimizeWindow(pane.id); });
+            const max = document.createElement('button');
+            max.type = 'button'; max.className = 'rk-window-control'; max.textContent = '□';
+            max.title = 'फुल स्क्रीन / वापस'; max.setAttribute('aria-label', 'फुल स्क्रीन या सामान्य आकार');
+            max.addEventListener('click', e => { e.stopPropagation(); rkToggleMaximizeWindow(pane.id); });
+            const close = document.createElement('button');
+            close.type = 'button'; close.className = 'rk-window-control rk-close'; close.textContent = '×';
+            close.title = 'बंद करें'; close.setAttribute('aria-label', 'पेज बंद करें');
+            close.addEventListener('click', e => { e.stopPropagation(); rkCloseWindow(pane.id); });
+            controls.append(min, max, close); bar.append(title, controls);
+            pane.insertBefore(bar, pane.firstChild);
+            pane.addEventListener('pointerdown', () => rkFocusWindow(pane.id), {passive:true});
+        }
+        function rkEnsureTaskbar() {
+            const admin = document.getElementById('view-admin-panel');
+            if (!admin || document.getElementById('rkWindowTaskbar')) return;
+            const taskbar = document.createElement('div'); taskbar.id = 'rkWindowTaskbar';
+            taskbar.setAttribute('aria-label', 'खुले हुए एडमिन पेज');
+            const container = admin.querySelector('.admin-container');
+            if (container) container.appendChild(taskbar);
+        }
+        function rkRenderTaskbar() {
+            rkEnsureTaskbar();
+            const taskbar = document.getElementById('rkWindowTaskbar'); if (!taskbar) return;
+            taskbar.replaceChildren();
+            const label = document.createElement('span'); label.className = 'rk-taskbar-label'; label.textContent = 'खुले पेज'; taskbar.appendChild(label);
+            rkOpenWindows.forEach(id => {
+                const pane = document.getElementById(id); if (!pane) return;
+                const b = document.createElement('button'); b.type = 'button'; b.className = 'rk-taskbar-item';
+                b.textContent = (pane.classList.contains('rk-window-minimized') ? '▁ ' : '▣ ') + rkWindowTitle(pane);
+                b.title = rkWindowTitle(pane); b.setAttribute('aria-current', id === rkActiveWindowId && !pane.classList.contains('rk-window-minimized') ? 'page' : 'false');
+                b.addEventListener('click', () => rkRestoreWindow(id)); taskbar.appendChild(b);
+            });
+            taskbar.style.display = rkOpenWindows.size ? 'flex' : 'none';
+        }
+        function rkFocusWindow(id) {
+            const pane = document.getElementById(id); if (!pane) return;
+            rkActiveWindowId = id; pane.style.zIndex = String(++rkWindowZ);
+            document.querySelectorAll('#view-admin-panel .admin-tab-pane.rk-window').forEach(p => p.classList.toggle('rk-window-focused', p.id === id));
+            rkRenderTaskbar();
+        }
+        function rkRestoreWindow(id) {
+            const pane = document.getElementById(id); if (!pane) return;
+            rkOpenWindows.add(id); pane.classList.remove('rk-window-minimized'); pane.classList.add('rk-window-open','active');
+            rkFocusWindow(id);
+            if (id === 'tab-vendor-stock' || id === 'tab-dispatch' || id === 'tab-vendor-bill') { try { refreshVendorStockDispatchControls(); } catch(e) { console.warn(e); } }
+        }
+        function rkMinimizeWindow(id) {
+            const pane = document.getElementById(id); if (!pane) return;
+            pane.classList.add('rk-window-minimized'); pane.classList.remove('rk-window-open','active');
+            if (rkActiveWindowId === id) {
+                rkActiveWindowId = '';
+                const next = Array.from(rkOpenWindows).find(other => other !== id && document.getElementById(other) && !document.getElementById(other).classList.contains('rk-window-minimized'));
+                if (next) rkFocusWindow(next);
+            }
+            rkRenderTaskbar();
+        }
+        function rkToggleMaximizeWindow(id) {
+            const pane = document.getElementById(id); if (!pane) return;
+            pane.classList.toggle('rk-window-maximized'); rkFocusWindow(id);
+            const btn = pane.querySelector('.rk-window-control[aria-label^="फुल स्क्रीन"]');
+            if (btn) { const isMax = pane.classList.contains('rk-window-maximized'); btn.textContent = isMax ? '❐' : '□'; btn.title = isMax ? 'सामान्य आकार' : 'फुल स्क्रीन'; }
+        }
+        function rkCloseWindow(id) {
+            const pane = document.getElementById(id); if (!pane) return;
+            pane.classList.remove('rk-window-open','rk-window-minimized','rk-window-maximized','active');
+            rkOpenWindows.delete(id);
+            if (rkActiveWindowId === id) rkActiveWindowId = '';
+            const next = Array.from(rkOpenWindows).find(other => document.getElementById(other) && !document.getElementById(other).classList.contains('rk-window-minimized'));
+            if (next) rkRestoreWindow(next); else { rkActiveWindowId = ''; rkRenderTaskbar(); }
+            document.querySelectorAll('#adminNavMenu .nav-btn').forEach(b => b.classList.remove('active-nav'));
+        }
         function openAdminTab(tabId, btnElement) {
-            document.querySelectorAll('.admin-tab-pane').forEach(el => el.classList.remove('active'));
             const targetPane = document.getElementById(tabId);
             if (!targetPane) { console.error('Admin tab not found:', tabId); return; }
-            targetPane.classList.add('active');
-            if (tabId === 'tab-vendor-stock' || tabId === 'tab-dispatch' || tabId === 'tab-vendor-bill') {
-                refreshVendorStockDispatchControls();
-            }
+            rkEnsureWindowControls(targetPane); rkEnsureTaskbar();
+            rkOpenWindows.add(tabId);
+            targetPane.classList.remove('rk-window-minimized'); targetPane.classList.add('rk-window-open','active');
+            rkFocusWindow(tabId);
             if (btnElement) {
                 document.querySelectorAll('#adminNavMenu .nav-btn').forEach(b => b.classList.remove('active-nav'));
                 btnElement.classList.add('active-nav');
             }
-            refreshAllTables();
+            if (tabId === 'tab-vendor-stock' || tabId === 'tab-dispatch' || tabId === 'tab-vendor-bill') {
+                try { refreshVendorStockDispatchControls(); } catch (e) { console.warn('Vendor window refresh:', e); }
+            }
+            try { refreshAllTables(); } catch (e) { console.warn('Table refresh:', e); }
         }
-
         window.openAdminTab = openAdminTab;
+        window.rkMinimizeWindow = rkMinimizeWindow;
+        window.rkToggleMaximizeWindow = rkToggleMaximizeWindow;
+        window.rkCloseWindow = rkCloseWindow;
+        window.rkRestoreWindow = rkRestoreWindow;
+        document.addEventListener('DOMContentLoaded', function () {
+            const initialPane = document.querySelector('#view-admin-panel .admin-tab-pane.active');
+            if (initialPane) openAdminTab(initialPane.id, null);
+        }, { once: true });
 
         // Built-in, deterministic assistant: navigates existing modules and summarizes stored records.
         // It deliberately does not silently save financial or inventory changes.
@@ -5450,5 +5647,158 @@ button:focus-visible,.btn:focus-visible,[role="button"]:focus-visible,input[type
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+
+<style id="rk-final-quality-pass-2026">
+/* Final unified design pass: clear surfaces, high contrast, compact mobile layout */
+:root{--rk-ui-ink:#183247;--rk-ui-muted:#536b7b;--rk-ui-line:#d5e1e8;--rk-ui-card:#ffffff;--rk-ui-teal:#146c67;--rk-ui-blue:#2f6698;--rk-ui-gold:#a87932;--rk-ui-shadow:0 8px 24px rgba(27,58,78,.075)}
+html,body,.app-view{color:var(--rk-ui-ink)!important;background:#f3f7fa!important;font-family:Inter,"Noto Sans Devanagari","Nirmala UI","Segoe UI",system-ui,sans-serif!important}
+body:before{display:none!important}
+.top-header{background:linear-gradient(115deg,#fff,#f2f8fb)!important;border:1px solid #e0e9ee!important;border-radius:0 0 18px 18px!important;box-shadow:0 5px 20px rgba(27,58,78,.06)!important;color:var(--rk-ui-ink)!important}
+.content-area{background:transparent!important}
+.admin-tab-pane{background:transparent!important;color:var(--rk-ui-ink)!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;min-width:0!important}
+.admin-tab-pane h2{display:flex;align-items:center;gap:9px;color:#193e55!important;font-size:clamp(19px,2.4vw,25px)!important;font-weight:800!important;letter-spacing:-.025em!important;padding-bottom:12px!important;border-bottom:1px solid #dbe6ec!important}
+.admin-tab-pane h3,.admin-tab-pane h4{color:#24495f!important}
+/* Replace muddy/dark inline panel fills in admin and vendor areas */
+#tab-setting .setting-box,#vtab-stock>div,#tab-vendor-bill #vendorBillCard,#tab-vendor-stock>div,#tab-vendor-orders>div,#tab-vendor-missing>div,
+#tab-vendor-reg .form-section,#tab-vendor-list .table-responsive,#tab-vendor-stock .table-responsive,
+#tab-vendor-orders .table-responsive,#tab-vendor-missing .table-responsive{
+ background:#fff!important;color:var(--rk-ui-ink)!important;border:1px solid var(--rk-ui-line)!important;border-radius:16px!important;box-shadow:var(--rk-ui-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+}
+#vtab-stock h4,#tab-vendor-stock h4,#tab-vendor-bill h4{color:#22566a!important}
+#tab-vendor-bill #vendorBillCard{max-width:100%!important;overflow-x:auto!important}
+#tab-setting .setting-card-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:start!important;gap:14px!important;width:100%!important}
+#tab-setting .setting-box{padding:0!important;overflow:hidden!important;border-radius:15px!important;border:1px solid #d8e4ea!important;border-top:3px solid #438c91!important}
+#tab-setting .setting-box h3{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin:0!important;padding:15px 16px!important;border:0!important;background:#f7fafc!important;color:#24475b!important;cursor:pointer!important;line-height:1.4!important}
+#tab-setting .setting-box h3 span{flex:0 0 auto!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:28px!important;height:28px!important;border-radius:8px!important;background:#e3f1f0!important;color:#176b66!important;font-size:13px!important}
+#tab-setting .setting-content-body{padding:15px!important;margin:0!important;background:#fff!important;color:var(--rk-ui-ink)!important}
+#tab-setting .setting-content-body[style*="display: none"]{display:none!important}
+#tab-setting label,#tab-setting .setting-content-body label{display:block!important;color:#34566b!important;font-size:13px!important;font-weight:750!important;margin:12px 0 6px!important}
+#tab-setting .config-note,#tab-setting .setting-content-body p{color:#526a79!important}
+#tab-setting .setting-box.red,#tab-setting .setting-box.orange,#tab-setting .setting-box.green,#tab-setting .setting-box.purple{border-color:#d8e4ea!important;border-top-color:#438c91!important;background:#fff!important}
+/* settings section controls */
+#rkSettingsAccordionTools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin:8px 0 14px}
+#rkSettingsAccordionTools button{width:auto!important;min-height:38px!important;padding:8px 13px!important;border-radius:10px!important;font-size:12px!important}
+#rkSettingsAccordionTools .rk-settings-hint{margin-right:auto;color:#617888;font-size:12px;font-weight:600}
+/* Backup / restore / reset never overflow the viewport */
+#tab-setting .rk-backup-row{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important;width:100%!important;max-width:100%!important;white-space:normal!important;overflow:visible!important;box-sizing:border-box!important;background:#fff!important;border:1px solid #d9e4e9!important;border-radius:15px!important;padding:14px!important}
+#tab-setting .rk-backup-row>div{min-width:0!important;max-width:100%!important}
+#tab-setting .rk-backup-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;width:100%!important}
+#tab-setting .rk-backup-actions button{width:100%!important;min-width:0!important;white-space:normal!important;overflow-wrap:anywhere!important;padding:10px 8px!important;min-height:44px!important;font-size:12px!important;line-height:1.35!important}
+#cloudSyncStatus{color:#526a79!important}
+/* Inputs and search fields: visible labels, comfortable touch targets, no clipped text */
+label{color:#34566b!important;font-weight:700!important}
+input,select,textarea,.form-control{color:#19394e!important;background:#fff!important;border:1px solid #cbdbe3!important;border-radius:11px!important;min-height:43px;max-width:100%;box-sizing:border-box!important}
+input::placeholder,textarea::placeholder{color:#7a8f9c!important;opacity:1!important}
+input:focus,select:focus,textarea:focus,.form-control:focus{border-color:#398b87!important;box-shadow:0 0 0 3px rgba(57,139,135,.14)!important;outline:none!important}
+#dispatchSearchInput,#returnSearchInput,#billingSearchInput,#custSearchMobile,#vendorSearchInput,[id*="Search"],[id*="search"]{min-width:min(100%,260px)!important;min-height:48px!important;font-size:15px!important;padding:12px 14px!important}
+/* Consistent button geometry, with restrained premium colors */
+button,.btn{font-family:inherit!important;font-weight:750!important;letter-spacing:0!important;border-radius:10px!important;min-height:40px;max-width:100%;white-space:normal}
+.btn-primary,.btn-success,.btn-wa{background:#176d67!important;color:#fff!important;border:1px solid #176d67!important;box-shadow:0 3px 8px rgba(23,109,103,.13)!important}
+.btn-secondary{background:#eaf1f5!important;color:#294d62!important;border:1px solid #d3e0e7!important;box-shadow:none!important}
+.btn-warning{background:#a8732e!important;color:#fff!important}.btn-danger{background:#a74349!important;color:#fff!important}.btn-purple{background:#536c91!important;color:#fff!important}
+button:focus-visible{outline:3px solid rgba(47,102,152,.28)!important;outline-offset:2px!important}
+.data-table th{background:#e8f0f4!important;color:#27485a!important}.data-table td{color:#2b4658!important}
+/* AI areas: remove washed-out copy and excessive explanatory clutter */
+.ai-assistant-shell{background:#fff!important;color:#183247!important;border:1px solid #d9e5eb!important;border-radius:18px!important;box-shadow:var(--rk-ui-shadow)!important}
+.ai-assistant-heading h2{color:#183e54!important;text-shadow:none!important}.ai-assistant-heading p,.ai-safety-note{color:#526a79!important}
+.ai-kicker{color:#267b80!important;letter-spacing:1.2px!important}.ai-status-pill{color:#176b55!important;background:#eaf7f0!important;border-color:#bfe5d0!important}
+.ai-chat-history{background:#f5f9fb!important;border-color:#dce7ed!important;color:#24475b!important;max-height:300px!important}
+.ai-bot{background:#fff!important;border-color:#dce7ed!important;color:#29485b!important}.ai-user{background:#e5f4f4!important;border-color:#c7e6e5!important;color:#164d52!important}
+.ai-command-chips button{background:#eef7f7!important;border-color:#cce6e5!important;color:#205a60!important}
+.ai-command-entry textarea{background:#fff!important;color:#183247!important;border-color:#cbdbe3!important}
+#hybridAiFab{background:#176d67!important;border:1px solid #d4ece8!important;box-shadow:0 8px 22px rgba(23,109,103,.2)!important}
+#hybridAiPanel{background:#fff!important;color:#183247!important;border:1px solid #d5e2e8!important;box-shadow:0 16px 42px rgba(20,50,70,.18)!important}
+#hybridAiPanel p{color:#536b7b!important}#hybridAiPanel input{background:#fff!important;color:#183247!important;border:1px solid #cbdbe3!important}
+#hybridAiAnswer{background:#eef6f7!important;color:#24495b!important;border-radius:10px!important;padding:10px!important}
+/* vendor and admin tabs must remain readable even where legacy inline styles exist */
+#vtab-stock [style*="background:#0f172a"],#vtab-stock [style*="background: #0f172a"],#tab-vendor-bill [style*="background:#0f172a"],#tab-vendor-bill [style*="background: #0f172a"]{background:#fff!important;color:#183247!important;border-color:#d5e2e8!important}
+#vtab-stock [style*="color:#4ade80"],#tab-vendor-stock [style*="color:#4ade80"]{color:#176d67!important}
+@media(max-width:760px){
+ #tab-setting .setting-card-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}
+ #tab-setting .setting-box h3{padding:13px!important;font-size:14px!important}
+ #tab-setting .setting-content-body{padding:12px!important}
+ #tab-setting .rk-backup-actions{grid-template-columns:1fr!important}
+ #tab-setting .rk-backup-actions button{font-size:13px!important}
+ #rkSettingsAccordionTools{justify-content:stretch!important}
+ #rkSettingsAccordionTools .rk-settings-hint{flex:1 0 100%!important}
+ #rkSettingsAccordionTools button{flex:1!important}
+ .ai-assistant-heading{gap:8px!important}.ai-chat-history{min-height:110px!important}
+ #dispatchSearchInput,#returnSearchInput,#billingSearchInput,#custSearchMobile,[id*="Search"],[id*="search"]{width:100%!important;min-width:0!important}
+ .admin-tab-pane{padding:8px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* Desktop-like Admin Workspace: independent page windows with minimize/maximize/close */
+#view-admin-panel .content-area{position:relative!important;overflow:hidden!important;isolation:isolate;}
+#view-admin-panel .admin-tab-pane.rk-window{display:none!important;position:absolute!important;inset:10px!important;width:auto!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:clamp(12px,1.6vw,24px)!important;overflow:auto!important;border:1px solid rgba(148,163,184,.35)!important;border-radius:16px!important;background:rgba(248,250,252,.97)!important;color:#172033!important;box-shadow:0 18px 48px rgba(15,23,42,.22),0 2px 8px rgba(15,23,42,.08)!important;}
+#view-admin-panel .admin-tab-pane.rk-window.rk-window-open{display:block!important;}
+#view-admin-panel .admin-tab-pane.rk-window.rk-window-minimized{display:none!important;}
+#view-admin-panel .admin-tab-pane.rk-window.rk-window-maximized{inset:0!important;border-radius:10px!important;}
+#view-admin-panel .rk-window-titlebar{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:calc(-1 * clamp(12px,1.6vw,24px));z-index:30;margin:calc(-1 * clamp(12px,1.6vw,24px)) calc(-1 * clamp(12px,1.6vw,24px)) 16px;padding:9px 12px;background:linear-gradient(120deg,#f8fafc,#eaf2f8);border-bottom:1px solid #dbe4ee;border-radius:15px 15px 0 0;box-shadow:0 4px 12px rgba(15,23,42,.06);}
+#view-admin-panel .rk-window-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;font-size:14px;color:#20334a;}
+#view-admin-panel .rk-window-controls{display:flex;flex:0 0 auto;align-items:center;gap:5px;}
+#view-admin-panel .rk-window-control{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;min-width:27px;padding:0;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#334155;font-size:14px;line-height:1;box-shadow:0 1px 2px rgba(15,23,42,.07);cursor:pointer;}
+#view-admin-panel .rk-window-control:hover{background:#e2e8f0;transform:translateY(-1px);}
+#view-admin-panel .rk-window-control.rk-close{background:#fff1f2;border-color:#fecdd3;color:#be123c;}
+#view-admin-panel .rk-window-control.rk-close:hover{background:#be123c;color:#fff;}
+#view-admin-panel #rkWindowTaskbar{display:flex;gap:7px;align-items:center;overflow-x:auto;padding:7px 10px;background:#e8eef5;border-top:1px solid #d4deea;min-height:42px;}
+#view-admin-panel .rk-taskbar-item{flex:0 0 auto;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#26384e;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;}
+#view-admin-panel .rk-taskbar-item[aria-current="page"]{background:#dbeafe;border-color:#60a5fa;color:#1d4ed8;}
+#view-admin-panel .rk-taskbar-label{flex:0 0 auto;font-size:11px;font-weight:800;color:#64748b;padding-right:3px;}
+@media(max-width:700px){#view-admin-panel .admin-tab-pane.rk-window{inset:5px!important;padding:12px!important;border-radius:12px!important;}#view-admin-panel .rk-window-titlebar{top:-12px;margin:-12px -12px 12px;padding:8px 9px;}#view-admin-panel .rk-window-control{width:26px;height:26px;min-width:26px;}#view-admin-panel #rkWindowTaskbar{min-height:39px;padding:5px 7px;}#view-admin-panel .rk-taskbar-item{max-width:145px;padding:6px 9px;}}
+
+</style>
+<script id="rk-final-quality-behavior-2026">
+(function(){
+ 'use strict';
+ function ready(fn){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fn,{once:true});else fn();}
+ function settingBoxes(){return Array.from(document.querySelectorAll('#tab-setting .setting-box'));}
+ function setAccordion(box,open){
+   if(!box)return;
+   var head=box.querySelector('h3');
+   var body=head&&head.nextElementSibling;
+   if(!head||!body||!body.classList.contains('setting-content-body'))return;
+   body.style.display=open?'block':'none';
+   head.setAttribute('aria-expanded',open?'true':'false');
+   var arrow=head.querySelector('span');if(arrow)arrow.textContent=open?'⌄':'›';
+   var btn=head.querySelector('.rk-accordion-toggle');if(btn){btn.textContent=open?'छिपाएँ':'खोलें';btn.setAttribute('aria-label',(open?'सेक्शन छिपाएँ: ':'सेक्शन खोलें: ')+head.textContent.replace(/छिपाएँ|खोलें|[⌄›▼▶]/g,'').trim());}
+ }
+ function init(){
+   var aiIntro=document.querySelector('.ai-assistant-heading p');if(aiIntro)aiIntro.textContent='पेज खोलें, रिपोर्ट पूछें या एंट्री में मदद लें।';
+   var aiSafety=document.querySelector('.ai-safety-note');if(aiSafety)aiSafety.textContent='🔐 महत्वपूर्ण सेव, भुगतान, मंज़ूरी या स्टॉक बदलाव से पहले विवरण जाँचें।';
+   var hybridIntro=document.querySelector('#hybridAiPanel p');if(hybridIntro)hybridIntro.textContent='ऑफलाइन सहायक: मॉड्यूल और सामान्य काम के छोटे निर्देश।';
+   var settings=document.getElementById('tab-setting');
+   if(settings){
+     var grid=settings.querySelector('.setting-card-grid');
+     if(grid&&!document.getElementById('rkSettingsAccordionTools')){
+       var tools=document.createElement('div');tools.id='rkSettingsAccordionTools';
+       tools.innerHTML='<span class="rk-settings-hint">⚙️ सेक्शन खोलें या बंद करें</span><button type="button" class="btn-secondary" data-rk-accordion="close">▴ सभी छिपाएँ</button><button type="button" class="btn-primary" data-rk-accordion="open">▾ सभी दिखाएँ</button>';
+       grid.parentNode.insertBefore(tools,grid);
+       tools.addEventListener('click',function(e){var b=e.target.closest('button[data-rk-accordion]');if(!b)return;settingBoxes().forEach(function(box){setAccordion(box,b.dataset.rkAccordion==='open');});});
+     }
+     settingBoxes().forEach(function(box){
+       var head=box.querySelector('h3');var body=head&&head.nextElementSibling;
+       if(!head||!body||!body.classList.contains('setting-content-body'))return;
+       if(!head.querySelector('.rk-accordion-toggle')){
+         var toggle=document.createElement('button');toggle.type='button';toggle.className='rk-accordion-toggle btn-secondary';toggle.style.cssText='width:auto!important;min-width:64px;min-height:30px;padding:5px 9px;font-size:11px;flex:0 0 auto';
+         toggle.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();setAccordion(box,body.style.display==='none');});
+         head.appendChild(toggle);
+       }
+       setAccordion(box,body.style.display!=='none' && getComputedStyle(body).display!=='none');
+     });
+     var backup=settings.querySelector('#systemBackupRestoreFile');
+     var backupRow=backup&&backup.closest('div[style*="justify-content: space-between"]');
+     if(backupRow&&!backupRow.classList.contains('rk-backup-row')){
+       backupRow.classList.add('rk-backup-row');
+       var actionWrap=backupRow.querySelector('div:nth-child(2)');if(actionWrap)actionWrap.classList.add('rk-backup-actions');
+     }
+   }
+   // Correct common contrast regressions from inline/legacy colors in vendor panels.
+   document.querySelectorAll('#vtab-stock h4,#tab-vendor-stock h4,#tab-vendor-bill h4').forEach(function(el){el.style.setProperty('color','#22566a','important');});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
 </body>
 </html>
