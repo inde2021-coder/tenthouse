@@ -1721,7 +1721,22 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
                                 <p class="config-note">भुगतान तभी Verified होगा जब सर्वर गेटवे से पुष्टि करे और webhook signature सत्यापित करे। केवल ग्राहक का UTR, स्क्रीनशॉट या लौटकर आने वाला URL पर्याप्त प्रमाण नहीं है।</p>
                             </div>
                         </div>
-
+                        <div class="setting-box green whatsapp-cloud-settings">
+                            <h3 onclick="window.toggleSettingAccordion(this)">💬 WhatsApp Cloud API सेटिंग्स <span>▼</span></h3>
+                            <div class="setting-content-body">
+                                <label for="waCloudPhoneNumberId">WhatsApp Phone Number ID</label>
+                                <input type="text" id="waCloudPhoneNumberId" class="form-control" placeholder="Meta Developers से Phone Number ID" autocomplete="off">
+                                <label for="waCloudBusinessAccountId">WhatsApp Business Account ID (WABA ID)</label>
+                                <input type="text" id="waCloudBusinessAccountId" class="form-control" placeholder="WhatsApp Business Account ID" autocomplete="off">
+                                <label for="waCloudAccessToken">Access Token (स्थायी टोकन यहाँ सेव न करें)</label>
+                                <input type="password" id="waCloudAccessToken" class="form-control" placeholder="टोकन सर्वर के Secret Manager में रखें" autocomplete="new-password" readonly onfocus="this.blur()">
+                                <label for="waCloudBackendUrl">WhatsApp भेजने का सुरक्षित Backend URL</label>
+                                <input type="url" id="waCloudBackendUrl" class="form-control" placeholder="https://your-domain.com/api/whatsapp/send" autocomplete="off">
+                                <label for="waCloudVerifyToken">Webhook Verify Token (केवल पहचान हेतु)</label>
+                                <input type="password" id="waCloudVerifyToken" class="form-control" placeholder="Webhook token सर्वर पर सेट करें" autocomplete="new-password" readonly onfocus="this.blur()">
+                                <p class="config-note">महत्वपूर्ण सुरक्षा: Meta Access Token को इस HTML, ब्राउज़र, LocalStorage या GitHub में रखना सुरक्षित नहीं है। इसलिए टोकन के लिए यह पेज इनपुट स्वीकार नहीं करता। Access Token और Webhook Verify Token अपने सुरक्षित Backend/Cloud Functions के Secret Manager में सेट करें। यह सेक्शन सेटिंग/Backend URL दिखाता है; संदेश भेजने के लिए Backend API बनाना और Meta में WhatsApp Cloud API सेटअप करना आवश्यक है।</p>
+                            </div>
+                        </div>
                         <div class="setting-box green">
                             <h3 onclick="window.toggleSettingAccordion(this)">🏷️ स्टैम्प अपलोड <span>▼</span></h3>
                             <div class="setting-content-body">
@@ -1891,9 +1906,14 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
   // Firebase web configuration supplied for radhe-krishna-online.
   // Web API keys are public identifiers; Firestore Rules and Auth claims must enforce access.
   // Cloud Firestore is used; no Realtime Database URL is required.
-  const savedFbApiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
-  const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
-  const savedFbProjectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
+  // Safe storage access: if the browser blocks localStorage, the main script must still start.
+  const safeStorageGet = (key, fallback = '') => {
+    try { return localStorage.getItem(key) || fallback; }
+    catch (storageError) { console.warn('Local storage unavailable for', key, storageError); return fallback; }
+  };
+  const savedFbApiKey = safeStorageGet('fbApiKey', 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8');
+  const savedFbCollectionName = safeStorageGet('fbCollectionName', 'appData');
+  const savedFbProjectId = safeStorageGet('fbProjectId', 'radhe-krishna-online');
   const firebaseConfig = {
     apiKey: savedFbApiKey,
     authDomain: `${savedFbProjectId}.firebaseapp.com`,
@@ -2014,44 +2034,7 @@ hr,.divider{border-color:var(--rk-premium-line)!important}
                 if (!win) { alert('❌ प्रिंट विंडो ब्लॉक हो गई। ब्राउज़र में pop-ups की अनुमति दें।'); return; }
                 win.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Print Preview - Radhe Krishna ERP</title><style>@page{size:A4;margin:10mm}*{box-sizing:border-box}html,body{font-family:Arial,"Noto Sans Devanagari",sans-serif;color:#111;background:#fff;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{padding:4px;font-size:11pt}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;page-break-inside:auto;table-layout:auto}tr{page-break-inside:avoid;page-break-after:auto}thead{display:table-header-group}tfoot{display:table-footer-group}th,td{overflow-wrap:anywhere;word-break:normal}h1,h2,h3{page-break-after:avoid}.print-stamp{display:block;max-width:130px;max-height:90px;object-fit:contain}.barcode,svg[id*=barcode],canvas[id*=barcode]{max-width:100%;height:auto;image-rendering:pixelated}@media print{body{padding:0}.no-print,.screen-only{display:none!important}.print-stamp{print-color-adjust:exact; -webkit-print-color-adjust:exact}}</style></head><body>');
                 win.document.write(modalBody.innerHTML);
-                win.document.write('
-<script>
-(function(){
-  const byId = id => document.getElementById(id);
-  const ids = ['waPhoneNumberId','waBusinessAccountId','waBackendUrl','waWebhookUrl','waVerifyToken'];
-  window.saveWhatsAppSettings = function(){
-    const values = {};
-    ids.forEach(id => { const el=byId(id); if(el) values[id]=el.value.trim(); });
-    try {
-      localStorage.setItem('rkWhatsAppSettings', JSON.stringify(values));
-      const status=byId('waSettingsStatus');
-      if(status) status.textContent='सेटिंग इस ब्राउज़र में सेव हुईं। Access Token सेव नहीं किया गया।';
-    } catch(e) { alert('सेटिंग सेव नहीं हो सकीं: '+e.message); }
-  };
-  window.testWhatsAppBackend = async function(){
-    const url=(byId('waBackendUrl')||{}).value?.trim();
-    const status=byId('waSettingsStatus');
-    if(!url){ if(status) status.textContent='पहले Backend URL भरें।'; return; }
-    if(status) status.textContent='Backend जाँचा जा रहा है…';
-    try {
-      const res=await fetch(url.replace(/\/send\/?$/,'/health'), {method:'GET'});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
-      if(status) status.textContent='✅ Backend उपलब्ध है। WhatsApp credentials server पर सेट होने चाहिए।';
-    } catch(e) {
-      if(status) status.textContent='❌ कनेक्शन नहीं हुआ: '+e.message+' — Backend deploy करें और URL जाँचें।';
-    }
-  };
-  window.addEventListener('DOMContentLoaded',()=>{
-    try {
-      const saved=JSON.parse(localStorage.getItem('rkWhatsAppSettings')||'{}');
-      ids.forEach(id=>{const el=byId(id); if(el && saved[id]) el.value=saved[id];});
-    } catch(e){}
-  });
-})();
-</script>
-
-</body></html>');
+                win.document.write('</body></html>');
                 win.document.close();
                 win.focus();
                 const waitForImages = () => Promise.all(Array.from(win.document.images).map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.onload=resolve; img.onerror=resolve; setTimeout(resolve,2500); })));
@@ -4751,43 +4734,6 @@ label,.config-note,.ai-assistant-heading p{color:var(--rk-muted)!important}
 
 
 
-
-<script>
-(function(){
-  const byId = id => document.getElementById(id);
-  const ids = ['waPhoneNumberId','waBusinessAccountId','waBackendUrl','waWebhookUrl','waVerifyToken'];
-  window.saveWhatsAppSettings = function(){
-    const values = {};
-    ids.forEach(id => { const el=byId(id); if(el) values[id]=el.value.trim(); });
-    try {
-      localStorage.setItem('rkWhatsAppSettings', JSON.stringify(values));
-      const status=byId('waSettingsStatus');
-      if(status) status.textContent='सेटिंग इस ब्राउज़र में सेव हुईं। Access Token सेव नहीं किया गया।';
-    } catch(e) { alert('सेटिंग सेव नहीं हो सकीं: '+e.message); }
-  };
-  window.testWhatsAppBackend = async function(){
-    const url=(byId('waBackendUrl')||{}).value?.trim();
-    const status=byId('waSettingsStatus');
-    if(!url){ if(status) status.textContent='पहले Backend URL भरें।'; return; }
-    if(status) status.textContent='Backend जाँचा जा रहा है…';
-    try {
-      const res=await fetch(url.replace(/\/send\/?$/,'/health'), {method:'GET'});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
-      if(status) status.textContent='✅ Backend उपलब्ध है। WhatsApp credentials server पर सेट होने चाहिए।';
-    } catch(e) {
-      if(status) status.textContent='❌ कनेक्शन नहीं हुआ: '+e.message+' — Backend deploy करें और URL जाँचें।';
-    }
-  };
-  window.addEventListener('DOMContentLoaded',()=>{
-    try {
-      const saved=JSON.parse(localStorage.getItem('rkWhatsAppSettings')||'{}');
-      ids.forEach(id=>{const el=byId(id); if(el && saved[id]) el.value=saved[id];});
-    } catch(e){}
-  });
-})();
-</script>
-
 </body></html>`;
             printModalContent(printHtml);
             document.getElementById('barcodePrintModal').style.display = 'none';
@@ -5350,27 +5296,7 @@ label,.config-note,.ai-assistant-heading p{color:var(--rk-muted)!important}
                 const keys = Object.keys(payload);
                 if (!keys.length) throw new Error('बैकअप में कोई डेटा नहीं मिला।');
                 const riskyKeys = keys.filter(k => /^(fbApiKey|fbProjectId|fbCollectionName|localAdminPasswordHash|localAdminSecondHash|localAdminSalt1|localAdminSalt2)$/.test(k));
-                const note = riskyKeys.length ? '\n\nध्यान दें: बैकअप में लॉगिन/Firebase 
-<div class="settings-section" id="whatsappCloudSettings" style="margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:14px;background:rgba(255,255,255,.72);">
-  <h3 onclick="window.toggleSettingAccordion(this)" style="cursor:pointer">📲 WhatsApp Cloud API सेटिंग्स <span>▼</span></h3>
-  <div class="setting-content" style="display:block">
-    <p style="font-size:13px;color:#475569">Access Token केवल Vercel Environment Variables में रखें। यहाँ कभी भी Token न डालें।</p>
-    <label for="waPhoneNumberId">WhatsApp Phone Number ID</label>
-    <input id="waPhoneNumberId" class="form-control" placeholder="Meta Developers से Phone Number ID" autocomplete="off">
-    <label for="waBusinessAccountId">WhatsApp Business Account ID (WABA ID)</label>
-    <input id="waBusinessAccountId" class="form-control" placeholder="WABA ID" autocomplete="off">
-    <label for="waBackendUrl">WhatsApp Backend URL</label>
-    <input id="waBackendUrl" class="form-control" placeholder="https://your-project.vercel.app/api/whatsapp/send" autocomplete="url">
-    <label for="waWebhookUrl">Webhook URL (सिर्फ पढ़ने के लिए)</label>
-    <input id="waWebhookUrl" class="form-control" readonly placeholder="Deploy के बाद: https://your-project.vercel.app/api/whatsapp/webhook">
-    <label for="waVerifyToken">Webhook Verify Token (सिर्फ़ नाम/नोट; असली मान Vercel env में रखें)</label>
-    <input id="waVerifyToken" class="form-control" placeholder="Vercel में WA_WEBHOOK_VERIFY_TOKEN के समान मान" autocomplete="off">
-    <button type="button" class="btn-primary" onclick="window.saveWhatsAppSettings()">💾 WhatsApp सेटिंग सेव करें</button>
-    <button type="button" class="btn-primary" onclick="window.testWhatsAppBackend()" style="margin-top:8px">🔎 Backend कनेक्शन जाँचें</button>
-    <div id="waSettingsStatus" role="status" style="margin-top:10px;font-size:13px"></div>
-  </div>
-</div>
-सेटिंग्स भी हैं। इन्हें बहाल करने से वर्तमान लॉगिन बदल सकता है।' : '';
+                const note = riskyKeys.length ? '\n\nध्यान दें: बैकअप में लॉगिन/Firebase सेटिंग्स भी हैं। इन्हें बहाल करने से वर्तमान लॉगिन बदल सकता है।' : '';
                 if (!confirm('⚠️ बैकअप बहाल करने से इस डिवाइस का मौजूदा डेटा बदलेगा। पहले वर्तमान बैकअप डाउनलोड कर लें। जारी रखें?' + note)) return;
                 const before = {};
                 for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); before[k] = localStorage.getItem(k); }
@@ -5524,42 +5450,5 @@ button:focus-visible,.btn:focus-visible,[role="button"]:focus-visible,input[type
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
-
-<script>
-(function(){
-  const byId = id => document.getElementById(id);
-  const ids = ['waPhoneNumberId','waBusinessAccountId','waBackendUrl','waWebhookUrl','waVerifyToken'];
-  window.saveWhatsAppSettings = function(){
-    const values = {};
-    ids.forEach(id => { const el=byId(id); if(el) values[id]=el.value.trim(); });
-    try {
-      localStorage.setItem('rkWhatsAppSettings', JSON.stringify(values));
-      const status=byId('waSettingsStatus');
-      if(status) status.textContent='सेटिंग इस ब्राउज़र में सेव हुईं। Access Token सेव नहीं किया गया।';
-    } catch(e) { alert('सेटिंग सेव नहीं हो सकीं: '+e.message); }
-  };
-  window.testWhatsAppBackend = async function(){
-    const url=(byId('waBackendUrl')||{}).value?.trim();
-    const status=byId('waSettingsStatus');
-    if(!url){ if(status) status.textContent='पहले Backend URL भरें।'; return; }
-    if(status) status.textContent='Backend जाँचा जा रहा है…';
-    try {
-      const res=await fetch(url.replace(/\/send\/?$/,'/health'), {method:'GET'});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
-      if(status) status.textContent='✅ Backend उपलब्ध है। WhatsApp credentials server पर सेट होने चाहिए।';
-    } catch(e) {
-      if(status) status.textContent='❌ कनेक्शन नहीं हुआ: '+e.message+' — Backend deploy करें और URL जाँचें।';
-    }
-  };
-  window.addEventListener('DOMContentLoaded',()=>{
-    try {
-      const saved=JSON.parse(localStorage.getItem('rkWhatsAppSettings')||'{}');
-      ids.forEach(id=>{const el=byId(id); if(el && saved[id]) el.value=saved[id];});
-    } catch(e){}
-  });
-})();
-</script>
-
 </body>
 </html>
