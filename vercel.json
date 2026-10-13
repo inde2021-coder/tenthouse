@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/whatsapp/send",
+      "destination": "/api/whatsapp/send"
+    },
+    {
+      "source": "/api/whatsapp/webhook",
+      "destination": "/api/whatsapp/webhook"
+    },
+    {
+      "source": "/api/whatsapp/health",
+      "destination": "/api/whatsapp/health"
+    }
+  ]
+}
