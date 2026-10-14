@@ -16,6 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Firebase SDK (v9 Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
     <style>
@@ -719,15 +720,16 @@ body.rk-desktop-version .app-view { min-height:100vh; }
               <label style="color:#cbd5e1;">🔑 वेंडर पासवर्ड</label>
               <input type="password" id="vendorLoginPass" class="form-control" autocomplete="current-password" placeholder="वेंडर पासवर्ड">
             </div>
-            <div id="adminLoginFields">
-              <label style="color:#cbd5e1;text-align:left;">🔐 एडमिन पासवर्ड</label>
-              <input type="password" id="loginPass" class="form-control" autocomplete="current-password" placeholder="एडमिन पासवर्ड">
-              <label style="color:#cbd5e1;text-align:left;">🗝️ दूसरी सुरक्षा कुंजी</label>
-              <input type="password" id="loginSecond" class="form-control" autocomplete="current-password" placeholder="दूसरी सुरक्षा कुंजी">
+            <div id="adminLoginFields" style="text-align:left;">
+              <label for="adminEmail" style="color:#cbd5e1;">📧 एडमिन Gmail</label>
+              <input type="email" id="adminEmail" class="form-control" autocomplete="username" inputmode="email" placeholder="inde2021@gmail.com" value="inde2021@gmail.com">
+              <label for="adminPassword" style="color:#cbd5e1;">🔐 एडमिन पासवर्ड</label>
+              <input type="password" id="adminPassword" class="form-control" autocomplete="current-password" placeholder="Firebase Auth पासवर्ड">
             </div>
             <div id="loginStatus" role="status" aria-live="polite" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;overflow-wrap:anywhere;"></div>
-            <button id="loginSubmitBtn" type="button" onclick="window.executeLogin()" class="btn-primary" style="margin-top:10px;">🔐 एडमिन लॉगिन</button>
-            <button id="openSecuritySettingsBtn" type="button" onclick="window.openSecuritySettings()" class="btn-secondary" style="margin-top:10px;width:100%;">⚙️ पहली बार सुरक्षा सेटअप</button>
+            <button id="loginSubmitBtn" type="button" onclick="window.executeLogin()" class="btn-primary" style="margin-top:10px;">🔐 ईमेल और पासवर्ड से एडमिन लॉगिन</button>
+            <button id="adminGoogleLoginBtn" type="button" onclick="window.adminGoogleLogin()" class="btn-secondary" style="margin-top:10px;width:100%;">🌐 Google से एडमिन लॉगिन</button>
+            <button id="openSecuritySettingsBtn" type="button" onclick="window.openSecuritySettings()" class="btn-secondary" style="display:none;margin-top:10px;width:100%;">⚙️ पुराना सुरक्षा सेटअप</button>
 
         </div>
     </div>
@@ -1730,6 +1732,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
   // Firebase web configuration supplied for radhe-krishna-online.
   // Web API keys are public identifiers; Firestore Rules and Auth claims must enforce access.
   // Cloud Firestore is used; no Realtime Database URL is required.
+  const AUTHORIZED_ADMIN_EMAIL = 'inde2021@gmail.com';
   const savedFbApiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
   const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
   const savedFbProjectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
@@ -2246,7 +2249,9 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         function switchAppView(viewId) {
             // Admin and vendor share the workspace shell, but must pass their own session gate.
             if (viewId === 'view-admin-panel') {
-                const isAdminAuthenticated = sessionStorage.getItem('localAdminAuthenticated') === 'true';
+                const authUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+                const isAdminAuthenticated = sessionStorage.getItem('localAdminAuthenticated') === 'true' &&
+                    !!authUser && String(authUser.email || '').trim().toLowerCase() === AUTHORIZED_ADMIN_EMAIL;
                 const isVendorAuthenticated = loggedInUserRole === 'vendor' &&
                     sessionStorage.getItem('vendorAuthenticated') === 'true' && !!loggedInVendorName;
                 if (!isAdminAuthenticated && !isVendorAuthenticated) {
@@ -2257,6 +2262,9 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if (viewId === 'view-login') {
                 sessionStorage.removeItem('localAdminAuthenticated');
                 sessionStorage.removeItem('vendorAuthenticated');
+                if (sessionStorage.getItem('rkGoogleRedirectPending') !== 'true' && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                    firebase.auth().signOut().catch(err => console.warn('Firebase sign-out failed:', err));
+                }
                 loggedInUserRole = '';
                 loggedInVendorName = '';
                 const adminNav = document.getElementById('adminNavMenu');
@@ -2543,19 +2551,28 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         function selectLoginRole(role) {
             selectedLoginRole = role === 'vendor' ? 'vendor' : 'admin';
             const vendor = selectedLoginRole === 'vendor';
-            document.getElementById('vendorLoginFields').style.display = vendor ? 'block' : 'none';
-            document.getElementById('adminLoginFields').style.display = vendor ? 'none' : 'block';
-            document.getElementById('loginRoleAdminBtn').className = vendor ? 'btn-secondary' : 'btn-primary';
-            document.getElementById('loginRoleVendorBtn').className = vendor ? 'btn-primary' : 'btn-secondary';
-            document.getElementById('loginSubmitBtn').textContent = vendor ? '🏢 वेंडर लॉगिन' : '🔐 एडमिन लॉगिन';
+            const vendorFields = document.getElementById('vendorLoginFields');
+            const adminFields = document.getElementById('adminLoginFields');
+            const adminBtn = document.getElementById('loginRoleAdminBtn');
+            const vendorBtn = document.getElementById('loginRoleVendorBtn');
+            const loginBtn = document.getElementById('loginSubmitBtn');
+            const googleBtn = document.getElementById('adminGoogleLoginBtn');
+            const oldSetupBtn = document.getElementById('openSecuritySettingsBtn');
+            if (vendorFields) vendorFields.style.display = vendor ? 'block' : 'none';
+            if (adminFields) adminFields.style.display = vendor ? 'none' : 'block';
+            if (adminBtn) adminBtn.className = vendor ? 'btn-secondary' : 'btn-primary';
+            if (vendorBtn) vendorBtn.className = vendor ? 'btn-primary' : 'btn-secondary';
+            if (loginBtn) loginBtn.textContent = vendor ? '🏢 वेंडर लॉगिन' : '🔐 ईमेल और पासवर्ड से एडमिन लॉगिन';
+            if (googleBtn) googleBtn.style.display = vendor ? 'none' : 'block';
+            if (oldSetupBtn) oldSetupBtn.style.display = 'none';
             const note = document.querySelector('#view-login .card-box > p:last-of-type');
-            if (note) note.textContent = vendor ? 'रजिस्ट्रेशन में दिया गया शॉप नाम और पासवर्ड डालें।' : 'एडमिन यूजर आईडी और पासवर्ड से लॉगिन करें। पहली बार सेटअप के लिए सुरक्षा सेटिंग्स खोलें।';
+            if (note) note.textContent = vendor ? 'रजिस्ट्रेशन में दिया गया शॉप नाम और पासवर्ड डालें।' : 'केवल अधिकृत एडमिन Gmail से लॉगिन करें। Google लॉगिन भी उपलब्ध है।';
         }
         window.selectLoginRole = selectLoginRole;
         function updateLocalAdminLoginView() {
             const configured = !!localStorage.getItem('localAdminPasswordHash') && !!localStorage.getItem('localAdminSecondHash');
             const setupBtn = document.getElementById('openSecuritySettingsBtn');
-            if (setupBtn) { setupBtn.textContent = '⚙️ पहली बार सुरक्षा सेटअप'; setupBtn.style.display = configured ? 'none' : ''; }
+            if (setupBtn) { setupBtn.textContent = '⚙️ पुराना सुरक्षा सेटअप'; setupBtn.style.display = 'none'; }
             const status = document.getElementById('securitySetupStatus');
             const form = document.getElementById('securitySetupForm');
             if (form) form.style.display = configured ? 'none' : 'block';
@@ -2596,6 +2613,60 @@ body.rk-desktop-version .app-view { min-height:100vh; }
               setTimeout(()=>switchAppView('view-login'),900);
             } catch(e){show('सेटअप नहीं हो सका: '+(e.message||'सुरक्षा त्रुटि'));}
         };
+        async function finishAuthorizedAdminLogin(user) {
+            const email = String(user && user.email || '').trim().toLowerCase();
+            if (email !== AUTHORIZED_ADMIN_EMAIL) {
+                if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut().catch(() => {});
+                sessionStorage.removeItem('localAdminAuthenticated');
+                setLoginStatus('यह Gmail एडमिन के लिए अधिकृत नहीं है। केवल ' + AUTHORIZED_ADMIN_EMAIL + ' से लॉगिन करें।');
+                return false;
+            }
+            sessionStorage.removeItem('adminLoginFails');
+            sessionStorage.setItem('localAdminAuthenticated', 'true');
+            sessionStorage.removeItem('vendorAuthenticated');
+            loggedInUserRole = 'admin';
+            loggedInVendorName = '';
+            const emailInput = document.getElementById('adminEmail');
+            const passwordInput = document.getElementById('adminPassword');
+            if (emailInput) emailInput.value = AUTHORIZED_ADMIN_EMAIL;
+            if (passwordInput) passwordInput.value = '';
+            const adminNav = document.getElementById('adminNavMenu');
+            const vendorNav = document.getElementById('vendorNavMenu');
+            if (adminNav) adminNav.style.display = 'flex';
+            if (vendorNav) vendorNav.style.display = 'none';
+            const adminShell = document.getElementById('view-admin-panel');
+            if (adminShell) adminShell.classList.remove('rk-vendor-mode');
+            switchAppView('view-admin-panel');
+            initFirebaseConnection();
+            const dashBtn = document.querySelector('#adminNavMenu .nav-btn');
+            openAdminTab('tab-dashboard', dashBtn);
+            setLoginStatus('एडमिन लॉगिन सफल हुआ।', 'success');
+            return true;
+        }
+        window.finishAuthorizedAdminLogin = finishAuthorizedAdminLogin;
+
+        window.adminGoogleLogin = async function() {
+            if (selectedLoginRole === 'vendor') return;
+            if (typeof firebase === 'undefined' || !firebase.auth) {
+                setLoginStatus('Firebase Authentication लोड नहीं हुआ। पेज को इंटरनेट के साथ फिर खोलें।');
+                return;
+            }
+            const googleBtn = document.getElementById('adminGoogleLoginBtn');
+            if (googleBtn) googleBtn.disabled = true;
+            try {
+                sessionStorage.setItem('rkGoogleRedirectPending', 'true');
+                setLoginStatus('Google लॉगिन खोला जा रहा है…', 'info');
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                await firebase.auth().signInWithRedirect(provider);
+            } catch (error) {
+                sessionStorage.removeItem('rkGoogleRedirectPending');
+                console.error('Google admin sign-in error:', error);
+                setLoginStatus('Google लॉगिन शुरू नहीं हुआ: ' + (error.message || error.code || 'कृपया फिर कोशिश करें।'));
+                if (googleBtn) googleBtn.disabled = false;
+            }
+        };
+
         async function executeLogin() {
             if (selectedLoginRole === 'vendor') {
                 const shop = document.getElementById('vendorLoginShop').value.trim();
@@ -2633,42 +2704,56 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const button = document.getElementById('loginSubmitBtn');
             if (button) button.disabled = true;
             try {
-                const configured = !!localStorage.getItem('localAdminPasswordHash') && !!localStorage.getItem('localAdminSecondHash');
-                if (!configured) { setLoginStatus('पहले ⚙️ सुरक्षा सेटिंग्स खोलकर एडमिन पासवर्ड और दूसरी कुंजी सेट करें।'); return; }
-                const password = document.getElementById('loginPass').value;
-                const second = document.getElementById('loginSecond').value;
-                if (!password || !second) { setLoginStatus('यूजर आईडी और पासवर्ड दोनों भरना अनिवार्य है।'); return; }
-                const hash1 = await deriveLocalAdminHash(password, localStorage.getItem('localAdminSalt1') || 'missing-salt-1');
-                const hash2 = await deriveLocalAdminHash(second, localStorage.getItem('localAdminSalt2') || 'missing-salt-2');
-                if (hash1 !== localStorage.getItem('localAdminPasswordHash') || hash2 !== localStorage.getItem('localAdminSecondHash')) {
-                    const tries = Number(sessionStorage.getItem('adminLoginFails') || 0) + 1;
-                    sessionStorage.setItem('adminLoginFails', String(tries));
-                    if (tries >= 5) { setLoginStatus('5 असफल प्रयास हो चुके हैं। यह टैब बंद करके कुछ देर बाद प्रयास करें।'); }
-                    else setLoginStatus('यूजर आईडी या पासवर्ड गलत है।');
+                const email = String((document.getElementById('adminEmail') || {}).value || '').trim().toLowerCase();
+                const password = String((document.getElementById('adminPassword') || {}).value || '');
+                if (!email || !password) { setLoginStatus('एडमिन Gmail और पासवर्ड दोनों भरें।'); return; }
+                if (email !== AUTHORIZED_ADMIN_EMAIL) { setLoginStatus('केवल ' + AUTHORIZED_ADMIN_EMAIL + ' एडमिन के लिए अधिकृत है।'); return; }
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    setLoginStatus('Firebase Authentication लोड नहीं हुआ। इंटरनेट जाँचकर पेज फिर खोलें।');
                     return;
                 }
-                sessionStorage.removeItem('adminLoginFails');
-                sessionStorage.setItem('localAdminAuthenticated', 'true');
-                sessionStorage.removeItem('vendorAuthenticated');
-                loggedInUserRole = 'admin'; loggedInVendorName = '';
-                document.getElementById('loginPass').value = ''; document.getElementById('loginSecond').value = '';
-                document.getElementById('adminNavMenu').style.display = 'flex';
-                document.getElementById('vendorNavMenu').style.display = 'none';
-                const adminShell = document.getElementById('view-admin-panel'); if (adminShell) adminShell.classList.remove('rk-vendor-mode');
-                switchAppView('view-admin-panel');
-                // Cloud sync is best-effort only; Firestore Rules may require authentication and reject it.
-                initFirebaseConnection();
-                const dashBtn = document.querySelector('#adminNavMenu .nav-btn');
-                openAdminTab('tab-dashboard', dashBtn);
+                const credential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                await finishAuthorizedAdminLogin(credential.user);
             } catch (error) {
-                console.error('Local admin login error:', error);
-                setLoginStatus(error.message || 'लॉगिन में त्रुटि हुई।');
+                console.error('Firebase admin login error:', error);
+                const code = error && error.code;
+                let message = 'एडमिन लॉगिन नहीं हुआ। कृपया ईमेल और पासवर्ड जाँचें।';
+                if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') message = 'Gmail या पासवर्ड गलत है। Firebase Authentication में इसी Gmail का पासवर्ड इस्तेमाल करें।';
+                else if (code === 'auth/too-many-requests') message = 'कई गलत प्रयास हुए हैं। कुछ देर बाद फिर कोशिश करें।';
+                else if (code === 'auth/network-request-failed') message = 'इंटरनेट कनेक्शन जाँचें और फिर कोशिश करें।';
+                else if (code === 'auth/operation-not-allowed') message = 'Firebase Console में Email/Password sign-in सक्षम करें।';
+                else if (code === 'auth/account-exists-with-different-credential') message = 'इस Gmail पर दूसरा sign-in तरीका पहले से है। पहले ईमेल-पासवर्ड से लॉगिन करें, फिर Google provider लिंक करना होगा।';
+                else if (error && error.message) message = error.message;
+                setLoginStatus(message);
             } finally { if (button) button.disabled = false; }
         }
         window.executeLogin = executeLogin;
         // First-run admin credentials are created only through the explicit security setup form.
-        window.addEventListener('load', () => { updateLocalAdminLoginView(); });
-        window.addEventListener('load', () => { const shop = document.getElementById('vendorLoginShop'); if (shop) shop.addEventListener('keydown', e => { if (e.key === 'Enter') window.executeLogin(); }); const pass = document.getElementById('vendorLoginPass'); if (pass) pass.addEventListener('keydown', e => { if (e.key === 'Enter') window.executeLogin(); }); });
+        window.addEventListener('load', async () => {
+            updateLocalAdminLoginView();
+            selectLoginRole('admin');
+            if (typeof firebase !== 'undefined' && firebase.auth && sessionStorage.getItem('rkGoogleRedirectPending') === 'true') {
+                try {
+                    const result = await firebase.auth().getRedirectResult();
+                    sessionStorage.removeItem('rkGoogleRedirectPending');
+                    const user = (result && result.user) || firebase.auth().currentUser;
+                    if (user) await finishAuthorizedAdminLogin(user);
+                } catch (error) {
+                    sessionStorage.removeItem('rkGoogleRedirectPending');
+                    console.error('Google redirect result error:', error);
+                    let message = 'Google लॉगिन पूरा नहीं हुआ। कृपया फिर कोशिश करें।';
+                    if (error && error.code === 'auth/account-exists-with-different-credential') message = 'इस Gmail पर Email/Password अकाउंट मौजूद है। पहले ईमेल-पासवर्ड से लॉगिन करें; Google अकाउंट लिंक करने की अलग प्रक्रिया करनी होगी।';
+                    else if (error && error.message) message = error.message;
+                    setLoginStatus(message);
+                }
+            }
+        });
+        window.addEventListener('load', () => {
+            ['vendorLoginShop','vendorLoginPass','adminEmail','adminPassword'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') window.executeLogin(); });
+            });
+        });
 
         function searchCustomerBookingStatus() {
             let q = document.getElementById('custSearchQuery').value.trim().toLowerCase();
