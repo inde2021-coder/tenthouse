@@ -720,15 +720,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
               <label style="color:#cbd5e1;">🔑 वेंडर पासवर्ड</label>
               <input type="password" id="vendorLoginPass" class="form-control" autocomplete="current-password" placeholder="वेंडर पासवर्ड">
             </div>
-            <div id="adminLoginFields" style="text-align:left;">
-              <label for="adminEmail" style="color:#cbd5e1;">📧 एडमिन Gmail</label>
-              <input type="email" id="adminEmail" class="form-control" autocomplete="username" inputmode="email" placeholder="inde2021@gmail.com" value="inde2021@gmail.com">
-              <label for="adminPassword" style="color:#cbd5e1;">🔐 एडमिन पासवर्ड</label>
-              <input type="password" id="adminPassword" class="form-control" autocomplete="current-password" placeholder="Firebase Auth पासवर्ड">
-            </div>
+            <div id="adminLoginFields" style="display:none;text-align:left;" aria-hidden="true"></div>
             <div id="loginStatus" role="status" aria-live="polite" style="display:none;margin-top:12px;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;overflow-wrap:anywhere;"></div>
-            <button id="loginSubmitBtn" type="button" onclick="window.executeLogin()" class="btn-primary" style="margin-top:10px;">🔐 ईमेल और पासवर्ड से एडमिन लॉगिन</button>
-            <button id="adminGoogleLoginBtn" type="button" onclick="window.adminGoogleLogin()" class="btn-secondary" style="margin-top:10px;width:100%;">🌐 Google से एडमिन लॉगिन</button>
+            <button id="loginSubmitBtn" type="button" onclick="window.executeLogin()" class="btn-primary" style="display:none;margin-top:10px;" aria-hidden="true">ईमेल-पासवर्ड लॉगिन बंद है</button>
+            <button id="adminGoogleLoginBtn" type="button" onclick="window.adminGoogleLogin()" class="btn-secondary" style="margin-top:10px;width:100%;">🌐 Google Account से एडमिन लॉगिन</button>
             <button id="openSecuritySettingsBtn" type="button" onclick="window.openSecuritySettings()" class="btn-secondary" style="display:none;margin-top:10px;width:100%;">⚙️ पुराना सुरक्षा सेटअप</button>
 
         </div>
@@ -2561,11 +2556,11 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const googleBtn = document.getElementById('adminGoogleLoginBtn');
             const oldSetupBtn = document.getElementById('openSecuritySettingsBtn');
             if (vendorFields) vendorFields.style.display = vendor ? 'block' : 'none';
-            if (adminFields) adminFields.style.display = vendor ? 'none' : 'block';
+            if (adminFields) adminFields.style.display = 'none';
             if (adminBtn) adminBtn.className = vendor ? 'btn-secondary' : 'btn-primary';
             if (vendorBtn) vendorBtn.className = vendor ? 'btn-primary' : 'btn-secondary';
-            if (loginBtn) loginBtn.textContent = vendor ? '🏢 वेंडर लॉगिन' : '🔐 ईमेल और पासवर्ड से एडमिन लॉगिन';
-            if (googleBtn) googleBtn.style.display = vendor ? 'none' : 'block';
+            if (loginBtn) { loginBtn.textContent = 'ईमेल-पासवर्ड लॉगिन बंद है'; loginBtn.style.display = 'none'; }
+            if (googleBtn) { googleBtn.style.display = vendor ? 'none' : 'block'; googleBtn.textContent = '🌐 Google Account से एडमिन लॉगिन'; }
             if (oldSetupBtn) oldSetupBtn.style.display = 'none';
             const note = document.querySelector('#view-login .card-box > p:last-of-type');
             if (note) note.textContent = vendor ? 'रजिस्ट्रेशन में दिया गया शॉप नाम और पासवर्ड डालें।' : 'केवल अधिकृत एडमिन Gmail से लॉगिन करें। Google लॉगिन भी उपलब्ध है।';
@@ -2703,6 +2698,9 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 setLoginStatus('वेंडर डैशबोर्ड खुल गया है।', 'success');
                 return;
             }
+            setLoginStatus('एडमिन के लिए केवल Google Account लॉगिन उपलब्ध है। कृपया “Google Account से एडमिन लॉगिन” दबाएँ।');
+            return;
+            /* ईमेल-पासवर्ड एडमिन लॉगिन जानबूझकर बंद है।
             const button = document.getElementById('loginSubmitBtn');
             if (button) button.disabled = true;
             try {
@@ -2728,29 +2726,46 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 else if (error && error.message) message = error.message;
                 setLoginStatus(message);
             } finally { if (button) button.disabled = false; }
+            */
         }
         window.executeLogin = executeLogin;
         // First-run admin credentials are created only through the explicit security setup form.
         window.addEventListener('load', async () => {
             updateLocalAdminLoginView();
             selectLoginRole('admin');
+            const redirectPending = sessionStorage.getItem('rkGoogleRedirectPending') === 'true';
+            // Keep the login screen visible on OAuth return, so the user can see failures.
+            if (redirectPending) {
+                switchAppView('view-login');
+                setLoginStatus('Google लॉगिन की पुष्टि की जा रही है…', 'info');
+            }
             if (typeof firebase !== 'undefined' && firebase.auth) {
                 try {
-                    // Always consume the redirect result. The sessionStorage marker can be
-                    // lost in some mobile browser restore flows, even when Google sign-in succeeded.
-                    const result = await firebase.auth().getRedirectResult();
-                    sessionStorage.removeItem('rkGoogleRedirectPending');
-                    const user = (result && result.user) || firebase.auth().currentUser;
-                    if (user) await finishAuthorizedAdminLogin(user);
+                    const auth = firebase.auth();
+                    const result = await auth.getRedirectResult();
+                    const user = (result && result.user) || auth.currentUser;
+                    if (user) {
+                        sessionStorage.removeItem('rkGoogleRedirectPending');
+                        await finishAuthorizedAdminLogin(user);
+                    } else if (redirectPending) {
+                        sessionStorage.removeItem('rkGoogleRedirectPending');
+                        switchAppView('view-login');
+                        setLoginStatus('Google लॉगिन पूरा नहीं हुआ। Firebase में Authorized domains और Google provider जाँचें। [auth/no-user-after-redirect]');
+                    }
                 } catch (error) {
                     sessionStorage.removeItem('rkGoogleRedirectPending');
                     console.error('Google redirect result error:', error);
+                    switchAppView('view-login');
                     let message = 'Google लॉगिन पूरा नहीं हुआ। कृपया फिर कोशिश करें।';
                     if (error && error.code === 'auth/unauthorized-domain') message = 'यह वेबसाइट Firebase में Authorized domains में जोड़नी होगी।';
                     else if (error && error.code === 'auth/account-exists-with-different-credential') message = 'इस Gmail पर दूसरा sign-in तरीका जुड़ा है। Firebase Authentication में उस अकाउंट की provider सेटिंग जाँचनी होगी।';
                     else if (error && error.message) message = error.message;
                     setLoginStatus(message + (error && error.code ? ' [' + error.code + ']' : ''));
                 }
+            } else if (redirectPending) {
+                sessionStorage.removeItem('rkGoogleRedirectPending');
+                switchAppView('view-login');
+                setLoginStatus('Firebase Authentication लोड नहीं हुआ। इंटरनेट कनेक्शन जाँचें और पेज फिर खोलें।');
             }
         });
         window.addEventListener('load', () => {
