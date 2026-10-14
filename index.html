@@ -1733,9 +1733,11 @@ body.rk-desktop-version .app-view { min-height:100vh; }
   // Web API keys are public identifiers; Firestore Rules and Auth claims must enforce access.
   // Cloud Firestore is used; no Realtime Database URL is required.
   const AUTHORIZED_ADMIN_EMAIL = 'inde2021@gmail.com';
-  const savedFbApiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
+  // Keep Authentication bound to the intended Firebase project. Old local settings
+  // must not silently redirect Google sign-in to a different Firebase project.
+  const savedFbApiKey = 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
   const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
-  const savedFbProjectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
+  const savedFbProjectId = 'radhe-krishna-online';
   const firebaseConfig = {
     apiKey: savedFbApiKey,
     authDomain: `${savedFbProjectId}.firebaseapp.com`,
@@ -2732,8 +2734,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         window.addEventListener('load', async () => {
             updateLocalAdminLoginView();
             selectLoginRole('admin');
-            if (typeof firebase !== 'undefined' && firebase.auth && sessionStorage.getItem('rkGoogleRedirectPending') === 'true') {
+            if (typeof firebase !== 'undefined' && firebase.auth) {
                 try {
+                    // Always consume the redirect result. The sessionStorage marker can be
+                    // lost in some mobile browser restore flows, even when Google sign-in succeeded.
                     const result = await firebase.auth().getRedirectResult();
                     sessionStorage.removeItem('rkGoogleRedirectPending');
                     const user = (result && result.user) || firebase.auth().currentUser;
@@ -2742,9 +2746,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                     sessionStorage.removeItem('rkGoogleRedirectPending');
                     console.error('Google redirect result error:', error);
                     let message = 'Google लॉगिन पूरा नहीं हुआ। कृपया फिर कोशिश करें।';
-                    if (error && error.code === 'auth/account-exists-with-different-credential') message = 'इस Gmail पर Email/Password अकाउंट मौजूद है। पहले ईमेल-पासवर्ड से लॉगिन करें; Google अकाउंट लिंक करने की अलग प्रक्रिया करनी होगी।';
+                    if (error && error.code === 'auth/unauthorized-domain') message = 'यह वेबसाइट Firebase में Authorized domains में जोड़नी होगी।';
+                    else if (error && error.code === 'auth/account-exists-with-different-credential') message = 'इस Gmail पर दूसरा sign-in तरीका जुड़ा है। Firebase Authentication में उस अकाउंट की provider सेटिंग जाँचनी होगी।';
                     else if (error && error.message) message = error.message;
-                    setLoginStatus(message);
+                    setLoginStatus(message + (error && error.code ? ' [' + error.code + ']' : ''));
                 }
             }
         });
