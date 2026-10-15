@@ -777,7 +777,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                 <span id="custPortalShopTitle" style="font-weight: bold; color: #fcd34d; font-size: 20px;"><span class="rk-diamond-mark" aria-label="Radhe Krishna diamond logo" role="img"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rkDiamondCrown" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#8ff4ff"/><stop offset=".7" stop-color="#37bce9"/><stop offset="1" stop-color="#0754ad"/></linearGradient><linearGradient id="rkDiamondFace" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#e8ffff"/><stop offset=".45" stop-color="#54dcff"/><stop offset="1" stop-color="#0877d7"/></linearGradient></defs><path d="M13 17 23 7h18l10 10 7 13-26 28L6 30z" fill="#072e63" opacity=".22" transform="translate(1 2)"/><path d="M13 17 23 7h18l10 10 7 13-26 28L6 30z" fill="url(#rkDiamondCrown)" stroke="#d5fbff" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 17h38l7 13H6z" fill="#f1ffff" opacity=".88"/><path d="M13 17 24 30 23 7z" fill="#fff" opacity=".9"/><path d="M23 7 24 30 32 17 41 7z" fill="#7ceaff"/><path d="M41 7 40 30 51 17z" fill="#249edc"/><path d="M13 17 6 30h18z" fill="#5de1f8"/><path d="M51 17 58 30H40z" fill="#0873c8"/><path d="M6 30h18l8 28z" fill="#1386d4"/><path d="M24 30h16l-8 28z" fill="#e9ffff"/><path d="M40 30h18L32 58z" fill="#0b5eb5"/><path d="M24 30 32 17 40 30z" fill="#ffffff" opacity=".85"/><path d="M13 17 23 7h18l10 10" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".95"/></svg></span>Radhe Krishna Tent House</span>
-                <button type="button" onclick="window.switchAppView('view-login')" class="btn-primary" style="width: auto; padding: 8px 16px; font-size: 12px;">🔒 एडमिन लॉगिन</button>
+                <button type="button" onclick="window.switchAppView('view-login')" class="btn-primary" style="width: auto; padding: 8px 16px; font-size: 12px;">🔐 लॉगिन (एडमिन)</button>
             </div>
             <!-- सेपरेट नेविगेशन बटन -->
             <div style="display: flex; gap: 12px; margin-bottom: 25px; border-bottom: 2px solid #334155; padding-bottom: 15px;">
@@ -849,6 +849,13 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                     <div style="flex: 1; min-width: 140px;">
                         <label>📞 मोबाइल (10 अंक)</label>
                         <input type="tel" id="custMobile" maxlength="10" inputmode="numeric" placeholder="10 अंकों का मोबाइल" class="form-control" autocomplete="off" oninput="window.resetCustomerMobileVerification && window.resetCustomerMobileVerification()">
+                        <button type="button" id="custMobileVerifyBtn" class="btn-primary" style="width:100%;margin-top:8px" onclick="window.requestCustomerAdvanceOtp()">📲 OTP भेजें / मोबाइल Verify करें</button>
+                        <div id="custOtpEntryArea" style="display:none;margin-top:10px;padding:12px;border:1px solid #38bdf8;border-radius:12px;background:rgba(14,165,233,.08)">
+                          <label for="custAdvanceOtpInput">SMS में आया OTP दर्ज करें</label>
+                          <input type="text" id="custAdvanceOtpInput" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="OTP दर्ज करें">
+                          <button type="button" class="btn-success" style="width:100%;margin-top:8px" onclick="window.verifyCustomerAdvanceOtp()">✅ OTP सत्यापित करें</button>
+                        </div>
+                        <p id="custAdvanceOtpStatus" role="status" aria-live="polite" style="font-size:12px;margin-top:7px;color:#0e7490">बुकिंग के मोबाइल नंबर को OTP से सत्यापित करें।</p>
                     </div>
 <div style="flex: 1; min-width: 140px;">
                         <label>🎉 फंक्शन टाइप</label>
@@ -1892,28 +1899,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 if (!win) { alert('❌ प्रिंट विंडो ब्लॉक हो गई। ब्राउज़र में pop-ups की अनुमति दें।'); return; }
                 win.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Print Preview - Radhe Krishna ERP</title><style>@page{size:A4;margin:10mm}*{box-sizing:border-box}html,body{font-family:Arial,"Noto Sans Devanagari",sans-serif;color:#111;background:#fff;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{padding:4px;font-size:11pt}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;page-break-inside:auto;table-layout:auto}tr{page-break-inside:avoid;page-break-after:auto}thead{display:table-header-group}tfoot{display:table-footer-group}th,td{overflow-wrap:anywhere;word-break:normal}h1,h2,h3{page-break-after:avoid}.print-stamp{display:block;max-width:130px;max-height:90px;object-fit:contain}.barcode,svg[id*=barcode],canvas[id*=barcode]{max-width:100%;height:auto;image-rendering:pixelated}@media print{body{padding:0}.no-print,.screen-only{display:none!important}.print-stamp{print-color-adjust:exact; -webkit-print-color-adjust:exact}}</style></head><body>');
                 win.document.write(modalBody.innerHTML);
-                win.document.write('<script id="rk-wa-api-link-compat">
-(function(){
- function syncWhatsAppApiLink(){
-   var extra=document.getElementById('waCloudApiLink');
-   var backend=document.getElementById('waCloudBackendUrl');
-   if(extra && backend && extra.value.trim()) backend.value=extra.value.trim();
- }
- document.addEventListener('input',function(e){
-   if(e.target && e.target.id==='waCloudApiLink') syncWhatsAppApiLink();
- });
- document.addEventListener('change',function(e){
-   if(e.target && e.target.id==='waCloudApiLink') syncWhatsAppApiLink();
- });
- document.addEventListener('DOMContentLoaded',function(){
-   var extra=document.getElementById('waCloudApiLink');
-   var backend=document.getElementById('waCloudBackendUrl');
-   if(extra && backend && !extra.value && backend.value) extra.value=backend.value;
- });
-})();
-</script>
-
-</body></html>');
+                win.document.write('</body></html>');
                 win.document.close();
                 win.focus();
                 const waitForImages = () => Promise.all(Array.from(win.document.images).map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.onload=resolve; img.onerror=resolve; setTimeout(resolve,2500); })));
@@ -1966,6 +1952,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         }
         window.switchCustomerTab = switchCustomerTab;
         // Public customer portal is the first view; default to the new booking form.
+        if (document.getElementById('view-customer-portal')) { document.getElementById('view-customer-portal').classList.add('active'); }
         document.addEventListener('DOMContentLoaded', function(){
             try { switchCustomerTab('new'); } catch (e) { console.warn('Customer portal initial tab setup failed:', e); }
         }, {once:true});
@@ -2046,7 +2033,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             try { publicServiceConfig = JSON.parse(localStorage.getItem('publicServiceConfig') || '{}') || {}; } catch (_) {}
             const configFields = ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'];
             configFields.forEach(id => { const el=document.getElementById(id); if(el) el.value=localStorage.getItem(id) || publicServiceConfig[id] || (id==='paymentGatewayProvider'?'none':(id==='waCloudBackendUrl'?'https://tenthouse.vercel.app/api/send':'')); });
-            const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) { otpRequiredEl.checked=false; otpRequiredEl.disabled=true; localStorage.setItem('customerOtpRequired','false'); }
+            const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) { otpRequiredEl.disabled=false; otpRequiredEl.checked=(localStorage.getItem('customerOtpRequired')==='true'); }
             const modeEl=document.getElementById('systemControlMode'); if(modeEl) modeEl.value=localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudEl=document.getElementById('hybridAutoCloudSync'); if(cloudEl) cloudEl.checked=localStorage.getItem('hybridAutoCloudSync') !== 'false';
             const refreshEl=document.getElementById('hybridAutoRefresh'); if(refreshEl) refreshEl.checked=localStorage.getItem('hybridAutoRefresh') !== 'false';
@@ -3320,7 +3307,6 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const btn=document.getElementById('custMobileVerifyBtn'); if(btn) btn.textContent='📲 मोबाइल Verify करें';
         };
         window.requestCustomerAdvanceOtp = async function() {
-            alert('ग्राहक बुकिंग में OTP आवश्यक नहीं है। मोबाइल नंबर दर्ज करके बुकिंग जारी रखें।'); return;
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             if (!/^\d{10}$/.test(mobile)) { alert('OTP के लिए 10 अंकों का मोबाइल नंबर दर्ज करें।'); return; }
             const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
@@ -3342,7 +3328,6 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         };
         window.closeCustomerAdvanceOtpPopup = function() { const p=document.getElementById('customerAdvanceOtpPopup'); if(p) p.style.display='none'; };
         window.verifyCustomerAdvanceOtp = async function() {
-            alert('ग्राहक बुकिंग में OTP आवश्यक नहीं है।'); return;
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             const otp = String(document.getElementById('custAdvanceOtpInput')?.value || '').trim();
             const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
