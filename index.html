@@ -639,6 +639,29 @@ body.rk-desktop-version .app-view { min-height:100vh; }
 #vendorNavMenu .nav-btn{white-space:nowrap;}
 @media(max-width:600px){.rk-stock-source-banner{padding:11px;font-size:12px}.rk-stock-source-banner strong{font-size:14px}}
 </style>
+
+<style id="rk-requested-customer-admin-fixes">
+/* Admin menu: hide vendor menu shortcuts from the admin navigation only. */
+#adminNavMenu button[onclick*="tab-vendor-reg"],
+#adminNavMenu button[onclick*="tab-vendor-list"],
+#adminNavMenu button[onclick*="tab-vendor-stock"],
+#adminNavMenu button[onclick*="tab-vendor-orders"] { display:none!important; }
+/* Customer stock gallery: image-only cards; no stock quantity, price, or descriptions. */
+#customerStockGallery .customer-stock-card { padding:8px!important; background:rgba(255,255,255,.82)!important; }
+#customerStockGallery .customer-stock-card img,
+#customerStockGallery .customer-stock-card .stock-card-placeholder {
+  width:100%!important;height:150px!important;object-fit:contain!important;
+  background:#fff!important;border-radius:10px!important;cursor:pointer!important;
+}
+#customerStockGallery .customer-stock-card .stock-card-name,
+#customerStockGallery .customer-stock-card .stock-card-meta,
+#customerStockGallery .customer-stock-card button { display:none!important; }
+/* Customer payment QR area: display the QR image only, hide accompanying text/labels. */
+#customerAdvanceQrWrap { display:flex!important; align-items:center!important; justify-content:center!important; }
+#customerAdvanceQrWrap > :not(img):not(canvas) { display:none!important; }
+#customerAdvanceQrWrap img, #customerAdvanceQrWrap canvas { display:block!important; margin:0 auto!important; }
+</style>
+
 </head>
 <body class="rk-mobile-version">
     <script id="rk-auto-device-mode">
@@ -1535,6 +1558,9 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                                 <input type="text" id="waCloudPhoneNumberId" class="form-control" placeholder="Meta Developers से Phone Number ID" autocomplete="off">
                                 <label for="waCloudBackendUrl">WhatsApp सुरक्षित Backend URL</label>
                                 <input type="url" id="waCloudBackendUrl" class="form-control" placeholder="https://your-domain.com/api/whatsapp/send" autocomplete="url">
+                                <label for="waCloudApiLink">WhatsApp API / Backend लिंक</label>
+                                <input type="url" id="waCloudApiLink" class="form-control" placeholder="https://your-backend.vercel.app/api/whatsapp/send" autocomplete="url">
+                                <p class="config-note">यह लिंक आपके सुरक्षित backend/API का होना चाहिए। Meta Access Token को HTML में न डालें।</p>
                                 <p class="config-note">Access Token और Webhook Verify Token यहाँ नहीं रखें। उन्हें Vercel के Environment Variables / सुरक्षित Backend में रखें। ये दोनों फ़ील्ड तभी काम करेंगे जब Backend API कॉन्फ़िगर हो।</p>
                             </div>
                         </div>
@@ -1866,7 +1892,28 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 if (!win) { alert('❌ प्रिंट विंडो ब्लॉक हो गई। ब्राउज़र में pop-ups की अनुमति दें।'); return; }
                 win.document.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Print Preview - Radhe Krishna ERP</title><style>@page{size:A4;margin:10mm}*{box-sizing:border-box}html,body{font-family:Arial,"Noto Sans Devanagari",sans-serif;color:#111;background:#fff;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{padding:4px;font-size:11pt}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;page-break-inside:auto;table-layout:auto}tr{page-break-inside:avoid;page-break-after:auto}thead{display:table-header-group}tfoot{display:table-footer-group}th,td{overflow-wrap:anywhere;word-break:normal}h1,h2,h3{page-break-after:avoid}.print-stamp{display:block;max-width:130px;max-height:90px;object-fit:contain}.barcode,svg[id*=barcode],canvas[id*=barcode]{max-width:100%;height:auto;image-rendering:pixelated}@media print{body{padding:0}.no-print,.screen-only{display:none!important}.print-stamp{print-color-adjust:exact; -webkit-print-color-adjust:exact}}</style></head><body>');
                 win.document.write(modalBody.innerHTML);
-                win.document.write('</body></html>');
+                win.document.write('<script id="rk-wa-api-link-compat">
+(function(){
+ function syncWhatsAppApiLink(){
+   var extra=document.getElementById('waCloudApiLink');
+   var backend=document.getElementById('waCloudBackendUrl');
+   if(extra && backend && extra.value.trim()) backend.value=extra.value.trim();
+ }
+ document.addEventListener('input',function(e){
+   if(e.target && e.target.id==='waCloudApiLink') syncWhatsAppApiLink();
+ });
+ document.addEventListener('change',function(e){
+   if(e.target && e.target.id==='waCloudApiLink') syncWhatsAppApiLink();
+ });
+ document.addEventListener('DOMContentLoaded',function(){
+   var extra=document.getElementById('waCloudApiLink');
+   var backend=document.getElementById('waCloudBackendUrl');
+   if(extra && backend && !extra.value && backend.value) extra.value=backend.value;
+ });
+})();
+</script>
+
+</body></html>');
                 win.document.close();
                 win.focus();
                 const waitForImages = () => Promise.all(Array.from(win.document.images).map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.onload=resolve; img.onerror=resolve; setTimeout(resolve,2500); })));
@@ -2070,7 +2117,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if (!rows.length) { gallery.innerHTML = '<div style="color:#fbbf24;grid-column:1/-1;text-align:center;padding:14px;border:1px dashed #475569;border-radius:8px;">अभी एडमिन स्टॉक में कोई आइटम दर्ज नहीं है। एडमिन पैनल में स्टॉक जोड़ने के बाद यहाँ दिखाई देगा।</div>'; return; }
             gallery.innerHTML = rows.map((item, idx) => {
                 const images = getStockItemImages(item);
-                const imageHtml = images.length ? `<img loading="lazy" src="${escapeHtml(images[0])}" alt="${escapeHtml(item.name || 'स्टॉक आइटम')}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="stock-card-placeholder" style="display:none;">📦</div>` : '<div class="stock-card-placeholder">📦</div>';
+                const imageHtml = images.length ? `<img loading="lazy" role="button" tabindex="0" onclick="window.selectCustomerStockItem(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.selectCustomerStockItem(${idx})}" src="${escapeHtml(images[0])}" alt="स्टॉक आइटम चुनें" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="stock-card-placeholder" role="button" tabindex="0" onclick="window.selectCustomerStockItem(${idx})" style="display:none;">📦</div>` : '<div class="stock-card-placeholder" role="button" tabindex="0" onclick="window.selectCustomerStockItem('+idx+')">📦</div>';
                 const qty = Math.max(0, Number(item.qty) || 0);
                 const rent = getRentRate({}, item, false);
                 return `<div class="customer-stock-card">${imageHtml}<div class="stock-card-name">${escapeHtml(item.name || 'बिना नाम का आइटम')}</div><div class="stock-card-meta">उपलब्ध स्टॉक: <strong style="color:${qty > 0 ? '#4ade80' : '#f87171'}">${qty}</strong><br>बल्क रेंट: ₹${rent.toFixed(2)}</div><button type="button" class="btn-primary" ${qty <= 0 ? 'disabled style="opacity:.45;cursor:not-allowed;"' : ''} onclick="window.selectCustomerStockItem(${idx})">${qty > 0 ? 'आइटम चुनें' : 'स्टॉक उपलब्ध नहीं'}</button></div>`;
