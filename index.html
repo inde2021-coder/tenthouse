@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radhe Krishn Tent House Manager</title>
+    <!-- Update 2026-10-15: customer booking SMS OTP disabled by request; Google Auth errors clarified. -->
     <!-- PWA Web App Manifest -->
     <!-- Embedded manifest data: standalone single-file edition -->
     <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiUmFkaGUgS3Jpc2huYSBUZW50IEhvdXNlIE1hbmFnZXIiLCJzaG9ydF9uYW1lIjoiUksgVGVudCIsImRlc2NyaXB0aW9uIjoiVGVudCBob3VzZSBib29raW5nLCBzdG9jayBhbmQgYmlsbGluZyBtYW5hZ2VyIiwic3RhcnRfdXJsIjoiLi8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsIm9yaWVudGF0aW9uIjoiYW55IiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjE3MmEiLCJ0aGVtZV9jb2xvciI6IiMwZjE3MmEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQTFNVElnTlRFeUlqNDhaR1ZtY3o0OGJHbHVaV0Z5UjNKaFpHbGxiblFnYVdROUltY2lJSGd4UFNJd0lpQjVNVDBpTUNJZ2VESTlJakVpSUhreVBTSXhJajQ4YzNSdmNDQnpkRzl3TFdOdmJHOXlQU0lqTXpoaVpHWTRJaTgrUEhOMGIzQWdiMlptYzJWMFBTSXhJaUJ6ZEc5d0xXTnZiRzl5UFNJak9HSTFZMlkySWk4K1BDOXNhVzVsWVhKSGNtRmthV1Z1ZEQ0OEwyUmxabk0rUEhKbFkzUWdkMmxrZEdnOUlqVXhNaUlnYUdWcFoyaDBQU0kxTVRJaUlISjRQU0l4TVRJaUlHWnBiR3c5SWlNd1pqRTNNbUVpTHo0OGNtVmpkQ0I0UFNJeU1pSWdlVDBpTWpJaUlIZHBaSFJvUFNJME5qZ2lJR2hsYVdkb2REMGlORFk0SWlCeWVEMGlPVGdpSUdacGJHdzlJblZ5YkNnalp5a2lJRzl3WVdOcGRIazlJaTR5SWk4K1BIQmhkR2dnWkQwaVRUZ3dJREkyTUNBeU5UWWdPVFVnTkRNeUlESTJNSFl4TlRCSU9EQjZJaUJtYVd4c1BTSnViMjVsSWlCemRISnZhMlU5SWlObU9HWmhabU1pSUhOMGNtOXJaUzEzYVdSMGFEMGlNakFpSUhOMGNtOXJaUzFzYVc1bGFtOXBiajBpY205MWJtUWlMejQ4Y0dGMGFDQmtQU0pOTVRZNElEUXhNRll5T0RCb01UYzJkakV6TUUweU1qQWdOREV3VmpNeU1tZzNNblk0T0NJZ1ptbHNiRDBpYm05dVpTSWdjM1J5YjJ0bFBTSWpabUppWmpJMElpQnpkSEp2YTJVdGQybGtkR2c5SWpFNElpQnpkSEp2YTJVdGJHbHVaV3B2YVc0OUluSnZkVzVrSWk4K1BIUmxlSFFnZUQwaU1qVTJJaUI1UFNJeU16VWlJR1p2Ym5RdGMybDZaVDBpTmpRaUlIUmxlSFF0WVc1amFHOXlQU0p0YVdSa2JHVWlJR1p2Ym5RdFptRnRhV3g1UFNKQmNtbGhiQ3h6WVc1ekxYTmxjbWxtSWlCbWIyNTBMWGRsYVdkb2REMGlOekF3SWlCbWFXeHNQU0lqWm1abUlqNVNTend2ZEdWNGRENDhMM04yWno0PSIsInNpemVzIjoiYW55IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwiLCJwdXJwb3NlIjoiYW55IG1hc2thYmxlIn1dfQ==">
@@ -825,16 +826,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                     <div style="flex: 1; min-width: 140px;">
                         <label>📞 मोबाइल (10 अंक)</label>
                         <input type="tel" id="custMobile" maxlength="10" inputmode="numeric" placeholder="10 अंकों का मोबाइल" class="form-control" autocomplete="off" oninput="window.resetCustomerMobileVerification && window.resetCustomerMobileVerification()">
-                        <button type="button" class="btn-secondary" id="custMobileVerifyBtn" onclick="window.requestCustomerAdvanceOtp()" style="margin-top:8px;width:100%;">📲 मोबाइल Verify करें</button>
-                        <div id="custOtpEntryArea" style="display:none;margin-top:10px;padding:12px;border:1px solid rgba(148,163,184,.35);border-radius:12px;background:rgba(255,255,255,.045);">
-                            <strong>🔐 OTP सत्यापन</strong>
-                            <p id="custAdvanceOtpStatus" style="font-size:12px;color:#fbbf24;margin:6px 0;">पहले मोबाइल नंबर सत्यापित करें।</p>
-                            <label for="custAdvanceOtpInput">SMS में आया OTP</label>
-                            <input id="custAdvanceOtpInput" class="form-control" type="text" maxlength="8" inputmode="numeric" autocomplete="one-time-code" placeholder="OTP दर्ज करें">
-                            <button type="button" class="btn-primary" onclick="window.verifyCustomerAdvanceOtp()" style="margin-top:8px;width:100%;">OTP सत्यापित करें</button>
-                        </div>
                     </div>
-                    <div style="flex: 1; min-width: 140px;">
+<div style="flex: 1; min-width: 140px;">
                         <label>🎉 फंक्शन टाइप</label>
                         <select id="functionType" class="form-control">
                             <option value="">-- फंक्शन चुनें --</option>
@@ -1739,23 +1732,28 @@ body.rk-desktop-version .app-view { min-height:100vh; }
     <!-- ================= संपूर्ण और विस्तृत जावास्क्रिप्ट लॉजिक ================= -->
     <script>
   // 1. Firebase Configuration
-  // Firebase web configuration supplied for radhe-krishna-online.
+  // Firebase web configuration supplied for radhe-krishna-online-booking.
   // Web API keys are public identifiers; Firestore Rules and Auth claims must enforce access.
   // Cloud Firestore is used; no Realtime Database URL is required.
   const AUTHORIZED_ADMIN_EMAIL = 'inde2021@gmail.com';
   // Keep Authentication bound to the intended Firebase project. Old local settings
   // must not silently redirect Google sign-in to a different Firebase project.
-  const savedFbApiKey = 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
+  const savedFbApiKey = 'AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I';
   const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
-  const savedFbProjectId = 'radhe-krishna-online';
+  const savedFbProjectId = 'radhe-krishna-online-booking';
+  // Migrate any stale local Firebase settings so they cannot point this page at the old project.
+  try {
+    localStorage.setItem('fbApiKey', savedFbApiKey);
+    localStorage.setItem('fbProjectId', savedFbProjectId);
+  } catch (storageMigrationError) { console.warn('Could not update saved Firebase settings:', storageMigrationError); }
   const firebaseConfig = {
     apiKey: savedFbApiKey,
     authDomain: `${savedFbProjectId}.firebaseapp.com`,
     projectId: savedFbProjectId,
-    storageBucket: 'radhe-krishna-online.firebasestorage.app',
-    messagingSenderId: '122262862724',
-    appId: '1:122262862724:web:a7c33aa15c81ff00a1bbd1',
-    measurementId: 'G-XM94XSHMJX',
+    storageBucket: 'radhe-krishna-online-booking.firebasestorage.app',
+    messagingSenderId: '1010400653483',
+    appId: '1:1010400653483:web:fb2a78ec593b3c2888c7ee',
+    measurementId: 'G-8FC58T5YNF',
   };
   // Initialize Firebase once; Firestore sync uses the configured project ID.
   if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
@@ -2001,7 +1999,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             try { publicServiceConfig = JSON.parse(localStorage.getItem('publicServiceConfig') || '{}') || {}; } catch (_) {}
             const configFields = ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'];
             configFields.forEach(id => { const el=document.getElementById(id); if(el) el.value=localStorage.getItem(id) || publicServiceConfig[id] || (id==='paymentGatewayProvider'?'none':(id==='waCloudBackendUrl'?'https://tenthouse.vercel.app/api/send':'')); });
-            const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) otpRequiredEl.checked=(localStorage.getItem('customerOtpRequired') || String(publicServiceConfig.customerOtpRequired || false))==='true';
+            const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) { otpRequiredEl.checked=false; otpRequiredEl.disabled=true; localStorage.setItem('customerOtpRequired','false'); }
             const modeEl=document.getElementById('systemControlMode'); if(modeEl) modeEl.value=localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudEl=document.getElementById('hybridAutoCloudSync'); if(cloudEl) cloudEl.checked=localStorage.getItem('hybridAutoCloudSync') !== 'false';
             const refreshEl=document.getElementById('hybridAutoRefresh'); if(refreshEl) refreshEl.checked=localStorage.getItem('hybridAutoRefresh') !== 'false';
@@ -2125,8 +2123,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const controlMode = localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudSyncEnabled = localStorage.getItem('hybridAutoCloudSync') !== 'false' && controlMode !== 'manual';
             if (!cloudSyncEnabled) { fbDatabase = null; const status = document.getElementById('cloudSyncStatus'); if (status) { status.textContent = '💾 लोकल/मैनुअल मोड — Cloud Sync बंद है'; status.style.color = '#f59e0b'; } console.info('Hybrid Control: cloud sync is off; local/manual mode active.'); return; }
-            const apiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
-            const projectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
+            const apiKey = savedFbApiKey;
+            const projectId = savedFbProjectId;
             const collectionName = (localStorage.getItem('fbCollectionName') || 'appData').trim() || 'appData';
             // Defense in depth: Firestore access still depends on the project's configured Security Rules.
             if (typeof firebase === 'undefined' || !firebase.firestore || !apiKey || !projectId) {
@@ -2692,11 +2690,28 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 await finishAuthorizedAdminLogin(result.user);
             } catch (error) {
                 console.error('Google admin sign-in error:', error);
+                // Android/mobile browsers sometimes block Firebase popups. Fall back to redirect.
+                const canFallbackToRedirect = error && (
+                    error.code === 'auth/popup-blocked' ||
+                    error.code === 'auth/operation-not-supported-in-this-environment'
+                );
+                if (canFallbackToRedirect) {
+                    try {
+                        localStorage.setItem('rkGoogleRedirectPending', 'true');
+                        setLoginStatus('इस ब्राउज़र में popup नहीं खुला। Google लॉगिन के लिए सुरक्षित redirect किया जा रहा है…', 'info');
+                        await auth.signInWithRedirect(provider);
+                        return;
+                    } catch (redirectError) {
+                        localStorage.removeItem('rkGoogleRedirectPending');
+                        console.error('Google redirect fallback error:', redirectError);
+                        error = redirectError;
+                    }
+                }
                 let message = 'Google लॉगिन शुरू नहीं हुआ।';
-                if (error && error.code === 'auth/popup-blocked') message = 'Chrome ने Google Login popup रोका है। साइट के लिए pop-ups की अनुमति दें और फिर कोशिश करें।';
-                else if (error && error.code === 'auth/popup-closed-by-user') message = 'Google Login विंडो बंद हो गई। फिर से Google Login दबाएँ।';
-                else if (error && error.code === 'auth/unauthorized-domain') message = 'Firebase Authorized Domains में tenthouse.vercel.app जोड़ें।';
-                else if (error && error.code === 'auth/operation-not-supported-in-this-environment') message = 'यह ब्राउज़र वातावरण Firebase Login सपोर्ट नहीं करता। Chrome में https://tenthouse.vercel.app खोलें और Web Storage चालू रखें।';
+                if (error && error.code === 'auth/popup-closed-by-user') message = 'Google Login विंडो बंद हो गई। फिर से Google Login दबाएँ।';
+                else if (error && error.code === 'auth/unauthorized-domain') message = 'Firebase Console → Authentication → Settings → Authorized domains में tenthouse.vercel.app जोड़ें, फिर दोबारा प्रयास करें।';
+                else if (error && error.code === 'auth/operation-not-allowed') message = 'Firebase Console → Authentication → Sign-in method में Google provider Enable करें।';
+                else if (error && error.code === 'auth/network-request-failed') message = 'इंटरनेट कनेक्शन जाँचें और पेज को https://tenthouse.vercel.app से खोलकर फिर प्रयास करें।';
                 else if (error && error.message) message = error.message;
                 setLoginStatus(message + (error && error.code ? ' [' + error.code + ']' : ''));
             } finally {
@@ -3258,6 +3273,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const btn=document.getElementById('custMobileVerifyBtn'); if(btn) btn.textContent='📲 मोबाइल Verify करें';
         };
         window.requestCustomerAdvanceOtp = async function() {
+            alert('ग्राहक बुकिंग में OTP आवश्यक नहीं है। मोबाइल नंबर दर्ज करके बुकिंग जारी रखें।'); return;
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             if (!/^\d{10}$/.test(mobile)) { alert('OTP के लिए 10 अंकों का मोबाइल नंबर दर्ज करें।'); return; }
             const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
@@ -3279,6 +3295,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         };
         window.closeCustomerAdvanceOtpPopup = function() { const p=document.getElementById('customerAdvanceOtpPopup'); if(p) p.style.display='none'; };
         window.verifyCustomerAdvanceOtp = async function() {
+            alert('ग्राहक बुकिंग में OTP आवश्यक नहीं है।'); return;
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             const otp = String(document.getElementById('custAdvanceOtpInput')?.value || '').trim();
             const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
@@ -3340,8 +3357,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 const utr=String(document.getElementById('custAdvanceUtr')?.value||'').trim();
                 if(!utr) { alert('ऑनलाइन एडवांस की बुकिंग के लिए UTR / Transaction ID अनिवार्य है। भुगतान के बाद UTR दर्ज करें।'); document.getElementById('custAdvanceUtr')?.focus(); return null; }
                 if(!/^[A-Za-z0-9-]{8,40}$/.test(utr)) { alert('UTR / Transaction ID 8 से 40 अक्षरों/अंकों का होना चाहिए। स्पेस या विशेष चिन्ह न डालें।'); document.getElementById('custAdvanceUtr')?.focus(); return null; }
-                const otpRequired = localStorage.getItem('customerOtpRequired') === 'true';
-                if (otpRequired && (!customerAdvanceOtpVerified || customerOtpVerifiedMobile !== mobile)) { alert('बुकिंग के लिए इसी ग्राहक मोबाइल नंबर का वास्तविक OTP सत्यापन जरूरी है।'); return null; }
+                // Customer booking does not require OTP; phone number is collected for contact only.
+                localStorage.setItem('customerOtpRequired', 'false');
                 return {mode,amount,upi:gatewayPending?.orderId?'':upi,mobile,utr,status:'Pending Verification',otpVerified:customerAdvanceOtpVerified,paymentVerified:false,gatewayOrderId:gatewayPending?.orderId||'',gatewayProvider:localStorage.getItem('paymentGatewayProvider')||'none'};
             }
             if(!Number.isFinite(amount)||amount<0) { alert('नकद एडवांस राशि जाँचें।'); return null; }
@@ -3360,7 +3377,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if(!/^\d{10}$/.test(mobile)) { alert('❌ कृपया ठीक 10 अंकों का वैध मोबाइल नंबर दर्ज करें!'); return; }
             if (!dispDate || !retDate) { alert('❌ कृपया डिस्पैच और रिटर्न दोनों तारीखें चुनें!'); return; }
             if (dispDate < localDateString() || retDate < dispDate) { alert('❌ तारीख जाँचें: डिस्पैच आज या आगे की हो और रिटर्न तारीख डिस्पैच के बराबर या बाद की हो!'); return; }
-            if (localStorage.getItem('customerOtpRequired') === 'true' && (!customerAdvanceOtpVerified || customerOtpVerifiedMobile !== mobile)) { alert('इस सॉफ्टवेयर में ग्राहक बुकिंग के लिए OTP अनिवार्य है। इसी मोबाइल नंबर पर OTP भेजकर सत्यापित करें।'); return; }
+            // Customer booking is intentionally allowed without SMS OTP.
+            localStorage.setItem('customerOtpRequired', 'false');
             const advancePayment = getCustomerAdvanceData();
             if (!advancePayment) return;
             pendingBookingDataObject = { 
@@ -5400,8 +5418,8 @@ label,.config-note,.ai-assistant-heading p{color:var(--rk-muted)!important}
                 localStorage.setItem('settingTermsText', document.getElementById('settingTermsText').value);
                 const publicServiceConfig = {};
                 ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'].forEach(id => { const el=document.getElementById(id); if(el) { const value=el.value.trim(); localStorage.setItem(id,value); publicServiceConfig[id]=value; } });
-                publicServiceConfig.customerOtpRequired = !!document.getElementById('customerOtpRequired')?.checked;
-                localStorage.setItem('customerOtpRequired', publicServiceConfig.customerOtpRequired ? 'true' : 'false');
+                publicServiceConfig.customerOtpRequired = false;
+                localStorage.setItem('customerOtpRequired', 'false');
                 if (!saveDataToStorage('publicServiceConfig', publicServiceConfig)) { alert('सेवा सेटिंग्स लोकल स्टोरेज में सेव नहीं हुईं।'); return; }
                 loadSavedSettings();
                 alert('ज़रूरी सेटिंग्स सेव हो गई हैं। Firebase कॉन्फ़िगरेशन कोड में पहले से सेट है; उसे बदलने के लिए इस पेज की सेटिंग्स की आवश्यकता नहीं है।');
@@ -5947,7 +5965,7 @@ img,canvas,video{max-width:100%}
     var cloudEnabled=localStorage.getItem('hybridAutoCloudSync')!=='false' && controlMode!=='manual';
     if(!cloudEnabled){ proofText('storageProofCloud','☁️ Firebase: ऐप की सेटिंग में Cloud Sync बंद है; डेटा लोकल में सेव हो सकता है।','#fbbf24'); return; }
     if(!db && typeof firebase!=='undefined' && firebase.firestore){
-      try { var app=firebase.app(); if(app.options.projectId===((localStorage.getItem('fbProjectId')||'radhe-krishna-online'))) db=firebase.firestore(); } catch(e){}
+      try { var app=firebase.app(); if(app.options.projectId===savedFbProjectId) db=firebase.firestore(); } catch(e){}
     }
     if(!db){
       proofText('storageProofCloud','☁️ Firebase: कनेक्ट नहीं — अभी लोकल स्टोरेज ही उपलब्ध/पुष्ट है','#fbbf24');
