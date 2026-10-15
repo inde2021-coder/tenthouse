@@ -640,45 +640,39 @@ body.rk-desktop-version .app-view { min-height:100vh; }
 @media(max-width:600px){.rk-stock-source-banner{padding:11px;font-size:12px}.rk-stock-source-banner strong{font-size:14px}}
 </style>
 
-<style id="rk-requested-customer-admin-fixes">
-/* Keep vendor navigation hidden in admin mode even when mobile CSS forces nav rows visible. */
-#view-admin-panel:not(.rk-vendor-mode) #vendorNavMenu { display:none!important; }
-/* Keep admin navigation unchanged; vendor menu appears only in vendor mode. */
-#view-admin-panel.rk-vendor-mode #adminNavMenu { display:none!important; }
-/* Dispatch item selector: give full item names enough horizontal room on mobile and desktop. */
-#dispatchItemSelect {
-  flex: 3 1 300px !important;
-  width: 100% !important;
-  min-width: min(280px, 100%) !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  white-space: normal !important;
-  overflow-wrap: anywhere !important;
+<style id="rk-dispatch-return-slip-layout-fix">
+/* Dispatch/return slip preview: keep text crisp and fit the phone viewport */
+#universalPrintModal{padding:10px!important;align-items:flex-start!important;overflow:auto!important;background:rgba(10,20,35,.78)!important}
+#universalPrintModal>div{width:min(760px,100%)!important;max-width:760px!important;max-height:94dvh!important;overflow:auto!important;box-sizing:border-box!important;background:#17263a!important;border-radius:14px!important;padding:12px!important}
+#printModalBody{width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important;padding:clamp(10px,3vw,24px)!important;background:#fff!important;color:#111!important;opacity:1!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-radius:8px!important}
+#printModalBody *{opacity:1!important;text-shadow:none!important;filter:none!important;box-sizing:border-box}
+#printModalBody img{max-width:100%!important;height:auto!important;object-fit:contain!important}
+#printModalBody table{width:100%!important;max-width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:12px!important}
+#printModalBody th,#printModalBody td{padding:7px 5px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:top!important;border:1px solid #64748b!important;color:#111!important}
+#printModalBody h2{font-size:clamp(19px,4.8vw,27px)!important;line-height:1.25!important;color:#123c57!important;overflow-wrap:anywhere}
+#printModalBody p{line-height:1.45!important;color:#111!important;overflow-wrap:anywhere}
+#universalPrintModal .no-print{display:initial}
+@media(max-width:520px){
+ #universalPrintModal>div{padding:8px!important}
+ #printModalBody{padding:10px!important}
+ #printModalBody table{font-size:10px!important}
+ #printModalBody th,#printModalBody td{padding:5px 3px!important}
 }
-#tab-dispatch #dispatchItemSelect option { white-space: normal; }
-@media (max-width: 600px) {
-  #tab-dispatch #dispatchItemSelect { flex: 1 1 100% !important; min-width: 100% !important; }
-  #tab-dispatch #dispatchItemQty { flex: 1 1 90px !important; }
+@media print{
+ @page{size:A4 portrait;margin:12mm}
+ html,body{width:100%!important;height:auto!important;overflow:visible!important;background:#fff!important;color:#111!important;margin:0!important;padding:0!important}
+ body *{visibility:hidden!important}
+ #universalPrintModal,#universalPrintModal *{visibility:visible!important}
+ #universalPrintModal{position:static!important;display:block!important;inset:auto!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:0!important;margin:0!important;background:#fff!important}
+ #universalPrintModal>div{position:static!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:0!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#111!important}
+ #universalPrintModal>div>div:first-child,#universalPrintModal>div>div:last-child{display:none!important}
+ #printModalBody{display:block!important;position:static!important;width:100%!important;max-width:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#111!important;font-size:10pt!important}
+ #printModalBody table{width:100%!important;table-layout:fixed!important;page-break-inside:auto!important;font-size:9pt!important}
+ #printModalBody tr{page-break-inside:avoid!important;break-inside:avoid!important}
+ #printModalBody th,#printModalBody td{padding:6px 5px!important;white-space:normal!important;overflow-wrap:anywhere!important;color:#111!important;background:#fff!important;border:1px solid #555!important}
+ #printModalBody img{max-width:100%!important;max-height:90px!important;object-fit:contain!important}
+ #printModalBody h2,#printModalBody strong{color:#111!important}
 }
-/* Admin menu: hide vendor menu shortcuts from the admin navigation only. */
-#adminNavMenu button[onclick*="tab-vendor-reg"],
-#adminNavMenu button[onclick*="tab-vendor-list"],
-#adminNavMenu button[onclick*="tab-vendor-stock"],
-#adminNavMenu button[onclick*="tab-vendor-orders"] { display:none!important; }
-/* Customer stock gallery: image-only cards; no stock quantity, price, or descriptions. */
-#customerStockGallery .customer-stock-card { padding:8px!important; background:rgba(255,255,255,.82)!important; }
-#customerStockGallery .customer-stock-card img,
-#customerStockGallery .customer-stock-card .stock-card-placeholder {
-  width:100%!important;height:150px!important;object-fit:contain!important;
-  background:#fff!important;border-radius:10px!important;cursor:pointer!important;
-}
-#customerStockGallery .customer-stock-card .stock-card-name,
-#customerStockGallery .customer-stock-card .stock-card-meta,
-#customerStockGallery .customer-stock-card button { display:none!important; }
-/* Customer payment QR area: display the QR image only, hide accompanying text/labels. */
-#customerAdvanceQrWrap { display:flex!important; align-items:center!important; justify-content:center!important; }
-#customerAdvanceQrWrap > :not(img):not(canvas) { display:none!important; }
-#customerAdvanceQrWrap img, #customerAdvanceQrWrap canvas { display:block!important; margin:0 auto!important; }
 </style>
 
 </head>
@@ -796,7 +790,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                 <span id="custPortalShopTitle" style="font-weight: bold; color: #fcd34d; font-size: 20px;"><span class="rk-diamond-mark" aria-label="Radhe Krishna diamond logo" role="img"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rkDiamondCrown" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".35" stop-color="#8ff4ff"/><stop offset=".7" stop-color="#37bce9"/><stop offset="1" stop-color="#0754ad"/></linearGradient><linearGradient id="rkDiamondFace" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#e8ffff"/><stop offset=".45" stop-color="#54dcff"/><stop offset="1" stop-color="#0877d7"/></linearGradient></defs><path d="M13 17 23 7h18l10 10 7 13-26 28L6 30z" fill="#072e63" opacity=".22" transform="translate(1 2)"/><path d="M13 17 23 7h18l10 10 7 13-26 28L6 30z" fill="url(#rkDiamondCrown)" stroke="#d5fbff" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 17h38l7 13H6z" fill="#f1ffff" opacity=".88"/><path d="M13 17 24 30 23 7z" fill="#fff" opacity=".9"/><path d="M23 7 24 30 32 17 41 7z" fill="#7ceaff"/><path d="M41 7 40 30 51 17z" fill="#249edc"/><path d="M13 17 6 30h18z" fill="#5de1f8"/><path d="M51 17 58 30H40z" fill="#0873c8"/><path d="M6 30h18l8 28z" fill="#1386d4"/><path d="M24 30h16l-8 28z" fill="#e9ffff"/><path d="M40 30h18L32 58z" fill="#0b5eb5"/><path d="M24 30 32 17 40 30z" fill="#ffffff" opacity=".85"/><path d="M13 17 23 7h18l10 10" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".95"/></svg></span>Radhe Krishna Tent House</span>
-                <button type="button" onclick="window.switchAppView('view-login')" class="btn-primary" style="width: auto; padding: 8px 16px; font-size: 12px;">🔐 लॉगिन (एडमिन)</button>
+                <button type="button" onclick="window.switchAppView('view-login')" class="btn-primary" style="width: auto; padding: 8px 16px; font-size: 12px;">🔒 एडमिन लॉगिन</button>
             </div>
             <!-- सेपरेट नेविगेशन बटन -->
             <div style="display: flex; gap: 12px; margin-bottom: 25px; border-bottom: 2px solid #334155; padding-bottom: 15px;">
@@ -868,13 +862,6 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                     <div style="flex: 1; min-width: 140px;">
                         <label>📞 मोबाइल (10 अंक)</label>
                         <input type="tel" id="custMobile" maxlength="10" inputmode="numeric" placeholder="10 अंकों का मोबाइल" class="form-control" autocomplete="off" oninput="window.resetCustomerMobileVerification && window.resetCustomerMobileVerification()">
-                        <button type="button" id="custMobileVerifyBtn" class="btn-primary" style="width:100%;margin-top:8px" onclick="window.requestCustomerAdvanceOtp()">📲 OTP भेजें / मोबाइल Verify करें</button>
-                        <div id="custOtpEntryArea" style="display:none;margin-top:10px;padding:12px;border:1px solid #38bdf8;border-radius:12px;background:rgba(14,165,233,.08)">
-                          <label for="custAdvanceOtpInput">SMS में आया OTP दर्ज करें</label>
-                          <input type="text" id="custAdvanceOtpInput" class="form-control" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="OTP दर्ज करें">
-                          <button type="button" class="btn-success" style="width:100%;margin-top:8px" onclick="window.verifyCustomerAdvanceOtp()">✅ OTP सत्यापित करें</button>
-                        </div>
-                        <p id="custAdvanceOtpStatus" role="status" aria-live="polite" style="font-size:12px;margin-top:7px;color:#0e7490">बुकिंग के मोबाइल नंबर को OTP से सत्यापित करें।</p>
                     </div>
 <div style="flex: 1; min-width: 140px;">
                         <label>🎉 फंक्शन टाइप</label>
@@ -1571,10 +1558,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                                 <label for="otpVerifyUrl">OTP सत्यापित करने का सुरक्षित Backend URL</label>
                                 <input type="url" id="otpVerifyUrl" class="form-control" placeholder="https://your-domain.com/api/otp/verify" autocomplete="url">
                                 <label style="display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;">
-                                    <input type="checkbox" id="realCustomerOtpEnabled" style="width:18px;height:18px;flex:0 0 auto;">
-                                    <span><b>वास्तविक मोबाइल OTP चालू करें</b> (SMS/Backend से)</span>
+                                    <input type="checkbox" id="customerOtpRequired" style="width:18px;height:18px;flex:0 0 auto;">
+                                    <span>ग्राहक बुकिंग के लिए वास्तविक OTP सत्यापन अनिवार्य करें</span>
                                 </label>
-                                <p class="config-note">चालू: OTP वास्तविक Backend से भेजा जाएगा; Request और Verify URL सही होने चाहिए। बंद: कोई SMS नहीं भेजा जाएगा, टेस्ट/डेमो OTP पॉपअप में दिखेगा। डेमो मोड वास्तविक मोबाइल सत्यापन नहीं है और इसे प्रोडक्शन सुरक्षा के लिए इस्तेमाल न करें।</p>
+                                <p class="config-note">सुझाव: पहले backend URL सेट करके टेस्ट करें। backend तैयार न हो तो OTP अनिवार्य न करें, वरना ग्राहक बुकिंग सबमिट नहीं कर पाएँगे।</p>
                             </div>
                         </div>
                         <div class="setting-box green whatsapp-cloud-settings">
@@ -1584,8 +1571,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                                 <input type="text" id="waCloudPhoneNumberId" class="form-control" placeholder="Meta Developers से Phone Number ID" autocomplete="off">
                                 <label for="waCloudBackendUrl">WhatsApp सुरक्षित Backend URL</label>
                                 <input type="url" id="waCloudBackendUrl" class="form-control" placeholder="https://your-domain.com/api/whatsapp/send" autocomplete="url">
-                                <p class="config-note">यह लिंक आपके सुरक्षित backend/API का होना चाहिए। Meta Access Token को HTML में न डालें।</p>
-                                <p class="config-note">Access Token और Webhook Verify Token यहाँ न रखें। उन्हें Vercel के Environment Variables / सुरक्षित Backend में रखें। नीचे दिया गया URL तभी काम करेगा जब उसी endpoint पर WhatsApp Cloud API भेजने वाला Backend route deployed हो।</p>
+                                <p class="config-note">Access Token और Webhook Verify Token यहाँ नहीं रखें। उन्हें Vercel के Environment Variables / सुरक्षित Backend में रखें। ये दोनों फ़ील्ड तभी काम करेंगे जब Backend API कॉन्फ़िगर हो।</p>
                             </div>
                         </div>
                         <div class="setting-box green">
@@ -1726,7 +1712,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
     </div>
     <div id="customerAdvanceOtpPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000000;align-items:center;justify-content:center;padding:18px;">
       <div style="width:100%;max-width:360px;background:#1e293b;border:1px solid #38bdf8;border-radius:16px;padding:22px;text-align:center;box-shadow:0 15px 40px #0008;">
-        <h2 id="customerAdvanceOtpPopupTitle" style="justify-content:center;border:0;margin-bottom:10px;">🔐 डेमो OTP</h2><p id="customerAdvanceOtpPopupMessage" style="font-size:13px;color:#cbd5e1;">यह डेमो OTP है; SMS नहीं भेजा गया।</p>
+        <h2 style="justify-content:center;border:0;margin-bottom:10px;">🔐 OTP सेवा सेटअप आवश्यक</h2><p style="font-size:13px;color:#cbd5e1;">वास्तविक SMS/WhatsApp OTP के लिए सुरक्षित backend endpoint जरूरी है।</p>
         <div id="customerAdvanceOtpPopupCode" style="font-size:30px;letter-spacing:8px;font-weight:bold;color:#fcd34d;padding:16px;">------</div>
         <button type="button" class="btn-primary" onclick="window.closeCustomerAdvanceOtpPopup()">OTP भरने के लिए वापस जाएँ</button>
       </div>
@@ -1782,28 +1768,23 @@ body.rk-desktop-version .app-view { min-height:100vh; }
     <!-- ================= संपूर्ण और विस्तृत जावास्क्रिप्ट लॉजिक ================= -->
     <script>
   // 1. Firebase Configuration
-  // Firebase web configuration supplied for radhe-krishna-online-booking.
+  // Firebase web configuration supplied for radhe-krishna-online.
   // Web API keys are public identifiers; Firestore Rules and Auth claims must enforce access.
   // Cloud Firestore is used; no Realtime Database URL is required.
   const AUTHORIZED_ADMIN_EMAIL = 'inde2021@gmail.com';
   // Keep Authentication bound to the intended Firebase project. Old local settings
   // must not silently redirect Google sign-in to a different Firebase project.
-  const savedFbApiKey = 'AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I';
+  const savedFbApiKey = 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
   const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
-  const savedFbProjectId = 'radhe-krishna-online-booking';
-  // Migrate any stale local Firebase settings so they cannot point this page at the old project.
-  try {
-    localStorage.setItem('fbApiKey', savedFbApiKey);
-    localStorage.setItem('fbProjectId', savedFbProjectId);
-  } catch (storageMigrationError) { console.warn('Could not update saved Firebase settings:', storageMigrationError); }
+  const savedFbProjectId = 'radhe-krishna-online';
   const firebaseConfig = {
     apiKey: savedFbApiKey,
     authDomain: `${savedFbProjectId}.firebaseapp.com`,
     projectId: savedFbProjectId,
-    storageBucket: 'radhe-krishna-online-booking.firebasestorage.app',
-    messagingSenderId: '1010400653483',
-    appId: '1:1010400653483:web:fb2a78ec593b3c2888c7ee',
-    measurementId: 'G-8FC58T5YNF',
+    storageBucket: 'radhe-krishna-online.firebasestorage.app',
+    messagingSenderId: '122262862724',
+    appId: '1:122262862724:web:a7c33aa15c81ff00a1bbd1',
+    measurementId: 'G-XM94XSHMJX',
   };
   // Initialize Firebase once; Firestore sync uses the configured project ID.
   if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
@@ -1969,7 +1950,6 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         }
         window.switchCustomerTab = switchCustomerTab;
         // Public customer portal is the first view; default to the new booking form.
-        if (document.getElementById('view-customer-portal')) { document.getElementById('view-customer-portal').classList.add('active'); }
         document.addEventListener('DOMContentLoaded', function(){
             try { switchCustomerTab('new'); } catch (e) { console.warn('Customer portal initial tab setup failed:', e); }
         }, {once:true});
@@ -2050,7 +2030,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             try { publicServiceConfig = JSON.parse(localStorage.getItem('publicServiceConfig') || '{}') || {}; } catch (_) {}
             const configFields = ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'];
             configFields.forEach(id => { const el=document.getElementById(id); if(el) el.value=localStorage.getItem(id) || publicServiceConfig[id] || (id==='paymentGatewayProvider'?'none':(id==='waCloudBackendUrl'?'https://tenthouse.vercel.app/api/send':'')); });
-            const realOtpEl=document.getElementById('realCustomerOtpEnabled'); if(realOtpEl) realOtpEl.checked=(localStorage.getItem('realCustomerOtpEnabled')==='true');
+            const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) { otpRequiredEl.checked=false; otpRequiredEl.disabled=true; localStorage.setItem('customerOtpRequired','false'); }
             const modeEl=document.getElementById('systemControlMode'); if(modeEl) modeEl.value=localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudEl=document.getElementById('hybridAutoCloudSync'); if(cloudEl) cloudEl.checked=localStorage.getItem('hybridAutoCloudSync') !== 'false';
             const refreshEl=document.getElementById('hybridAutoRefresh'); if(refreshEl) refreshEl.checked=localStorage.getItem('hybridAutoRefresh') !== 'false';
@@ -2121,7 +2101,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if (!rows.length) { gallery.innerHTML = '<div style="color:#fbbf24;grid-column:1/-1;text-align:center;padding:14px;border:1px dashed #475569;border-radius:8px;">अभी एडमिन स्टॉक में कोई आइटम दर्ज नहीं है। एडमिन पैनल में स्टॉक जोड़ने के बाद यहाँ दिखाई देगा।</div>'; return; }
             gallery.innerHTML = rows.map((item, idx) => {
                 const images = getStockItemImages(item);
-                const imageHtml = images.length ? `<img loading="lazy" role="button" tabindex="0" onclick="window.selectCustomerStockItem(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.selectCustomerStockItem(${idx})}" src="${escapeHtml(images[0])}" alt="स्टॉक आइटम चुनें" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="stock-card-placeholder" role="button" tabindex="0" onclick="window.selectCustomerStockItem(${idx})" style="display:none;">📦</div>` : '<div class="stock-card-placeholder" role="button" tabindex="0" onclick="window.selectCustomerStockItem('+idx+')">📦</div>';
+                const imageHtml = images.length ? `<img loading="lazy" src="${escapeHtml(images[0])}" alt="${escapeHtml(item.name || 'स्टॉक आइटम')}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="stock-card-placeholder" style="display:none;">📦</div>` : '<div class="stock-card-placeholder">📦</div>';
                 const qty = Math.max(0, Number(item.qty) || 0);
                 const rent = getRentRate({}, item, false);
                 return `<div class="customer-stock-card">${imageHtml}<div class="stock-card-name">${escapeHtml(item.name || 'बिना नाम का आइटम')}</div><div class="stock-card-meta">उपलब्ध स्टॉक: <strong style="color:${qty > 0 ? '#4ade80' : '#f87171'}">${qty}</strong><br>बल्क रेंट: ₹${rent.toFixed(2)}</div><button type="button" class="btn-primary" ${qty <= 0 ? 'disabled style="opacity:.45;cursor:not-allowed;"' : ''} onclick="window.selectCustomerStockItem(${idx})">${qty > 0 ? 'आइटम चुनें' : 'स्टॉक उपलब्ध नहीं'}</button></div>`;
@@ -2174,8 +2154,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const controlMode = localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudSyncEnabled = localStorage.getItem('hybridAutoCloudSync') !== 'false' && controlMode !== 'manual';
             if (!cloudSyncEnabled) { fbDatabase = null; const status = document.getElementById('cloudSyncStatus'); if (status) { status.textContent = '💾 लोकल/मैनुअल मोड — Cloud Sync बंद है'; status.style.color = '#f59e0b'; } console.info('Hybrid Control: cloud sync is off; local/manual mode active.'); return; }
-            const apiKey = savedFbApiKey;
-            const projectId = savedFbProjectId;
+            const apiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
+            const projectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
             const collectionName = (localStorage.getItem('fbCollectionName') || 'appData').trim() || 'appData';
             // Defense in depth: Firestore access still depends on the project's configured Security Rules.
             if (typeof firebase === 'undefined' || !firebase.firestore || !apiKey || !projectId) {
@@ -2741,28 +2721,14 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 await finishAuthorizedAdminLogin(result.user);
             } catch (error) {
                 console.error('Google admin sign-in error:', error);
-                // Android/mobile browsers sometimes block Firebase popups. Fall back to redirect.
-                const canFallbackToRedirect = error && (
-                    error.code === 'auth/popup-blocked' ||
-                    error.code === 'auth/operation-not-supported-in-this-environment'
-                );
-                if (canFallbackToRedirect) {
-                    try {
-                        localStorage.setItem('rkGoogleRedirectPending', 'true');
-                        setLoginStatus('इस ब्राउज़र में popup नहीं खुला। Google लॉगिन के लिए सुरक्षित redirect किया जा रहा है…', 'info');
-                        await auth.signInWithRedirect(provider);
-                        return;
-                    } catch (redirectError) {
-                        localStorage.removeItem('rkGoogleRedirectPending');
-                        console.error('Google redirect fallback error:', redirectError);
-                        error = redirectError;
-                    }
-                }
                 let message = 'Google लॉगिन शुरू नहीं हुआ।';
-                if (error && error.code === 'auth/popup-closed-by-user') message = 'Google Login विंडो बंद हो गई। फिर से Google Login दबाएँ।';
+                if (error && error.code === 'auth/popup-blocked') message = 'Chrome ने Google Login popup रोका है। साइट के लिए pop-ups की अनुमति दें और फिर कोशिश करें।';
+                else if (error && error.code === 'auth/popup-closed-by-user') message = 'Google Login विंडो बंद हो गई। फिर से Google Login दबाएँ।';
                 else if (error && error.code === 'auth/unauthorized-domain') message = 'Firebase Console → Authentication → Settings → Authorized domains में tenthouse.vercel.app जोड़ें, फिर दोबारा प्रयास करें।';
                 else if (error && error.code === 'auth/operation-not-allowed') message = 'Firebase Console → Authentication → Sign-in method में Google provider Enable करें।';
                 else if (error && error.code === 'auth/network-request-failed') message = 'इंटरनेट कनेक्शन जाँचें और पेज को https://tenthouse.vercel.app से खोलकर फिर प्रयास करें।';
+                else if (error && error.code === 'auth/popup-blocked') message = 'Chrome में इस साइट के Pop-ups की अनुमति दें, फिर Google लॉगिन दबाएँ।';
+                else if (error && error.code === 'auth/operation-not-supported-in-this-environment') message = 'यह ब्राउज़र वातावरण Firebase Login सपोर्ट नहीं करता। Chrome में https://tenthouse.vercel.app खोलें और Web Storage चालू रखें।';
                 else if (error && error.message) message = error.message;
                 setLoginStatus(message + (error && error.code ? ' [' + error.code + ']' : ''));
             } finally {
@@ -3324,64 +3290,37 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const btn=document.getElementById('custMobileVerifyBtn'); if(btn) btn.textContent='📲 मोबाइल Verify करें';
         };
         window.requestCustomerAdvanceOtp = async function() {
+            alert('ग्राहक बुकिंग में OTP आवश्यक नहीं है। मोबाइल नंबर दर्ज करके बुकिंग जारी रखें।'); return;
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             if (!/^\d{10}$/.test(mobile)) { alert('OTP के लिए 10 अंकों का मोबाइल नंबर दर्ज करें।'); return; }
-            const otpModeConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
-            const realOtpEnabled = localStorage.getItem('realCustomerOtpEnabled') === 'true' || otpModeConfig.realCustomerOtpEnabled === true;
-            customerAdvanceOtp = null; customerAdvanceOtpVerified = false; customerOtpRequestId = null; customerOtpVerifiedMobile = null;
-            const status = document.getElementById('custAdvanceOtpStatus');
-            const otpArea=document.getElementById('custOtpEntryArea');
-            if (!realOtpEnabled) {
-                // DEMO ONLY: the code is intentionally shown on-screen, not sent to a phone.
-                customerAdvanceOtp = String(Math.floor(100000 + Math.random() * 900000));
-                customerOtpRequestId = 'demo-' + Date.now();
-                if(otpArea) otpArea.style.display='block';
-                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) verifyBtn.textContent='🔄 नया डेमो OTP दिखाएँ';
-                const title=document.getElementById('customerAdvanceOtpPopupTitle'); if(title) title.textContent='🧪 डेमो OTP (SMS नहीं भेजा गया)';
-                const message=document.getElementById('customerAdvanceOtpPopupMessage'); if(message) message.textContent='वास्तविक मोबाइल सत्यापन बंद है। यह कोड केवल परीक्षण के लिए है।';
-                const code=document.getElementById('customerAdvanceOtpPopupCode'); if(code) code.textContent=customerAdvanceOtp;
-                const popup=document.getElementById('customerAdvanceOtpPopup'); if(popup) popup.style.display='flex';
-                if(status) status.textContent='डेमो मोड: OTP पॉपअप में दिखाया गया है; कोई SMS नहीं भेजा गया।';
-                document.getElementById('custAdvanceOtpInput')?.focus();
-                return;
-            }
             const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
             const url = String(localStorage.getItem('otpRequestUrl') || sharedConfig.otpRequestUrl || '').trim();
-            if (!url) { if(status) status.textContent='वास्तविक OTP चालू है, लेकिन Request URL सेट नहीं है। Settings में HTTPS URL सेव करें।'; alert('वास्तविक OTP चालू है, लेकिन OTP Request URL सेट नहीं है।'); return; }
-            if(status) status.textContent='वास्तविक OTP भेजने का अनुरोध किया जा रहा है…';
+            customerAdvanceOtp = null; customerAdvanceOtpVerified = false; customerOtpRequestId = null; customerOtpVerifiedMobile = null;
+            const status = document.getElementById('custAdvanceOtpStatus');
+            if (!url) { if(status) status.textContent='OTP backend अभी सेट नहीं है। Settings → वास्तविक ग्राहक OTP सेवा में HTTPS Request URL सेव करें। कोई SMS नहीं भेजा गया।'; alert('OTP backend URL सेट नहीं है। एडमिन लॉगिन करें → Settings → वास्तविक ग्राहक OTP सेवा में HTTPS Request URL और Verify URL सेव करें। अभी कोई SMS नहीं भेजा गया।'); return; }
+            if(status) status.textContent='OTP भेजने का अनुरोध किया जा रहा है…';
             try {
                 const data = await postConfiguredJson(url, { mobile, purpose:'customer_booking', bookingId:document.getElementById('autoBookingId')?.value || '' });
                 customerOtpRequestId = String(data.requestId || data.otpRequestId || '');
                 if (!customerOtpRequestId) throw new Error('Backend ने requestId नहीं लौटाया; OTP अनुरोध सुरक्षित रूप से पूरा नहीं माना गया।');
-                if(otpArea) otpArea.style.display='block';
-                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) verifyBtn.textContent='🔄 वास्तविक OTP दोबारा भेजें';
-                if(status) status.textContent='वास्तविक OTP भेजने का अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।';
+                const otpArea=document.getElementById('custOtpEntryArea'); if(otpArea) otpArea.style.display='block';
+                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) verifyBtn.textContent='🔄 OTP दोबारा भेजें';
+                if(status) status.textContent='OTP भेजने का अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।';
                 document.getElementById('custAdvanceOtpInput')?.focus();
-                alert('OTP भेजने का अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।');
+                alert('OTP अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।');
             } catch (err) { if(status) status.textContent='OTP नहीं भेजा जा सका: '+(err.message||'Backend त्रुटि'); alert('OTP अनुरोध विफल: '+(err.message||'Backend त्रुटि')); }
         };
         window.closeCustomerAdvanceOtpPopup = function() { const p=document.getElementById('customerAdvanceOtpPopup'); if(p) p.style.display='none'; };
         window.verifyCustomerAdvanceOtp = async function() {
+            alert('ग्राहक बुकिंग में OTP आवश्यक नहीं है।'); return;
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             const otp = String(document.getElementById('custAdvanceOtpInput')?.value || '').trim();
-            const status = document.getElementById('custAdvanceOtpStatus');
-            customerAdvanceOtpVerified = false;
-            if (!customerOtpRequestId) { alert('पहले OTP भेजें/दिखाएँ।'); return; }
-            if (!/^\d{4,8}$/.test(otp)) { alert('सही OTP दर्ज करें।'); return; }
-            const otpModeConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
-            const realOtpEnabledForVerify = localStorage.getItem('realCustomerOtpEnabled') === 'true' || otpModeConfig.realCustomerOtpEnabled === true;
-            if (!realOtpEnabledForVerify) {
-                if (otp !== String(customerAdvanceOtp || '')) { if(status) status.textContent='डेमो OTP गलत है। पॉपअप वाला कोड दर्ज करें।'; alert('डेमो OTP गलत है।'); return; }
-                customerAdvanceOtpVerified = true;
-                customerOtpVerifiedMobile = mobile;
-                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) { verifyBtn.textContent='✅ डेमो OTP मिल गया'; verifyBtn.disabled=false; }
-                if(status) status.textContent='✅ डेमो OTP सही है। वास्तविक मोबाइल/SMS सत्यापन नहीं हुआ।';
-                window.closeCustomerAdvanceOtpPopup();
-                alert('डेमो OTP सही है। ध्यान दें: मोबाइल नंबर वास्तविक रूप से सत्यापित नहीं हुआ।');
-                return;
-            }
             const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
             const url = String(localStorage.getItem('otpVerifyUrl') || sharedConfig.otpVerifyUrl || '').trim();
+            const status = document.getElementById('custAdvanceOtpStatus');
+            customerAdvanceOtpVerified = false;
+            if (!customerOtpRequestId) { alert('पहले OTP भेजने का अनुरोध करें।'); return; }
+            if (!/^\d{4,8}$/.test(otp)) { alert('SMS में आया सही OTP दर्ज करें।'); return; }
             if (!url) { if(status) status.textContent='OTP Verify URL सेट नहीं है; OTP सत्यापित नहीं हुआ।'; alert('Settings में OTP Verify URL जोड़ें।'); return; }
             try {
                 const data = await postConfiguredJson(url, { mobile, otp, requestId:customerOtpRequestId, purpose:'customer_booking' });
@@ -3435,6 +3374,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 const utr=String(document.getElementById('custAdvanceUtr')?.value||'').trim();
                 if(!utr) { alert('ऑनलाइन एडवांस की बुकिंग के लिए UTR / Transaction ID अनिवार्य है। भुगतान के बाद UTR दर्ज करें।'); document.getElementById('custAdvanceUtr')?.focus(); return null; }
                 if(!/^[A-Za-z0-9-]{8,40}$/.test(utr)) { alert('UTR / Transaction ID 8 से 40 अक्षरों/अंकों का होना चाहिए। स्पेस या विशेष चिन्ह न डालें।'); document.getElementById('custAdvanceUtr')?.focus(); return null; }
+                // Customer booking does not require OTP; phone number is collected for contact only.
+                localStorage.setItem('customerOtpRequired', 'false');
                 return {mode,amount,upi:gatewayPending?.orderId?'':upi,mobile,utr,status:'Pending Verification',otpVerified:customerAdvanceOtpVerified,paymentVerified:false,gatewayOrderId:gatewayPending?.orderId||'',gatewayProvider:localStorage.getItem('paymentGatewayProvider')||'none'};
             }
             if(!Number.isFinite(amount)||amount<0) { alert('नकद एडवांस राशि जाँचें।'); return null; }
@@ -3453,17 +3394,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if(!/^\d{10}$/.test(mobile)) { alert('❌ कृपया ठीक 10 अंकों का वैध मोबाइल नंबर दर्ज करें!'); return; }
             if (!dispDate || !retDate) { alert('❌ कृपया डिस्पैच और रिटर्न दोनों तारीखें चुनें!'); return; }
             if (dispDate < localDateString() || retDate < dispDate) { alert('❌ तारीख जाँचें: डिस्पैच आज या आगे की हो और रिटर्न तारीख डिस्पैच के बराबर या बाद की हो!'); return; }
-            // Booking requires the OTP flow to be completed in either demo or real mode.
-            // Demo mode accepts only the code shown in the popup; real mode requires backend verification.
-            const bookingOtpModeConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
-            const realOtpEnabledForBooking = localStorage.getItem('realCustomerOtpEnabled') === 'true' || bookingOtpModeConfig.realCustomerOtpEnabled === true;
-            if (!customerAdvanceOtpVerified || customerOtpVerifiedMobile !== mobile) {
-                alert(realOtpEnabledForBooking
-                    ? 'बुकिंग सबमिट करने से पहले वास्तविक OTP भेजें और सत्यापित करें।'
-                    : 'बुकिंग सबमिट करने से पहले OTP भेजें, पॉपअप में दिखा डेमो OTP दर्ज करें और सत्यापित करें।');
-                document.getElementById('custMobileVerifyBtn')?.scrollIntoView({behavior:'smooth', block:'center'});
-                return;
-            }
+            // Customer booking is intentionally allowed without SMS OTP.
+            localStorage.setItem('customerOtpRequired', 'false');
             const advancePayment = getCustomerAdvanceData();
             if (!advancePayment) return;
             pendingBookingDataObject = { 
@@ -3912,40 +3844,46 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         window.finalizeDispatchOrder = finalizeDispatchOrder;
 
         function printDispatchSlipModal() {
-            if(!activeDispatchBookingId) { alert('❌ कृपया पहले डिस्पैच बुकिंग सर्च करें!'); return; }
-            let bookings = getDataFromStorage('customerBookings');
-            let b = bookings.find(item => item.bookingId === activeDispatchBookingId);
-            let itemsList = b ? (b.dispatchedItems || b.items) : dispatchCommonCart;
-            if(!itemsList || itemsList.length === 0) { alert('❌ कोई आइटम नहीं है!'); return; }
-            let stamp = localStorage.getItem('stampDispatchData') || '';
-            let shopLogo = localStorage.getItem('settingShopLogoData') || '';
-            let shopName = localStorage.getItem('settingShopName') || 'Radhe Krishna Online Shop';
-            let terms = localStorage.getItem('settingTermsText') || '';
-            
-            let slipHtml = `
-                <div style="font-family:Arial, sans-serif; padding:20px; color:#000; background:#fff;">
-                    <div style="text-align:center; margin-bottom:10px;">
-                        ${shopLogo ? `<img src="${shopLogo}" style="max-width:80px; max-height:80px; object-fit:contain; margin-bottom:5px;"><br>` : ''}
-                        <h2 style="margin:0; font-size:24px; font-weight:bold; color:#1e293b;">${escapeHtml(shopName)}</h2>
-                        <p style="font-size:13px; margin:3px 0; font-weight:bold; color:#475569;">DISPATCH SLIP / CHALAN</p>
-                    </div>
-                    <hr style="margin:10px 0; border:1px solid #334155;">
-                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:12px;">
-                        <div><strong>Booking ID:</strong> ${b ? b.bookingId : 'N/A'}<br><strong>Customer Name:</strong> ${b ? b.customerName : 'N/A'}<br><strong>Mobile:</strong> ${b ? b.mobile : 'N/A'}</div>
-                        <div style="text-align:right;"><strong>Dispatch Date:</strong> ${b ? b.dispatchDate : new Date().toLocaleDateString()}<br><strong>Function:</strong> ${b ? b.functionType : 'N/A'}<br><strong>Address:</strong> ${b ? b.address : 'N/A'}</div>
-                    </div>
-                    <table border="1" cellspacing="0" cellpadding="8" style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
-                        <tr style="background:#e2e8f0; color:#0f172a;"><th>SN</th><th>ITEM NAME</th><th>QTY</th><th>SOURCE</th></tr>
-                        ${itemsList.map((i, idx) => `<tr><td>${idx+1}</td><td>${escapeHtml(i.name)}</td><td style="text-align:center;">${i.qty}</td><td>${i.source || 'एडमिन स्टॉक'}</td></tr>`).join('')}
-                    </table>
-                    ${terms ? `<p style="font-size:11px; margin-top:15px; color:#475569;"><strong>Terms & Conditions:</strong><br>${escapeHtml(terms)}</p>` : ''}
-                    <div style="display:flex; justify-content:space-between; margin-top:40px; align-items:end;">
-                        <div>${stamp ? `<img src="${stamp}" class="print-stamp" style="width:85px; height:85px; object-fit:contain;"><p style="font-size:10px;">Dispatch Stamp</p>` : ''}</div>
-                        <div style="text-align:right;"><p style="font-size:12px; font-weight:bold;">For ${shopName}</p><br><p style="font-size:12px; border-top:1px solid #000; padding-top:2px;">Authorised Signatory</p></div>
-                    </div>
+            if(!activeDispatchBookingId) { alert('कृपया पहले डिस्पैच बुकिंग सर्च करें।'); return; }
+            const bookings = getDataFromStorage('customerBookings') || [];
+            const b = bookings.find(item => item.bookingId === activeDispatchBookingId);
+            const itemsList = b ? (b.dispatchedItems || b.items || []) : dispatchCommonCart;
+            if(!itemsList || !itemsList.length) { alert('कोई डिस्पैच आइटम नहीं मिला।'); return; }
+            const stamp = localStorage.getItem('stampDispatchData') || '';
+            const logo = localStorage.getItem('settingShopLogoData') || '';
+            const shop = localStorage.getItem('settingShopName') || 'Radhe Krishna Tent House';
+            const terms = localStorage.getItem('settingTermsText') || '';
+            const esc = v => escapeHtml(String(v ?? '—'));
+            const field = (label,value) => `<div style="min-width:0;padding:7px 9px;border:1px solid #d7e0e8;border-radius:6px;background:#f8fafc"><div style="font-size:10px;color:#475569;font-weight:700;margin-bottom:3px">${label}</div><div style="font-size:12px;font-weight:600;color:#111;overflow-wrap:anywhere">${esc(value || '—')}</div></div>`;
+            const rows = itemsList.map((i,n)=>`<tr><td style="width:10%;text-align:center">${n+1}</td><td style="width:65%">${esc(i.name)}</td><td style="width:25%;text-align:center">${Number(i.qty)||0}</td></tr>`).join('');
+            const slip = `<article class="rk-slip" style="font-family:Arial,'Noto Sans Devanagari',sans-serif;background:#fff;color:#111;width:100%;max-width:190mm;margin:0 auto;padding:0">
+              <header style="text-align:center;margin-bottom:14px">
+                <div style="display:flex;align-items:center;justify-content:center;gap:14px;text-align:left;margin:0 auto 8px;max-width:100%">
+                  ${logo?`<img src="${logo}" alt="Shop logo" style="display:block;flex:0 0 auto;width:62px;height:62px;max-width:62px;max-height:62px;object-fit:contain;margin:0">`:''}
+                  <h2 style="margin:0;font-size:24px;line-height:1.2;color:#123c57;overflow-wrap:anywhere">${esc(shop)}</h2>
                 </div>
-            `;
-            printModalContent(slipHtml);
+                <div style="font-weight:800;font-size:14px;letter-spacing:.3px">DISPATCH SLIP / चालान</div>
+                <div style="font-size:10px;color:#475569;margin-top:3px">सामान भेजने की पर्ची</div>
+              </header><hr style="border:0;border-top:2px solid #244b68;margin:10px 0 14px">
+              <section style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:14px">
+                ${field('BOOKING ID',b?.bookingId||activeDispatchBookingId)}
+                ${field('DISPATCH DATE',b?.dispatchDate||localDateString())}
+                ${field('CUSTOMER NAME',b?.customerName)}
+                ${field('MOBILE',b?.mobile)}
+                ${field('FUNCTION / कार्यक्रम',b?.functionType)}
+                ${field('ADDRESS / पता',b?.address)}
+              </section>
+              <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px">
+                <thead><tr style="background:#e8eff5"><th style="width:10%;border:1px solid #526779;padding:7px">क्र.</th><th style="width:65%;border:1px solid #526779;padding:7px;text-align:left">आइटम का नाम</th><th style="width:25%;border:1px solid #526779;padding:7px">मात्रा</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+              ${terms?`<div style="margin-top:12px;font-size:10px;line-height:1.4"><b>नियम एवं शर्तें:</b><br>${esc(terms)}</div>`:''}
+              <footer style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-top:28px;break-inside:avoid">
+                <div style="text-align:center;max-width:45%">${stamp?`<img src="${stamp}" alt="Dispatch stamp" style="display:block;width:76px;height:76px;object-fit:contain;margin:0 auto 4px">`:''}<div style="font-size:10px">डिस्पैच मुहर</div></div>
+                <div style="text-align:center;min-width:40%;font-size:11px"><b>${esc(shop)}</b><div style="border-top:1px solid #111;margin-top:32px;padding-top:5px">अधिकृत हस्ताक्षर</div></div>
+              </footer>
+            </article>`;
+            printModalContent(slip);
         }
         window.printDispatchSlipModal = printDispatchSlipModal;
 
@@ -4107,16 +4045,43 @@ body.rk-desktop-version .app-view { min-height:100vh; }
 
         function printReturnSlipModal() {
             if (!activeReturnBookingId) { alert('पहले रिटर्न बुकिंग सर्च करें।'); return; }
-            const b = getDataFromStorage('customerBookings').find(x => x.bookingId === activeReturnBookingId);
+            const b = (getDataFromStorage('customerBookings') || []).find(x => x.bookingId === activeReturnBookingId);
             if (!b) { alert('बुकिंग रिकॉर्ड नहीं मिला।'); return; }
             const items = [...(returnAdminList || []), ...(returnVendorList || [])];
-            const slipItems = items.length ? items : ((Array.isArray(b.dispatchedItems) && b.dispatchedItems.length ? b.dispatchedItems : (b.items || [])));
+            const slipItems = items.length ? items : ((Array.isArray(b.dispatchedItems) && b.dispatchedItems.length) ? b.dispatchedItems : (b.items || []));
             const stamp = localStorage.getItem('stampReturnData') || '';
             const logo = localStorage.getItem('settingShopLogoData') || '';
             const shop = localStorage.getItem('settingShopName') || 'Radhe Krishna Tent House';
-            const rows = slipItems.map((i,n) => `<tr><td>${n+1}</td><td>${escapeHtml(i.name||'')}</td><td>${Number(i.qty)||0}</td><td>${Number(i.returnedQty ?? i.qty)||0}</td><td>${Number(i.missingQty)||0}</td><td>${escapeHtml(i.source||'एडमिन स्टॉक')}</td></tr>`).join('');
-            const html = `<div style="font-family:Arial,sans-serif;background:#fff;color:#111;padding:20px"><div style="text-align:center">${logo?`<img src="${logo}" style="max-width:70px;max-height:70px"><br>`:''}<h2>${escapeHtml(shop)}</h2><strong>RETURN SLIP / वापसी पर्ची</strong></div><hr><p><b>बुकिंग:</b> ${escapeHtml(b.bookingId)} | <b>कस्टमर:</b> ${escapeHtml(b.customerName)} | <b>मोबाइल:</b> ${escapeHtml(b.mobile)}</p><p><b>डिस्पैच:</b> ${escapeHtml(b.dispatchDate||'')} | <b>रिटर्न:</b> ${localDateString()}</p><table border="1" cellspacing="0" cellpadding="7" style="width:100%;border-collapse:collapse;margin-top:12px"><thead><tr><th>#</th><th>आइटम</th><th>भेजा</th><th>वापस</th><th>मिसिंग</th><th>स्रोत</th></tr></thead><tbody>${rows}</tbody></table><div style="display:flex;justify-content:space-between;align-items:end;margin-top:35px"><div>${stamp?`<img src="${stamp}" class="print-stamp" style="width:80px;height:80px;object-fit:contain"><div>Return Stamp</div>`:''}</div><div style="text-align:right">${escapeHtml(shop)}<br><br>हस्ताक्षर __________________</div></div></div>`;
-            printModalContent(html);
+            const esc = v => escapeHtml(String(v ?? '—'));
+            const field = (label,value) => `<div style="min-width:0;padding:7px 9px;border:1px solid #d7e0e8;border-radius:6px;background:#f8fafc"><div style="font-size:10px;color:#475569;font-weight:700;margin-bottom:3px">${label}</div><div style="font-size:12px;font-weight:600;color:#111;overflow-wrap:anywhere">${esc(value||'—')}</div></div>`;
+            const rows = slipItems.map((i,n)=>`<tr><td style="width:8%;text-align:center">${n+1}</td><td style="width:38%">${esc(i.name)}</td><td style="width:16%;text-align:center">${Number(i.qty)||0}</td><td style="width:19%;text-align:center">${Number(i.returnedQty ?? i.qty)||0}</td><td style="width:19%;text-align:center">${Number(i.missingQty)||0}</td></tr>`).join('');
+            const slip = `<article class="rk-slip" style="font-family:Arial,'Noto Sans Devanagari',sans-serif;background:#fff;color:#111;width:100%;max-width:190mm;margin:0 auto;padding:0">
+              <header style="text-align:center;margin-bottom:14px">
+                <div style="display:flex;align-items:center;justify-content:center;gap:14px;text-align:left;margin:0 auto 8px;max-width:100%">
+                  ${logo?`<img src="${logo}" alt="Shop logo" style="display:block;flex:0 0 auto;width:62px;height:62px;max-width:62px;max-height:62px;object-fit:contain;margin:0">`:''}
+                  <h2 style="margin:0;font-size:24px;line-height:1.2;color:#123c57;overflow-wrap:anywhere">${esc(shop)}</h2>
+                </div>
+                <div style="font-weight:800;font-size:14px">RETURN SLIP / वापसी पर्ची</div>
+                <div style="font-size:10px;color:#475569;margin-top:3px">वापस आए और मिसिंग सामान का विवरण</div>
+              </header><hr style="border:0;border-top:2px solid #244b68;margin:10px 0 14px">
+              <section style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:14px">
+                ${field('BOOKING ID',b.bookingId)}
+                ${field('RETURN DATE',localDateString())}
+                ${field('CUSTOMER NAME',b.customerName)}
+                ${field('MOBILE',b.mobile)}
+                ${field('DISPATCH DATE',b.dispatchDate)}
+                ${field('ADDRESS / पता',b.address)}
+              </section>
+              <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px">
+                <thead><tr style="background:#e8eff5"><th style="width:8%;border:1px solid #526779;padding:6px">क्र.</th><th style="width:38%;border:1px solid #526779;padding:6px;text-align:left">आइटम</th><th style="width:16%;border:1px solid #526779;padding:6px">भेजा</th><th style="width:19%;border:1px solid #526779;padding:6px">वापस</th><th style="width:19%;border:1px solid #526779;padding:6px">मिसिंग</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+              <footer style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-top:28px;break-inside:avoid">
+                <div style="text-align:center;max-width:45%">${stamp?`<img src="${stamp}" alt="Return stamp" style="display:block;width:76px;height:76px;object-fit:contain;margin:0 auto 4px">`:''}<div style="font-size:10px">रिटर्न मुहर</div></div>
+                <div style="text-align:center;min-width:40%;font-size:11px"><b>${esc(shop)}</b><div style="border-top:1px solid #111;margin-top:32px;padding-top:5px">अधिकृत हस्ताक्षर</div></div>
+              </footer>
+            </article>`;
+            printModalContent(slip);
         }
         window.printReturnSlipModal = printReturnSlipModal;
 
@@ -4393,7 +4358,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             let invoiceHtml = `
                 <div style="font-family:Arial, sans-serif; padding:20px; color:#000; background:#fff;">
                     <div style="text-align:center; margin-bottom:10px;">
-                        ${shopLogo ? `<img src="${shopLogo}" style="max-width:85px; max-height:85px; object-fit:contain; margin-bottom:5px;"><br>` : ''}
+                        <div style="display:flex;align-items:center;justify-content:center;gap:14px;text-align:left;margin:0 auto 8px;max-width:100%">
+                          ${shopLogo ? `<img src="${shopLogo}" alt="Shop logo" style="display:block;flex:0 0 auto;width:62px;height:62px;max-width:62px;max-height:62px;object-fit:contain;margin:0;">` : ''}
+                          <div style="font-size:24px;font-weight:800;line-height:1.2;overflow-wrap:anywhere;">${localStorage.getItem('settingShopName') || 'Radhe Krishna Tent House'}</div>
+                        </div>
                         <h2 style="margin:0; font-size:24px; font-weight:bold; color:#1e293b;">${escapeHtml(shopName)}</h2>
                         <p style="font-size:13px; margin:3px 0; font-weight:bold; color:#475569; letter-spacing:1px;">RENTAL SETTLEMENT INVOICE</p>
                     </div>
@@ -4820,165 +4788,68 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         };
 
         window.executeBarcodePrint = function() {
-            let count = Number.parseInt(document.getElementById('printBarcodeCount').value, 10) || 1;
+            const countInput = document.getElementById('printBarcodeCount');
+            let count = Number.parseInt(countInput?.value, 10) || 1;
             count = Math.max(1, Math.min(200, count));
-            let shopName = localStorage.getItem('settingShopName') || 'RADHE KRISHNA TENT';
-            const safeShop = escapeHtml(shopName), safeItem = escapeHtml(selectedBarcodeItemName), safeCode = escapeHtml(selectedBarcodeToPrint);
+            const shopName = localStorage.getItem('settingShopName') || 'RADHE KRISHNA TENT';
+            const itemName = String(selectedBarcodeItemName || 'स्टॉक आइटम');
+            const code = String(selectedBarcodeToPrint || '');
+            if (!code) { alert('बारकोड उपलब्ध नहीं है।'); return; }
             let barcodeSvg = '';
             try {
-                if (typeof JsBarcode !== 'undefined') {
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-                    JsBarcode(svg, String(selectedBarcodeToPrint), {format:'CODE128',displayValue:true,fontSize:12,height:38,margin:2,valid:true});
-                    barcodeSvg = new XMLSerializer().serializeToString(svg);
-                }
-            } catch (e) { console.warn('Barcode SVG generation failed', e); }
-            let printHtml = `<html><head><title>Barcode Print</title><style>body{font-family:Arial,sans-serif;margin:0;padding:8px;color:#000}.label{width:220px;min-height:110px;border:1px dashed #000;padding:8px;text-align:center;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;margin:4px;page-break-inside:avoid}.shop{font-size:10px;font-weight:bold;margin-bottom:2px}.item{font-size:12px;font-weight:bold;margin-bottom:2px}.barcode svg{max-width:200px;height:45px}.barcodeText{font-family:monospace;font-size:12px;letter-spacing:2px}
-
-        /* === Responsive layout repair v6: full-width pages, no nested screen-sized cards === */
-        :root { color-scheme: dark; }
-        html { width:100%; min-width:0; height:100%; overscroll-behavior-x:none; }
-        body { width:100%; min-width:0; min-height:100%; margin:0; overflow-x:hidden; }
-        .app-view { width:100%; max-width:100vw; height:100dvh; min-height:100dvh; overflow-x:hidden; overscroll-behavior:contain; }
-        .admin-container { width:100%; min-width:0; height:100%; min-height:0; }
-        .top-header { flex-shrink:0; min-width:0; }
-        .header-top-row, .shop-brand-title { min-width:0; }
-        .content-area { width:100%; min-width:0; flex:1 1 auto; min-height:0; padding:clamp(8px,1.5vw,20px); overflow:auto; }
-        /* Remove the large dark card/box behind every admin tab; retain individual useful cards. */
-        .admin-tab-pane, .admin-tab-pane.active {
-          width:100%; max-width:none; min-height:0; margin:0; padding:clamp(10px,1.4vw,22px);
-          background:transparent !important; border:0 !important; border-radius:0 !important;
-          box-shadow:none !important; overflow-wrap:anywhere;
-        }
-        /* Customer advance payment: compact, consistent and mobile-safe layout */
-        #customerAdvancePaymentBox.customer-payment-card{box-sizing:border-box;width:100%;min-width:0;margin:18px 0;padding:clamp(14px,2.8vw,22px);border:1px solid rgba(255,255,255,.2);border-radius:18px;background:rgba(255,255,255,.075);backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);box-shadow:0 12px 30px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.12);color:#f8fafc;}
-        .customer-payment-heading{display:flex;align-items:center;gap:12px;margin:0 0 18px;min-width:0}
-        .customer-payment-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:13px;background:rgba(56,189,248,.14);border:1px solid rgba(125,211,252,.28);color:#7dd3fc;font-size:22px;font-weight:800}
-        .customer-payment-heading h3{margin:0 0 4px!important;color:#f8fafc!important;font-size:18px;line-height:1.3}
-        .customer-payment-heading p,.customer-field-help{margin:0;color:#b9c7d8;font-size:12px;line-height:1.5}
-        .customer-payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
-        .customer-payment-field{min-width:0;display:flex;flex-direction:column;gap:7px;margin:0 0 14px}
-        #customerAdvancePaymentBox label{display:block;margin:0;color:#e2e8f0;font-size:13px;font-weight:650;line-height:1.4}
-        #customerAdvancePaymentBox label span{color:#94a3b8;font-weight:400}
-        #customerAdvancePaymentBox .form-control{box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin:0!important;min-height:44px;border:1px solid rgba(203,213,225,.28);border-radius:10px;background:rgba(15,23,42,.42);color:#f8fafc;padding:11px 12px}
-        #customerAdvancePaymentBox select.form-control{appearance:auto}
-        #customerAdvancePaymentBox .form-control::placeholder{color:#94a3b8;opacity:1}
-        .customer-online-payment{min-width:0;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.13)}
-        .customer-qr-generate-btn{display:flex!important;align-items:center;justify-content:center;width:100%!important;max-width:100%;min-height:46px;margin:0 0 14px!important;white-space:normal;line-height:1.35}
-        .customer-qr-result{box-sizing:border-box;width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 0 16px;padding:16px 12px;border-radius:14px;border:1px solid #e2e8f0;background:#fff;color:#0f172a;overflow:hidden}
-        .customer-qr-result img{display:block;width:200px;height:200px;max-width:100%;object-fit:contain}
-        .customer-qr-caption{max-width:100%;margin:0;color:#334155;font-size:13px;font-weight:700;text-align:center;overflow-wrap:anywhere}
-        .customer-qr-instruction{margin:0;color:#64748b;font-size:12px;text-align:center;line-height:1.5}
-        .customer-gateway-option{min-width:0;margin:0 0 14px;padding:12px;border:1px solid rgba(255,255,255,.14);border-radius:12px;background:rgba(15,23,42,.22)}
-        .customer-gateway-option button{width:100%!important;max-width:100%;white-space:normal;line-height:1.4}
-        .customer-gateway-option .config-note{margin:8px 0 0;color:#b9c7d8;font-size:12px;line-height:1.5}
-        #customerAdvancePaymentBox .customer-utr-field input:invalid{border-color:rgba(251,113,133,.55)}
-        #customerAdvancePaymentBox .customer-utr-field input:focus{outline:2px solid rgba(125,211,252,.35);outline-offset:1px}
-        .customer-payment-disclaimer{margin:4px 0 0;padding:10px 12px;border-radius:10px;background:rgba(148,163,184,.09);color:#cbd5e1;font-size:11px;line-height:1.6}
-        @media(max-width:520px){.customer-payment-grid{grid-template-columns:minmax(0,1fr);gap:0}.customer-payment-heading h3{font-size:17px}#customerAdvancePaymentBox.customer-payment-card{padding:14px;border-radius:14px}.customer-qr-result{padding:12px 8px}}
-
-        #view-customer-portal { padding:0 !important; align-items:stretch; }
-        #view-customer-portal > div {
-          width:100% !important; max-width:none !important; min-width:0 !important;
-          min-height:100dvh; max-height:none !important; height:auto !important; margin:0 !important;
-          border:0 !important; border-radius:0 !important; box-shadow:none !important;
-        }
-        #view-customer-portal > div[style*="max-width"], #view-customer-portal > div[style*="border-radius"] {
-          box-shadow:none !important;
-        }
-        .setting-card-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); }
-        .dashboard-cards { grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr)); }
-        .data-table { max-width:none; }
-        .table-responsive { display:block; max-width:100%; overflow-x:auto; overscroll-behavior-x:contain; }
-        .form-control, input, select, textarea, button { min-width:0; max-width:100%; }
-        textarea.form-control { resize:vertical; }
-        .btn-primary, .btn-success, .btn-warning, .btn-danger, .btn-purple, .btn-secondary, .btn-wa {
-          width:auto !important; min-height:40px; height:auto !important; max-width:100%; padding:10px 14px !important;
-          white-space:normal; overflow-wrap:anywhere; flex:0 1 auto;
-        }
-        .card-box .btn-primary, .card-box .btn-success, .card-box .btn-warning, .card-box .btn-secondary,
-        #view-customer-portal .btn-primary, #view-customer-portal .btn-success, #view-customer-portal .btn-secondary {
-          width:100% !important;
-        }
-        .nav-row { min-width:0; max-width:100%; scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
-        .nav-btn { flex:0 0 auto; max-width:85vw; }
-        .dashboard-cards > *, .setting-card-grid > *, .cust-detail-grid > *, .customer-stock-gallery > * { min-width:0; }
-        img, video, canvas, svg { max-width:100%; }
-        .modal, [role="dialog"] { max-width:100vw; }
-        @media (max-width:700px) {
-          .app-view { height:100dvh; min-height:100dvh; }
-          .top-header { padding:9px 10px; }
-          .header-top-row { margin-bottom:7px; }
-          .shop-brand-title { font-size:clamp(15px,4.2vw,19px); line-height:1.25; }
-          .content-area { padding:8px; }
-          .admin-tab-pane, .admin-tab-pane.active { padding:8px 2px; }
-          h2 { font-size:18px; gap:7px; padding-bottom:8px; margin-bottom:14px; }
-          h3 { font-size:16px; }
-          .dashboard-cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-          .stat-card { padding:10px; border-left-width:3px; }
-          .stat-card p { font-size:clamp(15px,4vw,19px); }
-          .setting-card-grid { grid-template-columns:minmax(0,1fr); gap:10px; }
-          .setting-box { padding:12px; }
-          .data-table { min-width:650px; }
-          .data-table th, .data-table td { padding:9px 10px; font-size:12px; }
-          .form-control { padding:10px 11px !important; }
-          .card-box { padding:20px 15px; border-radius:14px; }
-          .customer-stock-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); }
-          #view-customer-portal > div { padding:12px !important; }
-          .nav-btn { height:36px; padding:0 11px; font-size:12px; }
-        }
-        @media (max-width:360px) {
-          .dashboard-cards { grid-template-columns:minmax(0,1fr); }
-          .data-table { min-width:600px; }
-          .card-box { padding:16px 12px; }
-        }
-        @media (min-width:701px) {
-          .admin-tab-pane, .admin-tab-pane.active { padding:clamp(14px,1.5vw,26px); }
-        }
-</style>
-<style id="rk-unified-flat-theme-v14">
-/* Unified flat theme: remove enclosing background panels across every module. */
-:root{--rk-page-bg:#101827;--rk-text:#f1f5f9;--rk-muted:#d1d9e6;--rk-line:rgba(203,213,225,.16)}
-html,body,.app-view,.content-area,#view-admin,#view-vendor,#view-customer-portal{background:var(--rk-page-bg)!important;color:var(--rk-text)!important;background-image:none!important}
-.app-view,.top-header{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-.top-header{background:var(--rk-page-bg)!important;border:0!important;box-shadow:none!important}
-.content-area{padding:20px!important}
-/* Main panes and decorative cards no longer appear as large boxed surfaces. */
-.admin-tab-pane,.card-box,.setting-box,.stat-card,.cust-detail-card,.customer-stock-card,
-.customer-stock-gallery .customer-stock-card,#customerAdvancePaymentBox,#view-customer-portal>div,
-.png-floating-preview,.ai-assistant-shell,.ai-chat-history,.cust-detail-grid p,
-.customer-stock-card .stock-card-placeholder{
- background:transparent!important;background-image:none!important;border-color:transparent!important;
- box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
-}
-.admin-tab-pane{padding:12px 0!important;border-radius:0!important}
-.card-box{max-width:520px!important;padding:24px!important}
-.setting-box,.stat-card,.cust-detail-card,.customer-stock-card{border-radius:0!important;padding:14px 0!important}
-/* Keep functional inputs legible, but remove the heavy inset box treatment. */
-.form-control,input,select,textarea{font-weight:700!important;color:var(--rk-text)!important;background:#172235!important;border:1px solid #46546a!important;box-shadow:none!important}
-label,.data-table th,.data-table td,.nav-btn,button,.btn,.shop-brand-title,.admin-tab-pane h1,.admin-tab-pane h2,.admin-tab-pane h3,.admin-tab-pane h4,
-.stat-card p,.customer-stock-card .stock-card-name{font-weight:700!important}
-body,p,span,small,li,td,th,label,.config-note{font-weight:600}
-label,.config-note,.ai-assistant-heading p{color:var(--rk-muted)!important}
-.data-table,.data-table th{background:transparent!important}
-.data-table th,.data-table td{border-bottom:1px solid var(--rk-line)!important}
-.data-table tr:hover{background:rgba(255,255,255,.045)!important}
-.table-responsive{border:0!important;box-shadow:none!important;background:transparent!important}
-.nav-btn{box-shadow:none!important}
-@media(max-width:600px){.content-area{padding:12px!important}.admin-tab-pane{padding:8px 0!important}.card-box{padding:18px!important}}
-</style>
-</head><body>`;
-            for(let i=0;i<count;i++) {
-                printHtml += `<div class="label"><div class="shop">${safeShop}</div><div class="item">${safeItem}</div><div class="barcode">${barcodeSvg || `<div class="barcodeText">*${safeCode}*</div>`}</div></div>`;
+                if (typeof JsBarcode === 'undefined') throw new Error('JsBarcode library unavailable');
+                const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+                JsBarcode(svg, code, {
+                    format:'CODE128', displayValue:true, fontSize:13, font:'Arial',
+                    textMargin:4, height:48, width:2, margin:6,
+                    background:'#ffffff', lineColor:'#000000'
+                });
+                svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+                svg.setAttribute('width','360');
+                svg.setAttribute('height','82');
+                svg.setAttribute('role','img');
+                svg.setAttribute('aria-label','Barcode '+code);
+                barcodeSvg = new XMLSerializer().serializeToString(svg);
+            } catch (e) {
+                console.error('Barcode generation failed', e);
+                alert('बारकोड तैयार नहीं हो पाया। इंटरनेट कनेक्शन जाँचें और दोबारा कोशिश करें।');
+                return;
             }
-            printHtml += `
-
-
-
-
-
-</body></html>`;
+            const safe = v => escapeHtml(String(v));
+            const labels = Array.from({length:count},()=>`
+              <section class="label">
+                <div class="shop">${safe(shopName)}</div>
+                <div class="item">${safe(itemName)}</div>
+                <div class="barcode">${barcodeSvg}</div>
+              </section>`).join('');
+            const printHtml = `<div class="barcode-print-sheet">
+              <style>
+                .barcode-print-sheet{background:#fff!important;color:#000!important;font-family:Arial,'Noto Sans Devanagari',sans-serif;width:100%;box-sizing:border-box}
+                .barcode-print-sheet *{box-sizing:border-box;color:#000!important;opacity:1!important;filter:none!important;text-shadow:none!important}
+                .barcode-print-sheet .labels{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px}
+                .barcode-print-sheet .label{width:220px;min-height:112px;border:1px dashed #777;padding:7px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#fff!important;break-inside:avoid;page-break-inside:avoid}
+                .barcode-print-sheet .shop{font-size:10px;font-weight:700;line-height:1.2}
+                .barcode-print-sheet .item{font-size:12px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+                .barcode-print-sheet .barcode{width:100%;display:flex;justify-content:center;align-items:center;background:#fff!important}
+                .barcode-print-sheet .barcode svg{display:block;width:100%!important;max-width:200px!important;height:auto!important;max-height:70px!important;overflow:visible}
+                @page{size:auto;margin:8mm}
+                @media print{
+                  html,body{margin:0!important;padding:0!important;background:#fff!important;color:#000!important;overflow:visible!important}
+                  body *{visibility:hidden!important}
+                  #universalPrintModal,#universalPrintModal *{visibility:visible!important}
+                  #universalPrintModal{position:static!important;display:block!important;inset:auto!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;background:#fff!important}
+                  #universalPrintModal>div{position:static!important;width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important}
+                  #universalPrintModal>div>div:first-child,#universalPrintModal>div>div:last-child{display:none!important}
+                  #printModalBody{display:block!important;position:static!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;box-shadow:none!important;background:#fff!important}
+                  .barcode-print-sheet .labels{gap:4px}
+                  .barcode-print-sheet .label{width:55mm;min-height:28mm;margin:0;padding:2mm;border:1px dashed #888}
+                  .barcode-print-sheet .barcode svg{width:100%!important;max-width:50mm!important;height:auto!important;max-height:18mm!important}
+                  .barcode-print-sheet .shop{font-size:8pt}.barcode-print-sheet .item{font-size:9pt}
+                }
+              </style><div class="labels">${labels}</div></div>`;
             printModalContent(printHtml);
-            document.getElementById('barcodePrintModal').style.display = 'none';
+            const modal = document.getElementById('barcodePrintModal');
+            if (modal) modal.style.display = 'none';
         };
 
         window.editPurchaseItem = function(index) {
@@ -5503,9 +5374,8 @@ label,.config-note,.ai-assistant-heading p{color:var(--rk-muted)!important}
                 localStorage.setItem('settingTermsText', document.getElementById('settingTermsText').value);
                 const publicServiceConfig = {};
                 ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'].forEach(id => { const el=document.getElementById(id); if(el) { const value=el.value.trim(); localStorage.setItem(id,value); publicServiceConfig[id]=value; } });
-                const realOtpEnabled = document.getElementById('realCustomerOtpEnabled')?.checked === true;
-                localStorage.setItem('realCustomerOtpEnabled', realOtpEnabled ? 'true' : 'false');
-                publicServiceConfig.realCustomerOtpEnabled = realOtpEnabled;
+                publicServiceConfig.customerOtpRequired = false;
+                localStorage.setItem('customerOtpRequired', 'false');
                 if (!saveDataToStorage('publicServiceConfig', publicServiceConfig)) { alert('सेवा सेटिंग्स लोकल स्टोरेज में सेव नहीं हुईं।'); return; }
                 loadSavedSettings();
                 alert('ज़रूरी सेटिंग्स सेव हो गई हैं। Firebase कॉन्फ़िगरेशन कोड में पहले से सेट है; उसे बदलने के लिए इस पेज की सेटिंग्स की आवश्यकता नहीं है।');
@@ -6051,7 +5921,7 @@ img,canvas,video{max-width:100%}
     var cloudEnabled=localStorage.getItem('hybridAutoCloudSync')!=='false' && controlMode!=='manual';
     if(!cloudEnabled){ proofText('storageProofCloud','☁️ Firebase: ऐप की सेटिंग में Cloud Sync बंद है; डेटा लोकल में सेव हो सकता है।','#fbbf24'); return; }
     if(!db && typeof firebase!=='undefined' && firebase.firestore){
-      try { var app=firebase.app(); if(app.options.projectId===savedFbProjectId) db=firebase.firestore(); } catch(e){}
+      try { var app=firebase.app(); if(app.options.projectId===((localStorage.getItem('fbProjectId')||'radhe-krishna-online'))) db=firebase.firestore(); } catch(e){}
     }
     if(!db){
       proofText('storageProofCloud','☁️ Firebase: कनेक्ट नहीं — अभी लोकल स्टोरेज ही उपलब्ध/पुष्ट है','#fbbf24');
