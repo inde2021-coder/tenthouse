@@ -1520,6 +1520,21 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                                 <p class="config-note">भुगतान तभी Verified होगा जब सर्वर गेटवे से पुष्टि करे और webhook signature सत्यापित करे। केवल ग्राहक का UTR, स्क्रीनशॉट या लौटकर आने वाला URL पर्याप्त प्रमाण नहीं है।</p>
                             </div>
                         </div>
+                        <div class="setting-box blue otp-service-settings" id="otpServiceSettingsBox">
+                            <h3 onclick="window.toggleSettingAccordion(this)">🔐 वास्तविक ग्राहक OTP सेवा <span>▼</span></h3>
+                            <div class="setting-content-body">
+                                <p class="config-note">वास्तविक OTP के लिए अलग HTTPS Request और Verify endpoints जरूरी हैं। आपके मौजूदा backend का <code>https://tenthouse.vercel.app/api/send</code> संदेश भेजने वाला endpoint है; इसे OTP Verify URL की जगह नहीं डालना चाहिए। OTP चलाने के लिए backend में <code>/api/otp/request</code> और <code>/api/otp/verify</code> routes भी उपलब्ध होने चाहिए। OTP को HTML/ब्राउज़र में generate या expose न करें।</p>
+                                <label for="otpRequestUrl">OTP भेजने का सुरक्षित Backend URL</label>
+                                <input type="url" id="otpRequestUrl" class="form-control" placeholder="https://your-domain.com/api/otp/request" autocomplete="url">
+                                <label for="otpVerifyUrl">OTP सत्यापित करने का सुरक्षित Backend URL</label>
+                                <input type="url" id="otpVerifyUrl" class="form-control" placeholder="https://your-domain.com/api/otp/verify" autocomplete="url">
+                                <label style="display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;">
+                                    <input type="checkbox" id="customerOtpRequired" style="width:18px;height:18px;flex:0 0 auto;">
+                                    <span>ग्राहक बुकिंग के लिए वास्तविक OTP सत्यापन अनिवार्य करें</span>
+                                </label>
+                                <p class="config-note">सुझाव: पहले backend URL सेट करके टेस्ट करें। backend तैयार न हो तो OTP अनिवार्य न करें, वरना ग्राहक बुकिंग सबमिट नहीं कर पाएँगे।</p>
+                            </div>
+                        </div>
                         <div class="setting-box green whatsapp-cloud-settings">
                             <h3 onclick="window.toggleSettingAccordion(this)">💬 WhatsApp Cloud API सेटिंग्स <span>▼</span></h3>
                             <div class="setting-content-body">
@@ -1802,7 +1817,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         }
 
         function initSystem() {
-            // Local admin login is used; Firebase Authentication has been removed. Cloud sync depends on Firestore Rules.
+            // App data initialization; Firebase Authentication is used for authorized Google admin login.
             fbDatabase = null;
             generateNewBookingId();
             generateStockBarcode();
@@ -1905,6 +1920,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             }
         }
         window.switchCustomerTab = switchCustomerTab;
+        // Public customer portal is the first view; default to the new booking form.
+        document.addEventListener('DOMContentLoaded', function(){
+            try { switchCustomerTab('new'); } catch (e) { console.warn('Customer portal initial tab setup failed:', e); }
+        }, {once:true});
 
         function generateHostingQrCode() {
             let link = document.getElementById('settingHostingUrl').value.trim();
@@ -1981,7 +2000,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             let publicServiceConfig = {};
             try { publicServiceConfig = JSON.parse(localStorage.getItem('publicServiceConfig') || '{}') || {}; } catch (_) {}
             const configFields = ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'];
-            configFields.forEach(id => { const el=document.getElementById(id); if(el) el.value=localStorage.getItem(id) || publicServiceConfig[id] || (id==='paymentGatewayProvider'?'none':''); });
+            configFields.forEach(id => { const el=document.getElementById(id); if(el) el.value=localStorage.getItem(id) || publicServiceConfig[id] || (id==='paymentGatewayProvider'?'none':(id==='waCloudBackendUrl'?'https://tenthouse.vercel.app/api/send':'')); });
             const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) otpRequiredEl.checked=(localStorage.getItem('customerOtpRequired') || String(publicServiceConfig.customerOtpRequired || false))==='true';
             const modeEl=document.getElementById('systemControlMode'); if(modeEl) modeEl.value=localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudEl=document.getElementById('hybridAutoCloudSync'); if(cloudEl) cloudEl.checked=localStorage.getItem('hybridAutoCloudSync') !== 'false';
@@ -2109,8 +2128,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const apiKey = localStorage.getItem('fbApiKey') || 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
             const projectId = localStorage.getItem('fbProjectId') || 'radhe-krishna-online';
             const collectionName = (localStorage.getItem('fbCollectionName') || 'appData').trim() || 'appData';
-            // Defense in depth: never attach protected Firestore listeners without a signed-in user.
-            // Firebase Authentication is intentionally removed. Firestore sync may still fail if its Rules require an authenticated user; local storage remains the primary mode.
+            // Defense in depth: Firestore access still depends on the project's configured Security Rules.
             if (typeof firebase === 'undefined' || !firebase.firestore || !apiKey || !projectId) {
                 fbDatabase = null;
                 const status = document.getElementById('cloudSyncStatus'); if (status) { status.textContent = '⚠️ Firebase SDK/सेटिंग उपलब्ध नहीं — डेटा केवल इस डिवाइस पर'; status.style.color = '#dc2626'; }
@@ -2259,7 +2277,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if (viewId === 'view-login') {
                 sessionStorage.removeItem('localAdminAuthenticated');
                 sessionStorage.removeItem('vendorAuthenticated');
-                if (sessionStorage.getItem('rkGoogleRedirectPending') !== 'true' && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                if (localStorage.getItem('rkGoogleRedirectPending') !== 'true' && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
                     firebase.auth().signOut().catch(err => console.warn('Firebase sign-out failed:', err));
                 }
                 loggedInUserRole = '';
@@ -2645,21 +2663,43 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         window.adminGoogleLogin = async function() {
             if (selectedLoginRole === 'vendor') return;
             if (typeof firebase === 'undefined' || !firebase.auth) {
-                setLoginStatus('Firebase Authentication लोड नहीं हुआ। पेज को इंटरनेट के साथ फिर खोलें।');
+                setLoginStatus('Firebase Authentication लोड नहीं हुआ। इंटरनेट के साथ https://tenthouse.vercel.app खोलें।');
+                return;
+            }
+            if (!/^https?:$/.test(window.location.protocol) && window.location.protocol !== 'chrome-extension:') {
+                setLoginStatus('यह HTML फ़ाइल सीधे खुली है। कृपया Chrome में https://tenthouse.vercel.app खोलकर Google Login करें।');
+                return;
+            }
+            try {
+                const storageTest = '__rk_storage_test__';
+                window.localStorage.setItem(storageTest, '1');
+                window.localStorage.removeItem(storageTest);
+            } catch (storageError) {
+                setLoginStatus('ब्राउज़र में Web Storage बंद है। Chrome में साइट की Storage अनुमति चालू करें और फिर कोशिश करें।');
                 return;
             }
             const googleBtn = document.getElementById('adminGoogleLoginBtn');
             if (googleBtn) googleBtn.disabled = true;
             try {
-                sessionStorage.setItem('rkGoogleRedirectPending', 'true');
                 setLoginStatus('Google लॉगिन खोला जा रहा है…', 'info');
+                const auth = firebase.auth();
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 const provider = new firebase.auth.GoogleAuthProvider();
                 provider.setCustomParameters({ prompt: 'select_account' });
-                await firebase.auth().signInWithRedirect(provider);
+                const result = await auth.signInWithPopup(provider);
+                if (!result || !result.user) throw new Error('Google से यूज़र की पुष्टि नहीं मिली। फिर कोशिश करें।');
+                localStorage.removeItem('rkGoogleRedirectPending');
+                await finishAuthorizedAdminLogin(result.user);
             } catch (error) {
-                sessionStorage.removeItem('rkGoogleRedirectPending');
                 console.error('Google admin sign-in error:', error);
-                setLoginStatus('Google लॉगिन शुरू नहीं हुआ: ' + (error.message || error.code || 'कृपया फिर कोशिश करें।'));
+                let message = 'Google लॉगिन शुरू नहीं हुआ।';
+                if (error && error.code === 'auth/popup-blocked') message = 'Chrome ने Google Login popup रोका है। साइट के लिए pop-ups की अनुमति दें और फिर कोशिश करें।';
+                else if (error && error.code === 'auth/popup-closed-by-user') message = 'Google Login विंडो बंद हो गई। फिर से Google Login दबाएँ।';
+                else if (error && error.code === 'auth/unauthorized-domain') message = 'Firebase Authorized Domains में tenthouse.vercel.app जोड़ें।';
+                else if (error && error.code === 'auth/operation-not-supported-in-this-environment') message = 'यह ब्राउज़र वातावरण Firebase Login सपोर्ट नहीं करता। Chrome में https://tenthouse.vercel.app खोलें और Web Storage चालू रखें।';
+                else if (error && error.message) message = error.message;
+                setLoginStatus(message + (error && error.code ? ' [' + error.code + ']' : ''));
+            } finally {
                 if (googleBtn) googleBtn.disabled = false;
             }
         };
@@ -2733,10 +2773,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         window.addEventListener('load', async () => {
             updateLocalAdminLoginView();
             selectLoginRole('admin');
-            const redirectPending = sessionStorage.getItem('rkGoogleRedirectPending') === 'true';
-            // Keep the login screen visible on OAuth return, so the user can see failures.
+            const redirectPending = localStorage.getItem('rkGoogleRedirectPending') === 'true';
+            // Do not let a stale redirect flag hide the public customer portal.
+            // The new popup flow returns its user directly; this block only supports an older in-flight redirect.
             if (redirectPending) {
-                switchAppView('view-login');
                 setLoginStatus('Google लॉगिन की पुष्टि की जा रही है…', 'info');
             }
             if (typeof firebase !== 'undefined' && firebase.auth) {
@@ -2745,15 +2785,15 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                     const result = await auth.getRedirectResult();
                     const user = (result && result.user) || auth.currentUser;
                     if (user) {
-                        sessionStorage.removeItem('rkGoogleRedirectPending');
+                        localStorage.removeItem('rkGoogleRedirectPending');
                         await finishAuthorizedAdminLogin(user);
                     } else if (redirectPending) {
-                        sessionStorage.removeItem('rkGoogleRedirectPending');
-                        switchAppView('view-login');
-                        setLoginStatus('Google लॉगिन पूरा नहीं हुआ। Firebase में Authorized domains और Google provider जाँचें। [auth/no-user-after-redirect]');
+                        localStorage.removeItem('rkGoogleRedirectPending');
+                        setLoginStatus('पुराना Google redirect यूज़र वापस नहीं लाया। कस्टमर पोर्टल खुला रहेगा; एडमिन लॉगिन के लिए Google बटन दोबारा दबाएँ। [auth/no-user-after-redirect]');
+                        switchAppView('view-customer-portal');
                     }
                 } catch (error) {
-                    sessionStorage.removeItem('rkGoogleRedirectPending');
+                    localStorage.removeItem('rkGoogleRedirectPending');
                     console.error('Google redirect result error:', error);
                     switchAppView('view-login');
                     let message = 'Google लॉगिन पूरा नहीं हुआ। कृपया फिर कोशिश करें।';
@@ -2763,7 +2803,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                     setLoginStatus(message + (error && error.code ? ' [' + error.code + ']' : ''));
                 }
             } else if (redirectPending) {
-                sessionStorage.removeItem('rkGoogleRedirectPending');
+                localStorage.removeItem('rkGoogleRedirectPending');
                 switchAppView('view-login');
                 setLoginStatus('Firebase Authentication लोड नहीं हुआ। इंटरनेट कनेक्शन जाँचें और पेज फिर खोलें।');
             }
@@ -3224,7 +3264,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             const url = String(localStorage.getItem('otpRequestUrl') || sharedConfig.otpRequestUrl || '').trim();
             customerAdvanceOtp = null; customerAdvanceOtpVerified = false; customerOtpRequestId = null; customerOtpVerifiedMobile = null;
             const status = document.getElementById('custAdvanceOtpStatus');
-            if (!url) { if(status) status.textContent='OTP backend अभी सेट नहीं है। सेटिंग्स में सुरक्षित OTP Request URL जोड़ें; SMS नहीं भेजा गया।'; alert('वास्तविक OTP सेवा कॉन्फ़िगर नहीं है। Settings → वास्तविक OTP सेवा में backend URL जोड़ें।'); return; }
+            if (!url) { if(status) status.textContent='OTP backend अभी सेट नहीं है। Settings → वास्तविक ग्राहक OTP सेवा में HTTPS Request URL सेव करें। कोई SMS नहीं भेजा गया।'; alert('OTP backend URL सेट नहीं है। एडमिन लॉगिन करें → Settings → वास्तविक ग्राहक OTP सेवा में HTTPS Request URL और Verify URL सेव करें। अभी कोई SMS नहीं भेजा गया।'); return; }
             if(status) status.textContent='OTP भेजने का अनुरोध किया जा रहा है…';
             try {
                 const data = await postConfiguredJson(url, { mobile, purpose:'customer_booking', bookingId:document.getElementById('autoBookingId')?.value || '' });
@@ -5935,5 +5975,15 @@ img,canvas,video{max-width:100%}
   else setTimeout(function(){window.runStorageProofCheck();},0);
 })();
 </script>
+
+<style id="rk-login-settings-correction-v2">
+/* Keep the customer portal as the front page; preserve both customer-to-admin and Admin Login buttons. */
+#view-customer-portal button[onclick*="switchAppView('view-login')"],
+#loginRoleAdminBtn, #loginRoleVendorBtn, #adminGoogleLoginBtn { visibility:visible!important; opacity:1!important; }
+/* Legacy local password/security-key setup is obsolete while admin access uses Google Authentication. */
+#adminSecuritySettingsBox, #openSecuritySettingsBtn, #view-security-settings { display:none!important; }
+/* Settings remains available; only the obsolete security box above is removed from its grid. */
+#adminNavMenu button[onclick*="openAdminTab('tab-setting'"] { display:flex; visibility:visible; }
+</style>
 </body>
 </html>
