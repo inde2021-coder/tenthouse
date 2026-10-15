@@ -641,6 +641,25 @@ body.rk-desktop-version .app-view { min-height:100vh; }
 </style>
 
 <style id="rk-requested-customer-admin-fixes">
+/* Keep vendor navigation hidden in admin mode even when mobile CSS forces nav rows visible. */
+#view-admin-panel:not(.rk-vendor-mode) #vendorNavMenu { display:none!important; }
+/* Keep admin navigation unchanged; vendor menu appears only in vendor mode. */
+#view-admin-panel.rk-vendor-mode #adminNavMenu { display:none!important; }
+/* Dispatch item selector: give full item names enough horizontal room on mobile and desktop. */
+#dispatchItemSelect {
+  flex: 3 1 300px !important;
+  width: 100% !important;
+  min-width: min(280px, 100%) !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+#tab-dispatch #dispatchItemSelect option { white-space: normal; }
+@media (max-width: 600px) {
+  #tab-dispatch #dispatchItemSelect { flex: 1 1 100% !important; min-width: 100% !important; }
+  #tab-dispatch #dispatchItemQty { flex: 1 1 90px !important; }
+}
 /* Admin menu: hide vendor menu shortcuts from the admin navigation only. */
 #adminNavMenu button[onclick*="tab-vendor-reg"],
 #adminNavMenu button[onclick*="tab-vendor-list"],
@@ -1552,10 +1571,10 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                                 <label for="otpVerifyUrl">OTP सत्यापित करने का सुरक्षित Backend URL</label>
                                 <input type="url" id="otpVerifyUrl" class="form-control" placeholder="https://your-domain.com/api/otp/verify" autocomplete="url">
                                 <label style="display:flex;align-items:center;gap:10px;margin-top:12px;cursor:pointer;">
-                                    <input type="checkbox" id="customerOtpRequired" style="width:18px;height:18px;flex:0 0 auto;">
-                                    <span>ग्राहक बुकिंग के लिए वास्तविक OTP सत्यापन अनिवार्य करें</span>
+                                    <input type="checkbox" id="realCustomerOtpEnabled" style="width:18px;height:18px;flex:0 0 auto;">
+                                    <span><b>वास्तविक मोबाइल OTP चालू करें</b> (SMS/Backend से)</span>
                                 </label>
-                                <p class="config-note">सुझाव: पहले backend URL सेट करके टेस्ट करें। backend तैयार न हो तो OTP अनिवार्य न करें, वरना ग्राहक बुकिंग सबमिट नहीं कर पाएँगे।</p>
+                                <p class="config-note">चालू: OTP वास्तविक Backend से भेजा जाएगा; Request और Verify URL सही होने चाहिए। बंद: कोई SMS नहीं भेजा जाएगा, टेस्ट/डेमो OTP पॉपअप में दिखेगा। डेमो मोड वास्तविक मोबाइल सत्यापन नहीं है और इसे प्रोडक्शन सुरक्षा के लिए इस्तेमाल न करें।</p>
                             </div>
                         </div>
                         <div class="setting-box green whatsapp-cloud-settings">
@@ -1565,10 +1584,8 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                                 <input type="text" id="waCloudPhoneNumberId" class="form-control" placeholder="Meta Developers से Phone Number ID" autocomplete="off">
                                 <label for="waCloudBackendUrl">WhatsApp सुरक्षित Backend URL</label>
                                 <input type="url" id="waCloudBackendUrl" class="form-control" placeholder="https://your-domain.com/api/whatsapp/send" autocomplete="url">
-                                <label for="waCloudApiLink">WhatsApp API / Backend लिंक</label>
-                                <input type="url" id="waCloudApiLink" class="form-control" placeholder="https://your-backend.vercel.app/api/whatsapp/send" autocomplete="url">
                                 <p class="config-note">यह लिंक आपके सुरक्षित backend/API का होना चाहिए। Meta Access Token को HTML में न डालें।</p>
-                                <p class="config-note">Access Token और Webhook Verify Token यहाँ नहीं रखें। उन्हें Vercel के Environment Variables / सुरक्षित Backend में रखें। ये दोनों फ़ील्ड तभी काम करेंगे जब Backend API कॉन्फ़िगर हो।</p>
+                                <p class="config-note">Access Token और Webhook Verify Token यहाँ न रखें। उन्हें Vercel के Environment Variables / सुरक्षित Backend में रखें। नीचे दिया गया URL तभी काम करेगा जब उसी endpoint पर WhatsApp Cloud API भेजने वाला Backend route deployed हो।</p>
                             </div>
                         </div>
                         <div class="setting-box green">
@@ -1709,7 +1726,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
     </div>
     <div id="customerAdvanceOtpPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000000;align-items:center;justify-content:center;padding:18px;">
       <div style="width:100%;max-width:360px;background:#1e293b;border:1px solid #38bdf8;border-radius:16px;padding:22px;text-align:center;box-shadow:0 15px 40px #0008;">
-        <h2 style="justify-content:center;border:0;margin-bottom:10px;">🔐 OTP सेवा सेटअप आवश्यक</h2><p style="font-size:13px;color:#cbd5e1;">वास्तविक SMS/WhatsApp OTP के लिए सुरक्षित backend endpoint जरूरी है।</p>
+        <h2 id="customerAdvanceOtpPopupTitle" style="justify-content:center;border:0;margin-bottom:10px;">🔐 डेमो OTP</h2><p id="customerAdvanceOtpPopupMessage" style="font-size:13px;color:#cbd5e1;">यह डेमो OTP है; SMS नहीं भेजा गया।</p>
         <div id="customerAdvanceOtpPopupCode" style="font-size:30px;letter-spacing:8px;font-weight:bold;color:#fcd34d;padding:16px;">------</div>
         <button type="button" class="btn-primary" onclick="window.closeCustomerAdvanceOtpPopup()">OTP भरने के लिए वापस जाएँ</button>
       </div>
@@ -2033,7 +2050,7 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             try { publicServiceConfig = JSON.parse(localStorage.getItem('publicServiceConfig') || '{}') || {}; } catch (_) {}
             const configFields = ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'];
             configFields.forEach(id => { const el=document.getElementById(id); if(el) el.value=localStorage.getItem(id) || publicServiceConfig[id] || (id==='paymentGatewayProvider'?'none':(id==='waCloudBackendUrl'?'https://tenthouse.vercel.app/api/send':'')); });
-            const otpRequiredEl=document.getElementById('customerOtpRequired'); if(otpRequiredEl) { otpRequiredEl.disabled=false; otpRequiredEl.checked=(localStorage.getItem('customerOtpRequired')==='true'); }
+            const realOtpEl=document.getElementById('realCustomerOtpEnabled'); if(realOtpEl) realOtpEl.checked=(localStorage.getItem('realCustomerOtpEnabled')==='true');
             const modeEl=document.getElementById('systemControlMode'); if(modeEl) modeEl.value=localStorage.getItem('systemControlMode') || 'hybrid';
             const cloudEl=document.getElementById('hybridAutoCloudSync'); if(cloudEl) cloudEl.checked=localStorage.getItem('hybridAutoCloudSync') !== 'false';
             const refreshEl=document.getElementById('hybridAutoRefresh'); if(refreshEl) refreshEl.checked=localStorage.getItem('hybridAutoRefresh') !== 'false';
@@ -3309,33 +3326,62 @@ body.rk-desktop-version .app-view { min-height:100vh; }
         window.requestCustomerAdvanceOtp = async function() {
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             if (!/^\d{10}$/.test(mobile)) { alert('OTP के लिए 10 अंकों का मोबाइल नंबर दर्ज करें।'); return; }
-            const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
-            const url = String(localStorage.getItem('otpRequestUrl') || sharedConfig.otpRequestUrl || '').trim();
+            const otpModeConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
+            const realOtpEnabled = localStorage.getItem('realCustomerOtpEnabled') === 'true' || otpModeConfig.realCustomerOtpEnabled === true;
             customerAdvanceOtp = null; customerAdvanceOtpVerified = false; customerOtpRequestId = null; customerOtpVerifiedMobile = null;
             const status = document.getElementById('custAdvanceOtpStatus');
-            if (!url) { if(status) status.textContent='OTP backend अभी सेट नहीं है। Settings → वास्तविक ग्राहक OTP सेवा में HTTPS Request URL सेव करें। कोई SMS नहीं भेजा गया।'; alert('OTP backend URL सेट नहीं है। एडमिन लॉगिन करें → Settings → वास्तविक ग्राहक OTP सेवा में HTTPS Request URL और Verify URL सेव करें। अभी कोई SMS नहीं भेजा गया।'); return; }
-            if(status) status.textContent='OTP भेजने का अनुरोध किया जा रहा है…';
+            const otpArea=document.getElementById('custOtpEntryArea');
+            if (!realOtpEnabled) {
+                // DEMO ONLY: the code is intentionally shown on-screen, not sent to a phone.
+                customerAdvanceOtp = String(Math.floor(100000 + Math.random() * 900000));
+                customerOtpRequestId = 'demo-' + Date.now();
+                if(otpArea) otpArea.style.display='block';
+                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) verifyBtn.textContent='🔄 नया डेमो OTP दिखाएँ';
+                const title=document.getElementById('customerAdvanceOtpPopupTitle'); if(title) title.textContent='🧪 डेमो OTP (SMS नहीं भेजा गया)';
+                const message=document.getElementById('customerAdvanceOtpPopupMessage'); if(message) message.textContent='वास्तविक मोबाइल सत्यापन बंद है। यह कोड केवल परीक्षण के लिए है।';
+                const code=document.getElementById('customerAdvanceOtpPopupCode'); if(code) code.textContent=customerAdvanceOtp;
+                const popup=document.getElementById('customerAdvanceOtpPopup'); if(popup) popup.style.display='flex';
+                if(status) status.textContent='डेमो मोड: OTP पॉपअप में दिखाया गया है; कोई SMS नहीं भेजा गया।';
+                document.getElementById('custAdvanceOtpInput')?.focus();
+                return;
+            }
+            const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
+            const url = String(localStorage.getItem('otpRequestUrl') || sharedConfig.otpRequestUrl || '').trim();
+            if (!url) { if(status) status.textContent='वास्तविक OTP चालू है, लेकिन Request URL सेट नहीं है। Settings में HTTPS URL सेव करें।'; alert('वास्तविक OTP चालू है, लेकिन OTP Request URL सेट नहीं है।'); return; }
+            if(status) status.textContent='वास्तविक OTP भेजने का अनुरोध किया जा रहा है…';
             try {
                 const data = await postConfiguredJson(url, { mobile, purpose:'customer_booking', bookingId:document.getElementById('autoBookingId')?.value || '' });
                 customerOtpRequestId = String(data.requestId || data.otpRequestId || '');
                 if (!customerOtpRequestId) throw new Error('Backend ने requestId नहीं लौटाया; OTP अनुरोध सुरक्षित रूप से पूरा नहीं माना गया।');
-                const otpArea=document.getElementById('custOtpEntryArea'); if(otpArea) otpArea.style.display='block';
-                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) verifyBtn.textContent='🔄 OTP दोबारा भेजें';
-                if(status) status.textContent='OTP भेजने का अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।';
+                if(otpArea) otpArea.style.display='block';
+                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) verifyBtn.textContent='🔄 वास्तविक OTP दोबारा भेजें';
+                if(status) status.textContent='वास्तविक OTP भेजने का अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।';
                 document.getElementById('custAdvanceOtpInput')?.focus();
-                alert('OTP अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।');
+                alert('OTP भेजने का अनुरोध स्वीकार हुआ। SMS में आया OTP नीचे दर्ज करें।');
             } catch (err) { if(status) status.textContent='OTP नहीं भेजा जा सका: '+(err.message||'Backend त्रुटि'); alert('OTP अनुरोध विफल: '+(err.message||'Backend त्रुटि')); }
         };
         window.closeCustomerAdvanceOtpPopup = function() { const p=document.getElementById('customerAdvanceOtpPopup'); if(p) p.style.display='none'; };
         window.verifyCustomerAdvanceOtp = async function() {
             const mobile = String(document.getElementById('custMobile')?.value || '').trim();
             const otp = String(document.getElementById('custAdvanceOtpInput')?.value || '').trim();
-            const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
-            const url = String(localStorage.getItem('otpVerifyUrl') || sharedConfig.otpVerifyUrl || '').trim();
             const status = document.getElementById('custAdvanceOtpStatus');
             customerAdvanceOtpVerified = false;
-            if (!customerOtpRequestId) { alert('पहले OTP भेजने का अनुरोध करें।'); return; }
-            if (!/^\d{4,8}$/.test(otp)) { alert('SMS में आया सही OTP दर्ज करें।'); return; }
+            if (!customerOtpRequestId) { alert('पहले OTP भेजें/दिखाएँ।'); return; }
+            if (!/^\d{4,8}$/.test(otp)) { alert('सही OTP दर्ज करें।'); return; }
+            const otpModeConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
+            const realOtpEnabledForVerify = localStorage.getItem('realCustomerOtpEnabled') === 'true' || otpModeConfig.realCustomerOtpEnabled === true;
+            if (!realOtpEnabledForVerify) {
+                if (otp !== String(customerAdvanceOtp || '')) { if(status) status.textContent='डेमो OTP गलत है। पॉपअप वाला कोड दर्ज करें।'; alert('डेमो OTP गलत है।'); return; }
+                customerAdvanceOtpVerified = true;
+                customerOtpVerifiedMobile = mobile;
+                const verifyBtn=document.getElementById('custMobileVerifyBtn'); if(verifyBtn) { verifyBtn.textContent='✅ डेमो OTP मिल गया'; verifyBtn.disabled=false; }
+                if(status) status.textContent='✅ डेमो OTP सही है। वास्तविक मोबाइल/SMS सत्यापन नहीं हुआ।';
+                window.closeCustomerAdvanceOtpPopup();
+                alert('डेमो OTP सही है। ध्यान दें: मोबाइल नंबर वास्तविक रूप से सत्यापित नहीं हुआ।');
+                return;
+            }
+            const sharedConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
+            const url = String(localStorage.getItem('otpVerifyUrl') || sharedConfig.otpVerifyUrl || '').trim();
             if (!url) { if(status) status.textContent='OTP Verify URL सेट नहीं है; OTP सत्यापित नहीं हुआ।'; alert('Settings में OTP Verify URL जोड़ें।'); return; }
             try {
                 const data = await postConfiguredJson(url, { mobile, otp, requestId:customerOtpRequestId, purpose:'customer_booking' });
@@ -3389,8 +3435,6 @@ body.rk-desktop-version .app-view { min-height:100vh; }
                 const utr=String(document.getElementById('custAdvanceUtr')?.value||'').trim();
                 if(!utr) { alert('ऑनलाइन एडवांस की बुकिंग के लिए UTR / Transaction ID अनिवार्य है। भुगतान के बाद UTR दर्ज करें।'); document.getElementById('custAdvanceUtr')?.focus(); return null; }
                 if(!/^[A-Za-z0-9-]{8,40}$/.test(utr)) { alert('UTR / Transaction ID 8 से 40 अक्षरों/अंकों का होना चाहिए। स्पेस या विशेष चिन्ह न डालें।'); document.getElementById('custAdvanceUtr')?.focus(); return null; }
-                // Customer booking does not require OTP; phone number is collected for contact only.
-                localStorage.setItem('customerOtpRequired', 'false');
                 return {mode,amount,upi:gatewayPending?.orderId?'':upi,mobile,utr,status:'Pending Verification',otpVerified:customerAdvanceOtpVerified,paymentVerified:false,gatewayOrderId:gatewayPending?.orderId||'',gatewayProvider:localStorage.getItem('paymentGatewayProvider')||'none'};
             }
             if(!Number.isFinite(amount)||amount<0) { alert('नकद एडवांस राशि जाँचें।'); return null; }
@@ -3409,8 +3453,17 @@ body.rk-desktop-version .app-view { min-height:100vh; }
             if(!/^\d{10}$/.test(mobile)) { alert('❌ कृपया ठीक 10 अंकों का वैध मोबाइल नंबर दर्ज करें!'); return; }
             if (!dispDate || !retDate) { alert('❌ कृपया डिस्पैच और रिटर्न दोनों तारीखें चुनें!'); return; }
             if (dispDate < localDateString() || retDate < dispDate) { alert('❌ तारीख जाँचें: डिस्पैच आज या आगे की हो और रिटर्न तारीख डिस्पैच के बराबर या बाद की हो!'); return; }
-            // Customer booking is intentionally allowed without SMS OTP.
-            localStorage.setItem('customerOtpRequired', 'false');
+            // Booking requires the OTP flow to be completed in either demo or real mode.
+            // Demo mode accepts only the code shown in the popup; real mode requires backend verification.
+            const bookingOtpModeConfig = (()=>{try{return JSON.parse(localStorage.getItem('publicServiceConfig')||'{}')||{};}catch(_){return {};}})();
+            const realOtpEnabledForBooking = localStorage.getItem('realCustomerOtpEnabled') === 'true' || bookingOtpModeConfig.realCustomerOtpEnabled === true;
+            if (!customerAdvanceOtpVerified || customerOtpVerifiedMobile !== mobile) {
+                alert(realOtpEnabledForBooking
+                    ? 'बुकिंग सबमिट करने से पहले वास्तविक OTP भेजें और सत्यापित करें।'
+                    : 'बुकिंग सबमिट करने से पहले OTP भेजें, पॉपअप में दिखा डेमो OTP दर्ज करें और सत्यापित करें।');
+                document.getElementById('custMobileVerifyBtn')?.scrollIntoView({behavior:'smooth', block:'center'});
+                return;
+            }
             const advancePayment = getCustomerAdvanceData();
             if (!advancePayment) return;
             pendingBookingDataObject = { 
@@ -5450,8 +5503,9 @@ label,.config-note,.ai-assistant-heading p{color:var(--rk-muted)!important}
                 localStorage.setItem('settingTermsText', document.getElementById('settingTermsText').value);
                 const publicServiceConfig = {};
                 ['paymentGatewayProvider','paymentGatewayCreateUrl','paymentGatewayStatusUrl','paymentGatewayPublicKey','otpRequestUrl','otpVerifyUrl','waCloudPhoneNumberId','waCloudBackendUrl'].forEach(id => { const el=document.getElementById(id); if(el) { const value=el.value.trim(); localStorage.setItem(id,value); publicServiceConfig[id]=value; } });
-                publicServiceConfig.customerOtpRequired = false;
-                localStorage.setItem('customerOtpRequired', 'false');
+                const realOtpEnabled = document.getElementById('realCustomerOtpEnabled')?.checked === true;
+                localStorage.setItem('realCustomerOtpEnabled', realOtpEnabled ? 'true' : 'false');
+                publicServiceConfig.realCustomerOtpEnabled = realOtpEnabled;
                 if (!saveDataToStorage('publicServiceConfig', publicServiceConfig)) { alert('सेवा सेटिंग्स लोकल स्टोरेज में सेव नहीं हुईं।'); return; }
                 loadSavedSettings();
                 alert('ज़रूरी सेटिंग्स सेव हो गई हैं। Firebase कॉन्फ़िगरेशन कोड में पहले से सेट है; उसे बदलने के लिए इस पेज की सेटिंग्स की आवश्यकता नहीं है।');
