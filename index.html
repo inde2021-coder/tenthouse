@@ -1776,15 +1776,17 @@ body.rk-desktop-version .app-view { min-height:100vh; }
   // must not silently redirect Google sign-in to a different Firebase project.
   const savedFbApiKey = 'AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8';
   const savedFbCollectionName = localStorage.getItem('fbCollectionName') || 'appData';
-  const savedFbProjectId = 'radhe-krishna-online';
+  const savedFbProjectId = 'radhe-krishna-online-booking';
   const firebaseConfig = {
-    apiKey: savedFbApiKey,
-    authDomain: `${savedFbProjectId}.firebaseapp.com`,
-    projectId: savedFbProjectId,
-    storageBucket: 'radhe-krishna-online.firebasestorage.app',
-    messagingSenderId: '122262862724',
-    appId: '1:122262862724:web:a7c33aa15c81ff00a1bbd1',
-    measurementId: 'G-XM94XSHMJX',
+  apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I",
+  authDomain: "radhe-krishna-online-booking.firebaseapp.com",
+  databaseURL: "https://radhe-krishna-online-booking-default-rtdb.firebaseio.com",
+  projectId: "radhe-krishna-online-booking",
+  storageBucket: "radhe-krishna-online-booking.firebasestorage.app",
+  messagingSenderId: "1010400653483",
+  appId: "1:1010400653483:web:fb2a78ec593b3c2888c7ee",
+  measurementId: "G-8FC58T5YNF"
+
   };
   // Initialize Firebase once; Firestore sync uses the configured project ID.
   if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
