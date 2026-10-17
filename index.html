@@ -885,6 +885,16 @@ button:active,.btn:active{transform:translateY(1px);box-shadow:inset 0 4px 10px 
 @media(prefers-reduced-motion:reduce){button,.btn{transition:none!important}}
 </style>
 
+
+<style id="rk-hide-code-through-glass-fix">
+/* FIX: stop page text/underlying content bleeding through frosted-glass panels */
+html, body { background: #eaf6fb !important; }
+.app-view { background: linear-gradient(180deg,#eaf6fb 0%,#dcecf6 100%) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.top-header, .card-box, .setting-box, .admin-tab-pane, .stat-card, .cust-detail-card, .customer-stock-card, .modal-content, .customer-payment-card, .ai-assistant-shell, .table-container, .table-responsive, .content-area, .setting-content-body, .rk-nav-group { background-color: #f7fbff !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.top-header { background: #f4faff !important; }
+/* Source-code elements must never appear as visible page content */
+body pre, body code, body xmp, body plaintext { display: none !important; }
+</style>
 </head>
 <body class="rk-mobile-version">
     <script id="rk-auto-device-mode">
