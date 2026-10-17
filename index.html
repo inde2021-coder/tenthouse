@@ -1163,8 +1163,9 @@ button:active,.btn:active{transform:translateY(1px);box-shadow:inset 0 4px 10px 
                             <p class="customer-field-help" id="customerUpiSourceNote">QR कोड सेटिंग्स में सेव किए गए UPI ID से बनेगा।</p>
                         </div>
                         <div id="custAdvanceQrWrap" class="customer-qr-result" style="display:none;">
-                            <img id="custAdvanceQrImg" alt="एडवांस पेमेंट के लिए UPI QR कोड" style="width:200px;height:200px;max-width:100%;object-fit:contain;">
+                            <img id="custAdvanceQrImg" onclick="window.openQrPopupFromElement('custAdvanceQrImg','एडवांस पेमेंट QR',document.getElementById('custAdvanceQrText')?.textContent||'')" alt="एडवांस पेमेंट के लिए UPI QR कोड" style="width:200px;height:200px;max-width:100%;object-fit:contain;">
                             <p id="custAdvanceQrText" class="customer-qr-caption"></p>
+                            <button type="button" class="btn-primary" onclick="window.openQrPopupFromElement('custAdvanceQrImg','एडवांस पेमेंट QR',document.getElementById('custAdvanceQrText')?.textContent||'')">⤢ बड़ा QR खोलें</button>
                             <p class="customer-qr-instruction">अपने UPI ऐप से QR स्कैन करके भुगतान करें।</p>
                         </div>
                         <div id="customerGatewayOption" class="customer-gateway-option" style="display:none;">
@@ -1814,7 +1815,7 @@ button:active,.btn:active{transform:translateY(1px);box-shadow:inset 0 4px 10px 
                                 <input type="text" id="settingHostingUrl" class="form-control" placeholder="https://yourdomain.com" oninput="window.generateHostingQrCode()" autocomplete="off">
                                 <div style="text-align: center; margin-top: 15px;">
                                     <div id="hostingQrBox" style="padding: 10px; background: white; display: inline-block; border-radius: 8px; display: none;">
-                                        <img id="hostingQrImg" style="width: 130px; height: 130px;" alt="Hosting QR">
+                                        <img id="hostingQrImg" onclick="window.openQrPopupFromElement('hostingQrImg','वेबसाइट QR कोड',document.getElementById('settingHostingUrl')?.value||'')" style="width: 130px; height: 130px;cursor:zoom-in;" alt="Hosting QR">
                                     </div>
                                     <button type="button" onclick="window.shareHostingLink()" class="btn-primary" style="margin-top: 10px; padding: 10px; display: none;" id="shareLinkBtn">📤 लिंक शेयर करें</button>
                                 </div>
@@ -2148,7 +2149,7 @@ button:active,.btn:active{transform:translateY(1px);box-shadow:inset 0 4px 10px 
                 if (!win) { alert('❌ प्रिंट विंडो ब्लॉक हो गई। ब्राउज़र में pop-ups की अनुमति दें।'); return; }
                 win.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Print Preview - Radhe Krishna ERP</title><style>@page{size:A4;margin:10mm}*{box-sizing:border-box}html,body{font-family:"Noto Sans Devanagari","Nirmala UI",Mangal,Arial,sans-serif;color:#111;background:#fff;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{padding:4px;font-size:11pt}img{max-width:100%;height:auto;object-fit:contain}table{width:100%;border-collapse:collapse;page-break-inside:auto;table-layout:auto}tr{page-break-inside:avoid;page-break-after:auto}thead{display:table-header-group}tfoot{display:table-footer-group}th,td{overflow-wrap:anywhere;word-break:normal}h1,h2,h3{page-break-after:avoid}.print-stamp{display:block;max-width:130px;max-height:90px;object-fit:contain}.barcode,svg[id*=barcode],canvas[id*=barcode]{max-width:100%;height:auto;image-rendering:pixelated}@media print{body{padding:0}.no-print,.screen-only{display:none!important}.print-stamp{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>`);
                 win.document.write(modalBody.innerHTML);
-                win.document.write('
+                win.document.write(`
 <style id="rk-unified-soft-glass-background-cleanup">
 /* Unified soft-glass cleanup: remove muddy/strong fills while preserving structure and behavior. */
 :root{--rk-clean-glass:rgba(255,255,255,.58);--rk-clean-glass-strong:rgba(255,255,255,.78);--rk-clean-line:rgba(255,255,255,.92);--rk-clean-ink:#185b91;--rk-clean-shadow:0 8px 24px rgba(45,111,166,.10),inset 0 1px 0 rgba(255,255,255,.9)}
@@ -2178,7 +2179,38 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
 @media print{html,body,.app-view,.card,.panel,.dashboard-card,.table-container{background:#fff!important;background-image:none!important;box-shadow:none!important;color:#111!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
 </style>
 
-</body></html>');
+
+<style id="professionalQrPopupStyles">
+#professionalQrPopup{position:fixed;inset:0;z-index:1000000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(20,42,68,.48);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+#professionalQrPopup .qr-popup-card{width:min(94vw,430px);background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(226,242,255,.96));border:1px solid rgba(255,255,255,.95);border-radius:26px;box-shadow:0 28px 80px rgba(23,68,112,.3),inset 0 1px 0 #fff;padding:22px;color:#17324d;text-align:center;position:relative}
+#professionalQrPopup .qr-popup-title{font-size:21px;font-weight:800;color:#1765a8;margin:0 34px 8px}
+#professionalQrPopup .qr-popup-subtitle{font-size:14px;color:#4a6680;overflow-wrap:anywhere;margin:0 0 14px}
+#professionalQrPopup .qr-popup-image-wrap{background:#fff;padding:14px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 8px rgba(28,68,106,.12);border:1px solid #dbeaf7;max-width:100%}
+#professionalQrPopup .qr-popup-image{display:block;width:min(68vw,290px);height:min(68vw,290px);object-fit:contain;image-rendering:pixelated}
+#professionalQrPopup .qr-popup-actions{display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap}
+#professionalQrPopup .qr-popup-actions button{min-width:120px;border-radius:13px;border:1px solid rgba(255,255,255,.9);padding:11px 16px;font-weight:800;cursor:pointer;background:linear-gradient(145deg,#55b7f5,#247bd0);color:#fff;box-shadow:0 5px 0 #1d5d9b,0 10px 20px rgba(37,117,190,.25)}
+#professionalQrPopup .qr-popup-actions button.qr-close{background:linear-gradient(145deg,#fff,#e8f2fa);color:#28506f;box-shadow:0 5px 0 #c8d8e6,0 10px 20px rgba(37,75,110,.12)}
+#professionalQrPopup .qr-popup-close{position:absolute;right:13px;top:11px;width:34px;height:34px;border:0;border-radius:50%;background:#e5f1fb;color:#28506f;font-size:22px;cursor:pointer}
+@media print{#professionalQrPopup{display:none!important}}
+</style>
+<div id="professionalQrPopup" role="dialog" aria-modal="true" aria-labelledby="professionalQrPopupTitle" onclick="if(event.target===this)window.closeProfessionalQrPopup()">
+ <div class="qr-popup-card"><button type="button" class="qr-popup-close" aria-label="बंद करें" onclick="window.closeProfessionalQrPopup()">×</button>
+  <h2 id="professionalQrPopupTitle" class="qr-popup-title">पेमेंट QR कोड</h2><p id="professionalQrPopupSubtitle" class="qr-popup-subtitle"></p>
+  <div class="qr-popup-image-wrap"><img id="professionalQrPopupImage" class="qr-popup-image" alt="स्कैन करने के लिए QR कोड"></div>
+  <div class="qr-popup-actions"><button type="button" onclick="window.printProfessionalQrPopup()">प्रिंट करें</button><button type="button" class="qr-close" onclick="window.closeProfessionalQrPopup()">बंद करें</button></div>
+ </div>
+</div>
+<script>
+(function(){
+ window.openProfessionalQrPopup=function(src,title,subtitle){const modal=document.getElementById('professionalQrPopup'),img=document.getElementById('professionalQrPopupImage');if(!modal||!img||!src)return;img.src=src;document.getElementById('professionalQrPopupTitle').textContent=title||'QR कोड';document.getElementById('professionalQrPopupSubtitle').textContent=subtitle||'';modal.style.display='flex';document.body.style.overflow='hidden';};
+ window.openQrPopupFromElement=function(imgId,title,subtitle){const img=document.getElementById(imgId);if(img&&img.src&&img.getAttribute('src'))window.openProfessionalQrPopup(img.src,title,subtitle);};
+ window.closeProfessionalQrPopup=function(){const modal=document.getElementById('professionalQrPopup');if(modal)modal.style.display='none';document.body.style.overflow='';};
+ window.printProfessionalQrPopup=function(){const img=document.getElementById('professionalQrPopupImage'),title=document.getElementById('professionalQrPopupTitle')?.textContent||'QR कोड',sub=document.getElementById('professionalQrPopupSubtitle')?.textContent||'';if(!img||!img.src)return;const w=window.open('','_blank','width=520,height=700');if(!w)return;w.document.write('<!doctype html><html lang="hi"><head><meta charset="utf-8"><title>'+title.replace(/[<>]/g,'')+'</title><style>body{font-family:Arial,"Noto Sans Devanagari",sans-serif;text-align:center;padding:28px;color:#18324b}img{width:300px;height:300px;object-fit:contain;padding:12px;background:#fff;border:1px solid #ddd;border-radius:14px}p{overflow-wrap:anywhere}</style></head><body><h2>'+title.replace(/[<>]/g,'')+'</h2><p>'+sub.replace(/[<>]/g,'')+'</p><img src="'+img.src+'" onload="setTimeout(()=>window.print(),300)"></body></html>');w.document.close();};
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')window.closeProfessionalQrPopup();});
+})();
+</script>
+
+</body></html>`);
                 win.document.close();
                 win.focus();
                 const waitForImages = () => Promise.all(Array.from(win.document.images).map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.onload=resolve; img.onerror=resolve; setTimeout(resolve,2500); })));
@@ -3112,6 +3144,7 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
             document.getElementById('upiQrImg').src = qrApi;
             document.getElementById('upiIdDisplay').innerText = `UPI ID: ${upiNo} | Amt: ₹${amt}`;
             document.getElementById('qrCodeContainer').style.display = 'block';
+            window.openProfessionalQrPopup(qrApi, 'बुकिंग भुगतान QR', `₹${amt.toFixed(2)} · UPI ID: ${upiNo}`);
         }
         window.generateOnlineQRCode = generateOnlineQRCode;
 
@@ -3252,11 +3285,30 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
             const today = localDateString();
             const dispatch = document.getElementById('dispatchDate');
             const ret = document.getElementById('returnDate');
-            if (dispatch) dispatch.min = today;
-            if (ret) ret.min = dispatch && dispatch.value ? dispatch.value : today;
-            if (dispatch && ret && !dispatch.dataset.returnMinBound) {
-                dispatch.addEventListener('change', () => { ret.min = dispatch.value || today; if (ret.value && dispatch.value && ret.value < dispatch.value) ret.value = dispatch.value; });
+            if (!dispatch || !ret) return;
+
+            // Dispatch must be today or a future date. Return must be on/after dispatch.
+            dispatch.min = today;
+            if (dispatch.value && dispatch.value < today) dispatch.value = today;
+
+            const syncReturnDateLimits = () => {
+                const dispatchValue = dispatch.value;
+                ret.min = dispatchValue || today;
+                ret.disabled = !dispatchValue;
+                ret.title = dispatchValue ? 'वापसी की तारीख डिस्पैच की तारीख या उसके बाद चुनें' : 'पहले डिस्पैच की तारीख चुनें';
+                if (ret.value && ret.value < ret.min) ret.value = ret.min;
+            };
+            syncReturnDateLimits();
+            if (!dispatch.dataset.returnMinBound) {
+                dispatch.addEventListener('change', syncReturnDateLimits);
                 dispatch.dataset.returnMinBound = '1';
+            }
+            if (!ret.dataset.minDateBound) {
+                ret.addEventListener('change', () => {
+                    syncReturnDateLimits();
+                    if (ret.value && dispatch.value && ret.value < dispatch.value) ret.value = dispatch.value;
+                });
+                ret.dataset.minDateBound = '1';
             }
         }
 
@@ -3599,6 +3651,7 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
             let mobile = document.getElementById('custMobile').value.trim();
             let func = document.getElementById('functionType').value;
             let address = document.getElementById('custAddress').value.trim();
+            setMinDatesForBooking();
             let dispDate = document.getElementById('dispatchDate').value;
             let retDate = document.getElementById('returnDate').value;
             if(!name || !mobile || cartItemsList.length === 0) { alert('❌ कृपया नाम, मोबाइल और कम से कम एक आइटम जोड़ें!'); return; }
@@ -4399,6 +4452,7 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
                 let qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(upiLink)}`;
                 document.getElementById('billUpiQrImg').src = qrApi;
                 document.getElementById('billUpiIdText').innerText = `UPI ID: ${upiNo} | Amt: ₹${due}`;
+                window.openProfessionalQrPopup(qrApi, 'बिल भुगतान QR', `₹${Number(due).toFixed(2)} · UPI ID: ${upiNo}`);
             } else {
                 qrBox.style.display = 'none';
             }
@@ -6085,7 +6139,7 @@ img,canvas,video{max-width:100%}
 (function(){
  const launcher=document.getElementById('rkJarvisLauncher'),panel=document.getElementById('rkJarvisPanel'),output=document.getElementById('rkJarvisOutput');if(!launcher||!panel||!output)return;
  let busy=false,pending=null;
- function speak(t){try{if(!('speechSynthesis'in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(e){}}
+ function speak(t){try{if(!('speechSynthesis'in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang='hi-IN';u.volume=1;u.rate=0.9;u.pitch=1.2;const voices=window.speechSynthesis.getVoices();const hi=voices.find(v=>/^hi(-|_)?IN$/i.test(v.lang)&&/female|woman|hindi/i.test(v.name))||voices.find(v=>/^hi(-|_)?IN$/i.test(v.lang));if(hi)u.voice=hi;window.speechSynthesis.speak(u);}catch(e){}}
  function reply(t,voice){output.textContent=t;panel.style.display='block';if(voice!==false)speak(t);}
  async function getToken(){try{const auth=window.firebase&&firebase.auth?firebase.auth():null;const user=auth&&auth.currentUser;if(user)return await user.getIdToken();}catch(_){}return '';}
  async function sendMessage(heard){
@@ -6155,6 +6209,37 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
 @media(max-width:768px){.card,.panel,.form-card,.dashboard-card,.stat-card,.summary-card,.table-container,.table-responsive,.setting-box,.customer-card,.vendor-card{box-shadow:0 5px 16px rgba(45,111,166,.08),inset 0 1px 0 rgba(255,255,255,.9)!important}}
 @media print{html,body,.app-view,.card,.panel,.dashboard-card,.table-container{background:#fff!important;background-image:none!important;box-shadow:none!important;color:#111!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
 </style>
+
+
+<style id="professionalQrPopupStyles">
+#professionalQrPopup{position:fixed;inset:0;z-index:1000000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(20,42,68,.48);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+#professionalQrPopup .qr-popup-card{width:min(94vw,430px);background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(226,242,255,.96));border:1px solid rgba(255,255,255,.95);border-radius:26px;box-shadow:0 28px 80px rgba(23,68,112,.3),inset 0 1px 0 #fff;padding:22px;color:#17324d;text-align:center;position:relative}
+#professionalQrPopup .qr-popup-title{font-size:21px;font-weight:800;color:#1765a8;margin:0 34px 8px}
+#professionalQrPopup .qr-popup-subtitle{font-size:14px;color:#4a6680;overflow-wrap:anywhere;margin:0 0 14px}
+#professionalQrPopup .qr-popup-image-wrap{background:#fff;padding:14px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 0 2px 8px rgba(28,68,106,.12);border:1px solid #dbeaf7;max-width:100%}
+#professionalQrPopup .qr-popup-image{display:block;width:min(68vw,290px);height:min(68vw,290px);object-fit:contain;image-rendering:pixelated}
+#professionalQrPopup .qr-popup-actions{display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap}
+#professionalQrPopup .qr-popup-actions button{min-width:120px;border-radius:13px;border:1px solid rgba(255,255,255,.9);padding:11px 16px;font-weight:800;cursor:pointer;background:linear-gradient(145deg,#55b7f5,#247bd0);color:#fff;box-shadow:0 5px 0 #1d5d9b,0 10px 20px rgba(37,117,190,.25)}
+#professionalQrPopup .qr-popup-actions button.qr-close{background:linear-gradient(145deg,#fff,#e8f2fa);color:#28506f;box-shadow:0 5px 0 #c8d8e6,0 10px 20px rgba(37,75,110,.12)}
+#professionalQrPopup .qr-popup-close{position:absolute;right:13px;top:11px;width:34px;height:34px;border:0;border-radius:50%;background:#e5f1fb;color:#28506f;font-size:22px;cursor:pointer}
+@media print{#professionalQrPopup{display:none!important}}
+</style>
+<div id="professionalQrPopup" role="dialog" aria-modal="true" aria-labelledby="professionalQrPopupTitle" onclick="if(event.target===this)window.closeProfessionalQrPopup()">
+ <div class="qr-popup-card"><button type="button" class="qr-popup-close" aria-label="बंद करें" onclick="window.closeProfessionalQrPopup()">×</button>
+  <h2 id="professionalQrPopupTitle" class="qr-popup-title">पेमेंट QR कोड</h2><p id="professionalQrPopupSubtitle" class="qr-popup-subtitle"></p>
+  <div class="qr-popup-image-wrap"><img id="professionalQrPopupImage" class="qr-popup-image" alt="स्कैन करने के लिए QR कोड"></div>
+  <div class="qr-popup-actions"><button type="button" onclick="window.printProfessionalQrPopup()">प्रिंट करें</button><button type="button" class="qr-close" onclick="window.closeProfessionalQrPopup()">बंद करें</button></div>
+ </div>
+</div>
+<script>
+(function(){
+ window.openProfessionalQrPopup=function(src,title,subtitle){const modal=document.getElementById('professionalQrPopup'),img=document.getElementById('professionalQrPopupImage');if(!modal||!img||!src)return;img.src=src;document.getElementById('professionalQrPopupTitle').textContent=title||'QR कोड';document.getElementById('professionalQrPopupSubtitle').textContent=subtitle||'';modal.style.display='flex';document.body.style.overflow='hidden';};
+ window.openQrPopupFromElement=function(imgId,title,subtitle){const img=document.getElementById(imgId);if(img&&img.src&&img.getAttribute('src'))window.openProfessionalQrPopup(img.src,title,subtitle);};
+ window.closeProfessionalQrPopup=function(){const modal=document.getElementById('professionalQrPopup');if(modal)modal.style.display='none';document.body.style.overflow='';};
+ window.printProfessionalQrPopup=function(){const img=document.getElementById('professionalQrPopupImage'),title=document.getElementById('professionalQrPopupTitle')?.textContent||'QR कोड',sub=document.getElementById('professionalQrPopupSubtitle')?.textContent||'';if(!img||!img.src)return;const w=window.open('','_blank','width=520,height=700');if(!w)return;w.document.write('<!doctype html><html lang="hi"><head><meta charset="utf-8"><title>'+title.replace(/[<>]/g,'')+'</title><style>body{font-family:Arial,"Noto Sans Devanagari",sans-serif;text-align:center;padding:28px;color:#18324b}img{width:300px;height:300px;object-fit:contain;padding:12px;background:#fff;border:1px solid #ddd;border-radius:14px}p{overflow-wrap:anywhere}</style></head><body><h2>'+title.replace(/[<>]/g,'')+'</h2><p>'+sub.replace(/[<>]/g,'')+'</p><img src="'+img.src+'" onload="setTimeout(()=>window.print(),300)"></body></html>');w.document.close();};
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')window.closeProfessionalQrPopup();});
+})();
+</script>
 
 </body>
 </html>
