@@ -2208,7 +2208,7 @@ input:focus,select:focus,textarea:focus,.form-control:focus{background:rgba(255,
  window.printProfessionalQrPopup=function(){const img=document.getElementById('professionalQrPopupImage'),title=document.getElementById('professionalQrPopupTitle')?.textContent||'QR कोड',sub=document.getElementById('professionalQrPopupSubtitle')?.textContent||'';if(!img||!img.src)return;const w=window.open('','_blank','width=520,height=700');if(!w)return;w.document.write('<!doctype html><html lang="hi"><head><meta charset="utf-8"><title>'+title.replace(/[<>]/g,'')+'</title><style>body{font-family:Arial,"Noto Sans Devanagari",sans-serif;text-align:center;padding:28px;color:#18324b}img{width:300px;height:300px;object-fit:contain;padding:12px;background:#fff;border:1px solid #ddd;border-radius:14px}p{overflow-wrap:anywhere}</style></head><body><h2>'+title.replace(/[<>]/g,'')+'</h2><p>'+sub.replace(/[<>]/g,'')+'</p><img src="'+img.src+'" onload="setTimeout(()=>window.print(),300)"></body></html>');w.document.close();};
  document.addEventListener('keydown',e=>{if(e.key==='Escape')window.closeProfessionalQrPopup();});
 })();
-</script>
+<\/script>
 
 </body></html>`);
                 win.document.close();
@@ -6139,26 +6139,46 @@ img,canvas,video{max-width:100%}
 (function(){
  const launcher=document.getElementById('rkJarvisLauncher'),panel=document.getElementById('rkJarvisPanel'),output=document.getElementById('rkJarvisOutput');if(!launcher||!panel||!output)return;
  let busy=false,pending=null;
- function speak(t){try{if(!('speechSynthesis'in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang='hi-IN';u.volume=1;u.rate=0.9;u.pitch=1.2;const voices=window.speechSynthesis.getVoices();const hi=voices.find(v=>/^hi(-|_)?IN$/i.test(v.lang)&&/female|woman|hindi/i.test(v.name))||voices.find(v=>/^hi(-|_)?IN$/i.test(v.lang));if(hi)u.voice=hi;window.speechSynthesis.speak(u);}catch(e){}}
+ function speak(t){try{if(!('speechSynthesis'in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang='hi-IN';u.volume=1;u.rate=.88;u.pitch=1.22;const voices=window.speechSynthesis.getVoices();const hi=voices.find(v=>/^hi(-|_)?IN$/i.test(v.lang)&&/female|woman|hindi/i.test(v.name))||voices.find(v=>/^hi(-|_)?IN$/i.test(v.lang));if(hi)u.voice=hi;window.speechSynthesis.speak(u);}catch(e){}}
  function reply(t,voice){output.textContent=t;panel.style.display='block';if(voice!==false)speak(t);}
- async function getToken(){try{const auth=window.firebase&&firebase.auth?firebase.auth():null;const user=auth&&auth.currentUser;if(user)return await user.getIdToken();}catch(_){}return '';}
+ function role(){try{return typeof loggedInUserRole!=='undefined'?String(loggedInUserRole):'';}catch(e){return '';}}
+ function adminAuthorized(){try{if(role()!=='admin'||sessionStorage.getItem('vendorAuthenticated')==='true'||document.getElementById('view-admin-panel')?.classList.contains('rk-vendor-mode'))return false;const localOK=sessionStorage.getItem('localAdminAuthenticated')==='true';let firebaseOK=false;try{const auth=window.firebase&&firebase.auth?firebase.auth():null;const user=auth&&auth.currentUser;firebaseOK=!!user&&String(user.email||'').trim().toLowerCase()==='inde2021@gmail.com';if(firebaseOK&&!localOK)sessionStorage.setItem('localAdminAuthenticated','true');}catch(_){}return localOK||firebaseOK;}catch(e){return false;}}
+ function clean(t){return String(t||'').toLowerCase().replace(/[.,!?।]/g,' ').replace(/\s+/g,' ').trim();}
+ function localAdminCommand(raw){
+  if(!adminAuthorized())throw new Error('श्रद्धा एडमिन की पहचान तभी करेगी जब अधिकृत एडमिन लॉगिन सफल हो। “मैं एडमिन हूँ” बोलना अकेले सुरक्षा सत्यापन नहीं है। पहले एडमिन Google Login करें।');
+  const q=clean(raw);const routes=[
+   [/डैशबोर्ड|dashboard|मुख्य पेज/,'tab-dashboard','डैशबोर्ड खोल रही हूँ।'],[/स्टॉक|इन्वेंटरी|inventory|stock/,'tab-stock-list','स्टॉक पेज खोल रही हूँ।'],[/बुकिंग|booking/,'tab-booking-list','बुकिंग सूची खोल रही हूँ।'],[/नई बुकिंग|बुकिंग बनाओ|new booking/,'tab-new-booking','नई बुकिंग पेज खोल रही हूँ।'],[/डिस्पैच|dispatch|सामान भेज/,'tab-dispatch','डिस्पैच पेज खोल रही हूँ।'],[/रिटर्न|वापसी|return/,'tab-return','रिटर्न पेज खोल रही हूँ।'],[/बिलिंग|बिल बनाओ|billing|invoice/,'tab-bill','बिलिंग पेज खोल रही हूँ।'],[/वेंडर सूची|वेंडर लिस्ट|vendor list/,'tab-vendor-list','वेंडर सूची खोल रही हूँ।'],[/वेंडर जोड़|वेंडर रजिस्ट्रेशन|vendor registration/,'tab-vendor-reg','वेंडर रजिस्ट्रेशन खोल रही हूँ।'],[/खर्च|expense|व्यय/,'tab-expense','खर्च का पेज खोल रही हूँ।'],[/रिपोर्ट|financial report|वित्तीय रिपोर्ट/,'tab-financial-report','वित्तीय रिपोर्ट खोल रही हूँ।'],[/सेटिंग|settings/,'tab-setting','सेटिंग खोल रही हूँ।']
+  ];for(const [rx,id,msg] of routes){if(rx.test(q)){if(typeof window.openAdminTab!=='function')throw new Error('एडमिन पेज नेविगेशन फ़ंक्शन उपलब्ध नहीं है।');window.openAdminTab(id,document.querySelector(`#adminNavMenu [onclick*="${id}"]`)||null);return msg;}}
+  if(/कितनी बुकिंग|बुकिंग कितनी|booking count|बुकिंग गिन/.test(q)){const a=window.getDataFromStorage?.('bookingList')||window.getDataFromStorage?.('bookings')||[];return 'लोकल रिकॉर्ड में '+(Array.isArray(a)?a.length:0)+' बुकिंग मिलीं।';}
+  if(/स्टॉक कितना|कुल स्टॉक|stock count|कितने आइटम/.test(q)){const a=window.getDataFromStorage?.('stockList')||[];const qty=Array.isArray(a)?a.reduce((n,x)=>n+(Number(x.qty)||0),0):0;return 'लोकल स्टॉक में '+(Array.isArray(a)?a.length:0)+' प्रकार के आइटम और कुल '+qty+' पीस दर्ज हैं।';}
+  if(/आज की तारीख|आज तारीख|date today|समय क्या/.test(q))return 'आज '+new Date().toLocaleString('hi-IN',{dateStyle:'full',timeStyle:'short'})+' है।';
+  if(/मदद|help|क्या कर सकती/.test(q))return 'बिना API के मैं एडमिन लॉगिन के बाद उपलब्ध पेज खोल सकती हूँ और इस डिवाइस के लोकल बुकिंग व स्टॉक का सार बता सकती हूँ। नए रिकॉर्ड सेव करना, भुगतान या डेटा में बदलाव जैसे काम के लिए API सर्वर में सुरक्षित कार्य-हैंडलर चाहिए।';
+  return 'API उपलब्ध नहीं है। एडमिन लॉगिन के बाद मैं पेज खोलने और लोकल सार बताने में मदद कर सकती हूँ। इस कमांड के लिए API सर्वर या अलग सुरक्षित लोकल कार्य-हैंडलर चाहिए।';
+ }
+ async function getToken(){try{const auth=window.firebase&&firebase.auth?firebase.auth():null;const user=auth&&auth.currentUser;if(user&&adminAuthorized())return await user.getIdToken();}catch(_){}return '';}
  async function sendMessage(heard){
-  const token=await getToken();if(!token)throw new Error('पहले अपने अधिकृत एडमिन Google/Firebase खाते से लॉगिन करें।');
-  const body=pending&&/^(हाँ|हां|जी हाँ|हाँ पुष्टि|हां पुष्टि|हाँ कन्फर्म|हां कन्फर्म|पुष्टि|कन्फर्म|confirm|yes|कर दो|कर दीजिए|ठीक है)([,.!?। ]*)$/i.test(heard.trim())?{confirmAction:true,pendingAction:pending}:{message:heard};
-  if(pending&&!body.confirmAction&&/^(नहीं|नही|रद्द|cancel|मत करो|नहीं रद्द|नहीं करना)([,.!?। ]*)$/i.test(heard.trim())){pending=null;reply('ठीक है, कार्रवाई रद्द कर दी गई।');return;}
-  const r=await fetch('/api/jarvis',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});
-  const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||('सर्वर त्रुटि '+r.status));
-  if(data.pendingAction){pending=data.pendingAction;reply((data.confirmationText||'यह बदलाव करना है।')+' बोलें “हाँ, पुष्टि” करके पूरा करवाएँ या “रद्द” कहें।');return;}
-  if(body.confirmAction)pending=null;
-  reply(data.reply||'जवाब खाली मिला।');
+  if(!adminAuthorized())throw new Error('पहले अधिकृत एडमिन Google/Firebase लॉगिन पूरा करें। श्रद्धा केवल “मैं एडमिन हूँ” कहने पर एडमिन नहीं मानेगी।');
+  const token=await getToken();const endpoint=(localStorage.getItem('rkJarvisApiEndpoint')||'/api/jarvis').trim();
+  // API mode: use backend when an authenticated Firebase token exists and endpoint responds.
+  if(token){
+   const body=pending&&/^(हाँ|हां|जी हाँ|हाँ पुष्टि|हां पुष्टि|हाँ कन्फर्म|हां कन्फर्म|पुष्टि|कन्फर्म|confirm|yes|कर दो|कर दीजिए|ठीक है)$/.test(clean(heard))?{confirmAction:true,pendingAction:pending}:{message:heard};
+   if(pending&&/^(नहीं|नही|रद्द|cancel|मत करो|नहीं करना)$/.test(clean(heard))){pending=null;reply('ठीक है, कार्रवाई रद्द कर दी गई।');return;}
+   try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body)});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||('सर्वर त्रुटि '+r.status));if(data.pendingAction){pending=data.pendingAction;reply((data.confirmationText||'यह बदलाव करना है।')+' बोलें “हाँ, पुष्टि” करके पूरा करवाएँ या “रद्द” कहें।');return;}if(body.confirmAction)pending=null;reply(data.reply||'जवाब खाली मिला।');return;}catch(err){if(endpoint!='/api/jarvis'&&endpoint!=='')throw err;if(err&&/401|403|अनुमति|unauthor|forbidden/i.test(String(err.message||'')))throw err;console.warn('SHRADDHA API unavailable; falling back to local admin commands:',err);}
+  }
+  reply(localAdminCommand(heard));
  }
  launcher.addEventListener('click',()=>{
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){reply('Android Chrome में HTTPS साइट खोलें और माइक्रोफ़ोन अनुमति दें।');return;}if(busy)return;busy=true;launcher.textContent='⏳';reply(pending?'पुष्टि या रद्द बोलें…':'सुन रहा हूँ… हिंदी में अपना काम बताइए।',false);
+  if(!adminAuthorized()){reply('नमस्ते। मैं श्रद्धा हूँ। एडमिन की निजी जानकारी या काम के लिए पहले अधिकृत एडमिन Google Login पूरा करें। केवल आवाज़ से एडमिन पहचान नहीं की जा सकती।');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){reply('Android Chrome में HTTPS साइट खोलें और माइक्रोफ़ोन अनुमति दें।');return;}if(busy)return;busy=true;launcher.textContent='⏳';reply(pending?'पुष्टि या रद्द बोलें…':'नमस्ते एडमिन जी, श्रद्धा सुन रही हूँ। अपना काम बताइए।',false);
   const rec=new SR();rec.lang='hi-IN';rec.interimResults=false;rec.maxAlternatives=1;
-  rec.onresult=async e=>{const heard=e.results&&e.results[0]&&e.results[0][0]?String(e.results[0][0].transcript||'').trim():'';if(!heard){reply('आवाज़ समझ नहीं आई। फिर माइक दबाकर बोलें।');return;}reply('आपने कहा: '+heard+' — जाँच रहा हूँ…',false);try{await sendMessage(heard);}catch(err){reply('श्रद्धा की समस्या: '+(err&&err.message?err.message:'अज्ञात त्रुटि'));}};
-  rec.onerror=e=>reply('माइक समस्या: '+(e.error||'आवाज़ नहीं मिली')+'. माइक्रोफ़ोन अनुमति और HTTPS जाँचें।');rec.onend=()=>{busy=false;launcher.textContent='🎙️';};try{rec.start();}catch(e){busy=false;launcher.textContent='🎙️';reply('माइक शुरू नहीं हुआ। फिर प्रयास करें।');}
+  rec.onresult=async e=>{const heard=e.results&&e.results[0]&&e.results[0][0]?String(e.results[0][0].transcript||'').trim():'';if(!heard){reply('आवाज़ समझ नहीं आई। फिर माइक दबाकर बोलें।');return;}reply('आपने कहा: '+heard+' — जाँच रही हूँ…',false);try{await sendMessage(heard);}catch(err){reply('श्रद्धा: '+(err&&err.message?err.message:'अज्ञात त्रुटि'));}};
+  rec.onerror=e=>{busy=false;launcher.textContent='🎙️';reply('माइक समस्या: '+(e.error||'आवाज़ नहीं मिली')+'. माइक्रोफ़ोन अनुमति और HTTPS जाँचें।');};rec.onend=()=>{busy=false;launcher.textContent='🎙️';};try{rec.start();}catch(e){busy=false;launcher.textContent='🎙️';reply('माइक शुरू नहीं हुआ। फिर प्रयास करें।');}
  });
  window.RKJarvis={sendText:sendMessage,cancelPending:()=>{pending=null;reply('लंबित कार्रवाई रद्द कर दी गई।')}};
+ // Restore the admin session from Firebase only when the signed-in email matches the hard-coded allowlist.
+ try{const auth=window.firebase&&firebase.auth?firebase.auth():null;if(auth&&typeof auth.onAuthStateChanged==='function'){auth.onAuthStateChanged(user=>{if(user&&String(user.email||'').trim().toLowerCase()==='inde2021@gmail.com'&&role()==='admin'&&sessionStorage.getItem('vendorAuthenticated')!=='true'){sessionStorage.setItem('localAdminAuthenticated','true');}else if(!user&&sessionStorage.getItem('localAdminAuthenticated')==='true'&&sessionStorage.getItem('vendorAuthenticated')!=='true'){sessionStorage.removeItem('localAdminAuthenticated');}});}}catch(_){}
+ // Friendly welcome only after the app confirms a real authorized admin session.
+ document.addEventListener('click',function(e){const b=e.target&&e.target.closest&&e.target.closest('#adminGoogleLoginBtn');if(!b)return;setTimeout(()=>{if(adminAuthorized())reply('नमस्ते एडमिन जी, आपका स्वागत है। मैं श्रद्धा आपकी मदद के लिए तैयार हूँ।');},1200);});
 })();
 </script>
 
