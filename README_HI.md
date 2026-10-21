@@ -89,3 +89,18 @@ AI असिस्टेंट के लिए केवल HTML या APK प
 - AI जवाब देना चालू किया गया है, लेकिन यह अपने-आप Firebase रिकॉर्ड बदलने, स्क्रीन को बिना अनुमति पढ़ने, दूसरे ऐप नियंत्रित करने, SMS भेजने या कॉल करने का दावा नहीं करता। इन कामों के लिए अलग-अलग सत्यापित tools, Android permissions और provider integration चाहिए।
 - `ADMIN_API_TOKEN` को ब्राउज़र में रखना पूर्ण सुरक्षा नहीं है; यह ऐप के local storage में होता है। सार्वजनिक production उपयोग के लिए authenticated per-user backend authorization जोड़ना आवश्यक है।
 - नेटवर्क, API billing/quota, CORS, microphone permission और Android speech service पर निर्भरता रहती है; किसी भी सिस्टम के लिए बिना वास्तविक डिवाइस/hosting पर परीक्षण के “शून्य गलती” की गारंटी नहीं दी जा सकती।
+
+
+## संशोधित संस्करण — बिल/स्टॉक सुधार (2026-10-21)
+- बिल प्रिंट के लिए A4 invoice template जोड़ा गया है; लंबा सामान नाम wrap होगा और टेबल fixed-layout में रहेगी ताकि बायाँ टेक्स्ट न कटे।
+- Dispatch पर admin/third-party stock एक बार घटेगा; दोबारा dispatch रोकने के लिए booking marker जोड़ा गया है। अपर्याप्त/अनुपस्थित stock record पर dispatch रोका जाएगा।
+- Return दोबारा process होने से रोका गया है; third-party stock में वापस आया सामान जोड़ा जाएगा। Missing item का charge स्वतः लागू नहीं होता और return slip पर पुष्टि आवश्यक दिखेगी।
+- Advance/cash और installments को paid amount में शामिल करने की compatibility logic जोड़ी गई है। UPI advance को verified न होने पर paid नहीं माना जाएगा।
+- यह संशोधन static checks से गुजरा है; production से पहले Firebase rules/data, real printer output, backend OTP/AI and Android build device-test जरूरी हैं। GST/tax calculation अपने-आप नहीं जोड़ी गई क्योंकि tax rate/registration data का सत्यापन आवश्यक है।
+
+
+## AI Claude और WhatsApp Webhook अपडेट
+- `AI_PROVIDER=openai` या `AI_PROVIDER=claude` चुनें; `AI_API_KEY` backend environment में ही रखें। Claude के लिए `AI_MODEL` को अपने खाते में उपलब्ध Claude model ID पर सेट करें।
+- WhatsApp webhook setup के लिए `backend/WEBHOOK_SETUP_HI.md` पढ़ें। Endpoint `GET/POST /webhooks/whatsapp` है; अलग `webhook.js` जरूरी नहीं क्योंकि route `src/server.js` में है।
+- PWA और Android launcher icon जोड़ा गया है (`icon.svg`, Android mipmap PNGs)।
+- Android permissions/AI provider configuration जोड़ना अपने-आप screen reading, दूसरे ऐप नियंत्रण, SMS या कॉल को सक्षम नहीं करता; इनके लिए अलग Android services, explicit user grants, provider configuration और device testing जरूरी हैं। इस पैकेज में APK build/run परीक्षण का दावा नहीं है।

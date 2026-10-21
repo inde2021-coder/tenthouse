@@ -843,6 +843,15 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             return Math.max(1, diffDays);
         }
 
+        function getBookingPaidAmount(b) {
+            if (!b) return 0;
+            const recorded = Math.max(0, Number(b.totalPaid) || 0, Number(b.paidAmt) || 0);
+            const advanceEligible = (String(b.payMode || 'Cash').toLowerCase() === 'cash' || b.advancePaymentVerified === true)
+                ? Math.max(0, Number(b.advanceAmount) || 0) : 0;
+            const installments = Array.isArray(b.partPayments) ? b.partPayments.reduce((sum, p) => sum + Math.max(0, Number(p.amount) || 0), 0) : 0;
+            return Math.max(recorded, advanceEligible + installments);
+        }
+
         function calculateBookingTotalRent(b) {
             let days = calculateRentalDays(b.date, b.returnDate);
             let total = 0;
@@ -1028,14 +1037,43 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         }
 
         function completeDispatch(id) {
-            let bookings = safeGetStorage('softwareBookings', []);
-            let b = bookings.find(x => x.id === id);
-            if(b) {
-                b.status = 'Completed / Delivered';
-                safeSetStorage('softwareBookings', bookings);
-                loadAllFirebaseData();
-                showActionMessage("डिस्पैच पूर्ण हुआ", "success");
+            const bookings = safeGetStorage('softwareBookings', []);
+            const b = bookings.find(x => String(x.id) === String(id));
+            if (!b) { showActionMessage('बुकिंग नहीं मिली', 'error'); return; }
+            if (b.dispatchProcessedAt || b.status === 'Completed / Delivered') {
+                showActionMessage('इस बुकिंग का स्टॉक डिस्पैच पहले ही प्रोसेस हो चुका है', 'error'); return;
             }
+            const items = Array.isArray(b.items) ? b.items : [];
+            if (!items.length) { showActionMessage('बुकिंग में सामान नहीं है', 'error'); return; }
+            const stock = safeGetStorage('realStockDatabase', []);
+            const thirdParty = safeGetStorage('thirdPartyDatabase', []);
+            const requirements = [];
+            for (const it of items) {
+                const qty = Math.max(0, Number(it.qty) || 0);
+                if (!qty) continue;
+                const isThird = String(it.source || '').toLowerCase() === 'third-party';
+                const list = isThird ? thirdParty : stock;
+                const row = isThird
+                    ? list.find(x => (x.partyName || '') === (it.partyName || '') && (x.item || x.name) === it.name)
+                    : list.find(x => x.name === it.name);
+                if (!row) { showActionMessage('स्टॉक रिकॉर्ड नहीं मिला: ' + (it.name || 'अज्ञात सामान') + '। स्टॉक एंट्री जाँचें।', 'error'); return; }
+                const available = Math.max(0, Number(row.qty) || 0);
+                requirements.push({it, row, list, isThird, qty, available});
+            }
+            for (const r of requirements) {
+                if (r.available < r.qty) {
+                    showActionMessage('पर्याप्त स्टॉक नहीं: ' + r.it.name + ' (उपलब्ध ' + r.available + ', चाहिए ' + r.qty + ')', 'error'); return;
+                }
+            }
+            for (const r of requirements) r.row.qty = Math.max(0, (Number(r.row.qty) || 0) - r.qty);
+            b.status = 'Completed / Delivered';
+            b.dispatchProcessedAt = new Date().toISOString();
+            b.dispatchStockProcessed = true;
+            safeSetStorage('softwareBookings', bookings);
+            safeSetStorage('realStockDatabase', stock);
+            safeSetStorage('thirdPartyDatabase', thirdParty);
+            loadAllFirebaseData();
+            showActionMessage('डिस्पैच पूर्ण हुआ; स्टॉक एक बार घटाया गया', 'success');
         }
 
         function printDispatchSlip(id) {
@@ -1386,7 +1424,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             let b = bookings.find(x => x.id === id);
             if(b) {
                 if(!b.partPayments) b.partPayments = [];
+                const previousPaid = getBookingPaidAmount(b);
+                const due = Math.max(0, calculateBookingTotalRent(b) - previousPaid);
+                if (amt > due + 0.0001) { showActionMessage('किस्त बकाया राशि से अधिक नहीं हो सकती', 'error'); return; }
                 b.partPayments.push({ date: new Date().toISOString().slice(0,10), amount: amt });
+                b.totalPaid = previousPaid + amt;
+                b.dueAmount = Math.max(0, calculateBookingTotalRent(b) - b.totalPaid);
                 safeSetStorage('softwareBookings', bookings);
                 loadAllFirebaseData();
                 showActionMessage("किश्त जमा हो गई", "success");
@@ -1435,7 +1478,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             let totalRent = calculateBookingTotalRent(b);
             if(document.getElementById('paymentBookingId'))document.getElementById('paymentBookingId').value=b.id;
             if(document.getElementById('paymentTotalAmount'))document.getElementById('paymentTotalAmount').value=totalRent;
-            if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=Number(b.totalPaid)||0;
+            if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=getBookingPaidAmount(b);
             updatePaymentTotals();
             preview.innerHTML = `
                 <div style="background:#fff; padding:20px; border-radius:14px; border:1px solid #cbd5e1;">
@@ -1463,8 +1506,8 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         function updatePaymentTotals(){const total=Number(document.getElementById('paymentTotalAmount')?.value)||0,old=Number(document.getElementById('paymentAlreadyPaid')?.value)||0,cash=Number(document.getElementById('paymentCashAmount')?.value)||0,online=Number(document.getElementById('paymentOnlineAmount')?.value)||0;const paid=old+cash+online,due=Math.max(0,total-paid);if(document.getElementById('paymentPaidSummary'))document.getElementById('paymentPaidSummary').textContent='₹'+paid.toFixed(2);if(document.getElementById('paymentDueSummary'))document.getElementById('paymentDueSummary').textContent='₹'+due.toFixed(2);return {total,old,cash,online,paid,due};}
         ['paymentTotalAmount','paymentAlreadyPaid','paymentCashAmount','paymentOnlineAmount'].forEach(id=>document.addEventListener('input',e=>{if(e.target&&e.target.id===id)updatePaymentTotals()}));
         function generatePaymentQr(){const b=currentPaymentBooking(),settings=safeGetStorage('softwareSettings',{}),v=updatePaymentTotals(),amount=v.online;if(!b){showActionMessage('पहले सही Booking ID डालें','error');return}if(amount<=0){showActionMessage('Online amount शून्य से अधिक होना चाहिए','error');return}if(!settings.upiId){showActionMessage('Settings में UPI ID भरें','error');return}if(!window.QRious){showActionMessage('QR लाइब्रेरी लोड नहीं हुई','error');return}const uri='upi://pay?pa='+encodeURIComponent(settings.upiId)+'&pn='+encodeURIComponent(settings.businessName||'Radha Krishna Tent House')+'&am='+amount.toFixed(2)+'&cu=INR&tn='+encodeURIComponent('Booking '+b.id);new QRious({element:document.getElementById('paymentQrCanvas'),value:uri,size:240,level:'H'});document.getElementById('paymentQrCaption').textContent='बुकिंग #'+b.id+' · ₹'+amount.toFixed(2);document.getElementById('paymentQrArea').style.display='block';}
-        async function savePaymentEntry(){const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});if(!b){showActionMessage('Booking ID सही नहीं है','error');return}if(v.total<=0||v.old<0||v.cash<0||v.online<0||v.paid>v.total+0.0001){showActionMessage('कुल राशि सही भरें; कुल जमा राशि बिल से अधिक नहीं हो सकती','error');return}if(v.old>(Number(b.totalPaid)||0)+0.0001){showActionMessage('पहले जमा राशि रिकॉर्ड से मेल नहीं खाती। बिल दोबारा खोजें।','error');return}if(v.cash+v.online>Math.max(0,v.total-v.old)+0.0001){showActionMessage('इस बार का पेमेंट बाकी राशि से अधिक नहीं हो सकता','error');return}if(v.online>0&&!utr){showActionMessage('Online भुगतान के लिए UTR भरें','error');return}const key='rkPaymentLedger',ledger=safeGetStorage(key,[]);const rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:v.paid,due:v.due,utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',createdAt:new Date().toISOString()};ledger.push(rec);safeSetStorage(key,ledger);b.totalPaid=v.paid;b.dueAmount=v.due;safeSetStorage('softwareBookings',safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x));if(v.online>0&&settings.backendApiUrl){try{const response=await fetch(settings.backendApiUrl.replace(/\/$/,'')+'/api/payments/record-utr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});const data=await response.json();if(!response.ok)throw Error(data.error||'Backend error');showActionMessage('पेमेंट एंट्री सेव; ऑनलाइन पेमेंट सत्यापन लंबित','success')}catch(e){showActionMessage('लोकल पेमेंट सेव हुआ; backend sync नहीं हुआ: '+e.message,'error')}}else showActionMessage('पेमेंट लोकल सेव हुआ; Online verification के लिए backend URL सेट करें','success');}
-        function printReturnSlip(){const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim(),b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));if(!b){showActionMessage('रिटर्न स्लिप के लिए booking लोड करें','error');return}const s=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.style.display='block';area.innerHTML=`<div style="font-family:Arial;color:#111"><header style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>मोबाइल: ${escapeHtml(s.contactNo||'')}</p><h3>RETURN RECEIVED SLIP / रिटर्न प्राप्ति पर्ची</h3></header><p>Booking: #${escapeHtml(b.id)} | Customer: ${escapeHtml(b.name)} | Mobile: ${escapeHtml(b.mob)}</p><div style="text-align:center;margin:10px auto"><svg id="returnSlipBarcode"></svg></div><p>Dispatch: ${escapeHtml(b.date||'-')} | Return: ${escapeHtml(b.returnDate||'-')}</p><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>वापस मिली</th><th>मिसिंग</th><th>मिसिंग चार्ज</th></tr></thead><tbody>${(b.items||[]).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Number(i.qty)||0}</td><td>${Number(i.returnedQty)||0}</td><td>${Number(i.missingQty)||0}</td><td>₹${(Number(i.missingQty)||0)*(Number(i.missingCharge)||0)}</td></tr>`).join('')}</tbody></table><p style="margin-top:18px">शर्तें: प्राप्त मात्रा की जाँच ग्राहक/स्टोर इंचार्ज के हस्ताक्षर से करें। मिसिंग/क्षतिग्रस्त सामान का शुल्क अंतिम बिल में जोड़ा जा सकता है।</p><div style="display:flex;justify-content:space-between;gap:20px;margin-top:30px;align-items:flex-end"><span>ग्राहक हस्ताक्षर</span><div style="text-align:center;min-width:150px">${s.returnStamp?`<img src="${s.returnStamp}" style="display:block;max-width:130px;max-height:60px;object-fit:contain;margin:0 auto 5px">`:''}<span>रिटर्न प्राप्ति / ओनर स्टाम्प</span></div></div>${s.termsConditions?`<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(s.termsConditions)}</p></section>`:''}<div class="no-print" style="margin-top:20px"><button onclick="window.print()">प्रिंट करें</button><button onclick="document.getElementById('printableSlipArea').style.display='none'">बंद करें</button></div></div>`;try{if(window.JsBarcode)JsBarcode('#returnSlipBarcode',String(b.id),{format:'CODE128',width:2,height:48,displayValue:true,margin:4})}catch(e){console.warn('Return barcode render failed',e)}}
+        async function savePaymentEntry(){const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});if(!b){showActionMessage('Booking ID सही नहीं है','error');return}if(v.total<=0||v.old<0||v.cash<0||v.online<0||v.paid>v.total+0.0001){showActionMessage('कुल राशि सही भरें; कुल जमा राशि बिल से अधिक नहीं हो सकती','error');return}if(v.old>getBookingPaidAmount(b)+0.0001){showActionMessage('पहले जमा राशि रिकॉर्ड से मेल नहीं खाती। बिल दोबारा खोजें।','error');return}if(v.cash+v.online>Math.max(0,v.total-v.old)+0.0001){showActionMessage('इस बार का पेमेंट बाकी राशि से अधिक नहीं हो सकता','error');return}if(v.online>0&&!utr){showActionMessage('Online भुगतान के लिए UTR भरें','error');return}const key='rkPaymentLedger',ledger=safeGetStorage(key,[]);const rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:v.paid,due:v.due,utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',createdAt:new Date().toISOString()};ledger.push(rec);safeSetStorage(key,ledger);b.totalPaid=v.paid;b.dueAmount=v.due;safeSetStorage('softwareBookings',safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x));if(v.online>0&&settings.backendApiUrl){try{const response=await fetch(settings.backendApiUrl.replace(/\/$/,'')+'/api/payments/record-utr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});const data=await response.json();if(!response.ok)throw Error(data.error||'Backend error');showActionMessage('पेमेंट एंट्री सेव; ऑनलाइन पेमेंट सत्यापन लंबित','success')}catch(e){showActionMessage('लोकल पेमेंट सेव हुआ; backend sync नहीं हुआ: '+e.message,'error')}}else showActionMessage('पेमेंट लोकल सेव हुआ; Online verification के लिए backend URL सेट करें','success');}
+        function printReturnSlip(){const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim(),b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));if(!b){showActionMessage('रिटर्न स्लिप के लिए booking लोड करें','error');return}const s=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.style.display='block';area.innerHTML=`<div style="font-family:Arial;color:#111"><header style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>मोबाइल: ${escapeHtml(s.contactNo||'')}</p><h3>RETURN RECEIVED SLIP / रिटर्न प्राप्ति पर्ची</h3></header><p>Booking: #${escapeHtml(b.id)} | Customer: ${escapeHtml(b.name)} | Mobile: ${escapeHtml(b.mob)}</p><div style="text-align:center;margin:10px auto"><svg id="returnSlipBarcode"></svg></div><p>Dispatch: ${escapeHtml(b.date||'-')} | Return: ${escapeHtml(b.returnDate||'-')}</p><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>वापस मिली</th><th>मिसिंग</th><th>मिसिंग चार्ज</th></tr></thead><tbody>${(b.items||[]).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Number(i.qty)||0}</td><td>${Number(i.returnedQty)||0}</td><td>${Number(i.missingQty)||0}</td><td>${Number(i.missingQty)>0?'पुष्टि आवश्यक':'₹0.00'}</td></tr>`).join('')}</tbody></table><p style="margin-top:18px">शर्तें: प्राप्त मात्रा की जाँच ग्राहक/स्टोर इंचार्ज के हस्ताक्षर से करें। मिसिंग आइटम का कोई शुल्क इस स्लिप पर स्वतः नहीं जोड़ा गया; शुल्क केवल अलग से पुष्टि करने पर लागू होगा।</p><div style="display:flex;justify-content:space-between;gap:20px;margin-top:30px;align-items:flex-end"><span>ग्राहक हस्ताक्षर</span><div style="text-align:center;min-width:150px">${s.returnStamp?`<img src="${s.returnStamp}" style="display:block;max-width:130px;max-height:60px;object-fit:contain;margin:0 auto 5px">`:''}<span>रिटर्न प्राप्ति / ओनर स्टाम्प</span></div></div>${s.termsConditions?`<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(s.termsConditions)}</p></section>`:''}<div class="no-print" style="margin-top:20px"><button onclick="window.print()">प्रिंट करें</button><button onclick="document.getElementById('printableSlipArea').style.display='none'">बंद करें</button></div></div>`;try{if(window.JsBarcode)JsBarcode('#returnSlipBarcode',String(b.id),{format:'CODE128',width:2,height:48,displayValue:true,margin:4})}catch(e){console.warn('Return barcode render failed',e)}}
 
         function saveThirdPartyEntry(event) {
             event.preventDefault();
@@ -1607,10 +1650,11 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         }
         function completeManualReturnProcess(){
             if(activeReturnBookingId==null){showActionMessage('पहले बुकिंग लोड करें','error');return;}const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>x.id===activeReturnBookingId);if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
+            if(b.returnProcessedAt || b.status === 'Returned'){showActionMessage('इस बुकिंग का रिटर्न पहले ही सेव हो चुका है','error');return;}
             const missing=safeGetStorage('missingItemsDatabase',[]),stock=safeGetStorage('realStockDatabase',[]);
             [...document.querySelectorAll('.return-qty-input')].forEach(input=>{const it=b.items[Number(input.dataset.returnIndex)],sent=Math.max(0,Number(it.qty)||0),returned=Math.min(sent,Math.max(0,Number(input.value)||0)),lost=sent-returned;it.returnedQty=returned;it.missingQty=lost;
-                if(it.source==='third-party'){const tp=safeGetStorage('thirdPartyDatabase',[]),v=tp.find(x=>x.partyName===it.partyName&&x.item===it.name);if(v)v.qty=Math.max(0,Number(v.qty||0)-returned);safeSetStorage('thirdPartyDatabase',tp);}else{const owner=stock.find(x=>x.name===it.name);if(owner)owner.qty=Number(owner.qty||0)+returned;}
-                if(lost>0)missing.push({id:Date.now()+Number(input.dataset.returnIndex),bookingId:b.id,customer:b.name,item:it.name,source:it.source==='third-party'?'third-party':'admin',partyName:it.partyName||'',qty:lost,penalty:lost*(Number(it.missingCharge)||0),resolved:false});});
+                if(it.source==='third-party'){const tp=safeGetStorage('thirdPartyDatabase',[]),v=tp.find(x=>x.partyName===it.partyName&&x.item===it.name);if(v)v.qty=Math.max(0,Number(v.qty||0)+returned);safeSetStorage('thirdPartyDatabase',tp);}else{const owner=stock.find(x=>x.name===it.name);if(owner)owner.qty=Number(owner.qty||0)+returned;}
+                if(lost>0)missing.push({id:Date.now()+Number(input.dataset.returnIndex),bookingId:b.id,customer:b.name,item:it.name,source:it.source==='third-party'?'third-party':'admin',partyName:it.partyName||'',qty:lost,penalty:0,chargeApproved:false,proposedPenalty:lost*(Number(it.missingCharge)||0),resolved:false});});
             b.status='Returned';b.returnProcessedAt=new Date().toISOString();safeSetStorage('softwareBookings',bookings);safeSetStorage('realStockDatabase',stock);safeSetStorage('missingItemsDatabase',missing);activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();showActionMessage('रिटर्न सेव हुआ; मिसिंग आइटम अलग दर्ज हुए','success');
         }
         window.onload = function() {
@@ -1634,6 +1678,74 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
  // Native HTML date controls: past dates disabled; return cannot precede dispatch.
  function setDateBounds(){const now=new Date();now.setHours(0,0,0,0);const min=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);const d=$('portalEventDate'),r=$('portalReturnDate');if(d){d.min=min;if(d.value&&d.value<min)d.value=min}if(r){r.min=(d&&d.value&&d.value>=min)?d.value:min;if(d)d.addEventListener('change',()=>{r.min=d.value||min;if(r.value&&r.value<r.min)r.value=r.min;});}}
  document.addEventListener('DOMContentLoaded',setDateBounds);
+})();
+</script>
+
+
+<script id="rk-revised-invoice-and-print-fix">
+(function(){
+  const byId = id => document.getElementById(id);
+  const esc = value => (typeof window.escapeHtml === 'function' ? window.escapeHtml(String(value == null ? '' : value)) : String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+  function money(v){return '₹'+(Math.max(0,Number(v)||0)).toFixed(2)}
+  function paidFor(b){return typeof window.getBookingPaidAmount==='function' ? window.getBookingPaidAmount(b) : Math.max(0,Number(b.totalPaid)||0,Number(b.paidAmt)||0,((String(b.payMode||'Cash').toLowerCase()==='cash'||b.advancePaymentVerified===true)?Number(b.advanceAmount)||0:0));}
+  function findBooking(){const q=(byId('billSearchInput')?.value||byId('paymentBookingId')?.value||'').trim();return (window.safeGetStorage('softwareBookings',[])||[]).find(b=>String(b.id)===q||String(b.mob||'')===q)||null;}
+  function invoiceMarkup(b,settings,includeActions){
+    const days=Math.max(1,Number(window.calculateRentalDays(b.date,b.returnDate))||1);
+    const items=Array.isArray(b.items)?b.items:[];
+    const rows=items.map((it,i)=>{
+      const qty=Math.max(0,Number(it.qty)||0), rate=Math.max(0,Number(it.rentPrice??500)||0), amount=qty*rate*days;
+      return `<tr><td class="rk-col-no">${i+1}</td><td class="rk-item-name">${esc(it.name||'सामान')}</td><td class="rk-col-hsn">${esc(it.hsn||it.hsnCode||'-')}</td><td class="rk-num">${qty}</td><td class="rk-num">${money(rate)}</td><td class="rk-num">${days}</td><td class="rk-num">${money(amount)}</td></tr>`;
+    }).join('');
+    const subtotal=items.reduce((sum,it)=>sum+Math.max(0,Number(it.qty)||0)*Math.max(0,Number(it.rentPrice??500)||0)*days,0);
+    const other=Math.max(0,Number(b.otherCharges)||0), discount=Math.max(0,Number(b.discountAmount)||0);
+    const total=Math.max(0,subtotal+other-discount), paid=Math.min(total,paidFor(b)), due=Math.max(0,total-paid);
+    const taxId=settings.gstin||settings.GSTIN||settings.gstNumber||'';
+    const addr=settings.businessAddress||settings.address||settings.shopAddress||'';
+    const dateLabel=b.bookingDate||b.createdAt||b.date||new Date().toISOString().slice(0,10);
+    return `<article class="rk-med-invoice">
+      <header class="rk-inv-head"><div class="rk-inv-brand"><h1>${esc(settings.businessName||'राधा कृष्णा टेंट हाउस')}</h1><p>${esc(addr)}</p><p>मोबाइल: ${esc(settings.contactNo||settings.phone||'')}</p>${settings.email?`<p>${esc(settings.email)}</p>`:''}${taxId?`<p><b>GSTIN:</b> ${esc(taxId)}</p>`:''}</div><div class="rk-inv-title"><h2>${taxId?'TAX INVOICE':'INVOICE'}</h2><p><b>बिल नं.:</b> ${esc(b.invoiceNo||('RK-'+b.id))}</p><p><b>दिनांक:</b> ${esc(dateLabel)}</p><p><b>बुकिंग नं.:</b> #${esc(b.id)}</p></div></header>
+      <section class="rk-inv-customer"><div><b>ग्राहक / BILL TO</b><p>${esc(b.name||'-')}</p><p>मोबाइल: ${esc(b.mob||'-')}</p><p>${esc(b.address||'')}</p></div><div><b>कार्य विवरण</b><p>कार्य: ${esc(b.eventType||'-')}</p><p>डिस्पैच: ${esc(b.date||'-')}</p><p>वापसी: ${esc(b.returnDate||'-')}</p></div></section>
+      <table class="rk-inv-table"><thead><tr><th class="rk-col-no">क्र.</th><th class="rk-col-name">सामान / DESCRIPTION</th><th class="rk-col-hsn">HSN/SAC</th><th class="rk-col-qty">मात्रा</th><th class="rk-col-rate">दर</th><th class="rk-col-days">दिन</th><th class="rk-col-amount">राशि</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center">कोई सामान दर्ज नहीं</td></tr>'}</tbody></table>
+      <section class="rk-inv-bottom"><div class="rk-inv-note"><b>नोट / Terms</b><p>${esc(settings.termsConditions||'सामान की प्राप्ति और वापसी की मात्रा जाँचकर हस्ताक्षर करें।')}</p></div><table class="rk-inv-totals"><tbody><tr><td>सामान का कुल</td><td>${money(subtotal)}</td></tr><tr><td>अन्य चार्ज</td><td>${money(other)}</td></tr><tr><td>डिस्काउंट</td><td>−${money(discount)}</td></tr><tr class="rk-inv-grand"><th>कुल देय / TOTAL</th><th>${money(total)}</th></tr><tr><td>पहले जमा / ADVANCE</td><td>${money(paid)}</td></tr><tr class="rk-inv-due"><th>बाकी / BALANCE</th><th>${money(due)}</th></tr></tbody></table></section>
+      <footer class="rk-inv-sign"><div>ग्राहक के हस्ताक्षर</div><div>${settings.paidStamp?`<img src="${esc(settings.paidStamp)}" alt="स्टाम्प">`:''}<p>अधिकृत हस्ताक्षर / मुहर</p></div></footer>
+      ${includeActions?'<div class="no-print rk-inv-actions"><button type="button" onclick="printInvoice()">प्रिंट इनवॉइस</button><button type="button" onclick="sendWhatsAppMessage('+JSON.stringify(b.id)+', \'bill\')">WhatsApp शेयर</button></div>':''}
+    </article>`;
+  }
+  window.searchBillingCustomer=function(){
+    const b=findBooking(),preview=byId('billingInvoicePreview');
+    if(!preview)return;
+    if(!b){preview.innerHTML='बुकिंग नहीं मिली';return;}
+    const settings=window.safeGetStorage('softwareSettings',{});
+    const total=typeof window.calculateBookingTotalRent==='function'?window.calculateBookingTotalRent(b):0;
+    if(byId('paymentBookingId'))byId('paymentBookingId').value=b.id;
+    if(byId('paymentTotalAmount'))byId('paymentTotalAmount').value=total;
+    if(byId('paymentAlreadyPaid'))byId('paymentAlreadyPaid').value=paidFor(b);
+    if(typeof window.updatePaymentTotals==='function')window.updatePaymentTotals();
+    preview.innerHTML=invoiceMarkup(b,settings,true);
+  };
+  window.printInvoice=function(){
+    const b=findBooking(),area=byId('printableSlipArea');
+    if(!b||!area){if(typeof window.showActionMessage==='function')window.showActionMessage('पहले बिल खोजें, फिर प्रिंट करें','error');return;}
+    area.dataset.printRestore='invoice';area.style.display='block';
+    area.innerHTML=invoiceMarkup(b,window.safeGetStorage('softwareSettings',{}),false);
+    window.print();
+  };
+  const style=document.createElement('style');
+  style.id='rk-medical-style-invoice-print-fix';
+  style.textContent=`
+  .rk-med-invoice{background:#fff;color:#111;font:10pt Arial,"Noto Sans Devanagari",sans-serif;line-height:1.35;padding:10px;max-width:100%;overflow-wrap:anywhere}
+  .rk-inv-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(155px,30%);gap:12px;border-bottom:2px solid #111;padding:0 0 10px;margin-bottom:10px;align-items:start}
+  .rk-inv-brand h1{font-size:17pt;margin:0 0 5px;color:#111;overflow-wrap:anywhere}.rk-inv-brand p,.rk-inv-title p{font-size:9pt;margin:2px 0;overflow-wrap:anywhere}
+  .rk-inv-title{text-align:right}.rk-inv-title h2{font-size:14pt;margin:0 0 7px;color:#111}
+  .rk-inv-customer{display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid #777;padding:8px;margin-bottom:10px}.rk-inv-customer p{margin:3px 0;overflow-wrap:anywhere}
+  .rk-inv-table{width:100%;table-layout:fixed;border-collapse:collapse;margin:8px 0}.rk-inv-table th,.rk-inv-table td{border:1px solid #555;padding:5px 4px;font-size:9pt;color:#111;vertical-align:top;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+  .rk-inv-table th{background:#e9edf0;color:#111;text-align:center}.rk-inv-table .rk-col-no{width:6%}.rk-inv-table .rk-col-name{width:36%}.rk-inv-table .rk-col-hsn{width:10%}.rk-inv-table .rk-col-qty{width:8%}.rk-inv-table .rk-col-rate{width:12%}.rk-inv-table .rk-col-days{width:8%}.rk-inv-table .rk-col-amount{width:20%}.rk-inv-table .rk-item-name{text-align:left;white-space:normal;overflow-wrap:anywhere;word-break:break-word}.rk-inv-table .rk-num{text-align:right;font-variant-numeric:tabular-nums}
+  .rk-inv-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,44%);gap:12px;align-items:start;margin-top:8px}.rk-inv-note{border:1px solid #777;padding:8px;min-height:70px}.rk-inv-note p{white-space:pre-wrap;margin-top:5px;overflow-wrap:anywhere}.rk-inv-totals{width:100%;border-collapse:collapse}.rk-inv-totals td,.rk-inv-totals th{border:1px solid #777;padding:5px;text-align:right;color:#111;white-space:normal}.rk-inv-totals td:first-child,.rk-inv-totals th:first-child{text-align:left}.rk-inv-grand{font-size:11pt}.rk-inv-due{font-size:11pt}
+  .rk-inv-sign{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px;align-items:end}.rk-inv-sign>div{border-top:1px solid #555;text-align:center;padding-top:6px;min-height:25px}.rk-inv-sign img{max-width:110px;max-height:55px;object-fit:contain;display:block;margin:0 auto 4px}.rk-inv-actions{display:flex;gap:8px;margin-top:15px}.rk-inv-actions button{padding:8px 12px}
+  @media(max-width:560px){.rk-inv-head,.rk-inv-customer,.rk-inv-bottom{grid-template-columns:minmax(0,1fr)}.rk-inv-title{text-align:left}}
+  @media print{@page{size:A4 portrait;margin:8mm}html,body{width:auto!important;height:auto!important;min-height:0!important;overflow:visible!important;background:#fff!important;margin:0!important;padding:0!important}body *{visibility:hidden!important}#printableSlipArea,#printableSlipArea *{visibility:visible!important}#printableSlipArea{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important;display:block!important;padding:0!important;margin:0!important;border:0!important;background:#fff!important;color:#111!important;box-shadow:none!important}#printableSlipArea .no-print{display:none!important}.rk-med-invoice{width:100%!important;max-width:none!important;padding:0!important;margin:0!important;font-size:9pt!important;overflow:visible!important;box-shadow:none!important}.rk-inv-head{grid-template-columns:minmax(0,1fr) minmax(135px,30%)!important}.rk-inv-customer{grid-template-columns:1fr 1fr!important}.rk-inv-bottom{grid-template-columns:minmax(0,1fr) minmax(190px,44%)!important}.rk-inv-table{width:100%!important;table-layout:fixed!important}.rk-inv-table th,.rk-inv-table td{font-size:8.5pt!important;padding:4px 3px!important;white-space:normal!important;overflow-wrap:anywhere!important}.rk-inv-item-name{word-break:break-word!important}.rk-inv-totals td,.rk-inv-totals th{font-size:8.5pt!important}.rk-inv-sign{break-inside:avoid}.rk-med-invoice img{max-width:100%!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}}
+  `;
+  document.head.appendChild(style);
 })();
 </script>
 
