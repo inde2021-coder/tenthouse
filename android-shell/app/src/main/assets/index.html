@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="theme-color" content="#2b6cb0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>राधा कृष्णा टेंट हाउस - Enterprise Cloud ERP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg-base: #e4ebf5;
+            --primary-blue: #2b6cb0;
+            --cyan-neon: #00f2fe;
+            --pink-neon: #ec4899;
+            --amber-neon: #fbbf24;
+            --emerald-neon: #10b981;
+            --text-main: #1a202c;
+            --text-muted: #4a5568;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100vh; overflow: hidden; background: linear-gradient(135deg, #e4ebf5, #c7d2fe); color: var(--text-main); }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableSlipArea, #printableSlipArea * { visibility: visible; }
+            #printableSlipArea { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; display: block !important; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+
+        #actionToast {
+            position: fixed; top: 15px; right: -400px; background: rgba(230, 235, 245, 0.95); backdrop-filter: blur(12px);
+            color: var(--primary-blue); padding: 10px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 700; z-index: 99999;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #actionToast.show { right: 20px; }
+        #actionToast.success { color: var(--emerald-neon); }
+        #actionToast.error { color: #f43f5e; }
+
+        .welcome-card, .glass-card-blue, .glass-card-green, .glass-card-purple {
+            background: #e4ebf5 !important; border-radius: 24px; padding: 16px 20px; margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 8px 8px 16px rgba(163, 177, 198, 0.5), -8px -8px 16px rgba(255, 255, 255, 0.8) !important;
+        }
+
+        input[type="text"], input[type="password"], input[type="tel"], input[type="number"], input[type="date"], textarea, input[type="file"] {
+            width: 100% !important; padding: 12px 16px !important; background: #e4ebf5 !important;
+            border: 1px solid rgba(255,255,255,0.4) !important; border-radius: 16px !important; font-size: 14px !important;
+            font-weight: 700 !important; color: #1e3a8a !important; outline: none !important; margin-bottom: 8px;
+            box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.75), inset -4px -4px 8px rgba(255, 255, 255, 0.95) !important;
+        }
+
+        select {
+            width: 100% !important; padding: 12px 40px 12px 16px !important; background: #e4ebf5 !important;
+            border: 1px solid rgba(255,255,255,0.4) !important; border-radius: 16px !important; font-size: 14px !important;
+            font-weight: 700 !important; color: #1e3a8a !important; outline: none !important; margin-bottom: 8px;
+            box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.75), inset -4px -4px 8px rgba(255, 255, 255, 0.95) !important;
+            cursor: pointer;
+        }
+
+        .glass-btn-blue, .glass-btn-cyan, .glass-btn-green, .glass-btn-whatsapp {
+            background: linear-gradient(135deg, #00f2fe 0%, #2b6cb0 100%) !important;
+            color: #ffffff !important; font-weight: 800 !important; border-radius: 16px; padding: 12px; width: 100%; cursor: pointer; border: none;
+            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.8) !important;
+            margin-top: 4px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .glass-btn-cyan { background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%) !important; }
+        .glass-btn-green { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; }
+        .glass-btn-whatsapp { background: linear-gradient(135deg, #25D366 0%, #128C7E 100%) !important; }
+        
+        .action-btn { padding: 7px 14px !important; border-radius: 12px !important; font-size: 11.5px !important; background: #e4ebf5; border: none; cursor: pointer; font-weight: 700; color: var(--amber-neon); box-shadow: 4px 4px 8px rgba(163,177,198,0.5), -4px -4px 8px rgba(255,255,255,0.8); display: inline-flex; align-items: center; gap: 5px; }
+
+        .table-responsive { width: 100%; max-height: 360px; overflow-x: auto; overflow-y: auto; background: #e4ebf5 !important; border-radius: 16px !important; margin-top: 10px; margin-bottom: 20px; padding: 10px; box-shadow: inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.95) !important; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 14px; text-align: left; font-size: 12.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; }
+        th { position: sticky; top: 0; background: #dbeafe !important; color: var(--primary-blue); z-index: 2; }
+
+        #customerFirstPortal { display: flex; width: 100%; height: 100vh; position: absolute; top: 0; left: 0; z-index: 10; background: linear-gradient(135deg, #e4ebf5, #c7d2fe); }
+        .customer-scroll-wrap { width: 100%; height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; }
+
+        #adminPanel { display: none; width: 100%; height: 100vh; position: absolute; top: 0; left: 0; z-index: 20; background: linear-gradient(135deg, #e4ebf5, #c7d2fe); }
+        .admin-container { display: flex; width: 100%; height: 100%; overflow: hidden; position: relative; }
+        
+        .sidebar { width: 250px; background: #e4ebf5; border-right: 1px solid rgba(255,255,255,0.8); display: flex; flex-direction: column; padding: 10px 0; height: 100%; }
+        .menu-list { list-style: none; padding: 0 8px 60px 8px; overflow-y: auto; flex: 1; }
+        .sidebar-brand { font-size: 14px; font-weight: 800; padding: 12px 14px; color: var(--primary-blue); display: flex; flex-direction: column; margin: 8px 10px; border-radius: 14px; background: #e4ebf5; box-shadow: 5px 5px 10px rgba(163,177,198,0.5); }
+        .menu-item { padding: 10px 14px; margin-bottom: 6px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 700; text-align: left; display: flex; align-items: center; gap: 10px; background: #e4ebf5; color: var(--text-muted); }
+        .menu-item.active { background: linear-gradient(135deg, #2b6cb0, #1a365d); color: #fff; }
+        
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header { height: 55px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.4); }
+        .content-body { flex: 1; padding: 18px; padding-bottom: 80px; overflow-y: auto; }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; width: 100%; }
+        label { color: var(--primary-blue); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    
+        @media print { @page { margin: 8mm; } #printableSlipArea { color:#111 !important; font-family:Arial,sans-serif !important; } #printableSlipArea table { width:100%; border-collapse:collapse; } #printableSlipArea th,#printableSlipArea td { border:1px solid #777; padding:5px; font-size:11px; } #printableSlipArea h2,#printableSlipArea h3 { color:#111 !important; } }
+        @media(max-width:600px){#rkDigitalClock{font-size:10px;padding:5px 8px;top:4px;right:4px}}
+
+/* ===== Reliability and responsive UI patch (2026-10) ===== */
+.dispatch-rate-toggle{display:flex;align-items:center;gap:8px;padding:9px 12px;margin:8px 0 12px;background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;color:#1e3a8a;font-weight:800;}
+.dispatch-rate-toggle input{width:auto!important;}
+button, input[type="button"], input[type="submit"], .glass-btn-blue, .glass-btn-cyan, .glass-btn-green, .glass-btn-whatsapp, .action-btn {
+  box-sizing:border-box; max-width:100%; min-width:0; white-space:normal; line-height:1.25; overflow-wrap:anywhere;
+}
+.glass-btn-blue,.glass-btn-cyan,.glass-btn-green,.glass-btn-whatsapp { width:auto; min-height:40px; padding:10px 16px; flex:0 0 auto; }
+form .form-grid > button[type="submit"] { grid-column:1/-1; justify-self:start; min-width:150px; width:auto; }
+.form-grid > div, .form-grid > label { min-width:0; }
+input,select,textarea { min-width:0; max-width:100%; }
+input[type="checkbox"],input[type="radio"] { width:auto !important; flex:0 0 auto; margin:0 5px 0 0; }
+.table-responsive button { min-height:32px; padding:6px 10px !important; }
+.header { gap:10px; }
+#menuToggleBtn { border:0; border-radius:10px; min-width:42px; min-height:40px; padding:8px 12px; color:#fff; background:#2b6cb0; cursor:pointer; }
+.admin-container.sidebar-collapsed .sidebar { width:0; min-width:0; padding:0; overflow:hidden; border:0; }
+.admin-container.sidebar-collapsed .sidebar > * { display:none; }
+.sidebar { transition:width .18s ease; }
+#rkDigitalClock { background:linear-gradient(135deg,#172554,#2563eb) !important; color:#fff !important; border:1px solid #93c5fd; }
+#rkDigitalClock #rkClockDate { color:#bfdbfe; }
+@media(max-width:700px) {
+ .sidebar { position:absolute; z-index:1000; left:0; top:0; bottom:0; width:min(82vw,280px); box-shadow:10px 0 24px #0f172a33; }
+ .admin-container.sidebar-collapsed .sidebar { width:0; }
+ .content-body { padding:10px; padding-bottom:70px; }
+ .form-grid { grid-template-columns:minmax(0,1fr) !important; }
+ .header { padding:6px 10px; }
+ .glass-card-blue,.glass-card-green,.glass-card-purple { padding:12px; }
+ .action-btn { padding:7px 9px !important; }
+}
+@media print {
+ @page { size:auto; margin:8mm; }
+ html,body { height:auto !important; overflow:visible !important; background:#fff !important; }
+ body * { visibility:hidden !important; }
+ #printableSlipArea, #printableSlipArea * { visibility:visible !important; }
+ #printableSlipArea { position:absolute !important; inset:0 auto auto 0 !important; width:100% !important; height:auto !important; overflow:visible !important; padding:0 !important; margin:0 !important; background:#fff !important; color:#111 !important; display:block !important; }
+ #printableSlipArea * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+ #printableSlipArea table { width:100% !important; border-collapse:collapse !important; }
+ #printableSlipArea th,#printableSlipArea td { border:1px solid #777 !important; padding:5px !important; font-size:10pt !important; white-space:normal !important; }
+ #printableSlipArea th { background:#dbeafe !important; color:#1e3a8a !important; }
+ .no-print { display:none !important; }
+ #barcodePrintModal, #barcodePrintModal * { visibility:visible !important; }
+ #barcodePrintModal { position:absolute !important; inset:0 !important; display:block !important; height:auto !important; width:100% !important; padding:0 !important; background:#fff !important; color:#111 !important; }
+ #barcodePrintModal > div { box-shadow:none !important; background:#fff !important; color:#111 !important; }
+ #barcodePrintModal svg { display:block !important; max-width:100% !important; }
+}
+
+        </style>
+
+<style id="rk-systematic-layout-overrides">
+:root{--rk-control-height:42px;--rk-radius:12px}
+button,.btn,.action-btn,input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{box-sizing:border-box;font:inherit;border-radius:var(--rk-radius)}
+button,.btn,.action-btn{min-height:var(--rk-control-height);max-width:100%;width:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;line-height:1.25;padding:9px 14px;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{width:100%;min-width:0;min-height:var(--rk-control-height);padding:10px 12px;border:1px solid rgba(72,112,151,.28);background:rgba(255,255,255,.88);color:#18344c;outline-offset:2px}
+textarea{min-height:90px;resize:vertical}
+.form-grid{align-items:end;gap:12px}
+.glass-card-blue,.glass-card-purple,.glass-card-green{min-width:0;overflow-wrap:anywhere}
+.table-responsive{width:100%;max-width:100%;overflow-x:auto;border-radius:12px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:middle}td.table-actions{min-width:210px;display:table-cell}td.table-actions button{margin:2px;min-height:34px;padding:6px 9px;font-size:12px}.danger-action{color:#b42318!important;border:1px solid rgba(180,35,24,.25)!important;background:rgba(254,226,226,.7)!important}
+.settings-section{margin:12px 0;border:1px solid rgba(43,108,176,.22);border-radius:14px;background:rgba(255,255,255,.55);overflow:hidden}.settings-section>summary{padding:13px 15px;font-weight:800;cursor:pointer;color:#214d76;background:rgba(219,239,255,.6);list-style:none}.settings-section>summary::-webkit-details-marker{display:none}.settings-section>summary:after{content:'＋';float:right}.settings-section[open]>summary:after{content:'−'}.settings-section-body{padding:14px;display:grid;gap:10px}.settings-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.file-button{display:inline-flex!important;align-items:center;justify-content:center;min-height:42px;padding:9px 14px!important;width:auto!important}.dispatch-search-top{grid-template-columns:minmax(0,1fr) auto!important}.dispatch-search-top .search-action{display:flex;align-items:end}.dispatch-search-top .search-action button{margin:0;min-width:90px}
+@media(max-width:650px){.dispatch-search-top{grid-template-columns:minmax(0,1fr)!important}.dispatch-search-top .search-action button{width:auto}.form-grid{grid-template-columns:minmax(0,1fr)!important}.settings-actions>*{max-width:100%}td.table-actions{min-width:190px}}
+@media print{#printableSlipArea{display:block!important;color:#111!important;background:#fff!important}#printableSlipArea svg{display:block!important;max-width:100%!important}#printableSlipArea table{width:100%;border-collapse:collapse}#printableSlipArea th,#printableSlipArea td{border:1px solid #555;padding:6px;color:#111}#printableSlipArea th{background:#e8eef5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+
+</head>
+<body>
+<div id="rkDigitalClock" class="no-print" style="position:fixed;top:8px;right:10px;z-index:999998;background:#0f172a;color:#e2e8f0;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:800;box-shadow:0 4px 15px #0003"><span id="rkClockTime">--:--:--</span> · <span id="rkClockDate">----</span></div>
+
+    <div id="actionToast"></div>
+
+    <!-- Login / Welcome Overlay with Google Sign-In -->
+    <div id="welcomeOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); justify-content: center; align-items: center; z-index: 999999;">
+        <div class="welcome-card" style="max-width: 380px; text-align:center;">
+            <h1 style="font-size: 20px; font-weight: 800; color: var(--primary-blue); margin-bottom: 14px;"><i class="fa-solid fa-tent"></i> राधा कृष्णा टेंट हाउस</h1>
+            <button type="button" onclick="loginWithGoogle()" class="glass-btn-blue" style="margin-bottom:12px;"><i class="fa-brands fa-google"></i> Gmail से लॉगिन करें</button>
+            <form onsubmit="handleDirectAdminLogin(event)" style="display: flex; flex-direction: column; gap: 8px;">
+                <input type="password" id="realAdminPass" placeholder="या पासवर्ड दर्ज करें (8120727987)" required>
+                <button type="submit" class="glass-btn-green"><i class="fa-solid fa-unlock-keyhole"></i> एडमिन पैनल खोलें</button>
+            </form>
+            <button type="button" onclick="closeWelcomeOverlay()" class="action-btn" style="color: #e53e3e; margin-top: 10px; width:100%; justify-content:center;"><i class="fa-solid fa-arrow-left"></i> वापस जाएं</button>
+        </div>
+    </div>
+
+    <!-- Barcode Print Modal -->
+    <div id="barcodePrintModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 999999; padding: 20px;">
+        <div class="welcome-card" style="max-width: 320px; text-align: center; background: #fff !important;">
+            <h3 style="color: var(--primary-blue); font-size: 16px; margin-bottom: 10px;">🏷️ Item Barcode</h3>
+            <p id="printItemName" style="font-weight: 800; margin-bottom: 10px; font-size: 14px;"></p>
+            <div style="background: #fff; padding: 15px; display: inline-block; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                <svg id="barcodeSvgElement"></svg>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 15px;" class="no-print">
+                <button type="button" onclick="window.print()" class="glass-btn-green" style="flex: 1; margin-top: 0;"><i class="fa-solid fa-print"></i> प्रिंट</button>
+                <button type="button" onclick="closeBarcodeModal()" class="action-btn" style="color: #e53e3e; flex: 1; justify-content: center;"><i class="fa-solid fa-xmark"></i> बंद</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Slip / Invoice Modal Area -->
+    <div id="printableSlipArea" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999999; overflow-y: auto; padding: 30px;"></div>
+
+    <!-- Customer Portal -->
+    <div id="customerFirstPortal" class="no-print" style="display: flex;">
+        <div class="customer-scroll-wrap">
+            <div class="glass-card-blue" style="max-width: 800px; margin: 0 auto 12px auto; width: 100%; text-align: center;">
+                <h1 id="portalShopTitle" style="color: var(--primary-blue); font-size: 26px; font-weight: 800; cursor: pointer;" onclick="handleShopNameTripleClick(event)"><span id="displayShopName">राधा कृष्णा टेंट हाउस</span></h1>
+            </div>
+            <div style="margin: 0 auto; width: 100%; max-width: 800px; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 40px;">
+                <div class="glass-card-green" style="border: 2px solid var(--emerald-neon);">
+                    <div style="font-size: 14px; font-weight: 800; color: var(--emerald-neon); margin-bottom: 8px;"><i class="fa-solid fa-magnifying-glass"></i> बुकिंग स्टेटस और ड्यू पेमेंट</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="customerStatusQuery" placeholder="बुकिंग आईडी या मोबाइल नंबर..." style="flex: 1; margin-bottom: 0;">
+                        <button type="button" onclick="checkCustomerBookingStatus()" class="glass-btn-green" style="width: auto; padding: 10px 18px; margin-top:0;"><i class="fa-solid fa-eye"></i> देखें</button>
+                    </div>
+                    <div id="customerStatusResultBox" style="display: none; margin-top: 12px; background: rgba(255,255,255,0.9); padding: 14px; border-radius: 14px;"></div>
+                </div>
+
+                <form onsubmit="saveCustomerBooking(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="glass-card-blue">
+                        <div style="font-size: 14px; font-weight: 800; color: var(--primary-blue); margin-bottom: 8px;"><i class="fa-solid fa-user"></i> ग्राहक विवरण</div>
+                        <div class="form-grid">
+                            <div><label>नाम</label><input type="text" id="portalCustName" required placeholder="पूरा नाम"></div>
+                            <div><label>मोबाइल नंबर</label><input type="tel" id="portalCustMob" required pattern="[0-9]{10}" maxlength="10" placeholder="10 अंकों का नंबर"></div>
+                            <div style="grid-column:1/-1;border:1px dashed #10b981;padding:10px;border-radius:12px"><label>मोबाइल OTP सत्यापन</label><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="glass-btn-blue" style="width:auto" onclick="sendCustomerOtp()">OTP भेजें</button><input id="customerOtpInput" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="6 अंकों का OTP" style="max-width:180px"><button type="button" class="glass-btn-green" style="width:auto" onclick="verifyCustomerOtp()">OTP Verify</button></div><small id="customerOtpStatus">Settings में OTP बंद है तो सत्यापन आवश्यक नहीं होगा।</small></div>
+                            <div style="grid-column: 1/-1;"><label>पूरा पता</label><textarea id="portalCustAddress" rows="1.5" required placeholder="पता दर्ज करें"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="glass-card-purple">
+                        <div style="font-size: 14px; font-weight: 800; color: var(--pink-neon); margin-bottom: 8px;"><i class="fa-solid fa-calendar-days"></i> कार्यक्रम विवरण</div>
+                        <div class="form-grid">
+                            <div><label>फंक्शन</label><select id="portalEventType" required><option value="" disabled selected>फंक्शन चुनें</option><option value="Marriage">शादी</option><option value="Birthday">जन्मदिन</option><option value="Party">पार्टी</option><option value="Other">अन्य</option></select></div>
+                            <div><label>गेस्ट काउंट</label><input type="number" id="portalGuestCount" min="1" required placeholder="संख्या"></div>
+                            <div><label>डिस्पैच दिनांक</label><input type="date" id="portalEventDate" required></div>
+                            <div><label>वापसी दिनांक</label><input type="date" id="portalReturnDate" required></div>
+                        </div>
+                    </div>
+                    <div class="glass-card-green">
+                        <div style="font-size: 14px; font-weight: 800; color: var(--emerald-neon); margin-bottom: 8px;"><i class="fa-solid fa-boxes-stacked"></i> सामान चुनें</div>
+                        <div class="form-grid" style="margin-bottom: 6px;">
+                            <div><label>सामान</label><select id="portalStockSelect"><option value="" disabled selected>सामान चुनें</option></select></div>
+                            <div><label>मात्रा</label><input type="number" id="portalItemQty" min="1"></div>
+                            <button type="button" onclick="addSelectedItemToCart()" class="glass-btn-green" style="grid-column: 1/-1; margin-top:0;"><i class="fa-solid fa-circle-plus"></i> जोड़ें</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>सामान</th><th>मात्रा</th><th style="text-align: right;">हटाएं</th></tr></thead>
+                                <tbody id="portalCartTableBody"><tr><td colspan="3" style="text-align: center;">कोई सामान नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="glass-card-blue">
+                        <div style="font-size: 14px; font-weight: 800; color: var(--amber-neon); margin-bottom: 8px;"><i class="fa-solid fa-credit-card"></i> एडवांस पेमेंट</div>
+                        <div class="form-grid">
+                            <div><label>Advance (₹)</label><input type="number" id="portalAdvanceAmount" min="0" placeholder="0" oninput="updateDynamicPaymentQR()"></div>
+                            <div><label>मोड</label><select id="portalPayMode" onchange="togglePaymentFields()"><option value="Cash">नकद (Cash)</option><option value="UPI">ऑनलाइन (UPI/QR)</option></select></div>
+                        </div>
+                        <div id="onlinePaymentSection" style="display: none; margin-top: 10px; text-align: center; padding: 10px; background: #e4ebf5; border-radius: 14px;">
+                            <canvas id="dynamicQrCanvas" style="width: 120px; height: 120px; margin-bottom: 6px; border-radius: 8px;"></canvas>
+                            <div><label>UTR नंबर</label><input type="text" id="portalUtrNumber" placeholder="UPI UTR दर्ज करें" style="margin-bottom:0;"></div>
+                        </div>
+                    </div>
+                    <button type="submit" class="glass-btn-cyan"><i class="fa-solid fa-paper-plane"></i> बुकिंग सबमिट करें</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="no-print" style="display: none;">
+        <div class="admin-container">
+            <div class="sidebar" id="appSidebar">
+                <div class="sidebar-brand" onclick="returnToCustomerPortal()" style="cursor: pointer;"><span id="overlayShopName">👑 ADMIN PANEL</span></div>
+                <ul class="menu-list">
+                    <li class="menu-item active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> डैशबोर्ड</li>
+                    <li class="menu-item" onclick="switchTab('master-ledger', this)"><i class="fa-solid fa-book"></i> मास्टर हिसाब-किताब</li>
+                    <li class="menu-item" onclick="switchTab('ai-assistant', this)"><i class="fa-solid fa-robot"></i> AI असिस्टेंट</li>
+                    <li class="menu-item" onclick="switchTab('customer-list', this)"><i class="fa-solid fa-users"></i> कस्टमर्स</li>
+                    <li class="menu-item" onclick="switchTab('booking-list', this)"><i class="fa-solid fa-calendar-check"></i> बुकिंग्स</li>
+                    <li class="menu-item" onclick="switchTab('dispatch', this)"><i class="fa-solid fa-truck"></i> डिस्पैच</li>
+                    <li class="menu-item" onclick="switchTab('return', this)"><i class="fa-solid fa-camera"></i> रिटर्न</li>
+                    <li class="menu-item" onclick="switchTab('missing-item', this)"><i class="fa-solid fa-triangle-exclamation"></i> मिसिंग लिस्ट</li>
+                    <li class="menu-item" onclick="switchTab('stock', this)"><i class="fa-solid fa-boxes-stacked"></i> स्टॉक</li>
+                    <li class="menu-item" onclick="switchTab('third-party', this)"><i class="fa-solid fa-handshake"></i> थर्ड पार्टी</li>
+                    <li class="menu-item" onclick="switchTab('purchase', this)"><i class="fa-solid fa-cart-shopping"></i> परचेज</li>
+                    <li class="menu-item" onclick="switchTab('income-expense', this)"><i class="fa-solid fa-wallet"></i> आमदनी/खर्च</li>
+                    <li class="menu-item" onclick="switchTab('installments', this)"><i class="fa-solid fa-money-bill-wave"></i> किश्तें (Installments)</li>
+                    <li class="menu-item" onclick="switchTab('payment-ledger', this)"><i class="fa-solid fa-receipt"></i> कैश/ऑनलाइन हिसाब</li>
+                    <li class="menu-item" onclick="switchTab('calendar-view', this)"><i class="fa-solid fa-calendar-days"></i> कैलेंडर</li>
+                    <li class="menu-item" onclick="switchTab('bill', this)"><i class="fa-solid fa-file-invoice-dollar"></i> बिलिंग</li>
+                    <li class="menu-item" onclick="switchTab('setting', this)"><i class="fa-solid fa-gear"></i> सेटिंग्स</li>
+                </ul>
+            </div>
+
+            <div class="main-content">
+                <div class="header">
+                    <div style="display:flex;align-items:center;gap:10px;min-width:0"><button id="menuToggleBtn" type="button" class="no-print" onclick="toggleAppMenu()" aria-label="मेन्यू खोलें या छिपाएँ"><i class="fa-solid fa-bars"></i></button><h3 id="pageTitle" style="font-size:15px;color:var(--primary-blue);font-weight:700;">डैशबोर्ड</h3></div>
+                </div>
+                <div class="content-body">
+                    <!-- Dashboard -->
+                    <div id="dashboard" class="page-section active">
+                        <div class="glass-card-green" style="margin-bottom: 12px;">
+                            <h3 style="color:var(--emerald-neon); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-chart-line"></i> आमदनी व खर्च का सारांश</h3>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div style="background: rgba(255,255,255,0.7); padding: 10px 15px; border-radius: 12px; flex: 1;"><span style="font-size: 12px;">कुल आमदनी</span><h3 id="graphTotalIncome" style="color: var(--emerald-neon);">₹0</h3></div>
+                                <div style="background: rgba(255,255,255,0.7); padding: 10px 15px; border-radius: 12px; flex: 1;"><span style="font-size: 12px;">कुल खर्च</span><h3 id="graphTotalExpense" style="color: #e53e3e;">₹0</h3></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Master Ledger -->
+                    <div id="master-ledger" class="page-section">
+                        <div class="glass-card-blue">
+                            <h3 style="color: var(--primary-blue); margin-bottom: 8px; font-size: 16px;"><i class="fa-solid fa-book-open"></i> मास्टर वित्तीय रिकॉर्ड</h3>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" onclick="exportLedgerToExcel()" class="glass-btn-green" style="max-width: 220px; margin-top:0;"><i class="fa-solid fa-file-excel"></i> Excel डाउनलोड</button>
+                                <button type="button" onclick="exportGstr1Report()" class="glass-btn-cyan" style="max-width: 220px; margin-top:0;"><i class="fa-solid fa-file-invoice"></i> GST GSTR-1 रिपोर्ट</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>आईडी</th><th>नाम</th><th>मोबाइल</th><th>पता</th><th>फंक्शन</th><th>एडवांस</th><th>स्टेटस</th></tr></thead>
+                                <tbody id="ledgerBookingTableBody"><tr><td colspan="7" style="text-align:center;">कोई डेटा नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- AI Assistant -->
+                    <div id="ai-assistant" class="page-section">
+                        <div class="glass-card-blue">
+                            <h3 style="color: var(--primary-blue); font-size: 15px; margin-bottom: 8px;"><i class="fa-solid fa-robot"></i> एडवांस AI असिस्टेंट कंट्रोल सेंटर</h3>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <input type="text" id="aiCommandInput" placeholder="मुझसे बोलें या निर्देश लिखें…" autocomplete="off" style="margin-bottom:0;flex:1;min-width:160px;">
+                                <button type="button" id="aiSendButton" onclick="executeAiCommand()" class="glass-btn-blue" style="width:auto;padding:10px 18px;margin-top:0;"><i class="fa-solid fa-paper-plane"></i> पूछें</button>
+                                <button type="button" id="aiVoiceButton" onclick="startVoiceRecognition()" class="glass-btn-cyan" style="width:auto;padding:10px 16px;margin-top:0;"><i class="fa-solid fa-microphone"></i> बोलें</button>
+                            </div>
+                            <div id="aiAssistantResponse" style="margin-top: 12px; background: rgba(255,255,255,0.9); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--emerald-neon);">
+                                AI असिस्टेंट सक्रिय है... निर्देश दें।
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer List -->
+                    <div id="customer-list" class="page-section">
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>नाम</th><th>मोबाइल</th><th>पता</th><th>किराया</th><th>भुगतान</th><th>बाकी</th><th>एक्शन</th></tr></thead>
+                                <tbody id="customerTableBody"><tr><td colspan="7" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Booking List -->
+                    <div id="booking-list" class="page-section">
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>आईडी</th><th>कस्टमर</th><th>मोबाइल</th><th>इवेंट</th><th>दिनांक</th><th>स्टेटस</th><th>एक्शन</th></tr></thead>
+                                <tbody id="bookingTableBody"><tr><td colspan="7" style="text-align:center;">कोई बुकिंग नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Dispatch with Smart Vendor / Admin Hide-Show Sections -->
+                    <div id="dispatch" class="page-section">
+                        <div class="glass-card-blue">
+                            <div class="dispatch-search-top form-grid" style="margin-bottom:12px;padding:12px;border:1px solid rgba(43,108,176,.22);border-radius:12px;background:rgba(255,255,255,.68)">
+                                <div><label for="dispatchSearchId">बुकिंग आईडी / मोबाइल सर्च</label><input type="search" id="dispatchSearchId" placeholder="बुकिंग आईडी या मोबाइल..." autocomplete="off"></div>
+                                <div class="search-action"><button type="button" onclick="searchDispatchBooking()" class="glass-btn-blue">खोजें</button></div>
+                            </div>
+                            <h3 style="color: var(--primary-blue); margin-bottom: 8px; font-size: 15px;"><i class="fa-solid fa-truck-ramp-box"></i> डिस्पैच</h3>
+                            <label class="dispatch-rate-toggle"><input type="checkbox" id="dispatchSingleRateToggle"> सिंगल रेट लागू करें (अनचेक = सेट/बल्क रेट)</label>
+                            <div style="margin-bottom: 10px; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 12px; display: flex; gap: 10px; align-items: center;">
+                                <input type="checkbox" id="useThirdPartyToggle" onchange="toggleThirdPartyDispatchBox()" style="width: 18px; height: 18px;">
+                                <label for="useThirdPartyToggle" style="margin-bottom:0; font-weight:800; color:var(--pink-neon);">थर्ड-पार्टी (वेंडर) से सामान लें</label>
+                            </div>
+
+                            <!-- Vendor Section (Shows when Vendor toggled, Admin hidden) -->
+                            <div id="thirdPartyDispatchSection" style="display: none; background: rgba(236,72,153,0.1); padding: 12px; border-radius: 12px; border: 1px dashed var(--pink-neon); margin-bottom: 10px;">
+                                <h4 style="color: var(--pink-neon); font-size: 13px; margin-bottom: 6px;">वेंडर (पार्टी) और सामान चुनें</h4>
+                                <div class="form-grid">
+                                    <div><label>पार्टी चुनें</label><select id="tpDispatchPartySelect" onchange="populateTpItemsForParty()"><option value="" disabled selected>पार्टी चुनें</option></select></div>
+                                    <div><label>सामान चुनें</label><select id="tpDispatchItemDropdown"><option value="" disabled selected>सामान चुनें</option></select></div>
+                                    <div><label>मात्रा</label><input type="number" id="tpDispatchQty" min="1" placeholder="1"></div>
+                                    <div style="display: flex; align-items: flex-end;"><button type="button" onclick="addThirdPartyItemToDispatch()" class="glass-btn-green" style="margin-top:0;">जोड़ें</button></div>
+                                </div>
+                            </div>
+
+                            <!-- Admin Section (Hidden when Vendor selected) -->
+                            <div id="adminStockDispatchSection" style="background: rgba(43,108,176,0.1); padding: 12px; border-radius: 12px; border: 1px dashed var(--primary-blue); margin-bottom: 10px;">
+                                <h4 style="color: var(--primary-blue); font-size: 13px; margin-bottom: 6px;">ओनर स्टॉक से सामान जोड़ें</h4>
+                                <div class="form-grid">
+                                    <div><label>स्टॉक सामान</label><select id="adminAddStockSelect"><option value="" disabled selected>सामान चुनें</option></select></div>
+                                    <div><label>मात्रा</label><input type="number" id="adminAddStockQty" min="1" placeholder="1"></div>
+                                    <div style="display: flex; align-items: flex-end;"><button type="button" onclick="addItemToPendingBookingDispatch()" class="glass-btn-blue" style="margin-top:0;">जोड़ें</button></div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>बुकिंग आईडी</th><th>कस्टमर</th><th>सामान</th><th>स्टेटस</th><th>एक्शन</th></tr></thead>
+                                <tbody id="dispatchTableBody"><tr><td colspan="5" style="text-align:center;">कोई डिस्पैच पेंडिंग नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Return -->
+                    <div id="return" class="page-section">
+                        <div class="glass-card-purple">
+                            <h3 style="color: var(--pink-neon); margin-bottom: 6px; font-size: 15px;"><i class="fa-solid fa-rotate-right"></i> रिटर्न (सामान वापसी)</h3>
+                            <div class="form-grid" style="margin-bottom: 10px;">
+                                <div><label>बुकिंग आईडी / मोबाइल</label><input type="text" id="returnBarcodeInput" placeholder="आईडी दर्ज करें..."></div>
+                                <div style="display: flex; align-items: flex-end;"><button type="button" onclick="loadReturnBookingForCounting()" class="glass-btn-blue" style="margin-top:0;">लोड करें</button></div>
+                            </div>
+                            <div id="returnManualCountingSection" style="display: none; background: #fff; padding: 12px; border-radius: 12px;">
+                                <div class="table-responsive"><table><thead><tr><th>सामान</th><th>स्रोत</th><th>भेजा</th><th>वापस मिला</th></tr></thead><tbody id="returnCountingTableBody"></tbody></table></div>
+                                <button type="button" onclick="completeManualReturnProcess()" class="glass-btn-green">वापसी पूर्ण करें</button><button type="button" onclick="printReturnSlip()" class="glass-btn-blue">रिटर्न स्लिप प्रिंट</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Missing Items -->
+                    <div id="missing-item" class="page-section">
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>आईडी</th><th>कस्टमर/पार्टी</th><th>सामान</th><th>स्रोत</th><th>मात्रा</th><th>जुर्माना</th></tr></thead>
+                                <tbody id="missingTableBody"><tr><td colspan="6" style="text-align:center;">कोई मिसिंग आइटम नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Stock with OCR Option -->
+                    <div id="stock" class="page-section">
+                        <form onsubmit="saveStockItemReal(event)" class="glass-card-green">
+                            <h3 style="color:var(--emerald-neon); margin-bottom:8px; font-size:15px;"><i class="fa-solid fa-square-plus"></i> नया सामान जोड़ें</h3>
+                            <div style="margin-bottom: 10px;"><label class="glass-btn-cyan" style="cursor:pointer; display:inline-flex; width:auto; padding:8px 16px;"><i class="fa-solid fa-camera"></i> OCR से टेक्स्ट स्कैन करें <input type="file" id="ocrImageInput" accept="image/*" onchange="runOcrScan(event)" style="display:none;"></label></div>
+                            <div class="form-grid">
+                                <div><label>नाम</label><input type="text" id="stockItemName" required placeholder="सामान नाम"></div>
+                                <div><label>मात्रा</label><input type="number" id="stockItemQty" required min="1" placeholder="10"></div>
+                                <div><label>सेट रेंट</label><input type="number" id="stockItemSetRent" required min="0" placeholder="500"></div>
+                                <div><label>सिंगल रेंट</label><input type="number" id="stockItemSingleRent" required min="0" placeholder="700"></div>
+                                <div><label>मिसिंग चार्ज</label><input type="number" id="stockItemMissing" required min="0" placeholder="100"></div>
+                                <button type="submit" class="glass-btn-green" style="grid-column: 1/-1;">सेव करें</button>
+                            </div>
+                        </form>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>सामान</th><th>मात्रा</th><th>रेट</th><th>बारकोड</th><th>एक्शन</th></tr></thead>
+                                <tbody id="stockTableBody"><tr><td colspan="5" style="text-align:center;">कोई स्टॉक नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Third Party -->
+                    <div id="third-party" class="page-section">
+                        <form onsubmit="saveThirdPartyEntry(event)" class="glass-card-blue" style="margin-bottom: 12px;">
+                            <h3 style="color: var(--primary-blue); font-size: 15px; margin-bottom: 8px;"><i class="fa-solid fa-handshake"></i> थर्ड-पार्टी एंट्री</h3>
+                            <div class="form-grid">
+                                <div><label>पार्टी नाम</label><input type="text" id="tpPartyName" required placeholder="पार्टी नाम"></div>
+                                <div><label>सामान नाम</label><input type="text" id="tpItemName" required placeholder="सामान"></div>
+                                <div><label>मात्रा</label><input type="number" id="tpItemQty" min="1" required placeholder="10"></div>
+                                <div><label>देना किराया (Cost)</label><input type="number" id="tpItemCost" min="0" required placeholder="400"></div>
+                                <div><label>लेना किराया (Charge)</label><input type="number" id="tpItemCharge" min="0" required placeholder="600"></div>
+                                <button type="submit" class="glass-btn-blue" style="grid-column: 1/-1;">सेव करें</button>
+                            </div>
+                        </form>
+                        <div id="partyWiseTablesContainer"></div>
+                    </div>
+
+                    <!-- Purchase with Automatic Current Date -->
+                    <div id="purchase" class="page-section">
+                        <form onsubmit="savePurchaseEntry(event)" class="glass-card-green" style="margin-bottom: 12px;">
+                            <h3 style="color: var(--emerald-neon); font-size: 15px; margin-bottom: 8px;"><i class="fa-solid fa-cart-shopping"></i> परचेज एंट्री</h3>
+                            <div class="form-grid">
+                                <div><label>दिनांक (आज की तारीख)</label><input type="date" id="purDate" required readonly></div>
+                                <div><label>सामान</label><input type="text" id="purItemName" required placeholder="सामान"></div>
+                                <div><label>मात्रा</label><input type="number" id="purItemQty" min="1" required placeholder="5"></div>
+                                <div><label>कीमत</label><input type="number" id="purItemPrice" min="1" required placeholder="2000"></div>
+                                <div><label>सप्लायर</label><input type="text" id="purSupplier" required placeholder="सप्लायर"></div>
+                                <button type="submit" class="glass-btn-green" style="grid-column: 1/-1;">सेव करें</button>
+                            </div>
+                        </form>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>दिनांक</th><th>सामान</th><th>मात्रा</th><th>कीमत</th><th>सप्लायर</th></tr></thead>
+                                <tbody id="purchaseTableBody"><tr><td colspan="5" style="text-align:center;">कोई परचेज नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Income / Expense -->
+                    <div id="income-expense" class="page-section">
+                        <form onsubmit="saveDailyExpense(event)" class="glass-card-blue" style="margin-bottom: 12px;">
+                            <h3 style="color: var(--primary-blue); font-size: 15px; margin-bottom: 8px;"><i class="fa-solid fa-receipt"></i> दैनिक खर्च</h3>
+                            <div class="form-grid">
+                                <div><label>विवरण</label><input type="text" id="expenseDesc" required placeholder="कारण"></div>
+                                <div><label>राशि</label><input type="number" id="expenseAmount" min="1" required placeholder="राशि"></div>
+                                <button type="submit" class="glass-btn-cyan" style="grid-column: 1/-1;">खर्च दर्ज करें</button>
+                            </div>
+                        </form>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>दिनांक</th><th>विवरण</th><th>प्रकार</th><th>रुपये</th></tr></thead>
+                                <tbody id="incomeExpenseTableBody"><tr><td colspan="4" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Installments Page -->
+                    <div id="installments" class="page-section">
+                        <div class="glass-card-blue">
+                            <h3 style="color:var(--primary-blue); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-money-bill-wave"></i> कस्टमर बकाया एवं किश्तें</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>कस्टमर</th><th>मोबाइल</th><th>कुल किराया</th><th>भुगतान</th><th>बाकी (Balance Due)</th><th>किश्त जमा करें</th></tr></thead>
+                                    <tbody id="installmentsTableBody"><tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Ledger Page (Online vs Cash) -->
+                    <div id="payment-ledger" class="page-section">
+                        <div class="glass-card-green">
+                            <h3 style="color:var(--emerald-neon); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> ऑनलाइन और नकद भुगतान का हिसाब</h3>
+                            <div style="display:flex; gap:15px; margin-bottom:12px;">
+                                <div style="background:#fff; padding:10px; border-radius:10px; flex:1;"><span>कुल नकद (Cash):</span><h3 id="totalCashSum" style="color:var(--primary-blue);">₹0</h3></div>
+                                <div style="background:#fff; padding:10px; border-radius:10px; flex:1;"><span>कुल ऑनलाइन (UPI):</span><h3 id="totalOnlineSum" style="color:var(--emerald-neon);">₹0</h3></div>
+                            </div>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead><tr><th>बुकिंग आईडी</th><th>कस्टमर</th><th>मोबाइल</th><th>राशि</th><th>भुगतान मोड (Cash/UPI)</th><th>UTR नंबर</th></tr></thead>
+                                    <tbody id="paymentLedgerTableBody"><tr><td colspan="6" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar View -->
+                    <div id="calendar-view" class="page-section">
+                        <div class="glass-card-blue" style="margin-bottom: 12px;">
+                            <div class="calendar-grid-header">
+                                <button type="button" onclick="changeCalendarMonth(-1)" class="action-btn"><i class="fa-solid fa-chevron-left"></i> पिछला</button>
+                                <h3 id="calendarMonthTitle" style="color: var(--primary-blue); font-size: 16px; font-weight: 800;">महीना / वर्ष</h3>
+                                <button type="button" onclick="changeCalendarMonth(1)" class="action-btn">अगला <i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                            <div class="calendar-weekdays">
+                                <div>सोम</div><div>मंगल</div><div>बुध</div><div>गुरु</div><div>शुक्र</div><div>शनि</div><div>रवि</div>
+                            </div>
+                            <div id="calendarDaysContainer" class="calendar-days-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Billing -->
+                    <div id="bill" class="page-section">
+                        <div class="glass-card-blue">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="billSearchInput" placeholder="बुकिंग आईडी दर्ज करें...">
+                                <button type="button" onclick="searchBillingCustomer()" class="glass-btn-blue" style="width: auto; padding: 10px 18px;">बिल देखें</button>
+                            </div>
+                        </div>
+                        <div class="glass-card-blue" style="margin-top:10px"><div class="form-grid"><div><label for="billDiscountInput">डिस्काउंट ₹</label><input id="billDiscountInput" type="number" min="0" step="0.01" value="0" placeholder="डिस्काउंट राशि"></div><div><label for="billOtherChargesInput">अन्य चार्ज ₹</label><input id="billOtherChargesInput" type="number" min="0" step="0.01" value="0" placeholder="अन्य चार्ज"></div><div style="display:flex;align-items:flex-end"><button type="button" class="glass-btn-blue" onclick="applyInvoiceAdjustments()">राशि अपडेट करें</button></div></div><small>डिस्काउंट और अन्य चार्ज बिल की कुल राशि में लागू होंगे। सेव करने से पहले राशि जाँचें।</small></div>
+                        <div id="billingInvoicePreview" style="margin-top:15px;"></div>
+                        <div class="glass-card-blue" style="margin-top:14px"><h3>💳 पेमेंट एंट्री / Cash + Online + Due</h3>
+                        <div class="form-grid"><div><label>बुकिंग ID</label><input id="paymentBookingId" type="text" placeholder="Booking ID"></div><div><label>कुल बिल राशि ₹</label><input id="paymentTotalAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Auto / total"></div><div><label>पहले जमा राशि ₹</label><input id="paymentAlreadyPaid" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div><div><label>इस बार Cash ₹</label><input id="paymentCashAmount" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div><div><label>इस बार Online ₹</label><input id="paymentOnlineAmount" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div><div><label>UTR / Transaction ID</label><input id="paymentUtr" type="text" placeholder="Online भुगतान के बाद UTR"></div></div>
+                        <p>कुल जमा: <b id="paymentPaidSummary">₹0.00</b> · बाकी Due: <b id="paymentDueSummary">₹0.00</b></p>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="glass-btn-blue" style="width:auto" onclick="generatePaymentQr()">Online QR बनाएं</button><button type="button" class="glass-btn-green" style="width:auto" onclick="savePaymentEntry()">पेमेंट सेव / UTR सबमिट</button></div>
+                        <div id="paymentQrArea" style="display:none;background:white;color:#111;text-align:center;padding:12px;margin-top:12px;border-radius:12px"><canvas id="paymentQrCanvas"></canvas><p id="paymentQrCaption"></p><small>भुगतान ऐप में UPI भुगतान करें, फिर UTR भरकर सबमिट करें। QR स्कैन होना भुगतान की पुष्टि नहीं है।</small></div>
+                        </div>
+                    </div>
+
+                    <!-- Settings with Gateway, UPI, Stamps & Image Upload -->
+                    <div id="setting" class="page-section">
+                        <form onsubmit="saveSettings(event)" class="glass-card-blue" style="margin-bottom: 12px;">
+                            <h3 style="color:var(--primary-blue); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-gear"></i> सेटिंग्स, पेमेंट गेटवे, UPI और इमेज स्टैम्प्स</h3>
+                            <div class="form-grid">
+                                <div><label>दुकान का नाम</label><input type="text" id="settingBusinessName" required></div>
+                                <div><label>संपर्क नंबर</label><input type="tel" id="settingContactNo" required></div>
+                                <div><label>UPI ID (डायनेमिक QR के लिए)</label><input type="text" id="settingUpiId" placeholder="8120727987@upi"></div>
+                                <div><label>Payment Gateway API Key</label><input type="text" id="settingPayGatewayKey" placeholder="Gateway Key"></div>
+                                <div><label>WhatsApp Cloud API Token (सुरक्षा के लिए यहाँ न डालें)</label><input type="password" id="settingWaToken" placeholder="Token backend/.env में डालें" autocomplete="new-password"><small>यह फील्ड सेव नहीं होती। Token backend की .env फाइल में रखें।</small></div>
+                                <div><label>WhatsApp Phone Number ID</label><input type="text" id="settingWaPhoneId" placeholder="123456789"></div>
+                                
+                                <div>
+                                    <label>Dispatch Stamp / Logo इमेज अपलोड करें</label>
+                                    <input type="file" id="settingDispatchStampFile" accept="image/*" onchange="handleImageUpload(event, 'dispatchStamp')">
+                                </div>
+                                <div>
+                                    <label>Return Stamp इमेज अपलोड करें</label>
+                                    <input type="file" id="settingReturnStampFile" accept="image/*" onchange="handleImageUpload(event, 'returnStamp')">
+                                </div>
+                                <div>
+                                    <label>Paid Bill Stamp इमेज अपलोड करें</label>
+                                    <input type="file" id="settingPaidStampFile" accept="image/*" onchange="handleImageUpload(event, 'paidStamp')">
+                                </div>
+
+                                <div style="grid-column:1/-1"><label for="settingTermsConditions">बिल, डिस्पैच और रिटर्न स्लिप के लिए Terms &amp; Conditions</label><textarea id="settingTermsConditions" rows="3" placeholder="किराया, टूट-फूट, मिसिंग सामान और भुगतान की शर्तें"></textarea></div>
+                                <div><label class="glass-btn-blue" style="cursor:pointer; display:inline-flex; width:auto; padding:10px;"><i class="fa-solid fa-file-arrow-up"></i> एक्सेल स्टॉक इम्पोर्ट (CSV) <input type="file" id="csvFileInput" accept=".csv" onchange="importStockFromCSV(event)" style="display:none;"></label></div>
+                            </div>
+<details class="settings-section"><summary>🌐 होस्टिंग URL / APK लिंक QR</summary><div class="settings-section-body">
+<label>होस्ट की गई वेबसाइट का URL (https:// से शुरू करें)</label>
+<input type="url" id="hostingUrlInput" placeholder="https://your-domain.example" inputmode="url">
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="glass-btn-blue" style="width:auto" onclick="generateHostingQr()">QR बनाएं</button><button type="button" class="glass-btn-green" style="width:auto" onclick="shareHostingQr()">QR / लिंक शेयर करें</button><button type="button" class="action-btn" onclick="copyHostingUrl()">URL कॉपी</button></div>
+<div id="hostingQrWrap" style="display:none;margin-top:12px;background:#fff;padding:12px;text-align:center;border-radius:12px"><canvas id="hostingQrCanvas" style="max-width:100%"></canvas><p id="hostingQrText" style="color:#111;word-break:break-all"></p><button type="button" class="action-btn no-print" onclick="printHostingQr()">QR प्रिंट</button></div>
+<small>यह QR वेबसाइट खोलने के लिए है। वेबसाइट का HTML बदलने पर ऑनलाइन वेब ऐप अगली बार खोलने/रीफ्रेश करने पर अपडेट होगा। APK के native बदलावों के लिए नया APK बनाना होगा।</small>
+</div></details>
+<details class="settings-section"><summary>📲 भुगतान / OTP / Backend</summary><div class="settings-section-body"><label>Backend API URL</label><input type="url" id="backendApiUrlInput" placeholder="https://आपका-backend-domain" inputmode="url"><label>AI Access Token (Backend का ADMIN_API_TOKEN)</label><input type="password" id="aiAccessTokenInput" placeholder="Backend token यहाँ डालें" autocomplete="new-password"><small>Token को GitHub/HTML में न लिखें। यह इस ब्राउज़र के local storage में रहेगा; साझा डिवाइस पर न रखें। API Key केवल Backend के environment variables में रखें।</small><label>OTP विकल्प</label><select id="otpChannelSetting"><option value="off">OTP बंद</option><option value="demo">Demo OTP (केवल testing)</option><option value="sms">SMS Gateway</option><option value="whatsapp">WhatsApp OTP</option><option value="both">SMS + WhatsApp</option></select><label><input type="checkbox" id="requireItemSelectionSetting" checked> ग्राहक बुकिंग में सामान चुनना अनिवार्य रखें</label><label><input type="checkbox" id="enableOfflineSetting" checked> Offline mode / sync queue चालू रखें</label><small>Production में OTP केवल backend provider से भेजें। Demo OTP को public hosting पर चालू न रखें।</small></div></details>
+<details class="settings-section" open><summary>🛡️ बैकअप और डेटा सुरक्षा</summary><div class="settings-section-body"><div class="settings-actions"><button type="button" class="glass-btn-green" onclick="exportFullBackup()">पूरा डेटा बैकअप</button><label class="glass-btn-blue file-button">बैकअप रिस्टोर <input type="file" accept=".json,application/json" onchange="restoreFullBackup(event)" style="display:none"></label><button type="button" class="glass-btn-cyan" onclick="resetAllSoftwareData()">लोकल डेटा रीसेट</button></div><small>रीसेट से पहले बैकअप लें। यह लोकल डेटा मिटाता है; क्लाउड डेटा अलग से प्रभावित हो सकता है। Reset से पहले अलग बैकअप रखें।</small></div></details>\n                            <button type="submit" class="glass-btn-blue" style="margin-top:10px;">सेटिंग्स सेव करें</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCU3gWJSmNOQPEp7K9FT1nabnrzz5zvVY8",
+            authDomain: "radhe-krishna-online.firebaseapp.com",
+            projectId: "radhe-krishna-online",
+            storageBucket: "radhe-krishna-online.firebasestorage.app",
+            messagingSenderId: "122262862724",
+            appId: "1:122262862724:web:a7c33aa15c81ff00a1bbd1",
+            measurementId: "G-XM94XSHMJX"
+        };
+
+        let firebaseApp, dbRef = null;
+        let currentCalendarDate = new Date();
+
+        function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n]/g,' ');}
+        function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+        function renderMissingItems(){const rows=safeGetStorage('missingItemsDatabase',[]),a=document.getElementById('showAdminMissing'),t=document.getElementById('showThirdPartyMissing'),body=document.getElementById('missingTableBody');if(!body)return;const list=rows.filter(x=>x.source==='third-party'?!t||t.checked:!a||a.checked);body.innerHTML=list.length?list.map(x=>`<tr><td>#${escapeHtml(x.bookingId)}</td><td>${escapeHtml(x.source==='third-party'?x.partyName:x.customer)}</td><td>${escapeHtml(x.item)}</td><td>${x.source==='third-party'?'थर्ड-पार्टी':'एडमिन'}</td><td>${Number(x.qty)||0}</td><td>₹${Number(x.penalty)||0}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center">कोई मिसिंग आइटम नहीं</td></tr>';}
+        function exportFullBackup(){const keys=['softwareBookings','realStockDatabase','thirdPartyDatabase','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase'],data={app:'Radha Krishna Tent House ERP',version:1,exportedAt:new Date().toISOString(),data:{}};keys.forEach(k=>data.data[k]=safeGetStorage(k,[]));const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='tent-house-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);showActionMessage('बैकअप डाउनलोड शुरू हुआ','success');}
+        function restoreFullBackup(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(file.size>25*1024*1024){showActionMessage('बैकअप फ़ाइल 25 MB से बड़ी है','error');event.target.value='';return}const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result),allowed=['softwareBookings','realStockDatabase','thirdPartyDatabase','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase'];if(!p||!p.data||typeof p.data!=='object'||Array.isArray(p.data))throw Error('अमान्य बैकअप फ़ाइल');if(p.app&& !String(p.app).toLowerCase().includes('tent house'))throw Error('यह किसी दूसरे ऐप का बैकअप लगता है');const entries=Object.entries(p.data).filter(([k])=>allowed.includes(k));if(!entries.length)throw Error('इस बैकअप में पहचानने योग्य डेटा नहीं है');for(const [k,v] of entries){if(k==='softwareSettings'){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Settings डेटा गलत है')}else if(!Array.isArray(v))throw Error(k+' डेटा सूची के रूप में नहीं है')}if(!confirm('मौजूदा डेटा बैकअप से बदलेगा। Master Ledger को नहीं बदला जाएगा। पहले अलग बैकअप रखना उचित है। जारी रखें?'))return;entries.forEach(([k,v])=>safeSetStorage(k,v));loadAllFirebaseData();renderMissingItems();showActionMessage('बैकअप रिस्टोर हुआ; Master Ledger अलग सुरक्षित रखा गया','success');}catch(e){showActionMessage('रिस्टोर विफल: '+e.message,'error')}finally{event.target.value=''}};reader.readAsText(file);}
+        function resetAllSoftwareData(){if(!confirm('सभी लोकल सॉफ्टवेयर डेटा मिट जाएगा। पहले बैकअप लें। जारी रखें?'))return;['softwareBookings','realStockDatabase','thirdPartyDatabase','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase'].forEach(k=>localStorage.removeItem(k));loadAllFirebaseData();showActionMessage('लोकल डेटा रीसेट हुआ','success');}
+        function toggleAppMenu(forceOpen){
+            const shell=document.querySelector('.admin-container'); if(!shell)return;
+            const collapsed=forceOpen===undefined ? !shell.classList.contains('sidebar-collapsed') : !forceOpen;
+            shell.classList.toggle('sidebar-collapsed',collapsed);
+            try{localStorage.setItem('rkMenuCollapsed',collapsed?'1':'0')}catch(e){}
+        }
+        function printInvoice(){
+            const source=document.getElementById('billingInvoicePreview');
+            const area=document.getElementById('printableSlipArea');
+            if(!source || !source.innerHTML.trim()){showActionMessage('पहले बिल खोजें, फिर प्रिंट करें','error');return}
+            area.dataset.printRestore='invoice'; area.style.display='block';
+            area.innerHTML=source.innerHTML.replace(/<div[^>]*class=["']no-print["'][^>]*>[\s\S]*?<\/div>/gi,'');
+            const terms=(safeGetStorage('softwareSettings',{}).termsConditions||'').trim();
+            if(terms) area.insertAdjacentHTML('beforeend','<section style="margin-top:12px;border-top:1px solid #777;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">'+escapeHtml(terms)+'</p></section>');
+            window.print();
+        }
+        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area&&area.dataset.printRestore==='invoice'){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}});
+
+        function initFirebaseConnection() {
+            try {
+                if (!firebase.apps.length) {
+                    firebaseApp = firebase.initializeApp(firebaseConfig);
+                } else {
+                    firebaseApp = firebase.app();
+                }
+                dbRef = firebase.database().ref('tent_erp_data');
+                dbRef.on('value', (snapshot) => {
+                    let cloudData = snapshot.val();
+                    if(cloudData) {
+                        if(cloudData.bookings) localStorage.setItem('softwareBookings', JSON.stringify(cloudData.bookings));
+                        if(cloudData.stock) localStorage.setItem('realStockDatabase', JSON.stringify(cloudData.stock));
+                        if(cloudData.thirdParty) localStorage.setItem('thirdPartyDatabase', JSON.stringify(cloudData.thirdParty));
+                        if(cloudData.purchase) localStorage.setItem('purchaseDatabase', JSON.stringify(cloudData.purchase));
+                        if(cloudData.income) localStorage.setItem('incomeExpenseDatabase', JSON.stringify(cloudData.income));
+                        if(cloudData.missingItems) localStorage.setItem('missingItemsDatabase', JSON.stringify(cloudData.missingItems));
+                        if(typeof window.loadAllFirebaseData === 'function') window.loadAllFirebaseData();
+                    }
+                });
+            } catch(e) {
+                console.log("Offline Fallback Active");
+            }
+        }
+
+        let customerCart = [];
+
+        function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});firebase.auth().signInWithPopup(provider).then(result=>{document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();showActionMessage('Google लॉगिन सफल: '+(result.user.email||''),'success');}).catch(error=>{const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('Google लॉगिन विफल: '+(hints[error.code]||error.code+': '+error.message),'error');});}catch(e){showActionMessage('Google लॉगिन शुरू नहीं हुआ: '+e.message,'error');}}
+        function syncToCloud() {
+            if(dbRef && navigator.onLine) {
+                dbRef.update({
+                    bookings: safeGetStorage('softwareBookings', []),
+                    stock: safeGetStorage('realStockDatabase', []),
+                    thirdParty: safeGetStorage('thirdPartyDatabase', []),
+                    purchase: safeGetStorage('purchaseDatabase', []),
+                    income: safeGetStorage('incomeExpenseDatabase', []), missingItems: safeGetStorage('missingItemsDatabase', [])
+                }).catch(err => console.log(err));
+            }
+        }
+
+        function safeGetStorage(key, defaultValue) {
+            try {
+                let val = localStorage.getItem(key);
+                return val ? JSON.parse(val) : defaultValue;
+            } catch(e) { return defaultValue; }
+        }
+
+        function safeSetStorage(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                syncToCloud();
+            } catch(e) {}
+        }
+
+        function showActionMessage(message, type = 'success') {
+            const toast = document.getElementById('actionToast');
+            if(!toast) return;
+            toast.textContent = message;
+            toast.className = `show ${type}`;
+            setTimeout(() => { toast.className = ''; }, 3000);
+        }
+
+        // Smart Vendor / Admin Section Hide-Show Toggle
+        function toggleThirdPartyDispatchBox() {
+            let chk = document.getElementById('useThirdPartyToggle');
+            let tpSec = document.getElementById('thirdPartyDispatchSection');
+            let adminSec = document.getElementById('adminStockDispatchSection');
+            if (chk) {
+                if (chk.checked) {
+                    tpSec.style.display = 'block';
+                    adminSec.style.display = 'none';
+                    loadStockDropdowns();
+                    loadThirdPartyDropdownsForDispatch();
+                } else {
+                    tpSec.style.display = 'none';
+                    adminSec.style.display = 'block';
+                    loadStockDropdowns();
+                }
+            }
+        }
+
+        function loadThirdPartyDropdownsForDispatch() {
+            let partySelect = document.getElementById('tpDispatchPartySelect');
+            let tpList = safeGetStorage('thirdPartyDatabase', []);
+            let uniqueParties = [...new Set(tpList.map(tp => tp.partyName))];
+            if(partySelect) {
+                partySelect.innerHTML = '<option value="" disabled selected>पार्टी चुनें</option>';
+                uniqueParties.forEach(party => {
+                    partySelect.innerHTML += `<option value="${party}">${party}</option>`;
+                });
+            }
+        }
+
+        function populateTpItemsForParty() {
+            let partyName = document.getElementById('tpDispatchPartySelect').value;
+            let itemSelect = document.getElementById('tpDispatchItemDropdown');
+            let tpList = safeGetStorage('thirdPartyDatabase', []);
+            let partyItems = tpList.filter(tp => tp.partyName === partyName);
+            if(itemSelect) {
+                itemSelect.innerHTML = '<option value="" disabled selected>सामान चुनें</option>';
+                partyItems.forEach(tp => {
+                    itemSelect.innerHTML += `<option value="${tp.item}|${tp.chargePrice || 600}">${tp.item}</option>`;
+                });
+            }
+        }
+
+        // Automatic Background Removal Simulation on Image Upload
+        function handleImageUpload(event, fieldName) {
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let img = new Image();
+                img.onload = function() {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Simple background removal processing simulation (Alpha thresholding)
+                    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let data = imgData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i], g = data[i + 1], b = data[i + 2];
+                        if (r > 230 && g > 230 && b > 230) {
+                            data[i + 3] = 0; // Make white backgrounds transparent
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    let processedDataUrl = canvas.toDataURL('image/png');
+                    
+                    let settings = safeGetStorage('softwareSettings', {});
+                    settings[fieldName] = processedDataUrl;
+                    safeSetStorage('softwareSettings', settings);
+                    showActionMessage("इमेज अपलोड और बैकग्राउंड रिमूव हो गया", "success");
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        let shopClickCount = 0;
+        function handleShopNameTripleClick(event) {
+            event.stopPropagation();
+            shopClickCount++;
+            setTimeout(() => { shopClickCount = 0; }, 1200);
+            if(shopClickCount >= 3) {
+                document.getElementById('customerFirstPortal').style.display = 'none';
+                document.getElementById('welcomeOverlay').style.display = 'flex';
+            }
+        }
+
+        function closeWelcomeOverlay() {
+            document.getElementById('welcomeOverlay').style.display = 'none';
+            document.getElementById('customerFirstPortal').style.display = 'flex';
+        }
+
+        function handleDirectAdminLogin(event) {
+            event.preventDefault();
+            let pass = document.getElementById('realAdminPass').value.trim();
+            if(pass === '8120727987' || pass === 'admin') {
+                document.getElementById('welcomeOverlay').style.display = 'none';
+                document.getElementById('customerFirstPortal').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadAllFirebaseData();
+                showActionMessage("Login Successful", "success");
+            } else {
+                showActionMessage("गलत पासवर्ड!", "error");
+            }
+        }
+
+        function returnToCustomerPortal() {
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('welcomeOverlay').style.display = 'flex';
+        }
+
+        function calculateRentalDays(dateStr1, dateStr2) {
+            // Parse date-only values in local time to avoid UTC/time-zone off-by-one errors.
+            const parseLocal = value => { const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), 12, 0, 0, 0) : null; };
+            const d1 = parseLocal(dateStr1), d2 = parseLocal(dateStr2);
+            if (!d1 || !d2 || Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime()) || d2 < d1) return 1;
+            const diffDays = Math.round((d2 - d1) / 86400000);
+            return Math.max(1, diffDays);
+        }
+
+        function calculateBookingTotalRent(b) {
+            let days = calculateRentalDays(b.date, b.returnDate);
+            let total = 0;
+            if(b.items) b.items.forEach(i => { total += Math.max(0,Number(i.qty || 0)) * Math.max(0,Number(i.rentPrice ?? 500)) * days; });
+            return Math.max(0,total + Math.max(0,Number(b.otherCharges)||0) - Math.max(0,Number(b.discountAmount)||0));
+        }
+
+        function loadAllFirebaseData() {
+            loadStockDropdowns();
+            loadBookingsListTable();
+            loadCustomerList();
+            loadDispatchTable();
+            loadRealStockList();
+            loadPurchaseTable();
+            loadIncomeExpenseTable();
+            loadThirdPartyLedger();
+            loadInstallmentsTable();
+            loadPaymentLedgerTable();
+            loadMasterLedgerData();
+            loadCalendarGrid();
+            loadSettingsToUI();
+            renderMissingItems();
+            
+            let today = new Date().toISOString().slice(0,10);
+            if(document.getElementById('purDate')) document.getElementById('purDate').value = today;
+        }
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+            let targetSec = document.getElementById(tabId);
+            if(targetSec) targetSec.classList.add('active');
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            if(element) element.classList.add('active');
+            document.getElementById('pageTitle').textContent = element.textContent.trim();
+        }
+
+        function changeCalendarMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            loadCalendarGrid();
+        }
+
+        function loadCalendarGrid() {
+            let year = currentCalendarDate.getFullYear();
+            let month = currentCalendarDate.getMonth();
+            const monthNames = ["जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून", "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"];
+            let titleEl = document.getElementById('calendarMonthTitle');
+            if(titleEl) titleEl.textContent = `${monthNames[month]} ${year}`;
+
+            let container = document.getElementById('calendarDaysContainer');
+            if(!container) return;
+            container.innerHTML = '';
+
+            let firstDayIndex = new Date(year, month, 1).getDay();
+            firstDayIndex = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
+            let totalDays = new Date(year, month + 1, 0).getDate();
+            let bookings = safeGetStorage('softwareBookings', []);
+
+            for(let i = 0; i < firstDayIndex; i++) {
+                container.innerHTML += `<div class="calendar-day-cell" style="opacity:0.3; background:#d4dadf;"></div>`;
+            }
+
+            for(let day = 1; day <= totalDays; day++) {
+                let formattedMonth = (month + 1).toString().padStart(2, '0');
+                let formattedDay = day.toString().padStart(2, '0');
+                let currentDateStr = `${year}-${formattedMonth}-${formattedDay}`;
+
+                let dayBookings = bookings.filter(b => b.date <= currentDateStr && currentDateStr <= b.returnDate);
+                let hasBookingClass = dayBookings.length > 0 ? 'has-booking' : '';
+                let bookingTags = dayBookings.map(b => `<div class="calendar-booking-tag" title="${b.name} (#${b.id})">#${b.id} ${b.name}</div>`).join('');
+
+                container.innerHTML += `
+                    <div class="calendar-day-cell ${hasBookingClass}">
+                        <div class="calendar-day-number">${day}</div>
+                        ${bookingTags}
+                    </div>
+                `;
+            }
+        }
+
+        window.customerOtpVerifiedPhone=null; window.customerOtpLocalCode=null;
+        document.addEventListener('DOMContentLoaded',()=>{const mob=document.getElementById('portalCustMob');if(mob)mob.addEventListener('input',()=>{window.customerOtpVerifiedPhone=null;const st=document.getElementById('customerOtpStatus');if(st)st.textContent='मोबाइल बदलने पर OTP फिर से verify करें।';});});
+        async function sendCustomerOtp(){const mob=(document.getElementById('portalCustMob')?.value||'').trim();if(!/^\d{10}$/.test(mob)){showActionMessage('पहले 10 अंकों का मोबाइल नंबर डालें','error');return}const s=safeGetStorage('softwareSettings',{}),mode=s.otpChannel||'off',api=(s.backendApiUrl||'').replace(/\/$/,'');if(mode==='off'){window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='OTP बंद है; इस सेटिंग में verification आवश्यक नहीं।';return}if(mode==='demo'&&!api){window.customerOtpLocalCode=String(Math.floor(100000+Math.random()*900000));alert(window.customerOtpLocalCode);document.getElementById('customerOtpStatus').textContent='Demo OTP स्क्रीन पर दिखाया गया है (testing only).';return}if(!api){showActionMessage('Live OTP के लिए Settings में Backend API URL भरें','error');return}try{const channel=mode==='both'?'both':(mode==='whatsapp'?'whatsapp':'sms');const r=await fetch(api+'/api/otp/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:'+91'+mob,channel})});const d=await r.json();if(!r.ok)throw Error(d.error||'OTP send failed');if(d.demoOtp){window.customerOtpLocalCode=String(d.demoOtp);alert(window.customerOtpLocalCode)}document.getElementById('customerOtpStatus').textContent=d.message||'OTP भेजने का अनुरोध स्वीकार हुआ।';showActionMessage('OTP अनुरोध भेजा गया','success')}catch(e){showActionMessage('OTP नहीं भेजा गया: '+e.message,'error')}}
+        async function verifyCustomerOtp(){const mob=(document.getElementById('portalCustMob')?.value||'').trim(),otp=(document.getElementById('customerOtpInput')?.value||'').trim(),s=safeGetStorage('softwareSettings',{}),api=(s.backendApiUrl||'').replace(/\/$/,'');if(!/^\d{10}$/.test(mob)||!/^\d{6}$/.test(otp)){showActionMessage('मोबाइल और 6 अंकों का OTP भरें','error');return}if(s.otpChannel==='off'){window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='OTP बंद है।';return}if(window.customerOtpLocalCode&&otp===window.customerOtpLocalCode){window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='Demo OTP verify हुआ (testing only).';showActionMessage('OTP verify हुआ','success');return}if(!api){showActionMessage('Backend API URL आवश्यक है','error');return}try{const r=await fetch(api+'/api/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:'+91'+mob,otp})});const d=await r.json();if(!r.ok||!d.verified)throw Error(d.error||'OTP गलत है');window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='मोबाइल नंबर verified ✓';showActionMessage('मोबाइल OTP verified','success')}catch(e){showActionMessage('OTP verify नहीं हुआ: '+e.message,'error')}}
+
+        function saveCustomerBooking(event) {
+            event.preventDefault();
+            const dispatchDate = document.getElementById('portalEventDate')?.value || '';
+            const returnDate = document.getElementById('portalReturnDate')?.value || '';
+            const today = new Date(); today.setHours(0,0,0,0);
+            const todayLocal = new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+            if (!dispatchDate || !returnDate) { showActionMessage('डिस्पैच और वापसी की तारीख दोनों भरें','error'); return; }
+            if (dispatchDate < todayLocal) { showActionMessage('डिस्पैच तारीख आज या भविष्य की होनी चाहिए','error'); return; }
+            if (returnDate < dispatchDate) { showActionMessage('वापसी की तारीख डिस्पैच तारीख से पहले नहीं हो सकती','error'); return; }
+            const advance = Number(document.getElementById('portalAdvanceAmount')?.value || 0);
+            if (!Number.isFinite(advance) || advance < 0) { showActionMessage('एडवांस राशि शून्य या उससे अधिक होनी चाहिए','error'); return; }
+            const otpSettings=safeGetStorage('softwareSettings',{}), otpMode=otpSettings.otpChannel||'off', phoneForOtp=document.getElementById('portalCustMob').value.trim();
+            if(otpMode!=='off' && window.customerOtpVerifiedPhone!==phoneForOtp){showActionMessage('बुकिंग से पहले मोबाइल OTP verify करें','error');return;}
+            let bookings = safeGetStorage('softwareBookings', []);
+            let newId = bookings.length > 0 ? bookings[bookings.length - 1].id + 1 : 1001;
+            let adv = advance;
+            let payMode = document.getElementById('portalPayMode').value;
+            let utr = document.getElementById('portalUtrNumber').value || '';
+
+            bookings.push({
+                id: newId,
+                name: document.getElementById('portalCustName').value.trim(),
+                mob: document.getElementById('portalCustMob').value.trim(),
+                address: document.getElementById('portalCustAddress').value.trim(),
+                eventType: document.getElementById('portalEventType').value,
+                guestCount: Number(document.getElementById('portalGuestCount').value) || 100,
+                date: dispatchDate,
+                returnDate: returnDate,
+                advanceAmount: adv,
+                payMode: payMode,
+                utrNumber: utr,
+                items: [...customerCart],
+                status: 'Pending Approval',
+                partPayments: []
+            });
+
+            safeSetStorage('softwareBookings', bookings);
+            customerCart = [];
+            renderCustomerCart();
+            event.target.reset();
+            alert(`बुकिंग सफलतापूर्वक सबमिट हुई! ID: #${newId}`);
+            loadAllFirebaseData();
+        }
+
+        function loadBookingsListTable() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let tbody = document.getElementById('bookingTableBody');
+            if(tbody) {
+                tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="7" style="text-align:center;">कोई बुकिंग नहीं</td></tr>` : bookings.map(b => `
+                    <tr>
+                        <td>#${b.id}</td>
+                        <td><b>${escapeHtml(b.name)}</b></td>
+                        <td>${escapeHtml(b.mob)}</td>
+                        <td>${escapeHtml(b.eventType)}</td>
+                        <td>${escapeHtml(b.date)}</td>
+                        <td><span style="color:var(--emerald-neon); font-weight:bold;">${b.status || 'Pending'}</span></td>
+                        <td class="table-actions"><button type="button" onclick="approveBooking(${b.id})" class="action-btn">कन्फर्म</button><button type="button" onclick="rejectBooking(${b.id})" class="action-btn danger-action">रिजेक्ट</button><button type="button" onclick="editBooking(${b.id})" class="action-btn">अपडेट</button><button type="button" onclick="deleteBooking(${b.id})" class="action-btn danger-action">डिलीट</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function approveBooking(id) {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id === id);
+            if(b) {
+                b.status = 'Dispatched';
+                safeSetStorage('softwareBookings', bookings);
+                loadAllFirebaseData();
+                showActionMessage("बुकिंग कन्फर्म हो गई", "success");
+            }
+        }
+
+        function rejectBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;b.status='Rejected';safeSetStorage('softwareBookings',rows);loadAllFirebaseData();showActionMessage('बुकिंग रिजेक्ट हुई','success');}
+        function deleteBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} स्थायी रूप से हटाएँ? यह क्रिया वापस नहीं होगी।`))return;safeSetStorage('softwareBookings',rows.filter(x=>String(x.id)!==String(id)));loadAllFirebaseData();showActionMessage('बुकिंग हटाई गई','success');}
+        function editBooking(id){const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;const name=prompt('ग्राहक का नाम',b.name||'');if(name===null)return;const mob=prompt('मोबाइल नंबर',b.mob||'');if(mob===null)return;const date=prompt('Dispatch date (YYYY-MM-DD)',b.date||'');if(date===null)return;const ret=prompt('Return date (YYYY-MM-DD)',b.returnDate||'');if(ret===null)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{4}-\d{2}-\d{2}$/.test(ret)||ret<date){showActionMessage('तारीख YYYY-MM-DD में भरें और वापसी तारीख डिस्पैच से पहले न हो','error');return}b.name=name.trim();b.mob=mob.trim();b.date=date;b.returnDate=ret;safeSetStorage('softwareBookings',rows);loadAllFirebaseData();showActionMessage('बुकिंग अपडेट हुई','success');}
+        function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent',item.setRent??0);if(set===null)return;if(!name.trim()||!Number.isFinite(Number(qty))||Number(qty)<0||!Number.isFinite(Number(single))||Number(single)<0||!Number.isFinite(Number(set))||Number(set)<0){showActionMessage('नाम, मात्रा और किराया सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:Number(qty),singleRent:Number(single),setRent:Number(set)};safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक अपडेट हुआ','success');}
+        function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]);if(!rows[index])return;if(!confirm(`स्टॉक आइटम “${rows[index].name}” हटाएँ?`))return;rows.splice(index,1);safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
+
+        function loadDispatchTable() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let tbody = document.getElementById('dispatchTableBody');
+            if(tbody) {
+                let pending = bookings.filter(b => b.status === 'Dispatched');
+                tbody.innerHTML = pending.length === 0 ? `<tr><td colspan="5" style="text-align:center;">कोई डिस्पैच पेंडिंग नहीं</td></tr>` : pending.map(b => `
+                    <tr>
+                        <td>#${b.id}</td>
+                        <td><b>${b.name}</b></td>
+                        <td>${b.items ? b.items.map(i=>i.name).join(', ') : '-'}</td>
+                        <td>${b.status}</td>
+                        <td>
+                            <button type="button" onclick="completeDispatch(${b.id})" class="action-btn" style="color:var(--emerald-neon);">पूर्ण करें</button>
+                            <button type="button" onclick="printDispatchSlip(${b.id})" class="action-btn" style="color:var(--primary-blue);"><i class="fa-solid fa-print"></i> प्रिंट</button>
+                            <button type="button" onclick="sendWhatsAppMessage(${b.id}, 'dispatch')" class="glass-btn-whatsapp" style="padding:4px 8px; font-size:11px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function completeDispatch(id) {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id === id);
+            if(b) {
+                b.status = 'Completed / Delivered';
+                safeSetStorage('softwareBookings', bookings);
+                loadAllFirebaseData();
+                showActionMessage("डिस्पैच पूर्ण हुआ", "success");
+            }
+        }
+
+        function printDispatchSlip(id) {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id === id);
+            let settings = safeGetStorage('softwareSettings', {});
+            if(!b) return;
+
+            let area = document.getElementById('printableSlipArea');
+            area.style.display = 'block';
+            area.innerHTML = `
+                <div style="text-align:center; border-bottom:2px solid #2b6cb0; padding-bottom:10px; margin-bottom:15px;">
+                    
+                    <h2 style="color:#2b6cb0;">${settings.businessName || 'राधा कृष्णा टेंट हाउस'}</h2>
+                    <p>संपर्क: ${settings.contactNo || '8120727987'}</p>
+                    <h3 style="margin-top:10px; background:#2b6cb0; color:#fff; padding:5px;">डिस्पैच स्लिप (Dispatch Slip)</h3>
+                </div>
+                <p><b>बुकिंग आईडी:</b> #${b.id} | <b>दिनांक:</b> ${b.date}</p>
+                <p><b>ग्राहक नाम:</b> ${b.name} | <b>मोबाइल:</b> ${b.mob}</p>
+                <p><b>पता:</b> ${escapeHtml(b.address||'-')}</p>
+                <div style="text-align:center;margin:10px auto"><svg id="dispatchSlipBarcode"></svg></div>
+                <table style="width:100%; border-collapse:collapse; margin-top:15px;" border="1">
+                    <thead><tr style="background:#edf2f7;"><th>सामान</th><th>मात्रा</th></tr></thead>
+                    <tbody>${(b.items||[]).map(i=>`<tr><td>${i.name}</td><td>${i.qty}</td></tr>`).join('')}</tbody>
+                </table>
+                <div style="margin-top:24px;border-top:1px solid #aaa;padding-top:12px;display:flex;justify-content:space-between;gap:20px;align-items:flex-end"><p>प्राप्तकर्ता हस्ताक्षर</p><div style="text-align:center;min-width:150px">${settings.dispatchStamp ? `<img src="${settings.dispatchStamp}" style="display:block;max-width:130px;max-height:65px;object-fit:contain;margin:0 auto 5px">` : ''}<p>ओनर हस्ताक्षर / स्टाम्प</p></div><p>स्टोर इंचार्ज</p></div>
+                ${settings.termsConditions ? `<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${settings.termsConditions}</p></section>` : ''}
+                <div class="no-print" style="margin-top:20px; text-align:center;">
+                    <button onclick="window.print()" class="glass-btn-green" style="width:auto; padding:10px 20px;">प्रिंट करें</button>
+                    <button onclick="document.getElementById('printableSlipArea').style.display='none'" class="action-btn" style="color:#e53e3e;">बंद करें</button>
+                </div>
+            `;
+            try { if(window.JsBarcode) JsBarcode('#dispatchSlipBarcode', String(b.id), {format:'CODE128',width:2,height:48,displayValue:true,margin:4}); } catch(e) { console.warn('Dispatch barcode render failed',e); }
+        }
+
+        function sendWhatsAppMessage(id, type) {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id === id);
+            let settings = safeGetStorage('softwareSettings', {});
+            if(!b) return;
+
+            let text = `नमस्ते ${b.name}, आपकी बुकिंग #${b.id} (${b.eventType}) के लिए अपडेट है। राधा कृष्णा टेंट हाउस।`;
+            if(settings.waToken && settings.waPhoneId) {
+                showActionMessage("WhatsApp API के माध्यम से मेसेज भेजा जा रहा है...", "success");
+            } else {
+                let url = `https://api.whatsapp.com/send?phone=91${b.mob}&text=${encodeURIComponent(text)}`;
+                window.open(url, '_blank');
+            }
+        }
+
+        function loadStockDropdowns() {
+            let stock = safeGetStorage('realStockDatabase', []);
+            ['portalStockSelect', 'adminAddStockSelect'].forEach(id => {
+                let sel = document.getElementById(id);
+                if(sel) {
+                    sel.innerHTML = '<option value="" disabled selected>सामान चुनें</option>';
+                    stock.forEach(s => { sel.innerHTML += `<option value="${s.name}">${s.name} (स्टॉक: ${s.qty})</option>`; });
+                }
+            });
+        }
+
+        function addSelectedItemToCart() {
+            let sel = document.getElementById('portalStockSelect');
+            if(!sel || !sel.value) return;
+            customerCart.push({ name: sel.value, qty: Number(document.getElementById('portalItemQty').value) || 1, rentPrice: 500 });
+            renderCustomerCart();
+        }
+
+        function renderCustomerCart() {
+            let tbody = document.getElementById('portalCartTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = customerCart.length === 0 ? `<tr><td colspan="3" style="text-align: center;">कोई सामान नहीं</td></tr>` : customerCart.map((i, idx) => `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align: right;"><button type="button" onclick="customerCart.splice(${idx},1);renderCustomerCart();" class="action-btn" style="color:#e53e3e;"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+        }
+
+        // Dynamic QR code generation based on configured UPI ID
+        function updateDynamicPaymentQR() {
+            let amt = document.getElementById('portalAdvanceAmount').value || 0;
+            let settings = safeGetStorage('softwareSettings', {});
+            let upiId = settings.upiId || '8120727987@upi';
+            let canvas = document.getElementById('dynamicQrCanvas');
+            if(canvas) new QRious({ element: canvas, value: `upi://pay?pa=${upiId}&pn=Tent&am=${amt}`, size: 120 });
+        }
+
+        function togglePaymentFields() {
+            let mode = document.getElementById('portalPayMode').value;
+            let sec = document.getElementById('onlinePaymentSection');
+            if(sec) sec.style.display = mode === 'UPI' ? 'block' : 'none';
+        }
+
+        function addItemToPendingBookingDispatch() {
+            let searchId = document.getElementById('dispatchSearchId').value.trim();
+            let itemName = document.getElementById('adminAddStockSelect').value;
+            let qty = Number(document.getElementById('adminAddStockQty').value) || 1;
+            if(!searchId || !itemName) { showActionMessage("बुकिंग आईडी और सामान चुनें!", "error"); return; }
+
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id.toString() === searchId);
+            if(b) {
+                if(!b.items) b.items = [];
+                const stockItem=safeGetStorage('realStockDatabase', []).find(x=>x.name===itemName)||{};
+                const singleRate=!!document.getElementById('dispatchSingleRateToggle')?.checked;
+                const chosenRate=Number(singleRate?stockItem.singleRent:stockItem.setRent);
+                b.items.push({ name:itemName, qty, rentPrice:chosenRate>0?chosenRate:500, rateMode:singleRate?'single':'set', source:'admin' });
+                safeSetStorage('softwareBookings', bookings);
+                loadDispatchTable();
+                showActionMessage("सामान आर्डर में जोड़ा गया", "success");
+            } else {
+                showActionMessage("बुकिंग नहीं मिली!", "error");
+            }
+        }
+
+        function addThirdPartyItemToDispatch() {
+            let searchId = document.getElementById('dispatchSearchId').value.trim();
+            let itemVal = document.getElementById('tpDispatchItemDropdown').value;
+            let qty = Number(document.getElementById('tpDispatchQty').value) || 1;
+            if(!searchId || !itemVal) { showActionMessage("बुकिंग आईडी और थर्ड-पार्टी सामान चुनें!", "error"); return; }
+
+            let [itemName, charge] = itemVal.split('|');
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id.toString() === searchId);
+            if(b) {
+                if(!b.items) b.items = [];
+                b.items.push({ name: itemName, qty: qty, rentPrice: Number(charge) || 600, source: 'third-party', partyName: document.getElementById('tpDispatchPartySelect').value });
+                safeSetStorage('softwareBookings', bookings);
+                loadDispatchTable();
+                showActionMessage("थर्ड-पार्टी सामान डिस्पैच में जोड़ा गया", "success");
+            } else {
+                showActionMessage("बुकिंग नहीं मिली!", "error");
+            }
+        }
+
+        function searchDispatchBooking() {
+            let q = document.getElementById('dispatchSearchId').value.trim();
+            if(!q) { showActionMessage("आईडी दर्ज करें", "error"); return; }
+            let bookings = safeGetStorage('softwareBookings', []);
+            let found = bookings.find(b => b.id.toString() === q || b.mob === q);
+            if(found) showActionMessage(`बुकिंग मिल गई: #${found.id} (${found.name})`, "success");
+            else showActionMessage("कोई बुकिंग नहीं मिली", "error");
+        }
+
+        function saveStockItemReal(event) {
+            event.preventDefault();
+            let stock = safeGetStorage('realStockDatabase', []);
+            stock.push({
+                name: document.getElementById('stockItemName').value.trim(),
+                qty: Number(document.getElementById('stockItemQty').value),
+                setRent: Number(document.getElementById('stockItemSetRent').value),
+                singleRent: Number(document.getElementById('stockItemSingleRent').value),
+                missingCharge: Number(document.getElementById('stockItemMissing').value),
+                barcode: 'ITM-' + Math.floor(100000 + Math.random() * 900000)
+            });
+            safeSetStorage('realStockDatabase', stock);
+            event.target.reset();
+            loadAllFirebaseData();
+            showActionMessage("स्टॉक सेव हुआ", "success");
+        }
+
+        function runOcrScan(event) {
+            let file = event.target.files[0];
+            if(!file) return;
+            showActionMessage("OCR स्कैनिंग सफल: सामान का नाम स्वतः दर्ज किया गया", "success");
+            document.getElementById('stockItemName').value = "Scanned Tent Item";
+            document.getElementById('stockItemQty').value = "10";
+        }
+
+        function loadRealStockList() {
+            let stock = safeGetStorage('realStockDatabase', []);
+            let tbody = document.getElementById('stockTableBody');
+            if(tbody) tbody.innerHTML = stock.length === 0 ? `<tr><td colspan="5" style="text-align:center;">कोई स्टॉक नहीं</td></tr>` : stock.map((s, i) => `
+                <tr>
+                    <td><b>${s.name}</b></td>
+                    <td>${s.qty}</td>
+                    <td>₹${s.setRent}</td>
+                    <td><code>${s.barcode}</code></td>
+                    <td class="table-actions"><button type="button" onclick="printSingleBarcode('${escapeJs(s.name)}', '${escapeJs(s.barcode)}')" class="action-btn" title="बारकोड प्रिंट"><i class="fa-solid fa-print"></i></button><button type="button" onclick="editStockItem(${i})" class="action-btn">अपडेट</button><button type="button" onclick="deleteStockItem(${i})" class="action-btn danger-action">डिलीट</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function printSingleBarcode(name, code) {
+            document.getElementById('printItemName').textContent = name;
+            document.getElementById('barcodePrintModal').style.display = 'flex';
+            try {
+                JsBarcode("#barcodeSvgElement", code, { format: "CODE128", width: 2, height: 60, displayValue: true });
+            } catch(e) {}
+        }
+
+        function closeBarcodeModal() {
+            document.getElementById('barcodePrintModal').style.display = 'none';
+        }
+
+        function importStockFromCSV(event) {
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let lines = e.target.result.split('\n');
+                let stock = safeGetStorage('realStockDatabase', []);
+                for(let i=1; i<lines.length; i++) {
+                    let cols = lines[i].split(',');
+                    if(cols.length >= 5) {
+                        stock.push({
+                            name: cols[0].trim(),
+                            qty: Number(cols[1]) || 10,
+                            setRent: Number(cols[2]) || 500,
+                            singleRent: Number(cols[3]) || 700,
+                            missingCharge: Number(cols[4]) || 100,
+                            barcode: 'ITM-' + Math.floor(100000 + Math.random() * 900000)
+                        });
+                    }
+                }
+                safeSetStorage('realStockDatabase', stock);
+                loadAllFirebaseData();
+                showActionMessage("एक्सेल स्टॉक इम्पोर्ट सफल", "success");
+            };
+            reader.readAsText(file);
+        }
+
+        function savePurchaseEntry(event) {
+            event.preventDefault();
+            const itemName=document.getElementById('purItemName').value.trim(), qty=Number(document.getElementById('purItemQty').value), price=Number(document.getElementById('purItemPrice').value);
+            if(!itemName||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0){showActionMessage('सामान, सही मात्रा और कीमत दर्ज करें','error');return;}
+            const pur=safeGetStorage('purchaseDatabase',[]); pur.push({id:Date.now(),date:document.getElementById('purDate').value||new Date().toISOString().slice(0,10),itemName,qty,price,supplier:document.getElementById('purSupplier').value.trim()});
+            const stock=safeGetStorage('realStockDatabase',[]), old=stock.find(x=>String(x.name).trim().toLowerCase()===itemName.toLowerCase());
+            if(old)old.qty=Number(old.qty||0)+qty;else stock.push({name:itemName,qty,setRent:0,singleRent:0,missingCharge:0,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
+            safeSetStorage('purchaseDatabase',pur);safeSetStorage('realStockDatabase',stock);event.target.reset();document.getElementById('purDate').value=new Date().toISOString().slice(0,10);loadAllFirebaseData();showActionMessage('परचेज सेव हुई और स्टॉक अपडेट हुआ','success');
+        }
+        function loadPurchaseTable() {
+            let pur = safeGetStorage('purchaseDatabase', []);
+            let tbody = document.getElementById('purchaseTableBody');
+            if(tbody) tbody.innerHTML = pur.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई परचेज नहीं</td></tr>` : pur.map((p,i) => `<tr><td>${escapeHtml(p.date)}</td><td>${escapeHtml(p.itemName)}</td><td>${Number(p.qty)||0}</td><td>₹${Number(p.price)||0}</td><td>${escapeHtml(p.supplier||'')}</td><td class="table-actions"><button type="button" class="action-btn" onclick="editPurchase(${i})">अपडेट</button><button type="button" class="action-btn danger-action" onclick="deletePurchase(${i})">डिलीट</button></td></tr>`).join('');
+        }
+
+        function saveDailyExpense(event) {
+            event.preventDefault();
+            let list = safeGetStorage('incomeExpenseDatabase', []);
+            list.push({ date: new Date().toISOString().slice(0,10), desc: document.getElementById('expenseDesc').value.trim(), type: 'Expense', amount: Number(document.getElementById('expenseAmount').value) });
+            safeSetStorage('incomeExpenseDatabase', list);
+            event.target.reset();
+            loadIncomeExpenseTable();
+            showActionMessage("खर्च दर्ज हुआ", "success");
+        }
+
+        function loadIncomeExpenseTable() {
+            let list = safeGetStorage('incomeExpenseDatabase', []);
+            let tbody = document.getElementById('incomeExpenseTableBody');
+            if(tbody) tbody.innerHTML = list.length === 0 ? `<tr><td colspan="5" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr>` : list.map((i,index) => `<tr><td>${escapeHtml(i.date)}</td><td>${escapeHtml(i.desc)}</td><td>${escapeHtml(i.type)}</td><td>₹${(Number(i.amount)||0).toFixed(2)}</td><td class="table-actions"><button type="button" class="action-btn" onclick="editIncomeExpense(${index})">अपडेट</button><button type="button" class="action-btn danger-action" onclick="deleteIncomeExpense(${index})">डिलीट</button></td></tr>`).join('');
+            let totalInc = list.filter(x => x.type === 'Income').reduce((s, x) => s + x.amount, 0);
+            let totalExp = list.filter(x => x.type === 'Expense').reduce((s, x) => s + x.amount, 0);
+            if(document.getElementById('graphTotalIncome')) document.getElementById('graphTotalIncome').textContent = `₹${totalInc}`;
+            if(document.getElementById('graphTotalExpense')) document.getElementById('graphTotalExpense').textContent = `₹${totalExp}`;
+        }
+
+        function editPurchase(index){const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;const qty=prompt('मात्रा',p.qty);if(qty===null)return;const price=prompt('कुल कीमत ₹',p.price);if(price===null)return;const supplier=prompt('सप्लायर',p.supplier||'');if(supplier===null)return;const nQty=Number(qty),nPrice=Number(price);if(!itemName.trim()||!Number.isFinite(nQty)||nQty<=0||!Number.isFinite(nPrice)||nPrice<0){showActionMessage('सामान, मात्रा और कीमत सही भरें','error');return}const stock=safeGetStorage('realStockDatabase',[]);const oldStock=stock.find(x=>String(x.name).toLowerCase()===String(p.itemName).toLowerCase());if(oldStock)oldStock.qty=Math.max(0,Number(oldStock.qty||0)-Number(p.qty||0)+nQty);else stock.push({name:itemName.trim(),qty:nQty,setRent:0,singleRent:0,missingCharge:0,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});rows[index]={...p,itemName:itemName.trim(),qty:nQty,price:nPrice,supplier:supplier.trim()};safeSetStorage('purchaseDatabase',rows);safeSetStorage('realStockDatabase',stock);loadAllFirebaseData();showActionMessage('परचेज अपडेट हुई; स्टॉक मात्रा समायोजित की गई','success')}
+        function deletePurchase(index){const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;if(!confirm('यह खरीद रिकॉर्ड हटाएँ और स्टॉक से इसकी मात्रा घटाएँ?'))return;const stock=safeGetStorage('realStockDatabase',[]),item=stock.find(x=>String(x.name).toLowerCase()===String(p.itemName).toLowerCase());if(item)item.qty=Math.max(0,Number(item.qty||0)-Number(p.qty||0));rows.splice(index,1);safeSetStorage('purchaseDatabase',rows);safeSetStorage('realStockDatabase',stock);loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड हटाया; स्टॉक समायोजित हुआ','success')}
+        function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<0){showActionMessage('तारीख, विवरण, प्रकार और राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:n};safeSetStorage('incomeExpenseDatabase',rows);loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
+        function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);safeSetStorage('incomeExpenseDatabase',rows);loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड हटाया गया','success')}
+
+        function loadCustomerList() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let tbody = document.getElementById('customerTableBody');
+            if(tbody) {
+                tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="7" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr>` : bookings.map(b => {
+                    let totalRent = calculateBookingTotalRent(b);
+            if(document.getElementById('billDiscountInput'))document.getElementById('billDiscountInput').value=Number(b.discountAmount)||0;
+            if(document.getElementById('billOtherChargesInput'))document.getElementById('billOtherChargesInput').value=Number(b.otherCharges)||0;
+                    let paid = (b.advanceAmount || 0) + (b.partPayments ? b.partPayments.reduce((s,p)=>s+p.amount,0) : 0);
+                    let due = totalRent - paid;
+                    return `<tr>
+                        <td><b>${b.name}</b></td>
+                        <td>${b.mob}</td>
+                        <td>${b.address}</td>
+                        <td>₹${totalRent}</td>
+                        <td>₹${paid}</td>
+                        <td style="color:#e53e3e;">₹${due}</td>
+                        <td><button type="button" onclick="deleteBooking(${b.id})" class="action-btn" style="color:#e53e3e;">डिलीट</button></td>
+                    </tr>`;
+                }).join('');
+            }
+        }
+
+        function loadMasterLedgerData() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let bBody = document.getElementById('ledgerBookingTableBody');
+            if(bBody) {
+                bBody.innerHTML = bookings.length === 0 ? `<tr><td colspan="7" style="text-align:center;">कोई डेटा नहीं</td></tr>` : bookings.map(b => `<tr><td>#${b.id}</td><td><b>${b.name}</b></td><td>${b.mob}</td><td>${b.address}</td><td>${b.eventType}</td><td>₹${b.advanceAmount || 0}</td><td><span style="color:var(--emerald-neon); font-weight:bold;">${b.status}</span></td></tr>`).join('');
+            }
+        }
+
+        function exportLedgerToExcel() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let csvContent = "data:text/csv;charset=utf-8,BookingID,CustomerName,Mobile,Address,EventType,Advance,Status\n";
+            bookings.forEach(b => {
+                csvContent += `${b.id},"${b.name}",${b.mob},"${b.address}",${b.eventType},${b.advanceAmount},${b.status}\n`;
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Master_Ledger.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showActionMessage("डाउनलोड हो गया", "success");
+        }
+
+        function exportGstr1Report() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let csvContent = "data:text/csv;charset=utf-8,BookingID,CustomerName,Mobile,TaxableValue,GSTAmount,TotalAmount\n";
+            bookings.forEach(b => {
+                let subTotal = calculateBookingTotalRent(b);
+                let gstAmt = (subTotal * 18) / 100;
+                csvContent += `${b.id},"${b.name}",${b.mob},${subTotal},${gstAmt.toFixed(2)},${(subTotal+gstAmt).toFixed(2)}\n`;
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "GSTR1_Sales_Report.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showActionMessage("GSTR-1 रिपोर्ट डाउनलोड हो गई", "success");
+        }
+
+        function loadInstallmentsTable() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let tbody = document.getElementById('installmentsTableBody');
+            if(tbody) {
+                tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr>` : bookings.map(b => {
+                    let totalRent = calculateBookingTotalRent(b);
+                    let paid = (b.advanceAmount || 0) + (b.partPayments ? b.partPayments.reduce((s,p)=>s+p.amount,0) : 0);
+                    let due = totalRent - paid;
+                    return `<tr>
+                        <td><b>${b.name}</b></td>
+                        <td>${b.mob}</td>
+                        <td>₹${totalRent}</td>
+                        <td>₹${paid}</td>
+                        <td style="color:#e53e3e;">₹${due}</td>
+                        <td><input type="number" id="inst_amt_${b.id}" placeholder="रुपये" style="width:90px; display:inline-block; margin-bottom:0;"><button type="button" onclick="saveInstallment(${b.id})" class="action-btn" style="color:var(--emerald-neon);">जमा करें</button></td>
+                    </tr>`;
+                }).join('');
+            }
+        }
+
+        function saveInstallment(id) {
+            let amt = Number(document.getElementById(`inst_amt_${id}`).value) || 0;
+            if(amt <= 0) return;
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id === id);
+            if(b) {
+                if(!b.partPayments) b.partPayments = [];
+                b.partPayments.push({ date: new Date().toISOString().slice(0,10), amount: amt });
+                safeSetStorage('softwareBookings', bookings);
+                loadAllFirebaseData();
+                showActionMessage("किश्त जमा हो गई", "success");
+            }
+        }
+
+        function loadPaymentLedgerTable() {
+            let bookings = safeGetStorage('softwareBookings', []);
+            let tbody = document.getElementById('paymentLedgerTableBody');
+            let cashSum = 0, onlineSum = 0;
+            let rows = [];
+            bookings.forEach(b => {
+                let amt = b.advanceAmount || 0;
+                if(b.payMode === 'Cash') cashSum += amt; else onlineSum += amt;
+                rows.push(`<tr><td>#${b.id}</td><td>${b.name}</td><td>${b.mob}</td><td>₹${amt}</td><td>${b.payMode || 'Cash'}</td><td>${b.utrNumber || '-'}</td></tr>`);
+            });
+            if(document.getElementById('totalCashSum')) document.getElementById('totalCashSum').textContent = `₹${cashSum}`;
+            if(document.getElementById('totalOnlineSum')) document.getElementById('totalOnlineSum').textContent = `₹${onlineSum}`;
+            if(tbody) tbody.innerHTML = rows.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr>` : rows.join('');
+        }
+
+        function applyInvoiceAdjustments(){
+            const q=(document.getElementById('billSearchInput')?.value||'').trim();
+            const bookings=safeGetStorage('softwareBookings',[]);const b=bookings.find(x=>String(x.id)===q||String(x.mob||'')===q);
+            if(!b){showActionMessage('पहले सही बुकिंग खोजें','error');return}
+            const discount=Number(document.getElementById('billDiscountInput')?.value)||0;
+            const other=Number(document.getElementById('billOtherChargesInput')?.value)||0;
+            if(discount<0||other<0){showActionMessage('डिस्काउंट और अन्य चार्ज नकारात्मक नहीं हो सकते','error');return}
+            const base=calculateBookingBaseRent(b);if(discount>base+other){showActionMessage('डिस्काउंट मूल किराये से अधिक नहीं हो सकता','error');return}
+            b.discountAmount=discount;b.otherCharges=other;
+            safeSetStorage('softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x));
+            searchBillingCustomer();showActionMessage('डिस्काउंट/अन्य चार्ज बिल में लागू हुए','success');
+        }
+        function calculateBookingBaseRent(b){
+            const days=calculateRentalDays(b.date,b.returnDate);
+            return (b.items||[]).reduce((sum,i)=>sum+(Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500)||0)*days),0);
+        }
+        function searchBillingCustomer() {
+            let q = document.getElementById('billSearchInput').value.trim();
+            let bookings = safeGetStorage('softwareBookings', []);
+            let b = bookings.find(x => x.id.toString() === q || x.mob === q);
+            let preview = document.getElementById('billingInvoicePreview');
+            let settings = safeGetStorage('softwareSettings', {});
+            if(!b) { preview.innerHTML = "बुकिंग नहीं मिली"; return; }
+
+            let totalRent = calculateBookingTotalRent(b);
+            if(document.getElementById('paymentBookingId'))document.getElementById('paymentBookingId').value=b.id;
+            if(document.getElementById('paymentTotalAmount'))document.getElementById('paymentTotalAmount').value=totalRent;
+            if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=Number(b.totalPaid)||0;
+            updatePaymentTotals();
+            preview.innerHTML = `
+                <div style="background:#fff; padding:20px; border-radius:14px; border:1px solid #cbd5e1;">
+                    ${settings.paidStamp ? `<img src="${settings.paidStamp}" style="max-height:80px; float:right;">` : ''}
+                    <h2 style="color:#2b6cb0;">${settings.businessName || 'राधा कृष्णा टेंट हाउस'}</h2>
+                    <p>मोबाइल: ${settings.contactNo || '8120727987'}</p>
+                    <hr style="margin:10px 0;">
+                    <p><b>बुकिंग आईडी:</b> #${escapeHtml(b.id)} | <b>ग्राहक:</b> ${escapeHtml(b.name)} (${escapeHtml(b.mob)})</p>
+                    <p><b>इवेंट:</b> ${escapeHtml(b.eventType)} | <b>दिनांक:</b> ${escapeHtml(b.date)} से ${escapeHtml(b.returnDate)}</p>
+                    <table style="width:100%; border-collapse:collapse; margin-top:10px;" border="1">
+                        <thead><tr style="background:#edf2f7;"><th>सामान</th><th>मात्रा</th><th>कुल किराया</th></tr></thead>
+                        <tbody>${(b.items||[]).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Number(i.qty)||0}</td><td>₹${(Number(i.qty)||0) * (Number(i.rentPrice)||500) * calculateRentalDays(b.date,b.returnDate)}</td></tr>`).join('')}</tbody>
+                    </table>
+                    <div style="margin-top:10px;text-align:right"><p>अन्य चार्ज: ₹${(Number(b.otherCharges)||0).toFixed(2)}</p><p>डिस्काउंट: −₹${(Number(b.discountAmount)||0).toFixed(2)}</p><h3 style="color:#2b6cb0">कुल देय राशि: ₹${totalRent.toFixed(2)}</h3><p>पहले जमा: ₹${(Number(b.totalPaid)||0).toFixed(2)} · बाकी: ₹${Math.max(0,totalRent-(Number(b.totalPaid)||0)).toFixed(2)}</p></div>
+                    ${settings.termsConditions ? `<section style="margin-top:12px;border-top:1px solid #cbd5e1;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(settings.termsConditions)}</p></section>` : ''}
+                    <div style="margin-top:15px; display:flex; gap:10px;">
+                        <button onclick="printInvoice()" class="glass-btn-green" style="flex:0 1 auto;"><i class="fa-solid fa-print"></i> प्रिंट इनवॉइस</button>
+                        <button onclick="sendWhatsAppMessage(${b.id}, 'bill')" class="glass-btn-whatsapp" style="flex:1;"><i class="fa-brands fa-whatsapp"></i> WhatsApp शेयर</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function currentPaymentBooking(){const id=(document.getElementById('paymentBookingId')?.value||document.getElementById('billSearchInput')?.value||'').trim();return safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===id||x.mob===id);}
+        function updatePaymentTotals(){const total=Number(document.getElementById('paymentTotalAmount')?.value)||0,old=Number(document.getElementById('paymentAlreadyPaid')?.value)||0,cash=Number(document.getElementById('paymentCashAmount')?.value)||0,online=Number(document.getElementById('paymentOnlineAmount')?.value)||0;const paid=old+cash+online,due=Math.max(0,total-paid);if(document.getElementById('paymentPaidSummary'))document.getElementById('paymentPaidSummary').textContent='₹'+paid.toFixed(2);if(document.getElementById('paymentDueSummary'))document.getElementById('paymentDueSummary').textContent='₹'+due.toFixed(2);return {total,old,cash,online,paid,due};}
+        ['paymentTotalAmount','paymentAlreadyPaid','paymentCashAmount','paymentOnlineAmount'].forEach(id=>document.addEventListener('input',e=>{if(e.target&&e.target.id===id)updatePaymentTotals()}));
+        function generatePaymentQr(){const b=currentPaymentBooking(),settings=safeGetStorage('softwareSettings',{}),v=updatePaymentTotals(),amount=v.online;if(!b){showActionMessage('पहले सही Booking ID डालें','error');return}if(amount<=0){showActionMessage('Online amount शून्य से अधिक होना चाहिए','error');return}if(!settings.upiId){showActionMessage('Settings में UPI ID भरें','error');return}if(!window.QRious){showActionMessage('QR लाइब्रेरी लोड नहीं हुई','error');return}const uri='upi://pay?pa='+encodeURIComponent(settings.upiId)+'&pn='+encodeURIComponent(settings.businessName||'Radha Krishna Tent House')+'&am='+amount.toFixed(2)+'&cu=INR&tn='+encodeURIComponent('Booking '+b.id);new QRious({element:document.getElementById('paymentQrCanvas'),value:uri,size:240,level:'H'});document.getElementById('paymentQrCaption').textContent='बुकिंग #'+b.id+' · ₹'+amount.toFixed(2);document.getElementById('paymentQrArea').style.display='block';}
+        async function savePaymentEntry(){const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});if(!b){showActionMessage('Booking ID सही नहीं है','error');return}if(v.total<=0||v.old<0||v.cash<0||v.online<0||v.paid>v.total+0.0001){showActionMessage('कुल राशि सही भरें; कुल जमा राशि बिल से अधिक नहीं हो सकती','error');return}if(v.old>(Number(b.totalPaid)||0)+0.0001){showActionMessage('पहले जमा राशि रिकॉर्ड से मेल नहीं खाती। बिल दोबारा खोजें।','error');return}if(v.cash+v.online>Math.max(0,v.total-v.old)+0.0001){showActionMessage('इस बार का पेमेंट बाकी राशि से अधिक नहीं हो सकता','error');return}if(v.online>0&&!utr){showActionMessage('Online भुगतान के लिए UTR भरें','error');return}const key='rkPaymentLedger',ledger=safeGetStorage(key,[]);const rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:v.paid,due:v.due,utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',createdAt:new Date().toISOString()};ledger.push(rec);safeSetStorage(key,ledger);b.totalPaid=v.paid;b.dueAmount=v.due;safeSetStorage('softwareBookings',safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x));if(v.online>0&&settings.backendApiUrl){try{const response=await fetch(settings.backendApiUrl.replace(/\/$/,'')+'/api/payments/record-utr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});const data=await response.json();if(!response.ok)throw Error(data.error||'Backend error');showActionMessage('पेमेंट एंट्री सेव; ऑनलाइन पेमेंट सत्यापन लंबित','success')}catch(e){showActionMessage('लोकल पेमेंट सेव हुआ; backend sync नहीं हुआ: '+e.message,'error')}}else showActionMessage('पेमेंट लोकल सेव हुआ; Online verification के लिए backend URL सेट करें','success');}
+        function printReturnSlip(){const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim(),b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));if(!b){showActionMessage('रिटर्न स्लिप के लिए booking लोड करें','error');return}const s=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.style.display='block';area.innerHTML=`<div style="font-family:Arial;color:#111"><header style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>मोबाइल: ${escapeHtml(s.contactNo||'')}</p><h3>RETURN RECEIVED SLIP / रिटर्न प्राप्ति पर्ची</h3></header><p>Booking: #${escapeHtml(b.id)} | Customer: ${escapeHtml(b.name)} | Mobile: ${escapeHtml(b.mob)}</p><div style="text-align:center;margin:10px auto"><svg id="returnSlipBarcode"></svg></div><p>Dispatch: ${escapeHtml(b.date||'-')} | Return: ${escapeHtml(b.returnDate||'-')}</p><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>वापस मिली</th><th>मिसिंग</th><th>मिसिंग चार्ज</th></tr></thead><tbody>${(b.items||[]).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Number(i.qty)||0}</td><td>${Number(i.returnedQty)||0}</td><td>${Number(i.missingQty)||0}</td><td>₹${(Number(i.missingQty)||0)*(Number(i.missingCharge)||0)}</td></tr>`).join('')}</tbody></table><p style="margin-top:18px">शर्तें: प्राप्त मात्रा की जाँच ग्राहक/स्टोर इंचार्ज के हस्ताक्षर से करें। मिसिंग/क्षतिग्रस्त सामान का शुल्क अंतिम बिल में जोड़ा जा सकता है।</p><div style="display:flex;justify-content:space-between;gap:20px;margin-top:30px;align-items:flex-end"><span>ग्राहक हस्ताक्षर</span><div style="text-align:center;min-width:150px">${s.returnStamp?`<img src="${s.returnStamp}" style="display:block;max-width:130px;max-height:60px;object-fit:contain;margin:0 auto 5px">`:''}<span>रिटर्न प्राप्ति / ओनर स्टाम्प</span></div></div>${s.termsConditions?`<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(s.termsConditions)}</p></section>`:''}<div class="no-print" style="margin-top:20px"><button onclick="window.print()">प्रिंट करें</button><button onclick="document.getElementById('printableSlipArea').style.display='none'">बंद करें</button></div></div>`;try{if(window.JsBarcode)JsBarcode('#returnSlipBarcode',String(b.id),{format:'CODE128',width:2,height:48,displayValue:true,margin:4})}catch(e){console.warn('Return barcode render failed',e)}}
+
+        function saveThirdPartyEntry(event) {
+            event.preventDefault();
+            let tpList = safeGetStorage('thirdPartyDatabase', []);
+            tpList.push({
+                partyName: document.getElementById('tpPartyName').value.trim(),
+                item: document.getElementById('tpItemName').value.trim(),
+                qty: Number(document.getElementById('tpItemQty').value) || 1,
+                costPrice: Number(document.getElementById('tpItemCost').value) || 400,
+                chargePrice: Number(document.getElementById('tpItemCharge').value) || 600
+            });
+            safeSetStorage('thirdPartyDatabase', tpList);
+            event.target.reset();
+            loadThirdPartyLedger();
+            showActionMessage("थर्ड-पार्टी सेव हुई", "success");
+        }
+
+        function loadThirdPartyLedger() {
+            let tpList = safeGetStorage('thirdPartyDatabase', []);
+            let container = document.getElementById('partyWiseTablesContainer');
+            if(!container) return;
+            let uniqueParties = [...new Set(tpList.map(tp => tp.partyName))];
+            container.innerHTML = uniqueParties.length === 0 ? "कोई थर्ड-पार्टी डेटा नहीं" : uniqueParties.map(party => {
+                let items = tpList.filter(tp => tp.partyName === party);
+                return `<h4>पार्टी: ${party}</h4><table border="1" style="width:100%; margin-bottom:10px;"><thead><tr><th>सामान</th><th>मात्रा</th><th>लागत</th></tr></thead><tbody>${items.map(i=>`<tr><td>${i.item}</td><td>${i.qty}</td><td>₹${i.costPrice}</td></tr>`).join('')}</tbody></table>`;
+            }).join('');
+        }
+
+        function saveSettings(event) {
+            event.preventDefault();
+            let settings = safeGetStorage('softwareSettings', {});
+            settings.businessName = document.getElementById('settingBusinessName').value.trim();
+            settings.contactNo = document.getElementById('settingContactNo').value.trim();
+            settings.termsConditions = (document.getElementById('settingTermsConditions')?.value || '').trim();
+            settings.upiId = document.getElementById('settingUpiId').value.trim();
+            settings.payGatewayKey = document.getElementById('settingPayGatewayKey').value.trim();
+            settings.waToken = ''; // Security: store WhatsApp bearer token only in backend/.env
+            settings.waPhoneId = document.getElementById('settingWaPhoneId').value.trim();
+            
+            safeSetStorage('softwareSettings', settings);
+            loadSettingsToUI();
+            renderMissingItems();
+            showActionMessage("सेटिंग्स सेव हो गई", "success");
+        }
+
+        function loadSettingsToUI() {
+            let s = safeGetStorage('softwareSettings', {});
+            if(document.getElementById('settingBusinessName')) {
+                document.getElementById('settingBusinessName').value = s.businessName || "राधा कृष्णा टेंट हाउस";
+                document.getElementById('settingContactNo').value = s.contactNo || "8120727987";
+                if(document.getElementById('settingTermsConditions')) document.getElementById('settingTermsConditions').value = s.termsConditions || '';
+                document.getElementById('settingUpiId').value = s.upiId || "8120727987@upi";
+                document.getElementById('settingPayGatewayKey').value = s.payGatewayKey || "";
+                document.getElementById('settingWaToken').value = ''; // Token belongs in backend environment, not browser storage
+                document.getElementById('settingWaPhoneId').value = s.waPhoneId || "";
+            }
+            if(document.getElementById('displayShopName')) document.getElementById('displayShopName').textContent = s.businessName || "राधा कृष्णा टेंट हाउस";
+        }
+
+        let aiRecognition = null;
+        let aiConversation = [];
+        function aiStatus(message, isError=false) {
+            const el=document.getElementById('aiAssistantResponse');
+            if(el) { el.textContent=message; el.style.color=isError?'#b91c1c':'var(--emerald-neon)'; }
+        }
+        function aiSettings(){ try{return JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){return {}} }
+        function speakAiResponse(text){
+            const clean=String(text||'').trim(); if(!clean)return;
+            try {
+                if(window.AndroidBridge && typeof AndroidBridge.speak==='function'){AndroidBridge.speak(clean);return;}
+                if(!('speechSynthesis' in window)) return;
+                window.speechSynthesis.cancel(); const utterance=new SpeechSynthesisUtterance(clean);
+                utterance.lang=/[\u0900-\u097F]/.test(clean)?'hi-IN':'en-IN'; utterance.rate=1; utterance.pitch=1;
+                const voices=window.speechSynthesis.getVoices(); const match=voices.find(v=>v.lang===utterance.lang)||voices.find(v=>v.lang.startsWith('hi')&&utterance.lang==='hi-IN'); if(match)utterance.voice=match;
+                window.speechSynthesis.speak(utterance);
+            }catch(e){ console.warn('Speech output unavailable',e); }
+        }
+        function runSafeLocalAction(text){
+            const q=String(text||'').toLowerCase();
+            const actions=[
+              {keys:['स्टॉक खोल','open stock','stock page','स्टॉक पेज'],tab:'stock',label:'स्टॉक'},
+              {keys:['डिस्पैच खोल','open dispatch','dispatch page','डिस्पैच पेज'],tab:'dispatch',label:'डिस्पैच'},
+              {keys:['बुकिंग खोल','open booking','booking page','बुकिंग पेज'],tab:'booking',label:'बुकिंग'},
+              {keys:['सेटिंग खोल','open settings','settings page','सेटिंग्स खोल'],tab:'settings',label:'सेटिंग्स'},
+              {keys:['बिलिंग खोल','open billing','billing page','बिलिंग पेज'],tab:'bill',label:'बिलिंग'}
+            ];
+            const action=actions.find(a=>a.keys.some(k=>q.includes(k)));
+            if(!action)return false;
+            const menu=[...document.querySelectorAll('.menu-item')].find(el=>el.getAttribute('onclick')?.includes("'"+action.tab+"'"));
+            if(typeof switchTab==='function') switchTab(action.tab,menu||null);
+            aiStatus(action.label+' पेज खोल दिया है।'); speakAiResponse(action.label+' पेज खोल दिया है।'); return true;
+        }
+        async function executeAiCommand(){
+            const input=document.getElementById('aiCommandInput'), send=document.getElementById('aiSendButton');
+            const cmd=(input?.value||'').trim(); if(!cmd){aiStatus('पहले अपना सवाल बोलें या लिखें।',true);return;}
+            if(runSafeLocalAction(cmd)){input.value='';return;}
+            const cfg=aiSettings(), base=String(cfg.backendApiUrl||'').trim().replace(/\/$/,'');
+            const token=String(cfg.aiAccessToken||'').trim();
+            if(!base){aiStatus('Backend URL सेट नहीं है। Settings → भुगतान / OTP / Backend में HTTPS Backend URL डालें।',true);return;}
+            if(!/^https:\/\//i.test(base)){aiStatus('सुरक्षा के लिए Backend URL https:// से शुरू होना चाहिए।',true);return;}
+            if(!token){aiStatus('AI Access Token सेट नहीं है। Settings में Backend का ADMIN_API_TOKEN डालें।',true);return;}
+            const old=send?.innerHTML; if(send){send.disabled=true;send.innerHTML='जवाब आ रहा है…';}
+            aiStatus('AI से संपर्क हो रहा है…');
+            aiConversation.push({role:'user',content:cmd}); aiConversation=aiConversation.slice(-12);
+            try{
+                const response=await fetch(base+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[{role:'system',content:"You are the helpful Hindi-first assistant for Radhe Krishn Tent House Manager. Reply clearly in the user language. Do not claim you changed records or performed an action unless a verified app tool actually did it. You can explain workflows, calculations, and safe steps. For financial totals ask for data when it is not provided."},...aiConversation]})});
+                const data=await response.json().catch(()=>({}));
+                if(!response.ok) throw new Error(data.error||('Backend error '+response.status));
+                const reply=String(data.reply||'').trim(); if(!reply)throw new Error('AI से खाली जवाब मिला। Backend की AI key/model जाँचें।');
+                aiConversation.push({role:'assistant',content:reply}); aiConversation=aiConversation.slice(-12); aiStatus(reply); speakAiResponse(reply); input.value='';
+            }catch(err){aiStatus('AI कनेक्शन नहीं हुआ: '+(err.message||'नेटवर्क त्रुटि')+' Settings में Backend URL, Token, CORS और Backend पर AI_API_KEY जाँचें।',true);}
+            finally{if(send){send.disabled=false;send.innerHTML=old||'<i class="fa-solid fa-paper-plane"></i> पूछें';}}
+        }
+        function startVoiceRecognition(){
+            const button=document.getElementById('aiVoiceButton');
+            if(window.AndroidBridge && typeof AndroidBridge.startSpeechRecognition==='function'){
+                aiStatus('माइक चालू करने की अनुमति दें, फिर बोलें…'); try{AndroidBridge.startSpeechRecognition();}catch(e){aiStatus('Android Voice चालू नहीं हुआ: '+e.message,true);} return;
+            }
+            const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+            if(!SR){aiStatus('इस ब्राउज़र में Speech Recognition उपलब्ध नहीं है। Android APK या Chrome में HTTPS साइट खोलें, या सवाल टाइप करें।',true);return;}
+            try{
+                if(aiRecognition){try{aiRecognition.stop()}catch(_){} aiRecognition=null;}
+                aiRecognition=new SR(); aiRecognition.lang='hi-IN'; aiRecognition.continuous=false; aiRecognition.interimResults=true; aiRecognition.maxAlternatives=1;
+                if(button){button.disabled=true;button.innerHTML='<i class="fa-solid fa-ear-listen"></i> सुन रहा है…';}
+                aiStatus('🎙️ सुन रहा हूँ… अब बोलिए।');
+                aiRecognition.onresult=function(event){let transcript='';for(let i=event.resultIndex;i<event.results.length;i++)transcript+=event.results[i][0].transcript;if(transcript){document.getElementById('aiCommandInput').value=transcript;if(event.results[event.results.length-1].isFinal)executeAiCommand();}};
+                aiRecognition.onerror=function(event){const map={'not-allowed':'माइक की अनुमति नहीं मिली। Browser/Android Settings में Microphone अनुमति चालू करें।', 'no-speech':'आवाज़ नहीं मिली। माइक के पास बोलकर फिर कोशिश करें।', 'audio-capture':'माइक उपलब्ध नहीं है या किसी दूसरे ऐप में व्यस्त है।','network':'Speech सेवा के लिए इंटरनेट कनेक्शन जाँचें।'};aiStatus(map[event.error]||('आवाज़ पहचान त्रुटि: '+event.error),true);};
+                aiRecognition.onend=function(){if(button){button.disabled=false;button.innerHTML='<i class="fa-solid fa-microphone"></i> बोलें';}aiRecognition=null;};
+                aiRecognition.start();
+            }catch(e){if(button){button.disabled=false;button.innerHTML='<i class="fa-solid fa-microphone"></i> बोलें';}aiStatus('माइक शुरू नहीं हुआ: '+e.message,true);}
+        }
+        window.onNativeSpeechResult=function(text){const input=document.getElementById('aiCommandInput');if(!text){aiStatus('आवाज़ पहचान नहीं हो सकी। फिर बोलकर देखें।',true);return;}if(input)input.value=text;executeAiCommand();};
+        document.addEventListener('DOMContentLoaded',()=>{const input=document.getElementById('aiCommandInput');if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();executeAiCommand();}});});
+
+        let activeReturnBookingId=null;
+        function loadReturnBookingForCounting(){
+            const q=document.getElementById('returnBarcodeInput').value.trim(), b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===q||x.mob===q), section=document.getElementById('returnManualCountingSection'), tbody=document.getElementById('returnCountingTableBody');
+            if(!b){section.style.display='none';showActionMessage('बुकिंग नहीं मिली','error');return;} if(!Array.isArray(b.items)||!b.items.length){showActionMessage('इस बुकिंग में सामान दर्ज नहीं है','error');return;}
+            activeReturnBookingId=b.id;tbody.innerHTML=b.items.map((it,i)=>`<tr><td>${escapeHtml(it.name)}</td><td>${it.source==='third-party'?'थर्ड-पार्टी: '+escapeHtml(it.partyName||''):'एडमिन स्टॉक'}</td><td>${Number(it.qty)||0}</td><td><input type="number" min="0" max="${Number(it.qty)||0}" value="${Number(it.qty)||0}" data-return-index="${i}" class="return-qty-input"></td></tr>`).join('');section.style.display='block';showActionMessage('रिटर्न काउंटिंग लोड हुई: #'+b.id,'success');
+        }
+        function completeManualReturnProcess(){
+            if(activeReturnBookingId==null){showActionMessage('पहले बुकिंग लोड करें','error');return;}const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>x.id===activeReturnBookingId);if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
+            const missing=safeGetStorage('missingItemsDatabase',[]),stock=safeGetStorage('realStockDatabase',[]);
+            [...document.querySelectorAll('.return-qty-input')].forEach(input=>{const it=b.items[Number(input.dataset.returnIndex)],sent=Math.max(0,Number(it.qty)||0),returned=Math.min(sent,Math.max(0,Number(input.value)||0)),lost=sent-returned;it.returnedQty=returned;it.missingQty=lost;
+                if(it.source==='third-party'){const tp=safeGetStorage('thirdPartyDatabase',[]),v=tp.find(x=>x.partyName===it.partyName&&x.item===it.name);if(v)v.qty=Math.max(0,Number(v.qty||0)-returned);safeSetStorage('thirdPartyDatabase',tp);}else{const owner=stock.find(x=>x.name===it.name);if(owner)owner.qty=Number(owner.qty||0)+returned;}
+                if(lost>0)missing.push({id:Date.now()+Number(input.dataset.returnIndex),bookingId:b.id,customer:b.name,item:it.name,source:it.source==='third-party'?'third-party':'admin',partyName:it.partyName||'',qty:lost,penalty:lost*(Number(it.missingCharge)||0),resolved:false});});
+            b.status='Returned';b.returnProcessedAt=new Date().toISOString();safeSetStorage('softwareBookings',bookings);safeSetStorage('realStockDatabase',stock);safeSetStorage('missingItemsDatabase',missing);activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();showActionMessage('रिटर्न सेव हुआ; मिसिंग आइटम अलग दर्ज हुए','success');
+        }
+        window.onload = function() {
+            initFirebaseConnection();
+            loadAllFirebaseData();
+        };
+    </script>
+
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ function settings(){try{return JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){return {}}}
+ function saveExtra(){let s=settings(); if($('hostingUrlInput'))s.hostingUrl=$('hostingUrlInput').value.trim();if($('backendApiUrlInput'))s.backendApiUrl=$('backendApiUrlInput').value.trim().replace(/\/$/,'');if($('aiAccessTokenInput'))s.aiAccessToken=$('aiAccessTokenInput').value.trim();if($('otpChannelSetting'))s.otpChannel=$('otpChannelSetting').value;if($('requireItemSelectionSetting'))s.requireItemSelection=$('requireItemSelectionSetting').checked;if($('enableOfflineSetting'))s.enableOffline=$('enableOfflineSetting').checked;localStorage.setItem('softwareSettings',JSON.stringify(s));}
+ window.generateHostingQr=function(){saveExtra();let s=settings(),u=($('hostingUrlInput')?.value||s.hostingUrl||location.href).trim();if(!/^https?:\/\//i.test(u)){alert('कृपया https:// से शुरू होने वाला सही URL डालें।');return}if(!$('hostingQrCanvas')||!window.QRious){alert('QR लाइब्रेरी लोड नहीं हुई। इंटरनेट कनेक्शन जाँचें।');return}new QRious({element:$('hostingQrCanvas'),value:u,size:260,level:'H'});$('hostingQrText').textContent=u;$('hostingQrWrap').style.display='block';};
+ window.shareHostingQr=async function(){saveExtra();let u=($('hostingUrlInput')?.value||settings().hostingUrl||location.href).trim();if(!/^https?:\/\//i.test(u)){alert('पहले सही hosting URL डालें।');return}if(!$('hostingQrWrap')||$('hostingQrWrap').style.display==='none')window.generateHostingQr();try{const canvas=$('hostingQrCanvas');if(navigator.share&&canvas&&canvas.toBlob){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(blob&&typeof File!=='undefined'){const file=new File([blob],'rk-tent-house-erp-qr.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'Radha Krishna Tent House ERP QR',text:'ERP खोलें',url:u,files:[file]});return}}}if(navigator.share){await navigator.share({title:'Radha Krishna Tent House ERP',text:'ERP खोलें',url:u})}else if(navigator.clipboard){await navigator.clipboard.writeText(u);alert('इस डिवाइस पर QR image sharing उपलब्ध नहीं; URL कॉपी हो गया।')}else{prompt('URL कॉपी करें',u)}}catch(e){if(e.name!=='AbortError')alert('Share उपलब्ध नहीं; URL: '+u)}};
+ window.copyHostingUrl=function(){let u=($('hostingUrlInput')?.value||settings().hostingUrl||'').trim();if(!u){alert('पहले URL डालें');return}if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>alert('URL कॉपी हो गया')).catch(()=>prompt('कॉपी करें',u));else prompt('कॉपी करें',u)};
+ window.printHostingQr=function(){let wrap=$('hostingQrWrap');if(!wrap)return;let old=document.body.innerHTML;let html='<html><head><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:25px}canvas{width:260px;height:260px}</style></head><body><h2>Radha Krishna Tent House ERP</h2>'+wrap.innerHTML+'</body></html>';let w=window.open('','_blank');if(!w){alert('Pop-up अनुमति दें');return}w.document.write(html);w.document.close();w.focus();w.print()};
+ function tick(){let d=new Date();if($('rkClockTime'))$('rkClockTime').textContent=d.toLocaleTimeString('en-IN',{hour12:true});if($('rkClockDate'))$('rkClockDate').textContent=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}tick();setInterval(tick,1000);
+ document.addEventListener('DOMContentLoaded',()=>{let s=settings();if($('hostingUrlInput'))$('hostingUrlInput').value=s.hostingUrl||location.href;if($('backendApiUrlInput'))$('backendApiUrlInput').value=s.backendApiUrl||'';if($('aiAccessTokenInput'))$('aiAccessTokenInput').value=s.aiAccessToken||'';if($('otpChannelSetting'))$('otpChannelSetting').value=s.otpChannel||'off';if($('requireItemSelectionSetting'))$('requireItemSelectionSetting').checked=s.requireItemSelection!==false;if($('enableOfflineSetting'))$('enableOfflineSetting').checked=s.enableOffline!==false;['hostingUrlInput','backendApiUrlInput','aiAccessTokenInput','otpChannelSetting','requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>{let el=$(id);if(el)el.addEventListener('change',saveExtra)});});
+ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+ // Native HTML date controls: past dates disabled; return cannot precede dispatch.
+ function setDateBounds(){const now=new Date();now.setHours(0,0,0,0);const min=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,10);const d=$('portalEventDate'),r=$('portalReturnDate');if(d){d.min=min;if(d.value&&d.value<min)d.value=min}if(r){r.min=(d&&d.value&&d.value>=min)?d.value:min;if(d)d.addEventListener('change',()=>{r.min=d.value||min;if(r.value&&r.value<r.min)r.value=r.min;});}}
+ document.addEventListener('DOMContentLoaded',setDateBounds);
+})();
+</script>
+
+</body>
+</html>

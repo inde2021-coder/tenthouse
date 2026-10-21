@@ -1,0 +1,11 @@
+{
+  "name": "Radha Krishna Tent House ERP",
+  "short_name": "RK Tent ERP",
+  "description": "Tent house booking, stock, dispatch, return and billing ERP",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e4ebf5",
+  "theme_color": "#2b6cb0",
+  "icons": []
+}
