@@ -101,14 +101,18 @@ const authAdmin = (req, res, next) => {
   next();
 };
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({
+// Health checks — दोनों URL उपलब्ध होंगे:
+// /health और /api/health
+const healthHandler = (_req, res) => {
+  res.status(200).json({
     ok: true,
     service: 'rk-tent-house-erp-api',
     time: new Date().toISOString()
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // WhatsApp Cloud API text message
 async function sendWhatsAppText(to, body) {
