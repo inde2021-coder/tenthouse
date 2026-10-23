@@ -36,17 +36,23 @@
 
 ## 4. Android APK build
 1. Android Studio और JDK/SDK इंस्टॉल करें।
-2. `android-shell/app/build.gradle` में `HOSTED_APP_URL` को अपनी deployed HTTPS `index.html` URL से बदलें।
+2. अपनी HTML साइट को HTTPS hosting पर deploy करें। Build के समय URL सेट करें: `cd android-shell` फिर `gradlew assembleDebug -PhostedAppUrl=https://आपका-domain/index.html` (Windows पर `gradlew.bat`)। वैकल्पिक रूप से `HOSTED_APP_URL` environment variable सेट करें।
 3. Android Studio में `android-shell/` खोलें, Gradle sync करें, फिर **Build → Build APK(s)** चुनें। APK आम तौर पर `android-shell/app/build/outputs/apk/debug/app-debug.apk` में बनेगा।
 4. रिलीज़ के लिए signed release keystore बनाकर सुरक्षित रखें और Release APK/AAB build करें। इस source package में APK binary अभी compile नहीं की गई है।
-5. यह shell hosted URL लोड करता है, इसलिए web content refresh/reopen पर update हो सकता है। APK की Kotlin/permissions/native code बदलने पर नया signed APK install/update करना पड़ेगा। URL placeholder रहने पर local asset fallback खुलेगा, पर offline data sync की पूर्ण व्यवस्था इससे अपने-आप नहीं बनती।
+5. APK startup पर hosted HTTPS HTML लोड करती है और WebView cache-busting/no-cache का उपयोग करती है। इसलिए hosting पर `index.html`, CSS या JS बदलने के बाद अगली बार app खोलने पर web changes दिखने चाहिए—APK rebuild की जरूरत नहीं, बशर्ते APK में सही hosted URL build किया गया हो और डिवाइस online हो। URL placeholder रहने पर local asset fallback खुलेगा; उस स्थिति में HTML बदलाव के लिए APK rebuild/reinstall करना होगा। Native Android code/permissions बदलने पर भी नया signed APK चाहिए।
+
+### HTML changes को APK में अपने-आप लाने के लिए
+- `public/` folder की files (कम से कम `index.html`, `sw.js`, `manifest.webmanifest`, `version.json`, `icon.svg`) को HTTPS hosting पर deploy करें।
+- पहली बार APK build करते समय असली URL दें: `gradlew assembleDebug -PhostedAppUrl=https://आपका-domain/index.html`।
+- उसके बाद HTML/CSS/JS बदलें तो वही `public/` files hosting पर दोबारा upload करें। APK अगली बार खुलने पर latest hosted page लोड करेगी; APK दोबारा build करने की जरूरत नहीं।
+- यह तभी काम करेगा जब फोन में internet हो और hosting URL सही हो। Offline mode में APK bundled local HTML इस्तेमाल कर सकती है, जो पुराने version का हो सकता है। Native Android code/permissions बदलने पर नया APK फिर भी जरूरी है।
 
 ## 5. APK अपडेट सिस्टम (नया)
 - `public/version.json` को वेबसाइट की root directory पर deploy करें ताकि `https://आपका-domain/version.json` खुले। इसमें `versionCode`, `versionName`, `apkUrl`, `releaseNotes` हैं।
 - `apkUrl` को उस HTTPS URL से बदलें जहाँ नई signed APK रखी है, जैसे `https://आपका-domain/downloads/rk-tent-house-erp.apk`। APK फाइल भी उसी hosting/storage पर upload करें।
 - Android source `MainActivity` launch पर `version.json` चेक करता है। यदि `versionCode` installed APK से बड़ा है, तो “Update Now” prompt आएगा, APK डाउनलोड होगी और Android का installer खुलेगा। Android सुरक्षा के कारण user को install की पुष्टि करनी होती है; बिना user consent APK को चुपचाप install नहीं किया जा सकता।
 - हर native APK release के लिए `android-shell/app/build.gradle` में `versionCode` बढ़ाएँ और `versionName` बदलें, signed APK उसी keystore से build करें, APK को `apkUrl` पर upload करें, फिर `public/version.json` में वही नया `versionCode`/`versionName` डालकर deploy करें। पहले से जारी APK के signing key को सुरक्षित रखें; अलग key से बनी APK update के रूप में install नहीं होगी।
-- केवल `index.html`/CSS/JS बदलने पर hosted WebView ऐप अगली बार ऑनलाइन होने पर नया web content दिखा सकता है; native APK update prompt केवल `version.json` में versionCode बढ़ाने पर आता है।
+- केवल hosted `index.html`/CSS/JS बदलने पर APK अगली बार online launch होने पर नया web content लोड करती है; hosted URL को build-time पर `-PhostedAppUrl=...` से सेट करना जरूरी है। Native APK update prompt केवल `version.json` में `versionCode` बढ़ाने पर आता है।
 - प्रारंभिक `version.json` में versionCode `1` है, जो initial APK version 1.0.0 के साथ मेल खाता है। Release करने से पहले placeholder URL बदलें।
 
 ## 6. महत्वपूर्ण सुरक्षा/गुणवत्ता सीमाएँ
@@ -104,3 +110,9 @@ AI असिस्टेंट के लिए केवल HTML या APK प
 - WhatsApp webhook setup के लिए `backend/WEBHOOK_SETUP_HI.md` पढ़ें। Endpoint `GET/POST /webhooks/whatsapp` है; अलग `webhook.js` जरूरी नहीं क्योंकि route `src/server.js` में है।
 - PWA और Android launcher icon जोड़ा गया है (`icon.svg`, Android mipmap PNGs)।
 - Android permissions/AI provider configuration जोड़ना अपने-आप screen reading, दूसरे ऐप नियंत्रण, SMS या कॉल को सक्षम नहीं करता; इनके लिए अलग Android services, explicit user grants, provider configuration और device testing जरूरी हैं। इस पैकेज में APK build/run परीक्षण का दावा नहीं है।
+
+### Backend storage update (single-instance)
+- Backend अब payment UTR ledger और WhatsApp inbox/deduplication state को `DATA_DIR` में `erp-state.json` के रूप में atomic file replacement से save करता है, इसलिए सामान्य process restart पर ये records बने रहते हैं। Default directory `backend/data` है; hosting में इस path पर **persistent writable disk/volume** mount करें।
+- यह अभी PostgreSQL/Firestore का विकल्प नहीं है: multi-instance/serverless deployments, concurrent distributed writes, managed backups/restore और production-grade database transactions के लिए durable database migration अभी बाकी है। OTP जानबूझकर memory-only और short-lived है; restart पर pending OTP expire हो जाते हैं।
+- Online payment UTR duplicate submission अब reject होती है; UTR अपने-आप settlement proof नहीं है। Payment approval केवल admin token से होनी चाहिए।
+- Production में `OTP_HMAC_SECRET` कम-से-कम 32 characters रखें; OTP भेजने और verify करने दोनों पर इसे अनिवार्य किया गया है।

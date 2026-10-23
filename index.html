@@ -38,7 +38,7 @@
         #actionToast {
             position: fixed; top: 15px; right: -400px; background: rgba(230, 235, 245, 0.95); backdrop-filter: blur(12px);
             color: var(--primary-blue); padding: 10px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 700; z-index: 99999;
+            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 700; z-index: 2147483000;
             transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #actionToast.show { right: 20px; }
@@ -168,6 +168,26 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
 @media print{#printableSlipArea{display:block!important;color:#111!important;background:#fff!important}#printableSlipArea svg{display:block!important;max-width:100%!important}#printableSlipArea table{width:100%;border-collapse:collapse}#printableSlipArea th,#printableSlipArea td{border:1px solid #555;padding:6px;color:#111}#printableSlipArea th{background:#e8eef5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>
 
+
+<style id="rk-premium-calendar-audit-fixes">
+.calendar-grid-header{display:grid!important;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:18px 20px!important;background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:18px;color:#fff;margin-bottom:16px;box-shadow:0 12px 30px rgba(15,23,42,.18)}
+.calendar-grid-header h3{color:#fff!important;text-align:center;font-size:clamp(16px,2vw,22px)!important;margin:0;letter-spacing:.2px}
+.calendar-grid-header .action-btn{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);color:#fff;border-radius:11px;padding:10px 14px;white-space:nowrap}
+.calendar-weekdays,.calendar-days-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+.calendar-weekdays{margin-bottom:8px}.calendar-weekdays>div{text-align:center;padding:11px 4px;font-weight:800;color:#334155;background:#eaf1f8;border-radius:10px}
+.calendar-day-cell{min-height:105px!important;border:1px solid #dbe4ee!important;border-radius:13px!important;background:linear-gradient(180deg,#fff,#f8fbff)!important;padding:9px!important;box-shadow:0 2px 5px rgba(15,23,42,.04);transition:transform .15s,box-shadow .15s;overflow:hidden}
+.calendar-day-cell:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(15,23,42,.1)}
+.calendar-day-number{font-weight:800;color:#0f172a;margin-bottom:7px}.calendar-booking-tag{display:block;background:#dbeafe!important;color:#1d4ed8!important;border-left:3px solid #2563eb;border-radius:7px;padding:4px 6px;margin:4px 0;font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+@media(max-width:700px){.calendar-grid-header{grid-template-columns:1fr 1fr}.calendar-grid-header h3{grid-column:1/-1;grid-row:1}.calendar-grid-header button{font-size:12px;padding:8px}.calendar-weekdays,.calendar-days-grid{gap:3px}.calendar-weekdays>div{font-size:11px;padding:8px 1px}.calendar-day-cell{min-height:75px!important;padding:4px!important;border-radius:8px!important}.calendar-booking-tag{font-size:9px;padding:3px}.calendar-day-number{font-size:12px}}
+</style>
+
+
+<style id="rk-premium-dashboard-menubar">
+.rk-clock-menu{cursor:default!important;opacity:.95;font-variant-numeric:tabular-nums}.rk-clock-menu:hover{transform:none!important}
+#menuToggleBtn{border:1px solid #cbd5e1;border-radius:10px;padding:8px 11px;background:#fff;color:#1e3a8a;box-shadow:0 3px 10px #0f172a12}
+#rkDashboardGraph svg{display:block;width:100%;height:auto;min-height:220px}#rkDashboardGraph .rk-grid{stroke:#cbd5e1;stroke-width:1;stroke-dasharray:4 5}#rkDashboardGraph .rk-axis-label{font:11px Arial,sans-serif;fill:#475569}
+@media print{.rk-clock-menu{display:none!important}}
+</style>
 </head>
 <body>
 <div id="rkDigitalClock" class="no-print" style="position:fixed;top:8px;right:10px;z-index:999998;background:#0f172a;color:#e2e8f0;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:800;box-shadow:0 4px 15px #0003"><span id="rkClockTime">--:--:--</span> · <span id="rkClockDate">----</span></div>
@@ -277,6 +297,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             <div class="sidebar" id="appSidebar">
                 <div class="sidebar-brand" onclick="returnToCustomerPortal()" style="cursor: pointer;"><span id="overlayShopName">👑 ADMIN PANEL</span></div>
                 <ul class="menu-list">
+                    <li class="menu-item rk-clock-menu" aria-label="वर्तमान समय"><i class="fa-regular fa-clock"></i> समय: <span id="rkMenuClock">--:--:--</span></li>
                     <li class="menu-item active" onclick="switchTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> डैशबोर्ड</li>
                     <li class="menu-item" onclick="switchTab('master-ledger', this)"><i class="fa-solid fa-book"></i> मास्टर हिसाब-किताब</li>
                     <li class="menu-item" onclick="switchTab('ai-assistant', this)"><i class="fa-solid fa-robot"></i> AI असिस्टेंट</li>
@@ -310,6 +331,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
                                 <div style="background: rgba(255,255,255,0.7); padding: 10px 15px; border-radius: 12px; flex: 1;"><span style="font-size: 12px;">कुल आमदनी</span><h3 id="graphTotalIncome" style="color: var(--emerald-neon);">₹0</h3></div>
                                 <div style="background: rgba(255,255,255,0.7); padding: 10px 15px; border-radius: 12px; flex: 1;"><span style="font-size: 12px;">कुल खर्च</span><h3 id="graphTotalExpense" style="color: #e53e3e;">₹0</h3></div>
                             </div>
+                        </div>
+                        <div class="glass-card-blue" style="margin-bottom:14px">
+                            <h3 style="margin:0 0 8px;color:var(--primary-blue)"><i class="fa-solid fa-chart-area"></i> पूरे सॉफ्टवेयर का एकीकृत ग्राफ</h3>
+                            <p style="margin:0 0 8px;font-size:12px;color:#475569">बुकिंग, प्राप्त भुगतान, आमदनी और खर्च — उपलब्ध रिकॉर्ड के अनुसार</p>
+                            <div id="rkDashboardGraph" role="img" aria-label="बुकिंग, भुगतान, आमदनी और खर्च का मासिक ग्राफ" style="width:100%;min-height:220px;overflow:hidden"><p style="padding:20px;text-align:center">ग्राफ डेटा लोड हो रहा है…</p></div>
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-top:8px"><span style="color:#2563eb">━ बुकिंग राशि</span><span style="color:#16a34a">━ भुगतान</span><span style="color:#9333ea">━ आमदनी</span><span style="color:#dc2626">━ खर्च</span></div>
                         </div>
                     </div>
 
@@ -347,6 +374,8 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
 
                     <!-- Customer List -->
                     <div id="customer-list" class="page-section">
+                        <div class="form-grid" style="grid-template-columns:minmax(0,1fr) auto;align-items:end;margin-bottom:12px"><div><label for="customerListSearch">ग्राहक खोजें</label><input id="customerListSearch" type="search" placeholder="नाम, मोबाइल, बुकिंग ID या पता..." oninput="loadCustomerList()" autocomplete="off"></div><div><button type="button" class="glass-btn-blue" onclick="loadCustomerList()" style="margin:0">खोजें</button></div></div>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;margin:0 0 10px;font-size:12px;font-weight:800"><span style="color:#15803d">● पूरा भुगतान</span><span style="color:#b91c1c">● भुगतान नहीं</span><span style="color:#1d4ed8">● आंशिक भुगतान</span></div>
                         <div class="table-responsive">
                             <table>
                                 <thead><tr><th>नाम</th><th>मोबाइल</th><th>पता</th><th>किराया</th><th>भुगतान</th><th>बाकी</th><th>एक्शन</th></tr></thead>
@@ -635,7 +664,8 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
 
         function escapeJs(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[\r\n]/g,' ');}
         function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-        function renderMissingItems(){const rows=safeGetStorage('missingItemsDatabase',[]),a=document.getElementById('showAdminMissing'),t=document.getElementById('showThirdPartyMissing'),body=document.getElementById('missingTableBody');if(!body)return;const list=rows.filter(x=>x.source==='third-party'?!t||t.checked:!a||a.checked);body.innerHTML=list.length?list.map(x=>`<tr><td>#${escapeHtml(x.bookingId)}</td><td>${escapeHtml(x.source==='third-party'?x.partyName:x.customer)}</td><td>${escapeHtml(x.item)}</td><td>${x.source==='third-party'?'थर्ड-पार्टी':'एडमिन'}</td><td>${Number(x.qty)||0}</td><td>₹${Number(x.penalty)||0}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center">कोई मिसिंग आइटम नहीं</td></tr>';}
+        function renderMissingItems(){const rows=safeGetStorage('missingItemsDatabase',[]),a=document.getElementById('showAdminMissing'),t=document.getElementById('showThirdPartyMissing'),body=document.getElementById('missingTableBody');if(!body)return;const list=rows.map((x,index)=>({...x,_index:index})).filter(x=>x.source==='third-party'?!t||t.checked:!a||a.checked);body.innerHTML=list.length?list.map(x=>`<tr><td>#${escapeHtml(x.bookingId)}</td><td>${escapeHtml(x.source==='third-party'?x.partyName:x.customer)}</td><td>${escapeHtml(x.item)}</td><td>${x.source==='third-party'?'थर्ड-पार्टी':'एडमिन'}</td><td>${Number(x.qty)||0}</td><td><label style="display:flex;gap:5px;align-items:center">₹<input type="number" min="0" step="0.01" id="missingCharge_${x._index}" value="${Number(x.penalty||x.proposedPenalty)||0}" style="width:90px;margin:0"></label><button type="button" class="action-btn" onclick="saveMissingCharge(${x._index})">चार्ज सेव</button></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center">कोई मिसिंग आइटम नहीं</td></tr>';}
+        function saveMissingCharge(index){const rows=safeGetStorage('missingItemsDatabase',[]),r=rows[index],el=document.getElementById('missingCharge_'+index);if(!r||!el)return;const amount=Number(el.value);if(!Number.isFinite(amount)||amount<0){showActionMessage('Missing charge शून्य या उससे अधिक होना चाहिए','error');return;}r.penalty=amount;r.proposedPenalty=amount;r.chargeApproved=true;r.resolved=true;safeSetStorage('missingItemsDatabase',rows);renderMissingItems();showActionMessage('Missing charge सेव हुआ','success');}
         function exportFullBackup(){const keys=['softwareBookings','realStockDatabase','thirdPartyDatabase','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase'],data={app:'Radha Krishna Tent House ERP',version:1,exportedAt:new Date().toISOString(),data:{}};keys.forEach(k=>data.data[k]=safeGetStorage(k,[]));const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='tent-house-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);showActionMessage('बैकअप डाउनलोड शुरू हुआ','success');}
         function restoreFullBackup(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(file.size>25*1024*1024){showActionMessage('बैकअप फ़ाइल 25 MB से बड़ी है','error');event.target.value='';return}const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result),allowed=['softwareBookings','realStockDatabase','thirdPartyDatabase','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase'];if(!p||!p.data||typeof p.data!=='object'||Array.isArray(p.data))throw Error('अमान्य बैकअप फ़ाइल');if(p.app&& !String(p.app).toLowerCase().includes('tent house'))throw Error('यह किसी दूसरे ऐप का बैकअप लगता है');const entries=Object.entries(p.data).filter(([k])=>allowed.includes(k));if(!entries.length)throw Error('इस बैकअप में पहचानने योग्य डेटा नहीं है');for(const [k,v] of entries){if(k==='softwareSettings'){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Settings डेटा गलत है')}else if(!Array.isArray(v))throw Error(k+' डेटा सूची के रूप में नहीं है')}if(!confirm('मौजूदा डेटा बैकअप से बदलेगा। Master Ledger को नहीं बदला जाएगा। पहले अलग बैकअप रखना उचित है। जारी रखें?'))return;entries.forEach(([k,v])=>safeSetStorage(k,v));loadAllFirebaseData();renderMissingItems();showActionMessage('बैकअप रिस्टोर हुआ; Master Ledger अलग सुरक्षित रखा गया','success');}catch(e){showActionMessage('रिस्टोर विफल: '+e.message,'error')}finally{event.target.value=''}};reader.readAsText(file);}
         function resetAllSoftwareData(){if(!confirm('सभी लोकल सॉफ्टवेयर डेटा मिट जाएगा। पहले बैकअप लें। जारी रखें?'))return;['softwareBookings','realStockDatabase','thirdPartyDatabase','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase'].forEach(k=>localStorage.removeItem(k));loadAllFirebaseData();showActionMessage('लोकल डेटा रीसेट हुआ','success');}
@@ -645,6 +675,23 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             shell.classList.toggle('sidebar-collapsed',collapsed);
             try{localStorage.setItem('rkMenuCollapsed',collapsed?'1':'0')}catch(e){}
         }
+        let rkMenuHideTimer=null;
+        function scheduleMenuAutoHide(){clearTimeout(rkMenuHideTimer);rkMenuHideTimer=setTimeout(()=>{const shell=document.querySelector('.admin-container');if(shell&&!shell.classList.contains('sidebar-collapsed'))toggleAppMenu(false)},2000)}
+        function initPremiumMenu(){
+            const sidebar=document.getElementById('appSidebar'); if(sidebar){sidebar.addEventListener('mouseleave',scheduleMenuAutoHide);sidebar.addEventListener('mouseenter',()=>clearTimeout(rkMenuHideTimer));}
+            const toggle=document.getElementById('menuToggleBtn');if(toggle){toggle.addEventListener('click',()=>{clearTimeout(rkMenuHideTimer);scheduleMenuAutoHide()});}
+            const update=()=>{const d=new Date(),time=d.toLocaleTimeString('en-IN',{hour12:true}),date=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});const m=document.getElementById('rkMenuClock'),t=document.getElementById('rkClockTime'),dt=document.getElementById('rkClockDate');if(m)m.textContent=time;if(t)t.textContent=time;if(dt)dt.textContent=date};update();setInterval(update,1000);
+        }
+        function renderDashboardGraph(){
+            const host=document.getElementById('rkDashboardGraph');if(!host)return;
+            const bookings=safeGetStorage('softwareBookings',[]),cash=safeGetStorage('incomeExpenseDatabase',[]);
+            const labels=[];const now=new Date();for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);labels.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),label:d.toLocaleDateString('en-IN',{month:'short'})});}
+            const series=[{name:'बुकिंग राशि',color:'#2563eb',values:labels.map(m=>bookings.filter(b=>String(b.date||'').slice(0,7)===m.key).reduce((a,b)=>a+(Number(calculateBookingTotalRent(b))||0),0))},{name:'भुगतान',color:'#16a34a',values:labels.map(m=>bookings.filter(b=>String(b.date||'').slice(0,7)===m.key).reduce((a,b)=>a+(Number(getBookingPaidAmount(b))||0),0))},{name:'आमदनी',color:'#9333ea',values:labels.map(m=>cash.filter(x=>String(x.date||'').slice(0,7)===m.key&&x.type==='Income').reduce((a,x)=>a+(Number(x.amount)||0),0))},{name:'खर्च',color:'#dc2626',values:labels.map(m=>cash.filter(x=>String(x.date||'').slice(0,7)===m.key&&x.type==='Expense').reduce((a,x)=>a+(Number(x.amount)||0),0))}];
+            const W=760,H=250,L=46,R=16,T=18,B=32,plotW=W-L-R,plotH=H-T-B,max=Math.max(1,...series.flatMap(s=>s.values));const x=i=>L+(labels.length<2?plotW/2:i*plotW/(labels.length-1)),y=v=>T+plotH-(v/max)*plotH;
+            let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" aria-label="मासिक वित्तीय ग्राफ">`;for(let i=0;i<5;i++){const yy=T+i*plotH/4;svg+=`<line class="rk-grid" x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}"/><text class="rk-axis-label" x="${L-7}" y="${yy+4}" text-anchor="end">${Math.round(max*(4-i)/4).toLocaleString('en-IN')}</text>`;}labels.forEach((m,i)=>svg+=`<text class="rk-axis-label" x="${x(i)}" y="${H-9}" text-anchor="middle">${escapeHtml(m.label)}</text>`);series.forEach(s=>{const pts=s.values.map((v,i)=>`${x(i)},${y(v)}`).join(' ');svg+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;s.values.forEach((v,i)=>svg+=`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="${s.color}"><title>${escapeHtml(s.name)} ${labels[i].label}: ₹${v.toFixed(2)}</title></circle>`)});svg+='</svg>';host.innerHTML=svg;
+        }
+        document.addEventListener('DOMContentLoaded',initPremiumMenu);
+
         function printInvoice(){
             const source=document.getElementById('billingInvoicePreview');
             const area=document.getElementById('printableSlipArea');
@@ -684,7 +731,28 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
 
         let customerCart = [];
 
-        function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});firebase.auth().signInWithPopup(provider).then(result=>{document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();showActionMessage('Google लॉगिन सफल: '+(result.user.email||''),'success');}).catch(error=>{const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('Google लॉगिन विफल: '+(hints[error.code]||error.code+': '+error.message),'error');});}catch(e){showActionMessage('Google लॉगिन शुरू नहीं हुआ: '+e.message,'error');}}
+        async function loginWithGoogle(){
+            try {
+                if (location.protocol !== 'http:' && location.protocol !== 'https:' && location.protocol !== 'chrome-extension:') {
+                    showActionMessage('Google लॉगिन के लिए ऐप को file:// से न खोलें। इसे HTTPS hosting या http://localhost से खोलें। Android WebView में native Google Sign-In/HTTPS web flow configure करना होगा।','error'); return;
+                }
+                try { localStorage.setItem('__rk_storage_test__','1'); localStorage.removeItem('__rk_storage_test__'); }
+                catch (_) { showActionMessage('Google लॉगिन के लिए browser Web Storage चालू करें और third-party/site storage block न करें।','error'); return; }
+                if(!window.firebase||!firebase.auth) throw Error('Firebase Authentication SDK लोड नहीं हुआ');
+                if(!firebase.apps.length) initFirebaseConnection();
+                const provider=new firebase.auth.GoogleAuthProvider(); provider.setCustomParameters({prompt:'select_account'});
+                try { const result=await firebase.auth().signInWithPopup(provider); finishGoogleLogin(result); }
+                catch(error) {
+                    if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(error.code)) {
+                        await firebase.auth().signInWithRedirect(provider); return;
+                    }
+                    const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट का domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google provider Enable करें।','auth/invalid-api-key':'Firebase project की apiKey जाँचें।','auth/network-request-failed':'इंटरनेट कनेक्शन और Firebase domain जाँचें.','auth/web-storage-unsupported':'Browser Web Storage चालू करें और app को HTTPS या localhost से खोलें।'};
+                    showActionMessage('Google लॉगिन विफल: '+(hints[error.code]||((error.code||'error')+': '+(error.message||'अज्ञात त्रुटि'))),'error');
+                }
+            } catch(e) { showActionMessage('Google लॉगिन शुरू नहीं हुआ: '+e.message,'error'); }
+        }
+        function finishGoogleLogin(result){document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';initFirebaseConnection();loadAllFirebaseData();showActionMessage('Google लॉगिन सफल: '+(result?.user?.email||''),'success')}
+        document.addEventListener('DOMContentLoaded',()=>{if(window.firebase&&firebase.auth){firebase.auth().getRedirectResult().then(result=>{if(result&&result.user)finishGoogleLogin(result)}).catch(error=>showActionMessage('Google redirect लॉगिन विफल: '+(error.code||error.message),'error'))}});
         function syncToCloud() {
             if(dbRef && navigator.onLine) {
                 dbRef.update({
@@ -874,6 +942,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             loadCalendarGrid();
             loadSettingsToUI();
             renderMissingItems();
+            renderDashboardGraph();
             
             let today = new Date().toISOString().slice(0,10);
             if(document.getElementById('purDate')) document.getElementById('purDate').value = today;
@@ -889,7 +958,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         }
 
         function changeCalendarMonth(direction) {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            currentCalendarDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + direction, 1);
             loadCalendarGrid();
         }
 
@@ -920,7 +989,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
 
                 let dayBookings = bookings.filter(b => b.date <= currentDateStr && currentDateStr <= b.returnDate);
                 let hasBookingClass = dayBookings.length > 0 ? 'has-booking' : '';
-                let bookingTags = dayBookings.map(b => `<div class="calendar-booking-tag" title="${b.name} (#${b.id})">#${b.id} ${b.name}</div>`).join('');
+                let bookingTags = dayBookings.map(b => `<div class="calendar-booking-tag" title="${escapeHtml(b.name)} (#${escapeHtml(b.id)})">#${escapeHtml(b.id)} ${escapeHtml(b.name)}</div>`).join('');
 
                 container.innerHTML += `
                     <div class="calendar-day-cell ${hasBookingClass}">
@@ -1095,9 +1164,9 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
                 <p><b>ग्राहक नाम:</b> ${b.name} | <b>मोबाइल:</b> ${b.mob}</p>
                 <p><b>पता:</b> ${escapeHtml(b.address||'-')}</p>
                 <div style="text-align:center;margin:10px auto"><svg id="dispatchSlipBarcode"></svg></div>
-                <table style="width:100%; border-collapse:collapse; margin-top:15px;" border="1">
-                    <thead><tr style="background:#edf2f7;"><th>सामान</th><th>मात्रा</th></tr></thead>
-                    <tbody>${(b.items||[]).map(i=>`<tr><td>${i.name}</td><td>${i.qty}</td></tr>`).join('')}</tbody>
+                <table class="rk-slip-table" style="width:100%; border-collapse:collapse; margin-top:15px;" border="1">
+                    <thead><tr><th>डिस्पैच आइटम</th><th>Quantity</th></tr></thead>
+                    <tbody>${(b.items||[]).map(i=>`<tr><td>${escapeHtml(i.name||'-')}</td><td>${Math.max(0,Number(i.qty)||0)}</td></tr>`).join('')}</tbody>
                 </table>
                 <div style="margin-top:24px;border-top:1px solid #aaa;padding-top:12px;display:flex;justify-content:space-between;gap:20px;align-items:flex-end"><p>प्राप्तकर्ता हस्ताक्षर</p><div style="text-align:center;min-width:150px">${settings.dispatchStamp ? `<img src="${settings.dispatchStamp}" style="display:block;max-width:130px;max-height:65px;object-fit:contain;margin:0 auto 5px">` : ''}<p>ओनर हस्ताक्षर / स्टाम्प</p></div><p>स्टोर इंचार्ज</p></div>
                 ${settings.termsConditions ? `<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${settings.termsConditions}</p></section>` : ''}
@@ -1206,25 +1275,28 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         }
 
         function searchDispatchBooking() {
-            let q = document.getElementById('dispatchSearchId').value.trim();
-            if(!q) { showActionMessage("आईडी दर्ज करें", "error"); return; }
-            let bookings = safeGetStorage('softwareBookings', []);
-            let found = bookings.find(b => b.id.toString() === q || b.mob === q);
-            if(found) showActionMessage(`बुकिंग मिल गई: #${found.id} (${found.name})`, "success");
-            else showActionMessage("कोई बुकिंग नहीं मिली", "error");
+            const input=document.getElementById('dispatchSearchId');
+            const q=(input?.value||'').trim();
+            if(!q){showActionMessage('आईडी या मोबाइल नंबर दर्ज करें','error');return;}
+            const bookings=safeGetStorage('softwareBookings',[]);
+            const found=bookings.find(b=>String(b.id)===q||String(b.mob||'')===q);
+            let card=document.getElementById('dispatchBookingSearchResult');
+            if(!card){card=document.createElement('div');card.id='dispatchBookingSearchResult';card.style.cssText='margin:10px 0;padding:12px;border:1px solid #93c5fd;border-radius:10px;background:#eff6ff;color:#1e3a8a';document.getElementById('dispatchSearchId')?.closest('.dispatch-search-top')?.insertAdjacentElement('afterend',card);}
+            if(!found){card.innerHTML='कोई बुकिंग नहीं मिली। ID/मोबाइल नंबर जाँचें और डेटा sync होने की पुष्टि करें।';showActionMessage('कोई बुकिंग नहीं मिली','error');return;}
+            window.activeDispatchBookingId=found.id;
+            card.innerHTML=`<b>बुकिंग #${escapeHtml(found.id)} — ${escapeHtml(found.name||'-')}</b><div>मोबाइल: ${escapeHtml(found.mob||'-')} | डिस्पैच तारीख: ${escapeHtml(found.date||'-')} | वापसी: ${escapeHtml(found.returnDate||'-')}</div><div>स्थिति: ${escapeHtml(found.status||'बुकिंग')}</div><div>आइटम: ${(found.items||[]).map(i=>`${escapeHtml(i.name||'सामान')} × ${Number(i.qty)||0}`).join(', ')||'अभी कोई आइटम दर्ज नहीं'}</div>`;
+            loadDispatchTable();
+            showActionMessage(`बुकिंग लोड हुई: #${found.id}`,'success');
         }
 
         function saveStockItemReal(event) {
             event.preventDefault();
             let stock = safeGetStorage('realStockDatabase', []);
-            stock.push({
-                name: document.getElementById('stockItemName').value.trim(),
-                qty: Number(document.getElementById('stockItemQty').value),
-                setRent: Number(document.getElementById('stockItemSetRent').value),
-                singleRent: Number(document.getElementById('stockItemSingleRent').value),
-                missingCharge: Number(document.getElementById('stockItemMissing').value),
-                barcode: 'ITM-' + Math.floor(100000 + Math.random() * 900000)
-            });
+            const name=document.getElementById('stockItemName').value.trim(), qty=Number(document.getElementById('stockItemQty').value), setRent=Number(document.getElementById('stockItemSetRent').value), singleRent=Number(document.getElementById('stockItemSingleRent').value), missingCharge=Number(document.getElementById('stockItemMissing').value);
+            if(!name||!Number.isFinite(qty)||qty<=0||![setRent,singleRent,missingCharge].every(v=>Number.isFinite(v)&&v>=0)){showActionMessage('सामान, मात्रा और सभी रेट सही भरें','error');return;}
+            const old=stock.find(x=>String(x.name||'').trim().toLocaleLowerCase()===name.toLocaleLowerCase());
+            if(old){old.qty=Math.max(0,Number(old.qty)||0)+qty;old.setRent=setRent;old.singleRent=singleRent;old.missingCharge=missingCharge;}
+            else stock.push({name,qty,setRent,singleRent,missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
             safeSetStorage('realStockDatabase', stock);
             event.target.reset();
             loadAllFirebaseData();
@@ -1325,6 +1397,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             let totalExp = list.filter(x => x.type === 'Expense').reduce((s, x) => s + x.amount, 0);
             if(document.getElementById('graphTotalIncome')) document.getElementById('graphTotalIncome').textContent = `₹${totalInc}`;
             if(document.getElementById('graphTotalExpense')) document.getElementById('graphTotalExpense').textContent = `₹${totalExp}`;
+            if(typeof renderDashboardGraph==='function') renderDashboardGraph();
         }
 
         function editPurchase(index){const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;const qty=prompt('मात्रा',p.qty);if(qty===null)return;const price=prompt('कुल कीमत ₹',p.price);if(price===null)return;const supplier=prompt('सप्लायर',p.supplier||'');if(supplier===null)return;const nQty=Number(qty),nPrice=Number(price);if(!itemName.trim()||!Number.isFinite(nQty)||nQty<=0||!Number.isFinite(nPrice)||nPrice<0){showActionMessage('सामान, मात्रा और कीमत सही भरें','error');return}const stock=safeGetStorage('realStockDatabase',[]);const oldStock=stock.find(x=>String(x.name).toLowerCase()===String(p.itemName).toLowerCase());if(oldStock)oldStock.qty=Math.max(0,Number(oldStock.qty||0)-Number(p.qty||0)+nQty);else stock.push({name:itemName.trim(),qty:nQty,setRent:0,singleRent:0,missingCharge:0,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});rows[index]={...p,itemName:itemName.trim(),qty:nQty,price:nPrice,supplier:supplier.trim()};safeSetStorage('purchaseDatabase',rows);safeSetStorage('realStockDatabase',stock);loadAllFirebaseData();showActionMessage('परचेज अपडेट हुई; स्टॉक मात्रा समायोजित की गई','success')}
@@ -1332,27 +1405,48 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<0){showActionMessage('तारीख, विवरण, प्रकार और राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:n};safeSetStorage('incomeExpenseDatabase',rows);loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
         function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);safeSetStorage('incomeExpenseDatabase',rows);loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड हटाया गया','success')}
 
-        function loadCustomerList() {
-            let bookings = safeGetStorage('softwareBookings', []);
-            let tbody = document.getElementById('customerTableBody');
-            if(tbody) {
-                tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="7" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr>` : bookings.map(b => {
-                    let totalRent = calculateBookingTotalRent(b);
-            if(document.getElementById('billDiscountInput'))document.getElementById('billDiscountInput').value=Number(b.discountAmount)||0;
-            if(document.getElementById('billOtherChargesInput'))document.getElementById('billOtherChargesInput').value=Number(b.otherCharges)||0;
-                    let paid = (b.advanceAmount || 0) + (b.partPayments ? b.partPayments.reduce((s,p)=>s+p.amount,0) : 0);
-                    let due = totalRent - paid;
-                    return `<tr>
-                        <td><b>${b.name}</b></td>
-                        <td>${b.mob}</td>
-                        <td>${b.address}</td>
-                        <td>₹${totalRent}</td>
-                        <td>₹${paid}</td>
-                        <td style="color:#e53e3e;">₹${due}</td>
-                        <td><button type="button" onclick="deleteBooking(${b.id})" class="action-btn" style="color:#e53e3e;">डिलीट</button></td>
-                    </tr>`;
-                }).join('');
+        function checkCustomerBookingStatus() {
+            const input = document.getElementById('customerStatusQuery');
+            const box = document.getElementById('customerStatusResultBox');
+            if (!input || !box) return;
+            const query = String(input.value || '').trim().toLowerCase();
+            box.style.display = 'block';
+            if (!query) { box.innerHTML = '<p style="color:#b91c1c;margin:0">बुकिंग ID या मोबाइल नंबर डालें।</p>'; return; }
+            const bookings = safeGetStorage('softwareBookings', []);
+            const matches = bookings.filter(b => String(b.id ?? '').toLowerCase() === query || String(b.mob ?? '').replace(/\D/g,'') === query.replace(/\D/g,''));
+            if (!matches.length) {
+                box.innerHTML = '<p style="color:#b91c1c;margin:0">इस ID/मोबाइल नंबर से कोई बुकिंग नहीं मिली। अगर बुकिंग दूसरे डिवाइस पर है, तो डेटा sync/लोड करें या सही ID डालें।</p>';
+                return;
             }
+            box.innerHTML = matches.map(b => {
+                const total = calculateBookingTotalRent(b);
+                const paid = Math.min(total, getBookingPaidAmount(b));
+                const due = Math.max(0, total - paid);
+                const status = total > 0 && paid >= total - 0.005 ? 'paid' : paid <= 0 ? 'unpaid' : 'partial';
+                const color = status === 'paid' ? '#15803d' : status === 'unpaid' ? '#b91c1c' : '#1d4ed8';
+                const label = status === 'paid' ? 'पूरा भुगतान' : status === 'unpaid' ? 'भुगतान बाकी' : 'आंशिक भुगतान';
+                const items = Array.isArray(b.items) ? b.items.map(i => `<li>${escapeHtml(i.name || 'आइटम')} — मात्रा: ${Number(i.qty)||0}</li>`).join('') : '';
+                return `<section style="border:1px solid ${color};border-left:5px solid ${color};border-radius:10px;padding:12px;margin-bottom:10px;color:#111"><h3 style="margin:0 0 8px;color:${color}">बुकिंग #${escapeHtml(b.id)} · ${label}</h3><p style="margin:4px 0"><b>ग्राहक:</b> ${escapeHtml(b.name||'-')} &nbsp; <b>मोबाइल:</b> ${escapeHtml(b.mob||'-')}</p><p style="margin:4px 0"><b>कार्य:</b> ${escapeHtml(b.eventType||'-')} &nbsp; <b>तारीख:</b> ${escapeHtml(b.date||'-')} से ${escapeHtml(b.returnDate||'-')}</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0"><div>कुल बिल<br><b>₹${total.toFixed(2)}</b></div><div>जमा राशि<br><b style="color:${color}">₹${paid.toFixed(2)}</b></div><div>बाकी राशि<br><b style="color:${due>0?'#b91c1c':'#15803d'}">₹${due.toFixed(2)}</b></div></div>${items ? `<b>बुक किए गए आइटम</b><ul style="margin:5px 0 0;padding-left:20px">${items}</ul>` : ''}<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px"><div style="border:1px solid #cbd5e1;border-radius:8px;padding:9px;background:#f8fafc"><b>डिस्पैच स्थिति</b><div>${Array.isArray(b.dispatchItems)&&b.dispatchItems.length?'डिस्पैच रिकॉर्ड उपलब्ध':'डिस्पैच विवरण उपलब्ध नहीं'}</div></div><div style="border:1px solid #cbd5e1;border-radius:8px;padding:9px;background:#f8fafc"><b>रिटर्न स्थिति</b><div>${Array.isArray(b.returnItems)&&b.returnItems.length?'रिटर्न रिकॉर्ड उपलब्ध':'रिटर्न विवरण उपलब्ध नहीं'}</div></div><div style="border:1px solid #cbd5e1;border-radius:8px;padding:9px;background:#f8fafc"><b>बिल सारांश</b><div>कुल ₹${total.toFixed(2)} · बाकी ₹${due.toFixed(2)}</div></div></div></section>`;
+            }).join('');
+        }
+        document.addEventListener('DOMContentLoaded', () => { const q=document.getElementById('customerStatusQuery'); if(q) q.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();checkCustomerBookingStatus();}}); });
+
+        function loadCustomerList() {
+            const bookings = safeGetStorage('softwareBookings', []);
+            const tbody = document.getElementById('customerTableBody');
+            if (!tbody) return;
+            const query = (document.getElementById('customerListSearch')?.value || '').trim().toLowerCase();
+            const filtered = bookings.filter(b => [b.id,b.name,b.mob,b.address,b.eventType].some(v => String(v ?? '').toLowerCase().includes(query)));
+            if (!filtered.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">${bookings.length ? 'कोई मिलान वाला ग्राहक नहीं मिला' : 'कोई रिकॉर्ड नहीं'}</td></tr>`; return; }
+            tbody.innerHTML = filtered.map(b => {
+                const total = calculateBookingTotalRent(b);
+                const paid = Math.min(total, getBookingPaidAmount(b));
+                const due = Math.max(0, total - paid);
+                const status = total > 0 && paid >= total - 0.005 ? 'paid' : paid <= 0 ? 'unpaid' : 'partial';
+                const color = status === 'paid' ? '#15803d' : status === 'unpaid' ? '#b91c1c' : '#1d4ed8';
+                const label = status === 'paid' ? 'पूरा भुगतान' : status === 'unpaid' ? 'भुगतान नहीं' : 'आंशिक भुगतान';
+                return `<tr style="background:${status==='paid'?'#f0fdf4':status==='unpaid'?'#fef2f2':'#eff6ff'}"><td><b>${escapeHtml(b.name)}</b><div style="font-size:11px;color:${color};font-weight:800">${label} · #${escapeHtml(b.id)}</div></td><td>${escapeHtml(b.mob)}</td><td>${escapeHtml(b.address)}</td><td>₹${total.toFixed(2)}</td><td style="color:${color};font-weight:800">₹${paid.toFixed(2)}</td><td style="color:${color};font-weight:800">₹${due.toFixed(2)}</td><td><button type="button" onclick="deleteBooking(${Number(b.id)})" class="action-btn" style="color:#b91c1c">डिलीट</button></td></tr>`;
+            }).join('');
         }
 
         function loadMasterLedgerData() {
@@ -1403,8 +1497,8 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             if(tbody) {
                 tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr>` : bookings.map(b => {
                     let totalRent = calculateBookingTotalRent(b);
-                    let paid = (b.advanceAmount || 0) + (b.partPayments ? b.partPayments.reduce((s,p)=>s+p.amount,0) : 0);
-                    let due = totalRent - paid;
+                    let paid = getBookingPaidAmount(b);
+                    let due = Math.max(0,totalRent-paid);
                     return `<tr>
                         <td><b>${b.name}</b></td>
                         <td>${b.mob}</td>
@@ -1427,28 +1521,22 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
                 const previousPaid = getBookingPaidAmount(b);
                 const due = Math.max(0, calculateBookingTotalRent(b) - previousPaid);
                 if (amt > due + 0.0001) { showActionMessage('किस्त बकाया राशि से अधिक नहीं हो सकती', 'error'); return; }
-                b.partPayments.push({ date: new Date().toISOString().slice(0,10), amount: amt });
+                b.partPayments.push({ id:'inst-'+Date.now(), date: new Date().toISOString().slice(0,10), amount: amt, mode:'Cash', source:'installment' });
                 b.totalPaid = previousPaid + amt;
                 b.dueAmount = Math.max(0, calculateBookingTotalRent(b) - b.totalPaid);
                 safeSetStorage('softwareBookings', bookings);
+                const ledger=safeGetStorage('rkPaymentLedger',[]);ledger.push({id:Date.now(),bookingId:b.id,total:calculateBookingTotalRent(b),cash:amt,online:0,paid:b.totalPaid,due:b.dueAmount,utr:'',method:'Cash',source:'installment',createdAt:new Date().toISOString()});safeSetStorage('rkPaymentLedger',ledger);
                 loadAllFirebaseData();
                 showActionMessage("किश्त जमा हो गई", "success");
             }
         }
 
         function loadPaymentLedgerTable() {
-            let bookings = safeGetStorage('softwareBookings', []);
-            let tbody = document.getElementById('paymentLedgerTableBody');
-            let cashSum = 0, onlineSum = 0;
-            let rows = [];
-            bookings.forEach(b => {
-                let amt = b.advanceAmount || 0;
-                if(b.payMode === 'Cash') cashSum += amt; else onlineSum += amt;
-                rows.push(`<tr><td>#${b.id}</td><td>${b.name}</td><td>${b.mob}</td><td>₹${amt}</td><td>${b.payMode || 'Cash'}</td><td>${b.utrNumber || '-'}</td></tr>`);
-            });
-            if(document.getElementById('totalCashSum')) document.getElementById('totalCashSum').textContent = `₹${cashSum}`;
-            if(document.getElementById('totalOnlineSum')) document.getElementById('totalOnlineSum').textContent = `₹${onlineSum}`;
-            if(tbody) tbody.innerHTML = rows.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr>` : rows.join('');
+            const bookings=safeGetStorage('softwareBookings',[]), ledger=safeGetStorage('rkPaymentLedger',[]), tbody=document.getElementById('paymentLedgerTableBody');
+            const rows=[]; let cashSum=0,onlineSum=0;
+            ledger.forEach(p=>{const b=bookings.find(x=>String(x.id)===String(p.bookingId))||{};const cash=Math.max(0,Number(p.cash)||0),online=Math.max(0,Number(p.online)||0);cashSum+=cash;onlineSum+=online;if(cash>0)rows.push(`<tr><td>#${escapeHtml(p.bookingId)}</td><td>${escapeHtml(b.name||'-')}</td><td>${escapeHtml(b.mob||'-')}</td><td>₹${cash.toFixed(2)}</td><td>Cash</td><td>-</td></tr>`);if(online>0)rows.push(`<tr><td>#${escapeHtml(p.bookingId)}</td><td>${escapeHtml(b.name||'-')}</td><td>${escapeHtml(b.mob||'-')}</td><td>₹${online.toFixed(2)}</td><td>Online / UPI</td><td>${escapeHtml(p.utr||'-')}</td></tr>`);});
+            bookings.forEach(b=>{const advance=Math.max(0,Number(b.advanceAmount)||0);if(advance<=0||ledger.some(p=>String(p.bookingId)===String(b.id)&&Number(p.previousPaid||0)===0&&Number(p.paid||0)>=advance))return;const online=String(b.payMode||'').toLowerCase().includes('online')||String(b.payMode||'').toLowerCase().includes('upi')?advance:0,cash=online?0:advance;cashSum+=cash;onlineSum+=online;rows.push(`<tr><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${escapeHtml(b.mob||'-')}</td><td>₹${advance.toFixed(2)}</td><td>${online?'Online / UPI':'Cash'}</td><td>${escapeHtml(b.utrNumber||'-')}</td></tr>`);});
+            if(document.getElementById('totalCashSum'))document.getElementById('totalCashSum').textContent='₹'+cashSum.toFixed(2);if(document.getElementById('totalOnlineSum'))document.getElementById('totalOnlineSum').textContent='₹'+onlineSum.toFixed(2);if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="6" style="text-align:center">कोई रिकॉर्ड नहीं</td></tr>';
         }
 
         function applyInvoiceAdjustments(){
@@ -1507,7 +1595,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
         ['paymentTotalAmount','paymentAlreadyPaid','paymentCashAmount','paymentOnlineAmount'].forEach(id=>document.addEventListener('input',e=>{if(e.target&&e.target.id===id)updatePaymentTotals()}));
         function generatePaymentQr(){const b=currentPaymentBooking(),settings=safeGetStorage('softwareSettings',{}),v=updatePaymentTotals(),amount=v.online;if(!b){showActionMessage('पहले सही Booking ID डालें','error');return}if(amount<=0){showActionMessage('Online amount शून्य से अधिक होना चाहिए','error');return}if(!settings.upiId){showActionMessage('Settings में UPI ID भरें','error');return}if(!window.QRious){showActionMessage('QR लाइब्रेरी लोड नहीं हुई','error');return}const uri='upi://pay?pa='+encodeURIComponent(settings.upiId)+'&pn='+encodeURIComponent(settings.businessName||'Radha Krishna Tent House')+'&am='+amount.toFixed(2)+'&cu=INR&tn='+encodeURIComponent('Booking '+b.id);new QRious({element:document.getElementById('paymentQrCanvas'),value:uri,size:240,level:'H'});document.getElementById('paymentQrCaption').textContent='बुकिंग #'+b.id+' · ₹'+amount.toFixed(2);document.getElementById('paymentQrArea').style.display='block';}
         async function savePaymentEntry(){const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});if(!b){showActionMessage('Booking ID सही नहीं है','error');return}if(v.total<=0||v.old<0||v.cash<0||v.online<0||v.paid>v.total+0.0001){showActionMessage('कुल राशि सही भरें; कुल जमा राशि बिल से अधिक नहीं हो सकती','error');return}if(v.old>getBookingPaidAmount(b)+0.0001){showActionMessage('पहले जमा राशि रिकॉर्ड से मेल नहीं खाती। बिल दोबारा खोजें।','error');return}if(v.cash+v.online>Math.max(0,v.total-v.old)+0.0001){showActionMessage('इस बार का पेमेंट बाकी राशि से अधिक नहीं हो सकता','error');return}if(v.online>0&&!utr){showActionMessage('Online भुगतान के लिए UTR भरें','error');return}const key='rkPaymentLedger',ledger=safeGetStorage(key,[]);const rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:v.paid,due:v.due,utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',createdAt:new Date().toISOString()};ledger.push(rec);safeSetStorage(key,ledger);b.totalPaid=v.paid;b.dueAmount=v.due;safeSetStorage('softwareBookings',safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x));if(v.online>0&&settings.backendApiUrl){try{const response=await fetch(settings.backendApiUrl.replace(/\/$/,'')+'/api/payments/record-utr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});const data=await response.json();if(!response.ok)throw Error(data.error||'Backend error');showActionMessage('पेमेंट एंट्री सेव; ऑनलाइन पेमेंट सत्यापन लंबित','success')}catch(e){showActionMessage('लोकल पेमेंट सेव हुआ; backend sync नहीं हुआ: '+e.message,'error')}}else showActionMessage('पेमेंट लोकल सेव हुआ; Online verification के लिए backend URL सेट करें','success');}
-        function printReturnSlip(){const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim(),b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));if(!b){showActionMessage('रिटर्न स्लिप के लिए booking लोड करें','error');return}const s=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.style.display='block';area.innerHTML=`<div style="font-family:Arial;color:#111"><header style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>मोबाइल: ${escapeHtml(s.contactNo||'')}</p><h3>RETURN RECEIVED SLIP / रिटर्न प्राप्ति पर्ची</h3></header><p>Booking: #${escapeHtml(b.id)} | Customer: ${escapeHtml(b.name)} | Mobile: ${escapeHtml(b.mob)}</p><div style="text-align:center;margin:10px auto"><svg id="returnSlipBarcode"></svg></div><p>Dispatch: ${escapeHtml(b.date||'-')} | Return: ${escapeHtml(b.returnDate||'-')}</p><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>वापस मिली</th><th>मिसिंग</th><th>मिसिंग चार्ज</th></tr></thead><tbody>${(b.items||[]).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Number(i.qty)||0}</td><td>${Number(i.returnedQty)||0}</td><td>${Number(i.missingQty)||0}</td><td>${Number(i.missingQty)>0?'पुष्टि आवश्यक':'₹0.00'}</td></tr>`).join('')}</tbody></table><p style="margin-top:18px">शर्तें: प्राप्त मात्रा की जाँच ग्राहक/स्टोर इंचार्ज के हस्ताक्षर से करें। मिसिंग आइटम का कोई शुल्क इस स्लिप पर स्वतः नहीं जोड़ा गया; शुल्क केवल अलग से पुष्टि करने पर लागू होगा।</p><div style="display:flex;justify-content:space-between;gap:20px;margin-top:30px;align-items:flex-end"><span>ग्राहक हस्ताक्षर</span><div style="text-align:center;min-width:150px">${s.returnStamp?`<img src="${s.returnStamp}" style="display:block;max-width:130px;max-height:60px;object-fit:contain;margin:0 auto 5px">`:''}<span>रिटर्न प्राप्ति / ओनर स्टाम्प</span></div></div>${s.termsConditions?`<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(s.termsConditions)}</p></section>`:''}<div class="no-print" style="margin-top:20px"><button onclick="window.print()">प्रिंट करें</button><button onclick="document.getElementById('printableSlipArea').style.display='none'">बंद करें</button></div></div>`;try{if(window.JsBarcode)JsBarcode('#returnSlipBarcode',String(b.id),{format:'CODE128',width:2,height:48,displayValue:true,margin:4})}catch(e){console.warn('Return barcode render failed',e)}}
+        function printReturnSlip(){const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim(),b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));if(!b){showActionMessage('रिटर्न स्लिप के लिए booking लोड करें','error');return}const s=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.style.display='block';area.innerHTML=`<div style="font-family:Arial;color:#111"><header style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>मोबाइल: ${escapeHtml(s.contactNo||'')}</p><h3>RETURN RECEIVED SLIP / रिटर्न प्राप्ति पर्ची</h3></header><p>Booking: #${escapeHtml(b.id)} | Customer: ${escapeHtml(b.name)} | Mobile: ${escapeHtml(b.mob)}</p><div style="text-align:center;margin:10px auto"><svg id="returnSlipBarcode"></svg></div><p>Dispatch: ${escapeHtml(b.date||'-')} | Return: ${escapeHtml(b.returnDate||'-')}</p><table class="rk-slip-table"><thead><tr><th>डिस्पैच आइटम</th><th>Quantity</th><th>Return Quantity</th><th>Missing Quantity</th></tr></thead><tbody>${(b.items||[]).map(i=>{const qty=Math.max(0,Number(i.qty)||0),returned=Math.max(0,Number(i.returnedQty)||0),missing=Math.max(0,Number(i.missingQty??(qty-returned))||0);return `<tr><td>${escapeHtml(i.name||'-')}</td><td>${qty}</td><td>${returned}</td><td>${missing}</td></tr>`}).join('')}</tbody></table><p style="margin-top:18px">शर्तें: प्राप्त मात्रा की जाँच ग्राहक/स्टोर इंचार्ज के हस्ताक्षर से करें। मिसिंग आइटम का कोई शुल्क इस स्लिप पर स्वतः नहीं जोड़ा गया; शुल्क केवल अलग से पुष्टि करने पर लागू होगा।</p><div style="display:flex;justify-content:space-between;gap:20px;margin-top:30px;align-items:flex-end"><span>ग्राहक हस्ताक्षर</span><div style="text-align:center;min-width:150px">${s.returnStamp?`<img src="${s.returnStamp}" style="display:block;max-width:130px;max-height:60px;object-fit:contain;margin:0 auto 5px">`:''}<span>रिटर्न प्राप्ति / ओनर स्टाम्प</span></div></div>${s.termsConditions?`<section style="margin-top:14px;border-top:1px solid #aaa;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(s.termsConditions)}</p></section>`:''}<div class="no-print" style="margin-top:20px"><button onclick="window.print()">प्रिंट करें</button><button onclick="document.getElementById('printableSlipArea').style.display='none'">बंद करें</button></div></div>`;try{if(window.JsBarcode)JsBarcode('#returnSlipBarcode',String(b.id),{format:'CODE128',width:2,height:48,displayValue:true,margin:4})}catch(e){console.warn('Return barcode render failed',e)}}
 
         function saveThirdPartyEntry(event) {
             event.preventDefault();
@@ -1654,7 +1742,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
             const missing=safeGetStorage('missingItemsDatabase',[]),stock=safeGetStorage('realStockDatabase',[]);
             [...document.querySelectorAll('.return-qty-input')].forEach(input=>{const it=b.items[Number(input.dataset.returnIndex)],sent=Math.max(0,Number(it.qty)||0),returned=Math.min(sent,Math.max(0,Number(input.value)||0)),lost=sent-returned;it.returnedQty=returned;it.missingQty=lost;
                 if(it.source==='third-party'){const tp=safeGetStorage('thirdPartyDatabase',[]),v=tp.find(x=>x.partyName===it.partyName&&x.item===it.name);if(v)v.qty=Math.max(0,Number(v.qty||0)+returned);safeSetStorage('thirdPartyDatabase',tp);}else{const owner=stock.find(x=>x.name===it.name);if(owner)owner.qty=Number(owner.qty||0)+returned;}
-                if(lost>0)missing.push({id:Date.now()+Number(input.dataset.returnIndex),bookingId:b.id,customer:b.name,item:it.name,source:it.source==='third-party'?'third-party':'admin',partyName:it.partyName||'',qty:lost,penalty:0,chargeApproved:false,proposedPenalty:lost*(Number(it.missingCharge)||0),resolved:false});});
+                if(lost>0)missing.push({id:Date.now()+Number(input.dataset.returnIndex),bookingId:b.id,customer:b.name,item:it.name,source:it.source==='third-party'?'third-party':'admin',partyName:it.partyName||'',qty:lost,penalty:lost*(Number(it.missingCharge)||0),chargeApproved:false,proposedPenalty:lost*(Number(it.missingCharge)||0),resolved:false});});
             b.status='Returned';b.returnProcessedAt=new Date().toISOString();safeSetStorage('softwareBookings',bookings);safeSetStorage('realStockDatabase',stock);safeSetStorage('missingItemsDatabase',missing);activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();showActionMessage('रिटर्न सेव हुआ; मिसिंग आइटम अलग दर्ज हुए','success');
         }
         window.onload = function() {
@@ -1671,7 +1759,15 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
  window.generateHostingQr=function(){saveExtra();let s=settings(),u=($('hostingUrlInput')?.value||s.hostingUrl||location.href).trim();if(!/^https?:\/\//i.test(u)){alert('कृपया https:// से शुरू होने वाला सही URL डालें।');return}if(!$('hostingQrCanvas')||!window.QRious){alert('QR लाइब्रेरी लोड नहीं हुई। इंटरनेट कनेक्शन जाँचें।');return}new QRious({element:$('hostingQrCanvas'),value:u,size:260,level:'H'});$('hostingQrText').textContent=u;$('hostingQrWrap').style.display='block';};
  window.shareHostingQr=async function(){saveExtra();let u=($('hostingUrlInput')?.value||settings().hostingUrl||location.href).trim();if(!/^https?:\/\//i.test(u)){alert('पहले सही hosting URL डालें।');return}if(!$('hostingQrWrap')||$('hostingQrWrap').style.display==='none')window.generateHostingQr();try{const canvas=$('hostingQrCanvas');if(navigator.share&&canvas&&canvas.toBlob){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(blob&&typeof File!=='undefined'){const file=new File([blob],'rk-tent-house-erp-qr.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({title:'Radha Krishna Tent House ERP QR',text:'ERP खोलें',url:u,files:[file]});return}}}if(navigator.share){await navigator.share({title:'Radha Krishna Tent House ERP',text:'ERP खोलें',url:u})}else if(navigator.clipboard){await navigator.clipboard.writeText(u);alert('इस डिवाइस पर QR image sharing उपलब्ध नहीं; URL कॉपी हो गया।')}else{prompt('URL कॉपी करें',u)}}catch(e){if(e.name!=='AbortError')alert('Share उपलब्ध नहीं; URL: '+u)}};
  window.copyHostingUrl=function(){let u=($('hostingUrlInput')?.value||settings().hostingUrl||'').trim();if(!u){alert('पहले URL डालें');return}if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>alert('URL कॉपी हो गया')).catch(()=>prompt('कॉपी करें',u));else prompt('कॉपी करें',u)};
- window.printHostingQr=function(){let wrap=$('hostingQrWrap');if(!wrap)return;let old=document.body.innerHTML;let html='<html><head><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:25px}canvas{width:260px;height:260px}</style></head><body><h2>Radha Krishna Tent House ERP</h2>'+wrap.innerHTML+'</body></html>';let w=window.open('','_blank');if(!w){alert('Pop-up अनुमति दें');return}w.document.write(html);w.document.close();w.focus();w.print()};
+ window.printHostingQr=function(){let wrap=$('hostingQrWrap');if(!wrap)return;let html='<!doctype html><html><head><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:25px}canvas{width:260px;height:260px}</style></head><body><h2>Radha Krishna Tent House ERP</h2>'+wrap.innerHTML+'
+<script id="rk-layout-and-missing-bill-patch">
+(function(){
+  const style=document.createElement('style');style.textContent=`.rk-clock-menu{order:-1;position:sticky;top:0;z-index:5;background:linear-gradient(110deg,#172554,#1d4ed8)!important;color:#fff!important;border-radius:9px;margin-bottom:8px;font-weight:800}.rk-clock-menu span{font-variant-numeric:tabular-nums}#dispatchBookingSearchResult{line-height:1.6;overflow-wrap:anywhere}.menu-list .menu-item{white-space:normal;line-height:1.35;min-height:42px;display:flex;align-items:center;gap:9px}.menu-list .menu-item i{width:20px;text-align:center;flex:0 0 20px}`;document.head.appendChild(style);
+  document.addEventListener('DOMContentLoaded',()=>{if(typeof window.renderMissingItems==='function')window.renderMissingItems();});
+})();
+</script>
+
+</body></html>';let w=window.open('','_blank');if(!w){alert('Pop-up अनुमति दें');return}w.document.write(html);w.document.close();w.focus();w.print()};
  function tick(){let d=new Date();if($('rkClockTime'))$('rkClockTime').textContent=d.toLocaleTimeString('en-IN',{hour12:true});if($('rkClockDate'))$('rkClockDate').textContent=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}tick();setInterval(tick,1000);
  document.addEventListener('DOMContentLoaded',()=>{let s=settings();if($('hostingUrlInput'))$('hostingUrlInput').value=s.hostingUrl||location.href;if($('backendApiUrlInput'))$('backendApiUrlInput').value=s.backendApiUrl||'';if($('aiAccessTokenInput'))$('aiAccessTokenInput').value=s.aiAccessToken||'';if($('otpChannelSetting'))$('otpChannelSetting').value=s.otpChannel||'off';if($('requireItemSelectionSetting'))$('requireItemSelectionSetting').checked=s.requireItemSelection!==false;if($('enableOfflineSetting'))$('enableOfflineSetting').checked=s.enableOffline!==false;['hostingUrlInput','backendApiUrlInput','aiAccessTokenInput','otpChannelSetting','requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>{let el=$(id);if(el)el.addEventListener('change',saveExtra)});});
  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(()=>{});
@@ -1697,8 +1793,10 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
       return `<tr><td class="rk-col-no">${i+1}</td><td class="rk-item-name">${esc(it.name||'सामान')}</td><td class="rk-col-hsn">${esc(it.hsn||it.hsnCode||'-')}</td><td class="rk-num">${qty}</td><td class="rk-num">${money(rate)}</td><td class="rk-num">${days}</td><td class="rk-num">${money(amount)}</td></tr>`;
     }).join('');
     const subtotal=items.reduce((sum,it)=>sum+Math.max(0,Number(it.qty)||0)*Math.max(0,Number(it.rentPrice??500)||0)*days,0);
+    const missingRows=(window.safeGetStorage('missingItemsDatabase',[])||[]).filter(m=>String(m.bookingId)===String(b.id));
+    const missingCharge=missingRows.reduce((sum,m)=>sum+((m.chargeApproved||Number(m.penalty)>0)?Math.max(0,Number(m.penalty)||0):0),0);
     const other=Math.max(0,Number(b.otherCharges)||0), discount=Math.max(0,Number(b.discountAmount)||0);
-    const total=Math.max(0,subtotal+other-discount), paid=Math.min(total,paidFor(b)), due=Math.max(0,total-paid);
+    const total=Math.max(0,subtotal+other+missingCharge-discount), paid=Math.min(total,paidFor(b)), due=Math.max(0,total-paid);
     const taxId=settings.gstin||settings.GSTIN||settings.gstNumber||'';
     const addr=settings.businessAddress||settings.address||settings.shopAddress||'';
     const dateLabel=b.bookingDate||b.createdAt||b.date||new Date().toISOString().slice(0,10);
@@ -1706,7 +1804,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
       <header class="rk-inv-head"><div class="rk-inv-brand"><h1>${esc(settings.businessName||'राधा कृष्णा टेंट हाउस')}</h1><p>${esc(addr)}</p><p>मोबाइल: ${esc(settings.contactNo||settings.phone||'')}</p>${settings.email?`<p>${esc(settings.email)}</p>`:''}${taxId?`<p><b>GSTIN:</b> ${esc(taxId)}</p>`:''}</div><div class="rk-inv-title"><h2>${taxId?'TAX INVOICE':'INVOICE'}</h2><p><b>बिल नं.:</b> ${esc(b.invoiceNo||('RK-'+b.id))}</p><p><b>दिनांक:</b> ${esc(dateLabel)}</p><p><b>बुकिंग नं.:</b> #${esc(b.id)}</p></div></header>
       <section class="rk-inv-customer"><div><b>ग्राहक / BILL TO</b><p>${esc(b.name||'-')}</p><p>मोबाइल: ${esc(b.mob||'-')}</p><p>${esc(b.address||'')}</p></div><div><b>कार्य विवरण</b><p>कार्य: ${esc(b.eventType||'-')}</p><p>डिस्पैच: ${esc(b.date||'-')}</p><p>वापसी: ${esc(b.returnDate||'-')}</p></div></section>
       <table class="rk-inv-table"><thead><tr><th class="rk-col-no">क्र.</th><th class="rk-col-name">सामान / DESCRIPTION</th><th class="rk-col-hsn">HSN/SAC</th><th class="rk-col-qty">मात्रा</th><th class="rk-col-rate">दर</th><th class="rk-col-days">दिन</th><th class="rk-col-amount">राशि</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="text-align:center">कोई सामान दर्ज नहीं</td></tr>'}</tbody></table>
-      <section class="rk-inv-bottom"><div class="rk-inv-note"><b>नोट / Terms</b><p>${esc(settings.termsConditions||'सामान की प्राप्ति और वापसी की मात्रा जाँचकर हस्ताक्षर करें।')}</p></div><table class="rk-inv-totals"><tbody><tr><td>सामान का कुल</td><td>${money(subtotal)}</td></tr><tr><td>अन्य चार्ज</td><td>${money(other)}</td></tr><tr><td>डिस्काउंट</td><td>−${money(discount)}</td></tr><tr class="rk-inv-grand"><th>कुल देय / TOTAL</th><th>${money(total)}</th></tr><tr><td>पहले जमा / ADVANCE</td><td>${money(paid)}</td></tr><tr class="rk-inv-due"><th>बाकी / BALANCE</th><th>${money(due)}</th></tr></tbody></table></section>
+      <section class="rk-inv-bottom"><div class="rk-inv-note"><b>नोट / Terms</b><p>${esc(settings.termsConditions||'सामान की प्राप्ति और वापसी की मात्रा जाँचकर हस्ताक्षर करें।')}</p></div><table class="rk-inv-totals"><tbody><tr><td>सामान का कुल</td><td>${money(subtotal)}</td></tr><tr><td>अन्य चार्ज</td><td>${money(other)}</td></tr><tr><td>मिसिंग चार्ज</td><td>${money(missingCharge)}</td></tr><tr><td>डिस्काउंट</td><td>−${money(discount)}</td></tr><tr class="rk-inv-grand"><th>कुल देय / TOTAL</th><th>${money(total)}</th></tr><tr><td>पहले जमा / ADVANCE</td><td>${money(paid)}</td></tr><tr class="rk-inv-due"><th>बाकी / BALANCE</th><th>${money(due)}</th></tr></tbody></table></section>
       <footer class="rk-inv-sign"><div>ग्राहक के हस्ताक्षर</div><div>${settings.paidStamp?`<img src="${esc(settings.paidStamp)}" alt="स्टाम्प">`:''}<p>अधिकृत हस्ताक्षर / मुहर</p></div></footer>
       ${includeActions?'<div class="no-print rk-inv-actions"><button type="button" onclick="printInvoice()">प्रिंट इनवॉइस</button><button type="button" onclick="sendWhatsAppMessage('+JSON.stringify(b.id)+', \'bill\')">WhatsApp शेयर</button></div>':''}
     </article>`;
@@ -1733,6 +1831,12 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
   const style=document.createElement('style');
   style.id='rk-medical-style-invoice-print-fix';
   style.textContent=`
+  #printableSlipArea{background:#fff;color:#111;font-family:Arial,"Noto Sans Devanagari",sans-serif;padding:10px;box-sizing:border-box}
+  #printableSlipArea .rk-slip-table{width:100%;border-collapse:collapse;margin:12px 0;color:#111}
+  #printableSlipArea .rk-slip-table th,#printableSlipArea .rk-slip-table td{border:1px solid #333;padding:7px 8px;text-align:left;vertical-align:middle;font-size:10pt}
+  #printableSlipArea .rk-slip-table th{background:#e8f4f5;text-align:center;font-weight:700}
+  #printableSlipArea .rk-slip-table td:not(:first-child){text-align:center}
+
   .rk-med-invoice{background:#fff;color:#111;font:10pt Arial,"Noto Sans Devanagari",sans-serif;line-height:1.35;padding:10px;max-width:100%;overflow-wrap:anywhere}
   .rk-inv-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(155px,30%);gap:12px;border-bottom:2px solid #111;padding:0 0 10px;margin-bottom:10px;align-items:start}
   .rk-inv-brand h1{font-size:17pt;margin:0 0 5px;color:#111;overflow-wrap:anywhere}.rk-inv-brand p,.rk-inv-title p{font-size:9pt;margin:2px 0;overflow-wrap:anywhere}
@@ -1743,9 +1847,20 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 10px;vertical-align:
   .rk-inv-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,44%);gap:12px;align-items:start;margin-top:8px}.rk-inv-note{border:1px solid #777;padding:8px;min-height:70px}.rk-inv-note p{white-space:pre-wrap;margin-top:5px;overflow-wrap:anywhere}.rk-inv-totals{width:100%;border-collapse:collapse}.rk-inv-totals td,.rk-inv-totals th{border:1px solid #777;padding:5px;text-align:right;color:#111;white-space:normal}.rk-inv-totals td:first-child,.rk-inv-totals th:first-child{text-align:left}.rk-inv-grand{font-size:11pt}.rk-inv-due{font-size:11pt}
   .rk-inv-sign{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px;align-items:end}.rk-inv-sign>div{border-top:1px solid #555;text-align:center;padding-top:6px;min-height:25px}.rk-inv-sign img{max-width:110px;max-height:55px;object-fit:contain;display:block;margin:0 auto 4px}.rk-inv-actions{display:flex;gap:8px;margin-top:15px}.rk-inv-actions button{padding:8px 12px}
   @media(max-width:560px){.rk-inv-head,.rk-inv-customer,.rk-inv-bottom{grid-template-columns:minmax(0,1fr)}.rk-inv-title{text-align:left}}
-  @media print{@page{size:A4 portrait;margin:8mm}html,body{width:auto!important;height:auto!important;min-height:0!important;overflow:visible!important;background:#fff!important;margin:0!important;padding:0!important}body *{visibility:hidden!important}#printableSlipArea,#printableSlipArea *{visibility:visible!important}#printableSlipArea{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important;display:block!important;padding:0!important;margin:0!important;border:0!important;background:#fff!important;color:#111!important;box-shadow:none!important}#printableSlipArea .no-print{display:none!important}.rk-med-invoice{width:100%!important;max-width:none!important;padding:0!important;margin:0!important;font-size:9pt!important;overflow:visible!important;box-shadow:none!important}.rk-inv-head{grid-template-columns:minmax(0,1fr) minmax(135px,30%)!important}.rk-inv-customer{grid-template-columns:1fr 1fr!important}.rk-inv-bottom{grid-template-columns:minmax(0,1fr) minmax(190px,44%)!important}.rk-inv-table{width:100%!important;table-layout:fixed!important}.rk-inv-table th,.rk-inv-table td{font-size:8.5pt!important;padding:4px 3px!important;white-space:normal!important;overflow-wrap:anywhere!important}.rk-inv-item-name{word-break:break-word!important}.rk-inv-totals td,.rk-inv-totals th{font-size:8.5pt!important}.rk-inv-sign{break-inside:avoid}.rk-med-invoice img{max-width:100%!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}}
+  @media print{@page{size:A4 portrait;margin:8mm}#printableSlipArea{font-size:10pt!important;padding:0!important}#printableSlipArea table{break-inside:auto}#printableSlipArea tr{break-inside:avoid;break-after:auto}html,body{width:auto!important;height:auto!important;min-height:0!important;overflow:visible!important;background:#fff!important;margin:0!important;padding:0!important}body *{visibility:hidden!important}#printableSlipArea,#printableSlipArea *{visibility:visible!important}#printableSlipArea{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:100%!important;height:auto!important;min-height:0!important;overflow:visible!important;display:block!important;padding:0!important;margin:0!important;border:0!important;background:#fff!important;color:#111!important;box-shadow:none!important}#printableSlipArea .no-print{display:none!important}.rk-med-invoice{width:100%!important;max-width:none!important;padding:0!important;margin:0!important;font-size:9pt!important;overflow:visible!important;box-shadow:none!important}.rk-inv-head{grid-template-columns:minmax(0,1fr) minmax(135px,30%)!important}.rk-inv-customer{grid-template-columns:1fr 1fr!important}.rk-inv-bottom{grid-template-columns:minmax(0,1fr) minmax(190px,44%)!important}.rk-inv-table{width:100%!important;table-layout:fixed!important}.rk-inv-table th,.rk-inv-table td{font-size:8.5pt!important;padding:4px 3px!important;white-space:normal!important;overflow-wrap:anywhere!important}.rk-inv-item-name{word-break:break-word!important}.rk-inv-totals td,.rk-inv-totals th{font-size:8.5pt!important}.rk-inv-sign{break-inside:avoid}.rk-med-invoice img{max-width:100%!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}}
   `;
   document.head.appendChild(style);
+})();
+</script>
+
+<script id="rk-live-invoice-preview-fix">
+document.addEventListener('DOMContentLoaded',()=>{const ids=['billDiscountInput','billOtherChargesInput'];ids.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',()=>{const q=(document.getElementById('billSearchInput')?.value||'').trim();if(q&&typeof searchBillingCustomer==='function')searchBillingCustomer();});});});
+</script>
+
+<script id="rk-layout-and-missing-bill-patch">
+(function(){
+  const style=document.createElement('style');style.textContent=`.rk-clock-menu{order:-1;position:sticky;top:0;z-index:5;background:linear-gradient(110deg,#172554,#1d4ed8)!important;color:#fff!important;border-radius:9px;margin-bottom:8px;font-weight:800}.rk-clock-menu span{font-variant-numeric:tabular-nums}#dispatchBookingSearchResult{line-height:1.6;overflow-wrap:anywhere}.menu-list .menu-item{white-space:normal;line-height:1.35;min-height:42px;display:flex;align-items:center;gap:9px}.menu-list .menu-item i{width:20px;text-align:center;flex:0 0 20px}`;document.head.appendChild(style);
+  document.addEventListener('DOMContentLoaded',()=>{if(typeof window.renderMissingItems==='function')window.renderMissingItems();});
 })();
 </script>
 
