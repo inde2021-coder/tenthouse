@@ -33,3 +33,34 @@
 - Automated CI: `node --check backend/src/server.js`, business regression suite, package/manifest JSON validation — सफल।
 - `lia_reference.mov` repository के recursive Git tree में नहीं मिला; इसलिए उस वीडियो का visual review इस audit में संभव नहीं हुआ। इस काम में उपलब्ध customer portal structure और existing brand assets के अनुरूप design बनाया गया।
 - Vercel preview deployment API ने free daily deployment quota (100/day) की सीमा बताई; इस कारण नवीनतम commit का नया live preview deployment नहीं बन सका। Production deployment को बिना preview/device verification के force नहीं किया गया।
+
+
+## Final branch-by-branch audit — 26 नवंबर 2026
+जाँची गई सभी उपलब्ध branches:
+- `main` — production baseline; latest observed head `31a636dca7f60d95658949c998e4104df65e4ca8`
+- `audit/deep-audit-fixes-2026-11` — main से 341 commits ahead और 15 behind
+- `audit/tenthouse-ai-chat-2026-11` — main से 350 ahead और 15 behind; PR #2 इसी branch पर है और अभी unmerged है
+- `render-preview-bartan` — main से 368 ahead और 15 behind; BARTAN hero/icon और वैकल्पिक customer lookup changes हैं
+- `render-preview-isolated` — main से 400 ahead और 15 behind; इसमें BARTAN-specific branding/hero और अतिरिक्त preview-only बदलाव हैं
+- `render-preview-test` — main से 360 ahead और 15 behind
+
+सभी audit/preview branches का common merge base `a6d508fdd67e2b975edac90697d238ecd981262c` है; Main इस base से आगे बढ़ चुका है। इसलिए किसी भी पुरानी branch को सीधे Main में merge करना सुरक्षित नहीं है। PR #2 का base भी पुरानी audit branch है; उसे rebase/retarget और complete regression verification के बिना merge नहीं करना है।
+
+Main पर मिले root causes:
+1. `openCustomerLogin()` स्पष्ट रूप से Admin gate खोलने के बजाय “व्यवस्थापक प्रवेश लॉक है” दिखाकर रुकता था; shop-name click/triple-click का रास्ता इसलिए dead-end था।
+2. Secret-entry listener केवल developer footer पर 3.2-second long-press और Ctrl+Alt+Shift+K सुनता था; shop brand triple-tap, छोटा long-press और Ctrl+Shift+K समर्थित नहीं थे।
+3. पुराने global light-theme input rules और बाद के dark-theme overrides के बीच specificity/order conflicts थे; सभी Admin/dialog controls पर एक अंतिम dark control layer नहीं थी।
+4. Admin login ने 401/404/429/503 और network/CORS failures को generic error में समेट दिया था, जिससे वास्तविक configuration समस्या पता नहीं चलती थी।
+
+नई सुरक्षित branch `audit/final-hardening-2026-11` को नवीनतम Main से बनाया गया। इसमें केवल Tent House brand और customer booking workflow को सुरक्षित रखते हुए:
+- shop-name action को सुरक्षित Admin gate से जोड़ा;
+- Ctrl+Shift+K, Ctrl+Alt+Shift+K, brand triple-tap और 1.2-second long-press जोड़े;
+- Admin login के HTTP/configuration/network errors के लिए अलग संदेश जोड़े;
+- Admin panel और dialogs के fields पर final dark recessed/autofill-safe style जोड़ी;
+- तीनों deployable HTML copies को byte-identical रखा और document closing tags जोड़े;
+- इन fixes के लिए regression tests जोड़े।
+
+सुरक्षा/प्रोडक्शन सीमा:
+- Production Main को बदला या merge नहीं किया गया।
+- कोई secret/API key इस branch में नहीं जोड़ी गई।
+- Vercel preview quota के कारण live deployment की पुष्टि उपलब्ध नहीं थी; Firebase/Google OAuth, real WhatsApp/OTP, payment settlement, barcode/print और real-device visual tests अभी अलग production gates हैं।
