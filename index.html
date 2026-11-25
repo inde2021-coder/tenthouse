@@ -691,8 +691,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     <div id="booking-list" class="page-section">
                         <div class="table-responsive">
                             <table>
-                                <thead><tr><th>बुकिंग ID</th><th>कस्टमर</th><th>मोबाइल / कॉल</th><th>पता</th><th>इवेंट</th><th>डिस्पैच तारीख</th><th>वापसी तारीख</th><th>सामान / मात्रा</th><th>एडवांस</th><th>कुल किराया</th><th>स्टेटस</th><th>एक्शन</th></tr></thead>
-                                <tbody id="bookingTableBody"><tr><td colspan="12" style="text-align:center;">कोई बुकिंग नहीं</td></tr></tbody>
+                                <thead><tr><th>बुकिंग ID</th><th>कस्टमर</th><th>मोबाइल / कॉल</th><th>पता</th><th>इवेंट</th><th>डिस्पैच तारीख</th><th>वापसी तारीख</th><th>सामान / मात्रा</th><th>एडवांस</th><th>UTR नंबर</th><th>एडवांस सत्यापन</th><th>कुल बिल</th><th>जमा</th><th>बाकी</th><th>बुकिंग स्टेटस</th><th>एक्शन</th></tr></thead>
+                                <tbody id="bookingTableBody"><tr><td colspan="16" style="text-align:center;">कोई बुकिंग नहीं</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -1592,11 +1592,14 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         function loadBookingsListTable() {
-            const bookings=safeGetStorage('softwareBookings',[]), tbody=document.getElementById('bookingTableBody');
+            const bookings=safeGetStorage('softwareBookings',[]),tbody=document.getElementById('bookingTableBody');
             if(!tbody)return;
-            tbody.innerHTML=bookings.length===0?'<tr><td colspan="12" style="text-align:center;">कोई बुकिंग नहीं</td></tr>':bookings.map(b=>{
-                const items=(b.items||[]).map(i=>`${escapeHtml(i.name)} × ${Number(i.qty)||0}`).join(', ')||'-';
-                return `<tr><td>#${escapeHtml(b.id)}</td><td><b>${escapeHtml(b.name)}</b></td><td>${phoneCallLink(b.mob)}</td><td>${escapeHtml(b.address||'-')}</td><td>${escapeHtml(b.eventType||'-')}</td><td>${escapeHtml(b.date||'-')}</td><td>${escapeHtml(b.returnDate||'-')}</td><td>${items}</td><td>₹${calculateBookingTotalRent(b)}</td><td>₹${Number(b.advanceAmount)||0}</td><td>₹${getBookingPaidAmount(b)}</td><td>₹${Math.max(0,calculateBookingTotalRent(b)-getBookingPaidAmount(b))}</td><td><span style="font-weight:bold;">${escapeHtml(b.status||'Pending')}</span></td><td class="table-actions"><button type="button" onclick="approveBooking(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})" class="action-btn">कन्फर्म</button><button type="button" onclick="rejectBooking(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})" class="action-btn danger-action">रिजेक्ट</button><button type="button" onclick="editBooking(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})" class="action-btn">अपडेट</button><button type="button" onclick="deleteBooking(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})" class="action-btn danger-action">डिलीट</button></td></tr>`;
+            tbody.innerHTML=bookings.length===0?'<tr><td colspan="16" style="text-align:center;">कोई बुकिंग नहीं</td></tr>':bookings.map(b=>{
+                const items=(b.items||[]).map(i=>`${escapeHtml(i.name)} × ${Number(i.qty)||0}`).join(', ')||'एडमिन Dispatch में सामान जोड़ेगा';
+                const total=calculateBookingTotalRent(b),paid=getBookingPaidAmount(b),advance=Number(b.advanceAmount)||0;
+                const payStatus=advance<=0?'नहीं दिया':b.advancePaymentVerified?'सत्यापित':(b.advancePaymentStatus==='rejected'?'अस्वीकृत':'सत्यापन बाकी');
+                const verifyAction=advance>0&&!b.advancePaymentVerified?`<button type="button" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},true)" class="action-btn">UTR सत्यापित</button><button type="button" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},false)" class="action-btn danger-action">अस्वीकार</button>`:'';
+                return `<tr><td>#${escapeHtml(b.id)}</td><td><b>${escapeHtml(b.name)}</b></td><td>${phoneCallLink(b.mob)}</td><td>${escapeHtml(b.address||'-')}</td><td>${escapeHtml(b.eventType||'-')}</td><td>${escapeHtml(b.date||'-')}</td><td>${escapeHtml(b.returnDate||'-')}</td><td>${items}</td><td>₹${advance.toFixed(2)}</td><td>${escapeHtml(b.utrNumber||'-')}</td><td>${payStatus} ${verifyAction}</td><td>₹${total.toFixed(2)}</td><td>₹${paid.toFixed(2)}</td><td>₹${Math.max(0,total-paid).toFixed(2)}</td><td><b>${escapeHtml(b.status||'Pending')}</b></td><td class="table-actions"><button type="button" onclick="approveBooking(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')})" class="action-btn">कन्फर्म</button><button type="button" onclick="rejectBooking(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')})" class="action-btn danger-action">रिजेक्ट</button><button type="button" onclick="editBooking(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')})" class="action-btn">अपडेट</button><button type="button" onclick="deleteBooking(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')})" class="action-btn danger-action">डिलीट</button></td></tr>`;
             }).join('');
         }
 
@@ -1616,7 +1619,35 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 
         function rejectBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;b.status='Rejected';safeSetStorage('softwareBookings',rows);loadAllFirebaseData();updateRemoteCustomerBookingStatus(id,'Rejected');showActionMessage('बुकिंग रिजेक्ट हुई','success');}
         function deleteBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} स्थायी रूप से हटाएँ? इससे इस बुकिंग के Cash/Online भुगतान रिकॉर्ड भी हटेंगे। यह क्रिया वापस नहीं होगी।`))return;if(b.source==='customer-portal')updateRemoteCustomerBookingStatus(id,'Cancelled');const nextBookings=rows.filter(x=>String(x.id)!==String(id));const ledger=safeGetStorage('rkPaymentLedger',[]).filter(x=>String(x.bookingId)!==String(id));if(!safeSetStorage('softwareBookings',nextBookings))return;if(!safeSetStorage('rkPaymentLedger',ledger))return;loadCustomerList();loadInstallmentsTable();loadPaymentLedgerTable();loadMasterLedgerData();loadAllFirebaseData();showActionMessage('बुकिंग और उससे जुड़े Cash/Online भुगतान रिकॉर्ड हटाए गए','success');}
-        function editBooking(id){const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;const name=prompt('ग्राहक का नाम',b.name||'');if(name===null)return;const mob=prompt('मोबाइल नंबर',b.mob||'');if(mob===null)return;const date=prompt('Dispatch date (YYYY-MM-DD)',b.date||'');if(date===null)return;const ret=prompt('Return date (YYYY-MM-DD)',b.returnDate||'');if(ret===null)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{4}-\d{2}-\d{2}$/.test(ret)||ret<date){showActionMessage('तारीख YYYY-MM-DD में भरें और वापसी तारीख डिस्पैच से पहले न हो','error');return}b.name=name.trim();b.mob=mob.trim();b.date=date;b.returnDate=ret;safeSetStorage('softwareBookings',rows);loadCustomerList();loadInstallmentsTable();loadAllFirebaseData();showActionMessage('बुकिंग अपडेट हुई','success');}
+        async function editBooking(id){
+            const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;
+            const name=prompt('ग्राहक का नाम',b.name||'');if(name===null)return;
+            const mob=prompt('मोबाइल नंबर',b.mob||'');if(mob===null)return;
+            const address=prompt('पूरा पता',b.address||'');if(address===null)return;
+            const date=prompt('Dispatch date (YYYY-MM-DD)',b.date||'');if(date===null)return;
+            const ret=prompt('Return date (YYYY-MM-DD)',b.returnDate||'');if(ret===null)return;
+            if(!name.trim()||!/^\\+?[1-9]\\d{9,14}$/.test(mob.trim())||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(ret)||ret<date){showActionMessage('नाम, मोबाइल और तारीखें सही भरें','error');return;}
+            const patch={name:name.trim(),mob:mob.trim(),address:address.trim(),date,returnDate:ret};
+            if(b.source==='customer-portal'){
+                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\\/$/,''),token=String(settings.aiAccessToken||'').trim();
+                if(!api||!token){showActionMessage('Customer Booking edit के लिए Backend URL और Admin API Token सेट करें','error');return;}
+                try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id)),{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify(patch)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend update failed');Object.assign(b,data.booking||patch);}
+                catch(error){showActionMessage('बुकिंग Backend में अपडेट नहीं हुई: '+error.message,'error');return;}
+            }else Object.assign(b,patch);
+            if(!safeSetStorage('softwareBookings',rows))return;loadCustomerList();loadInstallmentsTable();loadAllFirebaseData();showActionMessage('बुकिंग अपडेट हुई','success');
+        }
+        async function verifyCustomerAdvance(id,verified){
+            const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b||!(Number(b.advanceAmount)>0))return;
+            if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस UTR भुगतान को अस्वीकार करना है?'))return;
+            if(b.source==='customer-portal'){
+                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\\/$/,''),token=String(settings.aiAccessToken||'').trim();
+                if(!api||!token){showActionMessage('UTR सत्यापन के लिए Backend URL और Admin API Token जरूरी है','error');return;}
+                try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/advance',{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({verified})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');Object.assign(b,data.booking||{});}
+                catch(error){showActionMessage('UTR सत्यापन विफल: '+error.message,'error');return;}
+            }else{b.advancePaymentVerified=verified;b.advancePaymentStatus=verified?'verified':'rejected';}
+            if(!safeSetStorage('softwareBookings',rows))return;loadAllFirebaseData();showActionMessage(verified?'Advance भुगतान सत्यापित; जमा राशि में शामिल होगा':'Advance UTR अस्वीकार हुआ','success');
+        }
+
         function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||nums.some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज अपडेट हुए','success');}
         function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]);if(!rows[index])return;if(!confirm(`स्टॉक आइटम “${rows[index].name}” हटाएँ?`))return;rows.splice(index,1);safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
 
