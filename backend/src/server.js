@@ -78,7 +78,7 @@ async function storeCreateIfAbsent(path, value) {
   memoryStore.set(path, value); return true;
 }
 const requireDurableStore = (_req, res, next) => {
-  if (!adminDb && isProd) return res.status(503).json({ error: 'Production database is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON and FIREBASE_DATABASE_URL before using data APIs.' });
+  if (!adminDb && isProd) return res.status(503).json({ error: 'Production database is not configured. Set FIREBASE_DATABASE_URL and either FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY before using data APIs.' });
   next();
 };
 const otpLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, message: { error: 'बहुत अधिक OTP अनुरोध; कुछ देर बाद प्रयास करें।' } });
