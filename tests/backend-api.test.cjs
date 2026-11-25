@@ -302,3 +302,72 @@ test('admin booking edits reject impossible calendar dates before attempting sto
   assert.equal(edited.status, 400);
   assert.match((await edited.json()).error, /वास्तविक कैलेंडर तारीख/);
 });
+
+test('preview customer booking search returns safe slips and bill data only after identity verification', async () => {
+  const port = await reservePort();
+  const previewUrl = 'http://127.0.0.1:' + port;
+  const previewServer = spawn(process.execPath, [path.join(__dirname, '..', 'backend', 'src', 'server.js')], {
+    env: { ...process.env, NODE_ENV: 'development', PREVIEW_MODE: 'true', PORT: String(port), ADMIN_API_TOKEN: '', OTP_HMAC_SECRET: '' },
+    stdio: 'ignore'
+  });
+  const call = (route, options = {}) => fetch(previewUrl + route, {
+    ...options,
+    headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) }
+  });
+  try {
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try { const response = await fetch(previewUrl + '/health'); if (response.ok) { ready = true; break; } } catch (_) {}
+      if (previewServer.exitCode !== null) throw new Error('Preview test server exited unexpectedly.');
+      await delay(50);
+    }
+    assert.equal(ready, true);
+    const createdResponse = await call('/api/customer/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Demo Customer', mob: '9876543210', address: 'Private Demo Address',
+        eventType: 'Wedding', guestCount: 120, date: '2027-01-01', returnDate: '2027-01-03',
+        advanceAmount: 100, payMode: 'Cash',
+        items: [{ name: 'Plastic Chair', qty: 2, rentPrice: 999, source: 'admin' }]
+      })
+    });
+    assert.equal(createdResponse.status, 201);
+    const created = await createdResponse.json();
+    const id = String(created.booking.id);
+
+    const byPhone = await call('/api/customer/bookings/search', {
+      method: 'POST', body: JSON.stringify({ lookup: '9876543210' })
+    });
+    assert.equal(byPhone.status, 200);
+    const phoneResult = await byPhone.json();
+    assert.equal(phoneResult.bookings.length, 1);
+    assert.equal(phoneResult.bookings[0].name, 'Demo Customer');
+    assert.equal(phoneResult.bookings[0].maskedMobile, '******3210');
+    assert.equal(phoneResult.bookings[0].totalAmount, 40);
+    assert.equal(Object.hasOwn(phoneResult.bookings[0], 'address'), false);
+    assert.equal(Object.hasOwn(phoneResult.bookings[0], 'utrNumber'), false);
+
+    const nameWithoutMobile = await call('/api/customer/bookings/search', {
+      method: 'POST', body: JSON.stringify({ lookup: 'Demo Customer' })
+    });
+    assert.equal(nameWithoutMobile.status, 400);
+    const byName = await call('/api/customer/bookings/search', {
+      method: 'POST', body: JSON.stringify({ lookup: 'Demo Customer', mobile: '9876543210' })
+    });
+    assert.equal((await byName.json()).bookings.length, 1);
+    const wrongMobile = await call('/api/customer/bookings/search', {
+      method: 'POST', body: JSON.stringify({ lookup: id, mobile: '9876543211' })
+    });
+    assert.equal((await wrongMobile.json()).bookings.length, 0);
+    const byBooking = await call('/api/customer/bookings/search', {
+      method: 'POST', body: JSON.stringify({ lookup: id, mobile: '9876543210' })
+    });
+    assert.equal((await byBooking.json()).bookings[0].id, id);
+  } finally {
+    if (previewServer.exitCode === null) {
+      previewServer.kill('SIGTERM');
+      await Promise.race([new Promise(resolve => previewServer.once('exit', resolve)), delay(2000)]);
+      if (previewServer.exitCode === null) previewServer.kill('SIGKILL');
+    }
+  }
+});

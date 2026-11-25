@@ -106,6 +106,7 @@ const otpVerifyLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, message: 
 const aiLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'AI अनुरोध सीमा पूरी हुई; एक मिनट बाद प्रयास करें।' } });
 const whatsappSendLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'WhatsApp संदेश सीमा पूरी हुई; एक मिनट बाद प्रयास करें।' } });
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'बहुत अधिक व्यवस्थापक लॉगिन प्रयास; 15 मिनट बाद पुनः प्रयास करें।' } });
+const customerLookupLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 12, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'बहुत अधिक Search प्रयास हुए हैं। 15 मिनट बाद फिर प्रयास करें।' } });
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
 const authAdmin = (req, res, next) => {
@@ -452,6 +453,73 @@ app.get('/api/customer/stock', requireDurableStore, async (_req,res) => {
     res.json({items});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
+function customerLookupMobile(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 10) return digits;
+  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(-10);
+  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(-10);
+  return '';
+}
+function customerRentalDays(start, end) {
+  const parse = value => {
+    const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? Date.UTC(Number(m[1]), Number(m[2])-1, Number(m[3]), 12) : null;
+  };
+  const from = parse(start), to = parse(end);
+  if (from === null || to === null || to < from) return 1;
+  return Math.max(1, Math.round((to-from)/86400000));
+}
+function customerPublicBill(booking) {
+  const items=Array.isArray(booking.items)?booking.items:[], entries=Array.isArray(booking.dispatchEntries)?booking.dispatchEntries:[];
+  const today=new Date().toLocaleDateString('en-CA'), scheduled=String(booking.returnDate||today), openEnd=scheduled>today?scheduled:today;
+  let rental=0;
+  if(!entries.length){
+    const end=booking.fullyReturnedAt?(booking.actualReturnDate||booking.returnDate):openEnd;
+    rental=items.reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rentPrice??500))*customerRentalDays(booking.date,end),0);
+  }else{
+    const allocated=entries.map(()=>0),slices=[];
+    const returns=(booking.returnEntries||[]).flatMap(entry=>(entry.items||[]).map(item=>({date:String(entry.date||booking.actualReturnDate||booking.returnDate||today),itemIndex:Number(item.itemIndex),qty:Math.max(0,Number(item.qty)||0)}))).sort((a,b)=>a.date.localeCompare(b.date));
+    returns.forEach(ret=>{let remaining=ret.qty;entries.map((entry,index)=>({entry,index})).filter(x=>Number(x.entry.itemIndex)===ret.itemIndex).sort((a,b)=>String(a.entry.date||'').localeCompare(String(b.entry.date||''))).forEach(({entry,index})=>{if(remaining<=0)return;const take=Math.min(Math.max(0,(Number(entry.qty)||0)-allocated[index]),remaining);if(take>0){slices.push({entry,qty:take,endDate:ret.date});allocated[index]+=take;remaining-=take;}});});
+    entries.forEach((entry,index)=>{const remaining=Math.max(0,(Number(entry.qty)||0)-allocated[index]);if(remaining>0)slices.push({entry,qty:remaining,endDate:booking.fullyReturnedAt?(booking.actualReturnDate||booking.returnDate||entry.date):openEnd});});
+    rental=slices.reduce((sum,slice)=>{const item=items[Number(slice.entry.itemIndex)]||{};return sum+Math.max(0,Number(slice.qty)||0)*Math.max(0,Number(slice.entry.unitRent??item.rentPrice??500))*customerRentalDays(slice.entry.date||booking.date,slice.endDate);},0);
+  }
+  const total=Math.max(0,Math.round((rental+Math.max(0,Number(booking.otherCharges)||0)-Math.max(0,Number(booking.discountAmount)||0))*100)/100);
+  const advance=booking.advancePaymentVerified===true?Math.max(0,Number(booking.advanceAmount)||0):0;
+  const installments=(booking.partPayments||[]).reduce((sum,p)=>sum+Math.max(0,Number(p.amount)||0),0);
+  const paid=Math.max(0,Number(booking.totalPaid)||0,Number(booking.paidAmt)||0,advance+installments);
+  return {totalAmount:total,totalPaid:paid,dueAmount:Math.max(0,Math.round((total-paid)*100)/100)};
+}
+function publicCustomerBooking(booking) {
+  return {
+    id:String(booking.id),name:String(booking.name||''),maskedMobile:'******'+String(booking.mob||'').replace(/\D/g,'').slice(-4),
+    date:booking.date||'',returnDate:booking.returnDate||'',eventType:booking.eventType||'',guestCount:Number(booking.guestCount)||0,
+    status:booking.status||'Pending Approval',
+    items:(booking.items||[]).map(item=>({name:String(item.name||''),qty:Math.max(0,Number(item.qty)||0),rentPrice:Math.max(0,Number(item.rentPrice)||0),returnedQty:Math.max(0,Number(item.returnedQty)||0),missingQty:Math.max(0,Number(item.missingQty)||0)})),
+    dispatchEntries:(booking.dispatchEntries||[]).map(entry=>({itemIndex:Number(entry.itemIndex),itemName:String(entry.itemName||''),qty:Math.max(0,Number(entry.qty)||0),date:entry.date||'',unitRent:Math.max(0,Number(entry.unitRent)||0)})),
+    returnEntries:(booking.returnEntries||[]).map(entry=>({date:entry.date||'',mode:entry.mode||'',items:(entry.items||[]).map(item=>({itemIndex:Number(item.itemIndex),qty:Math.max(0,Number(item.qty)||0)}))})),
+    actualReturnDate:booking.actualReturnDate||null,advanceAmount:Math.max(0,Number(booking.advanceAmount)||0),
+    advancePaymentStatus:booking.advancePaymentStatus||'not-applicable',advancePaymentVerified:booking.advancePaymentVerified===true,
+    partPayments:(booking.partPayments||[]).map(p=>({amount:Math.max(0,Number(p.amount)||0),method:String(p.method||''),date:String(p.date||'')})),
+    otherCharges:Math.max(0,Number(booking.otherCharges)||0),discountAmount:Math.max(0,Number(booking.discountAmount)||0),
+    ...customerPublicBill(booking),updatedAt:booking.updatedAt||booking.createdAt||''
+  };
+}
+app.post('/api/customer/bookings/search',customerLookupLimiter,requireDurableStore,async(req,res)=>{
+  const parsed=z.object({lookup:z.string().trim().min(4).max(160),mobile:z.string().trim().optional().default('')}).safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'नाम, मोबाइल या Booking Number दर्ज करें।'});
+  const lookup=parsed.data.lookup.trim().replace(/\s+/g,' '),digits=lookup.replace(/\D/g,''),directMobile=customerLookupMobile(lookup),verifiedMobile=customerLookupMobile(parsed.data.mobile);
+  if(!directMobile&&!verifiedMobile)return res.status(400).json({error:'नाम या Booking Number खोजने के लिए बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भी भरें।'});
+  try{
+    const all=(await storeList('erpData/customerBookings')).filter(b=>b&&b.source==='customer-portal');
+    let matched=[];
+    if(directMobile)matched=all.filter(b=>customerLookupMobile(b.mob)===directMobile);
+    else if(/^\d{10,16}$/.test(digits))matched=all.filter(b=>String(b.id)===digits&&customerLookupMobile(b.mob)===verifiedMobile);
+    else {const needle=lookup.toLocaleLowerCase('en-IN');matched=all.filter(b=>customerLookupMobile(b.mob)===verifiedMobile&&String(b.name||'').trim().toLocaleLowerCase('en-IN').includes(needle));}
+    matched.sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+    res.set('Cache-Control','no-store').set('Pragma','no-cache').json({ok:true,bookings:matched.slice(0,20).map(publicCustomerBooking)});
+  }catch(error){res.status(503).json({error:error.message||'बुकिंग खोज अभी उपलब्ध नहीं है।'});}
+});
+
 app.get('/api/customer/bookings', authAdmin, requireDurableStore, async (_req,res) => {
   try{
     const bookings=(await storeList('erpData/customerBookings')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));

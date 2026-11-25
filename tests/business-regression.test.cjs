@@ -934,3 +934,35 @@ test('Render preview is visibly labeled and isolated from production Firebase', 
   assert.ok(backend.includes("if (isPreviewMode && req.header('x-admin-token') === 'PREVIEW-DEMO-ONLY-ACCESS') return next();"));
   assert.ok(backend.includes("if(!adminDb && !isPreviewMode)return res.status(503)"));
 });
+
+test('customer portal now presents a bartan-rental hero, consistent readable fields and visible shop name',()=>{
+  assert.ok(html.includes('rk-bartan-hero'));
+  assert.ok(html.includes('बर्तन किराये पर'));
+  assert.ok(html.includes('थाली, प्लेट, कटोरी, गिलास'));
+  assert.ok(!html.includes('<div class="rk-stage-roof"'));
+  assert.ok(html.includes('#customerFirstPortal #displayShopName{color:#fff!important'));
+  assert.ok(html.includes('background:#f3f6fc!important;color:#17243a!important'));
+  assert.ok(html.includes('rk-customer-form label'));
+});
+test('customer advance defaults to cash and QR only appears for a positive online advance',()=>{
+  assert.ok(html.includes('<option value="Cash" selected>नकद (Cash) — Default</option>'));
+  assert.ok(html.includes('id="portalAdvanceChoice"'));
+  assert.ok(html.includes("mode==='UPI'&&amount>0"));
+  assert.ok(html.includes("advanceEnabled?Number(document.getElementById('portalAdvanceAmount')?.value||0):0"));
+  assert.ok(html.includes('QR केवल Online / UPI चुनने पर खुलेगा।'));
+});
+test('customer booking lookup has mobile, name and booking-number search plus printable slips and bill',()=>{
+  assert.ok(html.includes('/api/customer/bookings/search'));
+  assert.ok(html.includes('customerBookingLookup'));
+  assert.ok(html.includes('customerLookupMobile'));
+  assert.ok(html.includes('printCustomerBookingDocument'));
+  const backend=fs.readFileSync(require('node:path').join(__dirname,'..','backend','src','server.js'),'utf8');
+  assert.ok(backend.includes("app.post('/api/customer/bookings/search'"));
+  assert.ok(backend.includes('customerLookupMobile(b.mob)===verifiedMobile'));
+  assert.ok(backend.includes('maskedMobile'));
+});
+test('secret admin login is explained and mobile logo long-press opens the gate',()=>{
+  assert.ok(html.includes('Ctrl + Alt + Shift + K'));
+  assert.ok(html.includes("document.querySelector('.rk-customer-brand-mark')"));
+  assert.ok(html.includes('Secret Admin Login: इस लोगो को 3 सेकंड दबाकर रखें'));
+});
