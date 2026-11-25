@@ -157,6 +157,8 @@ test('missing items are shown as quantity only and never added to the customer i
   assert.doesNotMatch(html, /मिसिंग सामान चार्ज:/);
   assert.doesNotMatch(html, /totalRent-\(Number\(b\.missingChargeTotal\)/);
   assert.doesNotMatch(html, /rentalTotal\+missingTotal/);
+  assert.doesNotMatch(html, /rental\+missing\+/);
+  assert.ok(html.includes('Customer status mirrors the invoice: missing items are quantity-only'));
 });
 
 test('admin edits for customer portal bookings are sent to backend', () => {
