@@ -664,7 +664,7 @@ test('premium design layer loads after legacy styles so the new theme wins the c
 test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
   assert.ok(html.includes('holdTimer=setTimeout(show,1200)'));
-  assert.ok(html.includes('clickCount>=5'));
+  assert.ok(html.includes('clickCount>=3'));
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
   assert.ok(html.includes("e.ctrlKey&&e.shiftKey"));
   assert.ok(html.includes('/api/admin/session'));
@@ -945,7 +945,7 @@ test('customer portal now presents a bartan-rental hero, consistent readable fie
   assert.ok(html.includes('थाली, प्लेट, कटोरी, गिलास'));
   assert.ok(!html.includes('<div class="rk-stage-roof"'));
   assert.ok(html.includes('#customerFirstPortal #displayShopName{color:#fff!important'));
-  assert.ok(html.includes('background:#f3f6fc!important;color:#17243a!important'));
+  assert.ok(html.includes('background:linear-gradient(145deg,#0b1523,#14243a)!important;color:#edf5ff!important'));
   assert.ok(html.includes('rk-customer-form label'));
 });
 test('customer advance defaults to cash and QR only appears for a positive online advance',()=>{
@@ -969,8 +969,8 @@ test('secret admin login is explained and mobile logo long-press opens the gate'
   assert.ok(html.includes('Ctrl + Shift + K'));
   assert.ok(html.includes("target.closest('.rk-customer-brand, .rk-customer-brand-mark')"));
   assert.ok(html.includes('holdTimer=setTimeout(show,1200)'));
-  assert.ok(html.includes('clickCount>=5'));
-  assert.ok(html.includes('title="Secret Admin Login: लोगो को 1.2 सेकंड दबाएँ या पाँच बार टैप करें"'));
+  assert.ok(html.includes('clickCount>=3'));
+  assert.ok(html.includes('title="Secret Admin Login: लोगो को 1.2 सेकंड दबाएँ या तीन बार टैप करें"'));
 });
 
 test('standalone local HTML preview seeds utensil stock and keeps booking status lookup local',()=>{
@@ -980,4 +980,25 @@ test('standalone local HTML preview seeds utensil stock and keeps booking status
   assert.ok(html.includes("b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===id"));
   assert.ok(html.includes("const validId=window.__rkLocalHtmlPreviewMode?"));
   assert.ok(html.includes("if(window.__rkLocalHtmlPreviewMode){\n                const id='DEMO-'+Date.now();"));
+});
+
+
+test('all customer/admin/dialog text fields use the dark recessed field system',()=>{
+  assert.ok(html.includes('id="rk-final-dark-input-contrast-v1"'));
+  assert.ok(html.includes('html body #customerFirstPortal input:not([type="checkbox"])'));
+  assert.ok(html.includes('html body #adminPanel input:not([type="checkbox"])'));
+  assert.ok(html.includes('color-scheme:dark!important'));
+  assert.ok(!html.includes('background:#f7f9fd!important'));
+  assert.ok(!html.includes('background:#f3f6fc!important'));
+});
+test('shop-name admin entry opens the protected gate instead of reporting it locked',()=>{
+  assert.ok(html.includes('return revealAdminGate();'));
+  assert.ok(html.includes('function handleShopNameTripleClick(event) { return openCustomerLogin(event); }'));
+  assert.ok(html.includes('if(clickCount>=3)'));
+});
+test('admin login reports actionable backend configuration and token failures',()=>{
+  assert.ok(html.includes('Backend पर ADMIN_API_TOKEN सही तरह सेट नहीं है।'));
+  assert.ok(html.includes('Access Token गलत है।'));
+  assert.ok(html.includes('Admin login API route नहीं मिली।'));
+  assert.ok(html.includes('Backend से संपर्क नहीं हो पाया।'));
 });

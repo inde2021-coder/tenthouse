@@ -7,6 +7,8 @@ on:
       - "audit/**"
       - render-preview-test
       - render-preview-isolated
+      - render-preview-bartan
+  workflow_dispatch:
   pull_request:
     branches:
       - main

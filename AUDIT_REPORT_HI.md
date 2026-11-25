@@ -33,3 +33,33 @@
 - Automated CI: `node --check backend/src/server.js`, business regression suite, package/manifest JSON validation — सफल।
 - `lia_reference.mov` repository के recursive Git tree में नहीं मिला; इसलिए उस वीडियो का visual review इस audit में संभव नहीं हुआ। इस काम में उपलब्ध customer portal structure और existing brand assets के अनुरूप design बनाया गया।
 - Vercel preview deployment API ने free daily deployment quota (100/day) की सीमा बताई; इस कारण नवीनतम commit का नया live preview deployment नहीं बन सका। Production deployment को बिना preview/device verification के force नहीं किया गया।
+
+
+## Deep branch audit और सुरक्षित सुधार (26 नवंबर 2026)
+जाँची गई Git branches:
+- `main`
+- `audit/deep-audit-fixes-2026-11`
+- `audit/tenthouse-ai-chat-2026-11`
+- `render-preview-bartan`
+- `render-preview-isolated`
+- `render-preview-test`
+
+Branch तुलना:
+- `render-preview-isolated`, `audit/deep-audit-fixes-2026-11` से 41 commits आगे है और `audit/tenthouse-ai-chat-2026-11` से 32 commits आगे है; AI chat काम इसमें शामिल है।
+- `render-preview-bartan` में isolated branch से अलग 3 commits हैं: bartan hero SVG/cache और customer lookup API का वैकल्पिक implementation। इन्हें बिना route/data compatibility जाँचे blind merge नहीं करना है।
+- `render-preview-test` isolated branch से 22 commits पीछे है।
+- `main` और audit/preview branches का इतिहास diverged है; इसलिए अभी direct merge सुरक्षित नहीं है।
+
+इस branch में मिले UI defects:
+- Shop-name click handler admin gate खोलने के बजाय स्पष्ट रूप से “व्यवस्थापक प्रवेश लॉक है” कहकर रोकता था।
+- Mobile secret-entry listener पाँच taps माँगता था; shop-name triple-click handler gate से जुड़ा नहीं था।
+- Customer form और lookup controls पर legacy light-theme CSS सफेद textbox force कर रही थी, जबकि बाकी shell dark था।
+- Admin login UI backend 401/503/404 और network errors को एक ही generic संदेश में छिपा रही थी।
+
+इस commit में किए गए सुधार:
+- Shop-name trigger अब protected admin gate खोलता है; hidden brand entry तीन taps या 1.2-second long-press से खुलती है।
+- Backend token/configuration, route और network failure के लिए अलग actionable error messages।
+- Customer form, customer lookup, admin panel और dialogs के सभी text fields के लिए एक अंतिम dark recessed style; print styles सफेद paper पर ही रहती हैं।
+- इन व्यवहारों के लिए regression tests और bartan preview branch के लिए CI trigger जोड़ा गया।
+
+Production `main` और Vercel को इस branch audit/fix में नहीं बदला गया। Live Firebase/Google OAuth, SMS/WhatsApp provider, payment settlement और real-device visual tests को credentials/device access के बिना pass घोषित नहीं किया गया है।
