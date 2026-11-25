@@ -13,6 +13,7 @@ import { getDatabase } from 'firebase-admin/database';
 const app = express();
 const port = Number(process.env.PORT || 8080);
 const isProd = process.env.NODE_ENV === 'production';
+const deploymentEnvironment = process.env.VERCEL_ENV || (isProd ? 'production' : 'development');
 app.disable('x-powered-by');
 // Vercel terminates TLS/proxies requests; trust the single platform proxy so rate-limit
 // keys use the client address instead of throwing on X-Forwarded-For.
@@ -114,7 +115,7 @@ const readinessCheck = (_req, res) => {
     ok: ready,
     service: 'rk-tent-house-erp-api',
     persistentDatabaseReady,
-    environment: isProd ? 'production' : 'development'
+    environment: deploymentEnvironment
   });
 };
 app.get('/ready', readinessCheck);
@@ -129,7 +130,7 @@ app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
     : provider === 'msg91'
       ? !!(process.env.MSG91_AUTH_KEY && process.env.MSG91_TEMPLATE_ID && secretOk)
       : provider === 'demo' ? !isProd : false;
-  res.json({ ok: true, environment: isProd ? 'production' : 'development', checks: {
+  res.json({ ok: true, environment: deploymentEnvironment, checks: {
     adminToken: (process.env.ADMIN_API_TOKEN || '').length >= 32,
     otpHmacSecret: secretOk,
     otpProvider: provider,
