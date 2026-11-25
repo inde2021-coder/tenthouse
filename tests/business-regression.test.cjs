@@ -21,7 +21,7 @@ function runRentFunction(functionName, booking) {
   assert.notEqual(start, -1);
   assert.notEqual(next, -1);
   const code = html.slice(start, next);
-  const context = { calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, result: null };
+  const context = { booking, calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, result: null };
   vm.runInNewContext(`${code}\nresult = ${functionName}(booking);`, context);
   return context.result;
 }
