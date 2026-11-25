@@ -929,3 +929,13 @@ test('Google login failure clears the verified admin token and reports failure t
   const admin = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
   assert.ok(admin.includes('const googleLoginOk=await loginWithGoogle(token)'));
 });
+
+
+test('WhatsApp webhook verification secret is never published in setup documentation', () => {
+  const guide = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'SETUP_CREDENTIALS_HI.md'), 'utf8');
+  const secretLines = guide.split(/\r?\n/).filter(line => /WHATSAPP_WEBHOOK_VERIFY_TOKEN|hub\.verify_token=/i.test(line));
+  assert.ok(secretLines.length >= 2);
+  assert.doesNotMatch(secretLines.join('\n'), /\b\d{10,}\b/);
+  assert.match(guide, /पुरानी Git history/);
+  assert.match(guide, /नया random/);
+});
