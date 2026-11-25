@@ -200,8 +200,8 @@ test('admin status transitions wait for backend and cancelled bookings are not r
 });
 
 test('all inline frontend JavaScript blocks parse without syntax errors', () => {
-  const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
-    .filter(match => !/\\bsrc\\s*=/.test(match[1]))
+  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+    .filter(match => !/\bsrc\s*=/.test(match[1]))
     .map(match => match[2])
     .filter(source => source.trim());
   assert.ok(scripts.length > 0);
