@@ -895,3 +895,24 @@ test('AI chat redesign preserves the customer booking submit and verification ha
   assert.ok(html.includes('function startVoiceRecognition()'));
   assert.ok(html.includes("id=" + "'portalCustMob'"));
 });
+
+
+test('Tent House AI chat keeps recent conversation context across turns and resets on new chat', () => {
+  assert.ok(html.includes('let rkAiConversation=[];'));
+  assert.ok(html.includes('...rkAiConversation.slice(-20)'));
+  assert.ok(html.includes('rkAiConversation.push({role:\'user\',content:aiUserMessage},{role:\'assistant\',content:answer})'));
+  assert.ok(html.includes('rkAiConversation=[];'));
+});
+
+test('AI request payload stays within backend message limits and Hindi TTS falls back safely', () => {
+  assert.ok(html.includes('snapshotText.length>8500'));
+  assert.ok(html.includes("fetch(api+'/api/ai/tts'"));
+  assert.ok(html.includes('if(!voicePlayed&&\'speechSynthesis\'in window)'));
+  assert.ok(backend.includes("app.post('/api/ai/tts'"));
+  assert.ok(backend.includes("z.string().trim().min(1).max(4000)"));
+});
+
+test('all three deployed app shells remain byte-identical after AI chat updates', () => {
+  assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8'), html);
+  assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'public', 'index.html'), 'utf8'), html);
+});
