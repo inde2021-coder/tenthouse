@@ -1039,3 +1039,10 @@ test('bartan rental PWA icon and offline shell use utensils branding, not mandap
   assert.ok(html.includes('<link rel="icon" href="./icon.svg" type="image/svg+xml">'));
   assert.ok(backend.includes('favicon.ico'));
 });
+
+test('backend uses patched Firebase Admin and Zod releases on supported Node 22+',()=>{
+  const pkg=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'..','backend','package.json'),'utf8'));
+  assert.equal(pkg.engines.node,'>=22');
+  assert.equal(pkg.dependencies['firebase-admin'],'14.5.1');
+  assert.equal(pkg.dependencies.zod,'4.6.7');
+});
