@@ -254,6 +254,8 @@ const customerBookingSchema = z.object({
     name: z.string().trim().min(1).max(120),
     qty: z.number().int().positive().max(100000),
     rentPrice: z.number().finite().min(0).max(1000000).default(500),
+    missingCharge: z.number().finite().min(0).max(1000000).optional().default(0),
+    vendorRentRate: z.number().finite().min(0).max(1000000).optional().default(0),
     source: z.enum(['admin','third-party']).optional().default('admin'),
     partyName: z.string().max(120).optional().default('')
   })).max(100).default([])
