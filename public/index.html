@@ -2242,10 +2242,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const esc=escapeHtml,cur=v=>'₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}),items=b.items||[],rows=[];
             let title='Booking Bill / Customer Statement';
             if(type==='dispatch'){title='Dispatch Slip';(b.dispatchEntries||[]).forEach(e=>rows.push('<tr><td>'+esc(e.itemName||items[Number(e.itemIndex)]?.name||'-')+'</td><td>'+esc(e.date||'-')+'</td><td>'+Number(e.qty||0)+'</td><td>'+cur(e.unitRent)+'</td></tr>'));}
-            else if(type==='return'){title='Return Slip';(b.returnEntries||[]).forEach(e=>(e.items||[]).forEach(i=>rows.push('<tr><td>'+esc(items[Number(i.itemIndex)]?.name||'-')+'</td><td>'+esc(e.date||'-')+'</td><td>'+Number(i.qty||0)+'</td><td>'+esc(e.mode||'-')+'</td></tr>')));}
+            else if(type==='return'){title='Return Slip';(b.returnEntries||[]).forEach(e=>(e.items||[]).forEach(i=>{const item=items[Number(i.itemIndex)]||{};rows.push('<tr><td>'+esc(item.name||'-')+'</td><td>'+esc(e.date||'-')+'</td><td>'+Number(i.qty||0)+'</td><td>'+Math.max(0,Number(item.missingQty)||0)+'</td></tr>')}));}
             else{title='Final Bill / Customer Account';items.forEach(i=>rows.push('<tr><td>'+esc(i.name)+'</td><td>'+Number(i.qty||0)+'</td><td>'+cur(i.rentPrice)+'</td><td>'+Number(i.returnedQty||0)+'</td><td>'+Number(i.missingQty||0)+'</td></tr>'));}
             if(type!=='bill'&&!rows.length){showActionMessage(title+' अभी तैयार नहीं हुई है।','info');return;}
-            const th=type==='bill'?'<tr><th>सामान</th><th>बुक मात्रा</th><th>दर</th><th>वापस</th><th>Missing</th></tr>':'<tr><th>सामान</th><th>तारीख</th><th>मात्रा</th><th>'+(type==='dispatch'?'प्रति इकाई किराया':'प्रकार')+'</th></tr>';
+            const th=type==='bill'?'<tr><th>सामान</th><th>बुक मात्रा</th><th>दर</th><th>वापस</th><th>Missing</th></tr>':type==='return'?'<tr><th>सामान</th><th>वापसी तारीख</th><th>वापस मिली मात्रा</th><th>Missing Item / मिसिंग मात्रा</th></tr>':'<tr><th>सामान</th><th>तारीख</th><th>भेजी मात्रा</th><th>प्रति इकाई किराया</th></tr>';
             const summary=type==='bill'?'<section class="summary"><p><span>कुल किराया / Bill Total</span><b>'+cur(b.totalAmount)+'</b></p><p><span>Other Charges</span><b>'+cur(b.otherCharges)+'</b></p><p><span>Discount</span><b>'+cur(b.discountAmount)+'</b></p><p><span>Advance</span><b>'+cur(b.advanceAmount)+'</b></p><p><span>जमा राशि</span><b>'+cur(b.totalPaid)+'</b></p><p class="due"><span>बाकी / Balance Due</span><b>'+cur(b.dueAmount)+'</b></p></section>':'';
             const win=window.open('','_blank','width=900,height=720');if(!win){showActionMessage('Print Popup खोलने की अनुमति दें।','error');return;}
             win.document.write('<!doctype html><html lang="hi"><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font:14px Arial,sans-serif;color:#172033;padding:28px;max-width:850px;margin:auto}header{border-bottom:3px solid #1f4b82;padding-bottom:14px;margin-bottom:18px}h1{margin:0 0 7px;font-size:24px;color:#14375e}p{margin:5px 0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f1f5fb;padding:12px;border-radius:9px;margin:15px 0}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #cbd5e1;padding:10px;text-align:left}th{background:#e8eff8}.summary{margin:20px 0 0 auto;max-width:360px}.summary p{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:7px}.due{color:#b42318;font-weight:bold}.stamp{margin-top:28px;text-align:right;color:#64748b;font-size:12px}</style><body><header><h1>Radhe Krishn Bartan Tent House</h1><b>'+esc(title)+'</b></header><div class="meta"><p>Booking No: <b>#'+esc(b.id)+'</b></p><p>Status: <b>'+esc(b.status)+'</b></p><p>Customer: <b>'+esc(b.name)+'</b></p><p>Mobile: <b>'+esc(b.maskedMobile)+'</b></p><p>Event Date: '+esc(b.date)+'</p><p>Return Date: '+esc(b.returnDate)+'</p></div><table><thead>'+th+'</thead><tbody>'+rows.join('')+'</tbody></table>'+summary+'<div class="stamp">Customer Booking Portal · '+new Date().toLocaleString('en-IN')+'</div><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>');
@@ -4311,6 +4311,15 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(prefers-reduced-motion:reduce){#adminPanel .sidebar,#adminPanel .menu-item{transition:none!important}}
 
 
+/* Matching adminpanelimeage print language: white paper, navy rules and restrained gold accents. */
+@media print {
+  #printableSlipArea .rk-slip, #printableSlipArea .rk-slip table { color:#172033!important; font-family:Arial,"Noto Sans Devanagari",sans-serif!important; }
+  #printableSlipArea .rk-slip header, #printableSlipArea .rk-slip>div:first-child { border-color:#b88935!important; }
+  #printableSlipArea .rk-slip h2 { color:#173b63!important; letter-spacing:.02em; }
+  #printableSlipArea .rk-slip h3 { color:#173b63!important; }
+  #printableSlipArea .rk-slip th { background:#eaf1f8!important; color:#173b63!important; border:1px solid #b88935!important; }
+  #printableSlipArea .rk-slip td { border:1px solid #9aa9b9!important; color:#172033!important; }
+}
 /* ADMINPANELIMEAGE — visual reference implementation: preserve existing data/actions. */
 #adminPanel{background:#050c18!important;color:#edf5ff!important}
 #adminPanel .admin-container{background:#050c18!important}
