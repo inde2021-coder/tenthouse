@@ -597,6 +597,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 #customerFirstPortal .customer-scroll-wrap form button[type=submit]{border-radius:14px!important;min-height:52px!important;font-weight:900!important;box-shadow:0 10px 24px rgba(24,88,150,.2)!important}
 @media(max-width:720px){#customerFirstPortal .rk-customer-hero{grid-template-columns:1fr;min-height:0;padding:25px 22px 48px;border-radius:23px}#customerFirstPortal .rk-hero-copy h2{font-size:clamp(34px,9vw,47px)}#customerFirstPortal .rk-hero-description{max-width:100%;margin:13px 0 18px}#customerFirstPortal .rk-hero-trust{margin-top:17px;gap:12px}#customerFirstPortal .rk-hero-art{min-height:245px;margin-top:8px}#customerFirstPortal .rk-hero-stage{height:230px;transform:scale(.9)}#customerFirstPortal .rk-hero-orbit{width:250px}#customerFirstPortal .rk-hero-float.f1{right:0;top:16px}#customerFirstPortal .rk-hero-float.f2{left:0;bottom:13px}#customerFirstPortal .rk-hero-bottomline{left:22px;right:22px;bottom:12px;font-size:7px;letter-spacing:.8px}}
 @media(max-width:390px){#customerFirstPortal .rk-hero-art{min-height:215px}#customerFirstPortal .rk-hero-stage{transform:scale(.78)}#customerFirstPortal .rk-hero-float{padding:8px 9px;font-size:9px}#customerFirstPortal .rk-hero-bottomline span:last-child{display:none}}
+#customerFirstPortal .rk-customer-hero.has-custom-image::after{content:"";position:absolute;z-index:0;top:0;right:0;bottom:0;width:54%;background-image:linear-gradient(90deg,#111a35 0%,rgba(17,26,53,.2) 35%,rgba(17,26,53,.1) 100%),var(--rk-hero-bg);background-size:cover;background-position:center;border-radius:0 30px 30px 0}
+#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-art{display:none}
+#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-copy{max-width:54%}
+@media(max-width:720px){#customerFirstPortal .rk-customer-hero.has-custom-image::after{top:auto;left:0;right:0;bottom:0;width:100%;height:44%;border-radius:0 0 23px 23px;background-image:linear-gradient(180deg,#111a35 0%,rgba(17,26,53,.18) 55%),var(--rk-hero-bg)}#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-copy{max-width:100%;padding-bottom:125px}}
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
 </head>
@@ -1148,6 +1152,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                                     <label>Paid Bill Stamp इमेज अपलोड करें</label>
                                     <input type="file" id="settingPaidStampFile" accept="image/*" onchange="handleImageUpload(event, 'paidStamp')">
                                 </div>
+                                <div style="grid-column:1/-1;padding:14px;border:1px solid #d8dfeb;border-radius:14px;background:#f8fafc">
+                                    <label for="settingCustomerHeroFile">Customer Website Hero इमेज बदलें</label>
+                                    <input type="file" id="settingCustomerHeroFile" accept="image/png,image/jpeg,image/webp" onchange="handleImageUpload(event, 'customerHeroImage')">
+                                    <small>अपनी टेंट/डेकोरेशन की फोटो चुनें। यह ग्राहक वेबसाइट के Hero में अपने-आप फिट होगी और Firebase सेटिंग्स में सिंक होगी।</small>
+                                    <button type="button" class="action-btn" style="width:auto;margin-top:8px" onclick="removeCustomerHeroImage()"><i class="fa-solid fa-trash"></i> Default Hero वापस लगाएं</button>
+                                </div>
 
                                 <div style="grid-column:1/-1"><label for="settingTermsConditions">बिल, डिस्पैच और रिटर्न स्लिप के लिए Terms &amp; Conditions</label><textarea id="settingTermsConditions" rows="3" placeholder="किराया, टूट-फूट, मिसिंग सामान और भुगतान की शर्तें"></textarea></div>
                                 <div><label class="glass-btn-blue" style="cursor:pointer; display:inline-flex; width:auto; padding:10px;"><i class="fa-solid fa-file-arrow-up"></i> एक्सेल स्टॉक इम्पोर्ट (CSV) <input type="file" id="csvFileInput" accept=".csv" onchange="importStockFromCSV(event)" style="display:none;"></label></div>
@@ -1334,6 +1344,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             ['requireItemSelectionSetting','enableOfflineSetting'].forEach(id => {
                 const el=document.getElementById(id); if(el) el.checked = s[id === 'requireItemSelectionSetting' ? 'requireItemSelection' : 'enableOffline'] !== false;
             });
+            applyCustomerHeroSettings();
         }
         function saveSettings(event) {
             if (event) { event.preventDefault(); event.stopPropagation(); }
@@ -1587,8 +1598,27 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
         }
 
-        // Stamp upload: preserve the original stamp, resize/compress it for storage,
-        // and save it into the existing settings object without losing other settings.
+        function applyCustomerHeroSettings() {
+            const hero = document.querySelector('#customerFirstPortal .rk-customer-hero');
+            if (!hero) return;
+            const settings = safeGetStorage('softwareSettings', {});
+            const image = typeof settings.customerHeroImage === 'string' && /^data:image\/(png|jpeg|webp);base64,/i.test(settings.customerHeroImage)
+                ? settings.customerHeroImage : '';
+            hero.classList.toggle('has-custom-image', !!image);
+            if (image) hero.style.setProperty('--rk-hero-bg', 'url("' + image + '")');
+            else hero.style.removeProperty('--rk-hero-bg');
+        }
+        function removeCustomerHeroImage() {
+            const settings = safeGetStorage('softwareSettings', {});
+            delete settings.customerHeroImage;
+            if (!safeSetStorage('softwareSettings', settings)) return;
+            applyCustomerHeroSettings();
+            const input = document.getElementById('settingCustomerHeroFile');
+            if (input) input.value = '';
+            showActionMessage('Default Hero वापस लगा दिया गया।', 'success');
+        }
+
+        // Image upload: preserve stamps and compress customer hero photos for cloud sync.
         function handleImageUpload(event, fieldName) {
             const file = event && event.target && event.target.files && event.target.files[0];
             if (!file) return;
@@ -1600,7 +1630,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 img.onerror = () => showActionMessage('इमेज खुल नहीं सकी। PNG या JPG इस्तेमाल करें।','error');
                 img.onload = () => {
                     try {
-                        const maxSide = 900, scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+                        const maxSide = fieldName === 'customerHeroImage' ? 1600 : 900, scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
                         const canvas = document.createElement('canvas');
                         canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
                         canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
@@ -1608,11 +1638,16 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         if (!ctx) throw new Error('Canvas उपलब्ध नहीं है');
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        const dataUrl = canvas.toDataURL('image/png');
+                        const dataUrl = fieldName === 'customerHeroImage' ? canvas.toDataURL('image/jpeg', 0.78) : canvas.toDataURL('image/png');
                         const settings = safeGetStorage('softwareSettings', {});
                         settings[fieldName] = dataUrl;
                         if (!safeSetStorage('softwareSettings', settings)) throw new Error('सेटिंग सेव नहीं हो सकी; इमेज छोटी करके फिर कोशिश करें');
-                        showActionMessage('स्टाम्प इमेज सेव हो गई। प्रिंट से पहले Preview जाँचें।','success');
+                        if (fieldName === 'customerHeroImage') {
+                            applyCustomerHeroSettings();
+                            showActionMessage('Customer Hero इमेज सेव और क्लाउड सिंक के लिए भेज दी गई।','success');
+                        } else {
+                            showActionMessage('स्टाम्प इमेज सेव हो गई। प्रिंट से पहले Preview जाँचें।','success');
+                        }
                     } catch (err) { showActionMessage(err.message || 'स्टाम्प सेव नहीं हुई। छोटी इमेज चुनें।','error'); }
                 };
                 img.src = reader.result;
