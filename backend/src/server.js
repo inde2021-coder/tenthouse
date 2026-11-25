@@ -101,8 +101,10 @@ const authAdmin = (req, res, next) => {
   if (!crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))) return res.status(401).json({ error: 'Unauthorized' });
   next();
 };
-app.get('/health', (_req, res) => res.json({ ok: true, service: 'rk-tent-house-erp-api', time: new Date().toISOString() }));
-app.get('/ready', (_req, res) => {
+const healthCheck = (_req, res) => res.json({ ok: true, service: 'rk-tent-house-erp-api', time: new Date().toISOString() });
+app.get('/health', healthCheck);
+app.get('/api/health', healthCheck);
+const readinessCheck = (_req, res) => {
   const persistentDatabaseReady = !!adminDb;
   const ready = !isProd || persistentDatabaseReady;
   res.status(ready ? 200 : 503).set('Cache-Control', 'no-store').json({
@@ -111,7 +113,9 @@ app.get('/ready', (_req, res) => {
     persistentDatabaseReady,
     environment: isProd ? 'production' : 'development'
   });
-});
+};
+app.get('/ready', readinessCheck);
+app.get('/api/ready', readinessCheck);
 // Reports presence/configuration only; never returns secret values.
 app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
   const provider = (process.env.OTP_PROVIDER || 'none').toLowerCase();
