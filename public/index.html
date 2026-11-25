@@ -2811,7 +2811,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const rate=type==='tax-invoice'?Math.min(28,Math.max(0,Number(document.getElementById('docGstRate')?.value)||0)):0;
             const gst=Math.round(taxable*rate)/100;
             const taxType=document.getElementById('docTaxType')?.value||'intra';
-            return {subtotal,discount,other,taxable,rate,gst:Math.round(gst*100)/100,cgst:taxType==='intra'?Math.round(gst*50)/100:0,sgst:taxType==='intra'?Math.round(gst*50)/100:0,igst:taxType==='inter'?Math.round(gst*100)/100:0,total:Math.round((taxable+gst)*100)/100,taxType};
+            const roundedGst=Math.round(gst*100)/100,cgst=taxType==='intra'?Math.round(roundedGst*50)/100:0,sgst=taxType==='intra'?Math.round((roundedGst-cgst)*100)/100:0,igst=taxType==='inter'?roundedGst:0;
+            return {subtotal,discount,other,taxable,rate,gst:roundedGst,cgst,sgst,igst,total:Math.round((taxable+roundedGst)*100)/100,taxType};
         }
         function renderBusinessDocumentItems(){
             const body=document.getElementById('docItemsBody');if(!body)return;
