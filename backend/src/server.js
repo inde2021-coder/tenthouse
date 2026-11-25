@@ -331,6 +331,26 @@ app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req
   }catch(error){res.status(503).json({error:error.message});}
 });
 
+app.get('/api/customer/bookings/:id/status', requireDurableStore, async (req,res) => {
+  if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
+  const mobile=String(req.query.mobile||'').replace(/\D/g,'');
+  if(!/^\d{10}$/.test(mobile))return res.status(400).json({error:'बुकिंग मोबाइल नंबर दर्ज करें।'});
+  try{
+    const booking=await storeGet('erpData/customerBookings/'+req.params.id);
+    if(!booking||String(booking.mob||'').replace(/\D/g,'')!==mobile)return res.status(404).json({error:'बुकिंग ID और मोबाइल नंबर का मिलान नहीं हुआ।'});
+    const safeBooking={
+      id:booking.id,name:booking.name,mob:booking.mob,date:booking.date,returnDate:booking.returnDate,eventType:booking.eventType,
+      guestCount:booking.guestCount,status:booking.status,items:booking.items||[],dispatchEntries:booking.dispatchEntries||[],
+      returnEntries:booking.returnEntries||[],actualReturnDate:booking.actualReturnDate||null,advanceAmount:booking.advanceAmount||0,
+      advancePaymentStatus:booking.advancePaymentStatus||'not-applicable',advancePaymentVerified:booking.advancePaymentVerified===true,
+      payMode:booking.payMode||'',otherCharges:booking.otherCharges||0,discountAmount:booking.discountAmount||0,
+      partPayments:booking.partPayments||[],updatedAt:booking.updatedAt||booking.createdAt
+    };
+    res.set('Cache-Control','no-store');
+    res.json({ok:true,booking:safeBooking});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+
 app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const parsed=z.object({status:z.enum(['Confirmed','Rejected','Cancelled'])}).safeParse(req.body);
