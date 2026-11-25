@@ -758,6 +758,10 @@ test('backend rejects dispatch and return workflow quantities that cannot reconc
       recoveredMissing: validateBookingWorkflowConsistency(
         {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
         {status:'Returned',fullyReturnedAt:'2027-01-03T10:00:00.000Z',lastDispatchDate:'2027-01-01',items:[{name:'Chair',qty:5,source:'admin',returnedQty:3,missingQty:2}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:5,date:'2027-01-01',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'FINAL',items:[{itemIndex:0,qty:2}]}]}
+      ),
+      historicalReturnThenNewDispatch: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-06',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {status:'Partially Returned',lastDispatchDate:'2027-01-04',items:[{name:'Chair',qty:5,source:'admin',returnedQty:1,missingQty:0}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:2,date:'2027-01-01',source:'admin'},{itemIndex:0,itemName:'Chair',qty:3,date:'2027-01-04',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'PARTIAL',items:[{itemIndex:0,qty:1}]}]}
       )
     };
   `,context);
@@ -766,4 +770,5 @@ test('backend rejects dispatch and return workflow quantities that cannot reconc
   assert.match(context.result.excessReturn,/Dispatch मात्रा/);
   assert.match(context.result.incompleteFinal,/Final Return/);
   assert.equal(context.result.recoveredMissing,null);
+  assert.equal(context.result.historicalReturnThenNewDispatch,null);
 });
