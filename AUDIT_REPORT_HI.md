@@ -78,3 +78,15 @@ Main पर मिले root causes:
 - PR अभी Draft है, merge नहीं हुआ; Production Main unchanged है।
 - Root/public/backend-public HTML copies का content hash समान verify किया गया।
 - GitHub status में Vercel preview quota failure दिखा; इस turn में GitHub Actions test-run result उपलब्ध नहीं हुआ। इसलिए regression tests को pass घोषित नहीं किया जा रहा।
+
+
+## अतिरिक्त backend सुरक्षा hardening
+- Main के public customer booking-status endpoint पर पहले lookup rate limit नहीं था, जबकि यह endpoint Booking ID + Registered Mobile से customer/booking details लौटाता है।
+- नई audit branch में `customerLookupLimiter` जोड़ा: 30 प्रयास / 15 मिनट; गलत और missing lookup भी limit में गिने जाते हैं।
+- Backend API regression test में 31वें प्रयास पर HTTP 429 और स्पष्ट Hindi error message की जाँच जोड़ी।
+
+## CI feedback और वर्तमान स्थिति
+- GitHub Actions run `45689626553` पर backend syntax check सफल हुआ।
+- उस run में 91 business tests में 89 पास और 2 पुराने UI expectations fail हुए: (a) premium stylesheet को अंतिम stylesheet मानने वाला assertion, जबकि नया Admin-only override जानबूझकर उसके बाद आता है; (b) पुराना 3.2-second long-press assertion, जबकि नया trigger 1.2-second है।
+- दोनों assertions को नए intended behavior के अनुसार अपडेट किया गया; इसके बाद Google login failure cleanup और customer lookup rate-limit tests भी जोड़े गए।
+- नवीनतम head `fee9b71b9966019d594866cb42ee332ced9d725d` के लिए fresh GitHub Actions result अभी उपलब्ध नहीं है। इसलिए अंतिम CI pass अभी घोषित नहीं है।
