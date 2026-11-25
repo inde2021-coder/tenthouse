@@ -199,6 +199,18 @@ test('admin status transitions wait for backend and cancelled bookings are not r
   assert.ok(html.includes("!await updateRemoteCustomerBookingStatus(id,'Rejected')"));
 });
 
+test('all inline frontend JavaScript blocks parse without syntax errors', () => {
+  const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
+    .filter(match => !/\\bsrc\\s*=/.test(match[1]))
+    .map(match => match[2])
+    .filter(source => source.trim());
+  assert.ok(scripts.length > 0);
+  scripts.forEach((source,index) => {
+    try { new vm.Script(source, { filename: 'inline-script-' + (index + 1) + '.js' }); }
+    catch (error) { throw new Error('Inline script ' + (index + 1) + ': ' + error.message); }
+  });
+});
+
 test('root and public app copies are kept in sync', () => {
   const root = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
   const pub = fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
