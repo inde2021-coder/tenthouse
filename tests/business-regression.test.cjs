@@ -620,3 +620,19 @@ test('dispatch, return and missing recovery use rollback-capable multi-key persi
   assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
   assert.match(html, /Storage rollback failed/);
 });
+
+test('premium dark glass enterprise UI system is present and all served frontend copies stay in sync', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = html;
+  assert.ok(root.includes('id="rk-premium-enterprise-visual-system"'));
+  assert.ok(root.includes('--rk-bg:#090d16'));
+  assert.ok(root.includes('inset 5px 5px 12px'));
+  assert.ok(root.includes('inset 0 1px 0 rgba(255,255,255,.48)'));
+  assert.ok(root.includes("font-family:'Manrope','DM Sans',sans-serif"));
+  assert.ok(root.includes('prefers-reduced-motion:reduce'));
+  assert.ok(root.includes('@media print'));
+  for (const file of ['public/index.html','backend/public/index.html']) {
+    assert.equal(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), root, file + ' must match root frontend');
+  }
+});
