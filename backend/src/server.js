@@ -256,8 +256,9 @@ const customerBookingSchema = z.object({
     rentPrice: z.number().finite().min(0).max(1000000).default(500),
     source: z.enum(['admin','third-party']).optional().default('admin'),
     partyName: z.string().max(120).optional().default('')
-  })).min(1).max(100)
-}).refine(data => data.returnDate >= data.date, { message: 'Return date must not be before booking date.', path: ['returnDate'] });
+  })).max(100).default([])
+}).refine(data => data.returnDate >= data.date, { message: 'Return date must not be before booking date.', path: ['returnDate'] })
+  .refine(data => data.payMode !== 'UPI' || data.advanceAmount === 0 || String(data.utrNumber || '').trim().length >= 6, { message: 'UTR is required for online advance payment.', path: ['utrNumber'] });
 app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (req,res) => {
   const parsed=customerBookingSchema.safeParse(req.body);
   if(!parsed.success)return res.status(400).json({error:'बुकिंग विवरण सही भरें।',details:parsed.error.flatten()});
@@ -265,10 +266,22 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
   try{
     let id=Date.now();
     while(await storeGet('erpData/customerBookings/'+String(id)))id++;
-    const booking={id,...parsed.data,status:'Pending Approval',partPayments:[],createdAt:new Date().toISOString(),source:'customer-portal'};
+    const booking={id,...parsed.data,status:'Pending Approval',partPayments:[],advancePaymentVerified:false,
+      advancePaymentStatus:parsed.data.advanceAmount>0?(parsed.data.payMode==='UPI'?'pending-verification':'pending-admin-confirmation'):'not-applicable',
+      createdAt:new Date().toISOString(),source:'customer-portal'};
+    let utrKey=null;
+    if(parsed.data.payMode==='UPI'&&parsed.data.advanceAmount>0){
+      utrKey=phoneKey(parsed.data.utrNumber.trim().toLowerCase());
+      const unique=await storeCreateIfAbsent('erpPrivate/utrIndex/'+utrKey,{bookingId:String(id),createdAt:new Date().toISOString()});
+      if(!unique)return res.status(409).json({error:'यह UTR पहले किसी भुगतान में दर्ज हो चुका है।'});
+    }
     const saved=await storeCreateIfAbsent('erpData/customerBookings/'+String(id),booking);
-    if(!saved)return res.status(409).json({error:'बुकिंग ID दोबारा बन गई; कृपया फिर प्रयास करें।'});
-    res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई।'});
+    if(!saved){if(utrKey)await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{});return res.status(409).json({error:'बुकिंग ID दोबारा बन गई; कृपया फिर प्रयास करें।'});}
+    if(utrKey){
+      try{await storeSet('erpData/payments/advance-'+id,{id:'advance-'+id,bookingId:String(id),amount:parsed.data.advanceAmount,utr:parsed.data.utrNumber.trim(),method:'upi',phone:parsed.data.mob,status:'pending-verification',createdAt:booking.createdAt});}
+      catch(error){await storeDelete('erpData/customerBookings/'+String(id)).catch(()=>{});await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{});throw error;}
+    }
+    res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई। Advance payment UTR सत्यापन के लिए Pending है।'});
   }catch(error){res.status(503).json({error:error.message});}
 });
 app.get('/api/customer/bookings', authAdmin, requireDurableStore, async (_req,res) => {
@@ -277,6 +290,28 @@ app.get('/api/customer/bookings', authAdmin, requireDurableStore, async (_req,re
     res.json({bookings});
   }catch(error){res.status(503).json({error:error.message});}
 });
+app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req,res) => {
+  if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
+  const parsed=z.object({
+    name:z.string().trim().min(2).max(120).optional(),
+    mob:phoneSchema.optional(),
+    address:z.string().trim().min(2).max(500).optional(),
+    eventType:z.string().trim().min(1).max(80).optional(),
+    guestCount:z.number().int().min(1).max(100000).optional(),
+    date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    returnDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    items:z.array(z.object({name:z.string().trim().min(1).max(120),qty:z.number().int().positive().max(100000),rentPrice:z.number().finite().min(0).max(1000000),source:z.enum(['admin','third-party']).optional(),partyName:z.string().max(120).optional()})).max(100).optional()
+  }).strict().safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'Invalid booking edits.',details:parsed.error.flatten()});
+  try{
+    const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
+    if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    const next={...booking,...parsed.data,updatedAt:new Date().toISOString()};
+    if(next.returnDate<next.date)return res.status(400).json({error:'Return date must not be before dispatch date.'});
+    await storeSet(path,next);res.json({ok:true,booking:next});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+
 app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const parsed=z.object({status:z.enum(['Confirmed','Rejected','Cancelled'])}).safeParse(req.body);
