@@ -29,7 +29,7 @@
 ## Customer Portal / Hero अपडेट (25 नवंबर 2026)
 - Customer booking panel के मौजूदा form IDs, OTP callbacks, stock/cart flow, UPI/advance inputs और submit handler को untouched रखा गया; केवल visual landing hero और CSS polish जोड़े गए।
 - Admin-editable customer hero image `softwareSettings.customerHeroImage` में रखी जाती है। Upload को image MIME type से validate, resize और JPEG में compress किया जाता है; remove action केवल इस setting को हटाता है और बाकी settings सुरक्षित रखता है।
-- तीनों deployable HTML copies byte-for-byte synchronized हैं; branded SVG icon भी root/public/backend public copies में समान है।
+- तीनों deployable HTML copies byte-for-byte synchronized हैं; उपलब्ध uploaded Radhe Krishn artwork को customer hero में और branded SVG icon को root/public/backend public copies में लगाया गया है।
 - Automated CI: `node --check backend/src/server.js`, business regression suite, package/manifest JSON validation — सफल।
 - `lia_reference.mov` repository के recursive Git tree में नहीं मिला; इसलिए उस वीडियो का visual review इस audit में संभव नहीं हुआ। इस काम में उपलब्ध customer portal structure और existing brand assets के अनुरूप design बनाया गया।
 - Vercel preview deployment API ने free daily deployment quota (100/day) की सीमा बताई; इस कारण नवीनतम commit का नया live preview deployment नहीं बन सका। Production deployment को बिना preview/device verification के force नहीं किया गया।
