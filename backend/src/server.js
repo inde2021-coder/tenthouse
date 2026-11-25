@@ -207,7 +207,8 @@ app.post('/webhooks/whatsapp', requireDurableStore, async (req, res) => {
           status: 'pending-review',
           note: textBody ? 'ग्राहक का संदेश प्राप्त हुआ; स्टॉक/तारीख जाँचकर बुकिंग की पुष्टि करें।' : 'गैर-टेक्स्ट संदेश मिला; मैन्युअल समीक्षा आवश्यक।'
         };
-        await storeCreateIfAbsent('erpData/whatsappInbox/' + record.id, record);
+        const inserted = await storeCreateIfAbsent('erpData/whatsappInbox/' + record.id, record);
+        if (!inserted) continue;
       }
     }
     return res.sendStatus(200);
