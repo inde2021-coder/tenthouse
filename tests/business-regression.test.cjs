@@ -818,3 +818,25 @@ test('customer booking stock reservation lock serializes concurrent requests and
   assert.equal(context.result.third,'function');
   assert.equal(current,null);
 });
+
+
+test('customer front page remains a booking-only portal with no admin controls exposed inside it', () => {
+  const portal = sourceBetween('<!-- Customer Portal -->', '<!-- Admin Panel -->');
+  assert.ok(portal.includes('onsubmit="saveCustomerBooking(event)"'));
+  assert.ok(portal.includes('id="portalStockSelect"'));
+  assert.ok(portal.includes('id="portalCustName"'));
+  assert.ok(portal.includes('id="portalEventDate"'));
+  assert.ok(portal.includes('id="portalReturnDate"'));
+  assert.ok(portal.includes('id="portalAdvanceAmount"'));
+  assert.ok(!portal.includes('switchTab('), 'customer portal must not expose admin module navigation');
+  assert.ok(!portal.includes('adminPanel'), 'customer portal must remain separate from the admin panel');
+});
+test('premium customer and ERP visual system is scoped and mobile responsive', () => {
+  assert.ok(html.includes('id="rk-enterprise-customer-and-erp-design"'));
+  assert.ok(html.includes('#customerFirstPortal .rk-customer-brand'));
+  assert.ok(html.includes('#customerFirstPortal .rk-customer-section'));
+  assert.ok(html.includes('#customerFirstPortal .rk-customer-submit'));
+  assert.ok(html.includes('inset 5px 5px 12px'), 'input fields should use inset depth');
+  assert.ok(html.includes('prefers-reduced-motion:reduce'));
+  assert.ok(html.includes('@media(max-width:700px)'), 'customer layout must include a mobile breakpoint');
+});
