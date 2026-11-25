@@ -59,7 +59,7 @@
 
 
 ## Customer Login Fix (2026-10-28)
-- Customer Panel के दुकान नाम पर एक टैप से मौजूदा Gmail/Password लॉगिन ओवरले खुलेगा।
+- Admin login को public customer panel से छिपाया गया है; protected gate brand पर secret gesture / keyboard shortcut से खुलता है।
 - पुराने triple-tap handler नाम को compatibility के लिए रखा गया है।
 - मुख्य HTML में orphaned speech-recognition JavaScript fragment हटाया गया, जो पूरा script parse होने से रोक रहा था।
 
@@ -73,3 +73,10 @@
 - App icon SVG को Radhe Krishn navy/gold tent-house branding के अनुसार refresh किया और सभी app-shell copies में favicon link जोड़ा।
 - Customer hero / editable upload / existing booking submit handler के लिए regression test जोड़ा।
 - GitHub Actions पर backend syntax, business regression tests और JSON validation सफल।
+
+
+## Deep UI Audit Fixes (26 नवंबर 2026)
+- Shop-name handler अब admin gate को रोकने के बजाय खोलता है; mobile पर तीन taps और 1.2-second long-press supported हैं।
+- Admin login API के 401, 503, 404 और network failures के लिए अलग actionable संदेश।
+- Customer, admin और dialog text fields से legacy white textbox styling हटाकर dark recessed controls लागू किए।
+- सभी deployable HTML shells synchronized; regression coverage और bartan preview branch CI trigger जोड़ा।
