@@ -964,5 +964,5 @@ test('customer booking lookup has mobile, name and booking-number search plus pr
 test('secret admin login is explained and mobile logo long-press opens the gate',()=>{
   assert.ok(html.includes('Ctrl + Alt + Shift + K'));
   assert.ok(html.includes("document.querySelector('.rk-customer-brand-mark')"));
-  assert.ok(html.includes('Secret Admin Login — इस लोगो को 3 सेकंड दबाएँ'));
+  assert.ok(html.includes('title="Secret Admin Login: इस लोगो को 3 सेकंड दबाएँ"'));
 });
