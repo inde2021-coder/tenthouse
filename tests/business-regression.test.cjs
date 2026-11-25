@@ -221,10 +221,12 @@ test('customer status lookup is private and checks booking ID plus registered mo
   assert.ok(html.includes('/status?mobile='));
 });
 
-test('customer item selection uses configured stock rent, not a hardcoded rate', () => {
+test('customer item selection uses configured stock rent and safely renders item names', () => {
   assert.ok(html.includes('Number(stock.setRent)>0?Number(stock.setRent)'));
   assert.ok(html.includes('missingCharge:Math.max(0,Number(stock.missingCharge)||0)'));
   assert.ok(!html.includes('rentPrice: 500 });'));
+  assert.ok(html.includes('escapeHtml(i.name)'));
+  assert.ok(html.includes('Number(i.qty)||0'));
 });
 
 test('dispatch slip identifies admin versus vendor stock and print is professional', () => {
