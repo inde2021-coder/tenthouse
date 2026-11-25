@@ -188,6 +188,8 @@ test('ERP menu contains 19 modules including Business Card and documents', () =>
   assert.ok(html.includes("taxInvoiceDatabase: 'taxInvoices'"));
   assert.ok(html.includes('function saveBusinessCard()'));
   assert.ok(html.includes('function saveBusinessDocument()'));
+  assert.ok(html.includes('function changeBusinessDocumentType()'));
+  assert.ok(html.includes("if(number)number.value=''"));
   assert.ok(html.includes('function printBusinessDocument()'));
   assert.ok(html.includes('Tax Invoice से पहले Business Card में सही 15-अक्षर GSTIN सेव करें'));
   assert.ok(html.includes("numberInput.value=number"));
