@@ -173,7 +173,8 @@ input[type="checkbox"],input[type="radio"] { width:auto !important; flex:0 0 aut
  html,body { height:auto !important; overflow:visible !important; background:#fff !important; }
  body * { visibility:hidden !important; }
  #printableSlipArea, #printableSlipArea * { visibility:visible !important; }
- #printableSlipArea { position:absolute !important; inset:0 auto auto 0 !important; width:100% !important; height:auto !important; overflow:visible !important; padding:0 !important; margin:0 !important; background:#fff !important; color:#111 !important; display:block !important; }
+ #printableSlipArea { display:none !important; }
+ #printableSlipArea.print-area-active { position:absolute !important; inset:0 auto auto 0 !important; width:100% !important; height:auto !important; overflow:visible !important; padding:0 !important; margin:0 !important; background:#fff !important; color:#111 !important; display:block !important; }
  #printableSlipArea * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
  #printableSlipArea table { width:100% !important; border-collapse:collapse !important; }
  #printableSlipArea th,#printableSlipArea td { border:1px solid #777 !important; padding:5px !important; font-size:10pt !important; white-space:normal !important; }
@@ -1132,7 +1133,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             }
             printWithStampImages();
         }
-        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area&&['invoice','return','dispatch'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
+        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
         function initFirebaseConnection() {
             try {
@@ -1446,6 +1447,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         // Browser print may start before data-URL images are decoded. Wait for them.
         async function printWithStampImages() {
             const area = document.getElementById('printableSlipArea');
+            const barcodeModal=document.getElementById('barcodePrintModal');
+            if(area && !barcodeModal?.classList.contains('barcode-print-active') && area.style.display!=='none' && area.innerHTML.trim()) area.classList.add('print-area-active');
             if (area) {
                 const imgs = Array.from(area.querySelectorAll('img'));
                 await Promise.all(imgs.map(img => {
@@ -2597,7 +2600,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim();
             const b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));
             if(!b){showActionMessage('रिटर्न स्लिप के लिए booking लोड करें','error');return;}
-            const settings=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.style.display='block';
+            const settings=safeGetStorage('softwareSettings',{}),area=document.getElementById('printableSlipArea');area.dataset.printRestore='return';area.style.display='block';
             area.innerHTML=`<div class="rk-slip rk-return-slip" style="font-family:Arial;color:#111">
               <header style="text-align:center;border-bottom:2px solid #222;padding-bottom:10px"><h2>${escapeHtml(settings.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>मोबाइल: ${escapeHtml(settings.contactNo||'')}</p><h3>RETURN RECEIVED SLIP / रिटर्न प्राप्ति पर्ची</h3></header>
               <p>Booking: #${escapeHtml(b.id)} | Customer: ${escapeHtml(b.name)} | Mobile: ${escapeHtml(b.mob)}</p>
@@ -2885,7 +2888,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             el.innerHTML=rows.length?rows.slice(0,20).map(item=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #cbd5e1"><span><b>${escapeHtml(item.documentNumber||item.id)}</b> · ${escapeHtml(item.customerName||'')} · ₹${(Number(item.total)||0).toFixed(2)} · ${item._type==='quotation'?'Quotation':'Tax Invoice'}</span><button type="button" class="action-btn" onclick="loadBusinessDocument('${item._type}','${escapeJs(item.id)}')">खोलें</button></div>`).join(''):'अभी कोई दस्तावेज़ सेव नहीं है।';
         }
         function clearBusinessDocument(){editingBusinessDocumentId=null;currentDocumentItems=[];['docNumber','docCustomerName','docCustomerPhone','docCustomerAddress','docCustomerGstin','docValidUntil'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('docType').value='quotation';document.getElementById('docTaxType').value='intra';document.getElementById('docDate').value=new Date().toISOString().slice(0,10);document.getElementById('docGstRate').value='0';document.getElementById('docDiscount').value='0';document.getElementById('docOtherCharges').value='0';renderBusinessDocumentPreview();}
-        function printBusinessDocument(){const preview=document.getElementById('businessDocumentPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले दस्तावेज़ तैयार करें','error');return;}area.innerHTML=preview.innerHTML;area.style.display='block';window.print();area.style.display='none';}
+        function printBusinessDocument(){const preview=document.getElementById('businessDocumentPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले दस्तावेज़ तैयार करें','error');return;}area.dataset.printRestore='document';area.innerHTML=preview.innerHTML;area.style.display='block';area.classList.add('print-area-active');window.print();area.style.display='none';}
 
         window.onload = function() {
             // Local-first admin data; public customers load the safe stock catalog from the backend.
