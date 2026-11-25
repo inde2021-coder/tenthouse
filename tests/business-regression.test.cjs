@@ -192,21 +192,22 @@ test('admin can add stock items to an itemless booking and append new items on r
 
 test('booking edit validates ordinary Indian mobile numbers and ISO dates', () => {
   const code = sourceBetween('async function editBooking(id)', 'async function verifyCustomerAdvance');
-  assert.match(code, /\\[1-9\\]\\d\{9,14\}/);
-  assert.match(code, /\\d\{4\}-\\d\{2\}-\\d\{2\}/);
-  assert.doesNotMatch(code, /\\\\d\{9,14\}/);
+  assert.ok(code.includes('/^\\+?[1-9]\\d{9,14}$/'));
+  assert.ok(code.includes('/^\\d{4}-\\d{2}-\\d{2}$/'));
 });
 
 test('dispatch rent allocation stops returned quantities on each actual return date', () => {
   const start = html.indexOf('function getDispatchEntryRentalSlices(b)');
   const end = html.indexOf('        function calculateBookingTotalRent(b)', start);
   assert.ok(start >= 0 && end > start);
-  const context = { Math, Number, Array, Date };
-  vm.runInNewContext(html.slice(start, end) + '\\nresult=getDispatchEntryRentalSlices(booking);', { ...context, booking: {
+  const context = { Math, Number, Array, Date, result: null, booking: {
     date:'2026-11-01',returnDate:'2026-11-10',
     dispatchEntries:[{itemIndex:0,qty:3,date:'2026-11-01'},{itemIndex:0,qty:2,date:'2026-11-03'}],
     returnEntries:[{date:'2026-11-05',items:[{itemIndex:0,qty:4}]}]
-  }});
+  }};
+  vm.runInNewContext(html.slice(start, end) + '\nresult=getDispatchEntryRentalSlices(booking);', context);
+  assert.equal(context.result.reduce((sum,slice)=>sum+slice.qty,0),5);
+  assert.equal(context.result.filter(slice=>slice.endDate==='2026-11-05').reduce((sum,slice)=>sum+slice.qty,0),4);
 });
 
 test('customer status lookup is private and checks booking ID plus registered mobile', () => {
