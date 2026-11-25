@@ -335,34 +335,39 @@ test('preview customer booking search returns safe slips and bill data only afte
     const created = await createdResponse.json();
     const id = String(created.booking.id);
 
-    const byPhone = await call('/api/customer/bookings/search', {
+    const byPhoneOnly = await call('/api/customer/bookings/search', {
       method: 'POST', body: JSON.stringify({ lookup: '9876543210' })
     });
-    assert.equal(byPhone.status, 200);
-    const phoneResult = await byPhone.json();
-    assert.equal(phoneResult.bookings.length, 1);
-    assert.equal(phoneResult.bookings[0].name, 'Demo Customer');
-    assert.equal(phoneResult.bookings[0].maskedMobile, '******3210');
-    assert.equal(phoneResult.bookings[0].totalAmount, 40);
-    assert.equal(Object.hasOwn(phoneResult.bookings[0], 'address'), false);
-    assert.equal(Object.hasOwn(phoneResult.bookings[0], 'utrNumber'), false);
+    assert.equal(byPhoneOnly.status, 400);
 
     const nameWithoutMobile = await call('/api/customer/bookings/search', {
       method: 'POST', body: JSON.stringify({ lookup: 'Demo Customer' })
     });
     assert.equal(nameWithoutMobile.status, 400);
+
     const byName = await call('/api/customer/bookings/search', {
       method: 'POST', body: JSON.stringify({ lookup: 'Demo Customer', mobile: '9876543210' })
     });
-    assert.equal((await byName.json()).bookings.length, 1);
+    assert.equal(byName.status, 400);
+
     const wrongMobile = await call('/api/customer/bookings/search', {
       method: 'POST', body: JSON.stringify({ lookup: id, mobile: '9876543211' })
     });
-    assert.equal((await wrongMobile.json()).bookings.length, 0);
+    assert.equal(wrongMobile.status, 404);
+    assert.equal((await wrongMobile.json()).bookings, undefined);
+
     const byBooking = await call('/api/customer/bookings/search', {
       method: 'POST', body: JSON.stringify({ lookup: id, mobile: '9876543210' })
     });
-    assert.equal((await byBooking.json()).bookings[0].id, id);
+    assert.equal(byBooking.status, 200);
+    const bookingResult = await byBooking.json();
+    assert.equal(bookingResult.bookings.length, 1);
+    assert.equal(bookingResult.bookings[0].id, id);
+    assert.equal(bookingResult.bookings[0].name, 'Demo Customer');
+    assert.equal(bookingResult.bookings[0].maskedMobile, '******3210');
+    assert.equal(bookingResult.bookings[0].totalAmount, 40);
+    assert.equal(Object.hasOwn(bookingResult.bookings[0], 'address'), false);
+    assert.equal(Object.hasOwn(bookingResult.bookings[0], 'utrNumber'), false);
   } finally {
     if (previewServer.exitCode === null) {
       previewServer.kill('SIGTERM');
