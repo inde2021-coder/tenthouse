@@ -70,3 +70,10 @@ Production `main` और Vercel को इस branch audit/fix में नह�
 - पहले mobile-only search पर एक ही फोन की कई bookings लौट सकती थीं। अब backend exact booking ID को सीधे lookup करता है और उसी record के registered mobile से match करता है; एक request में अधिकतम एक booking लौटती है।
 - Name-only और mobile-history search हटाए गए। यह customer privacy के लिए जानबूझकर stricter रखा गया है।
 - Customer form textbox text-fill color भी dark field background के साथ readable किया गया।
+
+
+## BARTAN brand/PWA correction
+- Main branch का supplied hero/icon SVG decorated wedding tent और mandap दिखाता था, जो इस bartan-rental product identity से मेल नहीं खाता। Preview branch का customer hero utensil illustration ही रखा गया।
+- App icon को stainless-steel plates, serving handi और utensils वाले navy/gold emblem से बदला।
+- Root, public और backend/public में icon, manifest और service-worker shell synchronized; cache version v4 में icon precache।
+- `/favicon.ico` को उसी SVG icon पर route किया, ताकि browser favicon request पर 404 न आए।

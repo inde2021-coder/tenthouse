@@ -1,12 +1,12 @@
 {
-  "name": "Radha Krishna Tent House ERP",
-  "short_name": "RK Tent ERP",
-  "description": "Tent house booking, stock, dispatch, return and billing ERP",
+  "name": "Radhe Krishn Bartan Tent House Manager",
+  "short_name": "RK Bartan ERP",
+  "description": "बर्तन किराये की बुकिंग, स्टॉक, डिस्पैच, रिटर्न और बिलिंग ERP",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#e4ebf5",
-  "theme_color": "#2b6cb0",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
   "icons": [
     {
       "src": "./icon.svg",

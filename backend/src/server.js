@@ -28,6 +28,7 @@ app.use('/api/', rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draf
 // Vercel project root is /backend, so serve the committed frontend from backend/public.
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(backendDir, '../public'), { index: 'index.html', maxAge: 0 }));
+app.get('/favicon.ico', (_req, res) => res.type('image/svg+xml').sendFile(path.resolve(backendDir, '../public/icon.svg')));
 const memoryStore = new Map();
 // Clearly fake catalog data used only by the isolated Render preview. It is never persisted.
 if (isPreviewMode) {

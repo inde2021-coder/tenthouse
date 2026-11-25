@@ -653,12 +653,16 @@ test('premium dark glass enterprise UI system is present and all served frontend
 });
 
 
-test('premium design layer loads after legacy styles so the new theme wins the cascade', () => {
-  const start = html.indexOf('<style id="rk-premium-enterprise-visual-system">');
-  const end = html.indexOf('</style>', start);
-  assert.ok(start > html.lastIndexOf('</style>', start - 1), 'premium layer is not duplicated');
-  assert.equal(end, html.lastIndexOf('</style>'), 'premium layer must be the final stylesheet in the document');
-  assert.ok(start > html.lastIndexOf('</script>', start), 'premium layer must load after legacy scripts and styles');
+test('premium design and final dark field layers load in the correct cascade order', () => {
+  const premiumStart = html.indexOf('<style id="rk-premium-enterprise-visual-system">');
+  const premiumEnd = html.indexOf('</style>', premiumStart);
+  const fieldStart = html.indexOf('<style id="rk-final-dark-input-contrast-v1">');
+  const fieldEnd = html.indexOf('</style>', fieldStart);
+  assert.ok(premiumStart > html.lastIndexOf('</style>', premiumStart - 1), 'premium layer is not duplicated');
+  assert.ok(premiumEnd > premiumStart);
+  assert.ok(fieldStart > premiumEnd, 'final field layer must follow the premium design layer');
+  assert.equal(fieldEnd, html.lastIndexOf('</style>'), 'dark field layer must be the final stylesheet in the document');
+  assert.ok(fieldStart > html.lastIndexOf('</script>', fieldStart), 'final field layer must load after all frontend scripts');
 });
 
 test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
@@ -1015,4 +1019,21 @@ test('customer booking tracker never returns all bookings for a mobile-only quer
   assert.ok(route.includes("customerLookupMobile(booking.mob)!==mobile"));
   assert.ok(route.includes("bookings:[publicCustomerBooking(booking)]"));
   assert.ok(!route.includes("storeList('erpData/customerBookings')"));
+});
+
+test('bartan rental PWA icon and offline shell use utensils branding, not mandap artwork',()=>{
+  const root=require('node:path').join(__dirname,'..');
+  const icon=fs.readFileSync(require('node:path').join(root,'icon.svg'),'utf8');
+  const manifest=JSON.parse(fs.readFileSync(require('node:path').join(root,'manifest.webmanifest'),'utf8'));
+  const sw=fs.readFileSync(require('node:path').join(root,'sw.js'),'utf8');
+  assert.ok(icon.includes('Radhe Krishn Bartan Tent House Manager'));
+  assert.ok(icon.includes('stainless steel plate stack'));
+  assert.ok(!/mandap|wedding tent|peacock feather/i.test(icon));
+  assert.equal(manifest.theme_color,'#090d16');
+  assert.equal(manifest.background_color,'#090d16');
+  assert.equal(manifest.short_name,'RK Bartan ERP');
+  assert.ok(sw.includes("rk-tent-erp-shell-v4"));
+  assert.ok(sw.includes("'./icon.svg'"));
+  assert.ok(html.includes('<link rel="icon" href="./icon.svg" type="image/svg+xml">'));
+  assert.ok(backend.includes('favicon.ico'));
 });
