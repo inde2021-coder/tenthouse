@@ -1746,32 +1746,56 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const b = bookings.find(x => String(x.id) === String(id));
             if (!b) { showActionMessage('बुकिंग नहीं मिली', 'error'); return; }
             if (!['Confirmed','Dispatched','Partially Returned'].includes(b.status) || b.fullyReturnedAt) { showActionMessage('पहले बुकिंग Confirm करें और उसका Return पूरा न हुआ हो', 'error'); return; }
-            const items = Array.isArray(b.items) ? b.items : [];
-            const validItems = items.filter(it => String(it?.name || '').trim() && Number.isInteger(Number(it?.qty)) && Number(it.qty) > 0);
-            if (!items.length || !validItems.length || validItems.length !== items.length) {
-                showActionMessage('Dispatch से पहले हर आइटम का सामान चुनें और उसकी मात्रा सही भरें। बिना सामान/मात्रा के Dispatch नहीं होगा।', 'error');
-                return;
-            }
+            const items = Array.isArray(b.items) ? b.items.map(item=>({...item})) : [];
+            const adminStock=safeGetStorage('realStockDatabase',[]),vendorStock=safeGetStorage('thirdPartyDatabase',[]);
+            const catalog=[
+                ...adminStock.filter(x=>Math.max(0,Number(x.qty)||0)>0).map(x=>({row:x,source:'admin',label:(x.name||'सामान')+' · Admin · उपलब्ध '+Number(x.qty||0)})),
+                ...vendorStock.filter(x=>Math.max(0,Number(x.qty)||0)>0).map(x=>({row:x,source:'third-party',label:(x.item||x.name||'सामान')+' · Vendor '+(x.partyName||'')+' · उपलब्ध '+Number(x.qty||0)}))
+            ];
             const dispatchDate = prompt('इस Dispatch की तारीख (YYYY-MM-DD)', new Date().toLocaleDateString('en-CA'));
             if (dispatchDate === null) return;
             if (!/^\d{4}-\d{2}-\d{2}$/.test(dispatchDate) || dispatchDate < (b.date || dispatchDate) || (b.returnDate && dispatchDate > b.returnDate)) { showActionMessage('Dispatch की तारीख बुकिंग की तारीखों के बीच सही भरें', 'error'); return; }
             const history = Array.isArray(b.dispatchEntries) ? b.dispatchEntries : [];
-            const planned = items.map((it,index)=>{
-                const already = history.filter(e=>Number(e.itemIndex)===index).reduce((sum,e)=>sum+Math.max(0,Number(e.qty)||0),0);
-                const remaining = Math.max(0,(Number(it.qty)||0)-already);
-                return {it,index,already,remaining};
+            const catalogText=catalog.map((entry,index)=>(index+1)+'. '+entry.label).join('\\n');
+            if(catalog.length){
+                const selection=prompt((items.length?'अतिरिक्त सामान जोड़ने के लिए नंबर चुनें (कॉमा से अलग करें); खाली छोड़ें तो मौजूदा सामान Dispatch करें:\\n':'ग्राहक ने सामान नहीं चुना। Admin/Vendor स्टॉक से सामान के नंबर चुनें (कॉमा से अलग करें):\\n')+catalogText,'');
+                if(selection===null)return;
+                if(selection.trim()){
+                    const indexes=[...new Set(selection.split(',').map(x=>Number(x.trim())-1))];
+                    if(indexes.some(index=>!Number.isInteger(index)||index<0||index>=catalog.length)){showActionMessage('सामान का चयन सूची के अनुसार सही करें','error');return;}
+                    for(const index of indexes){
+                        const selected=catalog[index],row=selected.row,name=String(row.item||row.name||'').trim();
+                        const rawQty=prompt(name+' की इस बार Dispatch मात्रा (उपलब्ध '+Number(row.qty||0)+')','1');
+                        if(rawQty===null)return;
+                        const qty=Number(rawQty);
+                        if(!Number.isInteger(qty)||qty<1||qty>Number(row.qty||0)){showActionMessage(name+' की मात्रा उपलब्ध स्टॉक के भीतर पूर्ण संख्या हो','error');return;}
+                        let itemIndex=items.findIndex(it=>String(it.name||'').toLowerCase()===name.toLowerCase()&&it.source===selected.source&&String(it.partyName||'')===String(row.partyName||''));
+                        if(itemIndex<0){
+                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):Number(row.singleRent??row.rentPrice??0);
+                            items.push({name,qty:0,rentPrice:Math.max(0,rent),missingCharge:Math.max(0,Number(row.missingCharge??row.missingUnitPrice)||0),vendorRentRate:selected.source==='third-party'?Math.max(0,Number(row.costPrice??row.vendorRentRate)||0):0,vendorMissingCost:selected.source==='third-party'?Math.max(0,Number(row.missingCost??row.vendorMissingCost)||0):0,source:selected.source,partyName:String(row.partyName||'')});
+                            itemIndex=items.length-1;
+                        }
+                        items[itemIndex].qty=Math.max(0,Number(items[itemIndex].qty)||0)+qty;
+                    }
+                }
+            }
+            const validItems=items.filter(it=>String(it?.name||'').trim()&&Number.isInteger(Number(it?.qty))&&Number(it.qty)>0);
+            if(!validItems.length){showActionMessage('Dispatch से पहले Admin या Vendor स्टॉक से सामान चुनें','error');return;}
+            const planned=items.map((it,index)=>{
+                const already=history.filter(e=>Number(e.itemIndex)===index).reduce((sum,e)=>sum+Math.max(0,Number(e.qty)||0),0);
+                return {it,index,already,remaining:Math.max(0,(Number(it.qty)||0)-already)};
             });
             const chosen=[];
-            for (const x of planned) {
-                if (!x.remaining) continue;
-                const raw=prompt(`${x.it.name}: इस बार कितनी मात्रा Dispatch करें? अधिकतम ${x.remaining}`, String(x.remaining));
+            for(const x of planned){
+                if(!x.remaining)continue;
+                const raw=prompt(x.it.name+': इस बार कितनी मात्रा Dispatch करें? अधिकतम '+x.remaining,String(x.remaining));
                 if(raw===null)return;
                 const qty=Number(raw);
-                if(!Number.isInteger(qty)||qty<0||qty>x.remaining){showActionMessage(`${x.it.name} की मात्रा 0 से ${x.remaining} के बीच पूर्ण संख्या हो`, 'error');return;}
+                if(!Number.isInteger(qty)||qty<0||qty>x.remaining){showActionMessage(x.it.name+' की मात्रा 0 से '+x.remaining+' के बीच पूर्ण संख्या हो','error');return;}
                 if(qty)chosen.push({...x,qty});
             }
             if(!chosen.length){showActionMessage('इस Dispatch में कोई मात्रा दर्ज नहीं हुई','error');return;}
-            const stock = safeGetStorage('realStockDatabase', []), thirdParty = safeGetStorage('thirdPartyDatabase', []);
+            const stock=adminStock,thirdParty=vendorStock;
             const requirements=[];
             for(const x of chosen){
                 const isThird=String(x.it.source||'').toLowerCase()==='third-party';
@@ -1783,6 +1807,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 requirements.push({row,qty:x.qty});
             }
             requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty));
+            b.items=items;
             b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,vendorMissingCost:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorMissingCost)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
             if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('realStockDatabase',stock)||!safeSetStorage('thirdPartyDatabase',thirdParty)){showActionMessage('Dispatch सेव नहीं हुआ; स्टॉक जाँचें','error');return;}
