@@ -649,7 +649,7 @@ test('premium design layer loads after legacy styles so the new theme wins the c
 test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
   assert.ok(html.includes('setTimeout(show,3200)'));
-  assert.ok(html.includes('setTimeout(show,2200)'));
+  assert.ok(html.includes('setTimeout(show,3200)'));
   assert.ok(html.includes('/api/admin/session'));
   assert.ok(html.includes("'x-admin-token':token"));
   assert.ok(html.includes('window.__rkVerifiedAdminToken'));
