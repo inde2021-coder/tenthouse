@@ -84,6 +84,16 @@ const authAdmin = (req, res, next) => {
   next();
 };
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'rk-tent-house-erp-api', time: new Date().toISOString() }));
+app.get('/ready', (_req, res) => {
+  const persistentDatabaseReady = !!adminDb;
+  const ready = !isProd || persistentDatabaseReady;
+  res.status(ready ? 200 : 503).set('Cache-Control', 'no-store').json({
+    ok: ready,
+    service: 'rk-tent-house-erp-api',
+    persistentDatabaseReady,
+    environment: isProd ? 'production' : 'development'
+  });
+});
 // Reports presence/configuration only; never returns secret values.
 app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
   const provider = (process.env.OTP_PROVIDER || 'none').toLowerCase();
