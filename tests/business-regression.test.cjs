@@ -779,7 +779,7 @@ test('customer workflow failures are queued and retried after reconnect or admin
   assert.ok(html.includes("localStorage.setItem('rkPendingCustomerWorkflowSync',JSON.stringify(queue))"));
   assert.ok(html.includes('async function flushPendingCustomerWorkflowSync()'));
   assert.ok(html.includes("window.addEventListener('online', () => { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); })"));
-  assert.ok(html.includes('await syncCustomerBookingsFromBackend();await flushPendingCustomerWorkflowSync();'));
+  assert.ok(html.includes('await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();'));
   const dispatch=sourceBetween('async function completeDispatch(id)','function printDispatchSlip(id)');
   const ret=sourceBetween('async function completeManualReturnProcess()','let currentDocumentItems');
   const recover=sourceBetween('async function recoverMissingItem(recordId,rowIndex)','let currentDocumentItems');
