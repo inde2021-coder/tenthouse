@@ -13,6 +13,8 @@ import { getDatabase } from 'firebase-admin/database';
 const app = express();
 const port = Number(process.env.PORT || 8080);
 const isProd = process.env.NODE_ENV === 'production';
+// Preview demo mode is explicitly opt-in and can never run in production.
+const isPreviewMode = process.env.PREVIEW_MODE === 'true' && !isProd;
 const deploymentEnvironment = process.env.VERCEL_ENV || (isProd ? 'production' : 'development');
 app.disable('x-powered-by');
 // Vercel terminates TLS/proxies requests; trust the single platform proxy so rate-limit
@@ -27,6 +29,15 @@ app.use('/api/', rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draf
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(backendDir, '../public'), { index: 'index.html', maxAge: 0 }));
 const memoryStore = new Map();
+// Clearly fake catalog data used only by the isolated Render preview. It is never persisted.
+if (isPreviewMode) {
+  memoryStore.set('tent_erp_data/stock', [
+    { name: 'Plastic Chair', qty: 500, singleRent: 10, setRent: 0, missingCharge: 100 },
+    { name: 'Round Table', qty: 80, singleRent: 80, setRent: 0, missingCharge: 500 },
+    { name: 'Glass Set (100)', qty: 20, singleRent: 0, setRent: 350, missingCharge: 5 },
+    { name: 'Tent Carpet (10×10)', qty: 30, singleRent: 0, setRent: 250, missingCharge: 300 }
+  ]);
+}
 let adminDb = null;
 try {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -116,6 +127,7 @@ const readinessCheck = (_req, res) => {
     ok: ready,
     service: 'rk-tent-house-erp-api',
     persistentDatabaseReady,
+    previewMode: isPreviewMode,
     environment: deploymentEnvironment
   });
 };
@@ -368,7 +380,7 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
     if(!releaseReservationLock)return res.status(409).json({error:'दूसरी बुकिंग का स्टॉक सत्यापन चल रहा है; कुछ सेकंड बाद पुनः प्रयास करें।'});
     let customerItems=parsed.data.items;
     if(customerItems.length){
-      if(!adminDb)return res.status(503).json({error:'सामान और सही किराया सत्यापित करने के लिए Firebase stock catalog उपलब्ध नहीं है।'});
+      if(!adminDb && !isPreviewMode)return res.status(503).json({error:'सामान और सही किराया सत्यापित करने के लिए Firebase stock catalog उपलब्ध नहीं है।'});
       const stockValue=await storeGet('tent_erp_data/stock');
       const stockRows=Array.isArray(stockValue)?stockValue:Object.values(stockValue||{});
       // Reserve un-dispatched bookings for overlapping rental dates so two customers
