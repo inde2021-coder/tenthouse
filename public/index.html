@@ -3260,11 +3260,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
    if(!canvas||!url){alert('पहले QR बनाएं।');return}
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p>
-<script id="rk-secret-admin-entry">
-(()=>{let holdTimer=null;const show=()=>{if(typeof window.revealAdminGate==='function')window.revealAdminGate();};document.addEventListener('keydown',e=>{if(e.altKey&&e.shiftKey&&(e.key||'').toLowerCase()==='k'){e.preventDefault();show();}});const bind=()=>{const mark=document.querySelector('.rk-dev-title');if(!mark||mark.dataset.secretEntryBound)return;mark.dataset.secretEntryBound='1';mark.addEventListener('pointerdown',()=>{holdTimer=setTimeout(show,2200);});['pointerup','pointerleave','pointercancel'].forEach(name=>mark.addEventListener(name,()=>{clearTimeout(holdTimer);holdTimer=null;}));};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();})();
-</script>
-</body></html>';
+   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
  document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#aiAccessTokenInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
@@ -3294,6 +3290,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
   </div>
 </div>
 
+<script id="rk-secret-admin-entry">
+(()=>{let holdTimer=null;const show=()=>{if(typeof window.revealAdminGate==='function')window.revealAdminGate();};document.addEventListener('keydown',e=>{if(e.altKey&&e.shiftKey&&(e.key||'').toLowerCase()==='k'){e.preventDefault();show();}});const bind=()=>{const mark=document.querySelector('.rk-dev-title');if(!mark||mark.dataset.secretEntryBound)return;mark.dataset.secretEntryBound='1';mark.addEventListener('pointerdown',()=>{holdTimer=setTimeout(show,2200);});['pointerup','pointerleave','pointercancel'].forEach(name=>mark.addEventListener(name,()=>{clearTimeout(holdTimer);holdTimer=null;}));};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();})();
+</script>
 </body></html>');w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print()},250)};
 
  function init(){const s=settings();if($('hostingUrlInput')&&!$('hostingUrlInput').value)$('hostingUrlInput').value=s.hostingUrl||location.href;if($('backendApiUrlInput'))$('backendApiUrlInput').value=s.backendApiUrl||getBackendApiUrl(s);if($('aiAccessTokenInput'))$('aiAccessTokenInput').value=s.aiAccessToken||'';if($('otpChannelSetting'))$('otpChannelSetting').value=s.otpChannel||'off';if($('requireItemSelectionSetting'))$('requireItemSelectionSetting').checked=s.requireItemSelection!==false;if($('enableOfflineSetting'))$('enableOfflineSetting').checked=s.enableOffline!==false;['hostingUrlInput','backendApiUrlInput','aiAccessTokenInput','otpChannelSetting','requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>$(id)?.addEventListener('change',saveAdvancedSettings));if(typeof window.loadSettingsToUI==='function')window.loadSettingsToUI()}
