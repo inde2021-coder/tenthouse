@@ -2501,9 +2501,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const container=document.getElementById('partyWiseTablesContainer');if(!container)return;
             container.innerHTML=parties.length===0?'<p>कोई वेंडर डेटा नहीं</p>':parties.map(party=>{
                 const items=tpList.filter(x=>x.partyName===party);
-                const vendorEntries=bookings.flatMap(booking=>(Array.isArray(booking.dispatchEntries)?booking.dispatchEntries:[]).filter(e=>e.source==='third-party'&&String(e.partyName||'')===String(party)).map(e=>({booking,e})));
-                const vendorCost=vendorEntries.reduce((sum,{booking,e})=>{const item=booking.items?.[Number(e.itemIndex)]||{};const rate=Number(e.vendorRentRate??item.vendorRentRate??tpList.find(x=>x.partyName===party&&(x.item||x.name)===e.itemName)?.costPrice)||0;const days=calculateRentalDays(e.date||booking.date,booking.actualReturnDate||booking.returnDate||today);return sum+Math.max(0,Number(e.qty)||0)*Math.max(0,rate)*days;},0);
-                const customerRent=vendorEntries.reduce((sum,{booking,e})=>{const days=calculateRentalDays(e.date||booking.date,booking.actualReturnDate||booking.returnDate||today);return sum+Math.max(0,Number(e.qty)||0)*Math.max(0,Number(e.unitRent)||0)*days;},0);
+                const vendorEntries=bookings.flatMap(booking=>getDispatchEntryRentalSlices(booking).filter(slice=>slice.entry.source==='third-party'&&String(slice.entry.partyName||'')===String(party)).map(slice=>({booking,e:slice.entry,qty:slice.qty,endDate:slice.endDate})));
+                const vendorCost=vendorEntries.reduce((sum,{booking,e,qty,endDate})=>{const item=booking.items?.[Number(e.itemIndex)]||{};const rate=Number(e.vendorRentRate??item.vendorRentRate??tpList.find(x=>x.partyName===party&&(x.item||x.name)===e.itemName)?.costPrice)||0;const days=calculateRentalDays(e.date||booking.date,endDate);return sum+Math.max(0,Number(qty)||0)*Math.max(0,rate)*days;},0);
+                const customerRent=vendorEntries.reduce((sum,{booking,e,qty,endDate})=>{const days=calculateRentalDays(e.date||booking.date,endDate);return sum+Math.max(0,Number(qty)||0)*Math.max(0,Number(e.unitRent)||0)*days;},0);
                 const paid=payments.filter(x=>x.partyName===party).reduce((sum,x)=>sum+Math.max(0,Number(x.amount)||0),0);
                 const due=Math.max(0,vendorCost-paid),margin=customerRent-vendorCost;
                 return `<section class="glass-card-blue" style="margin:10px 0"><h4>वेंडर: ${escapeHtml(party)}</h4>
