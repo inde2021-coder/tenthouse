@@ -193,7 +193,7 @@ input[type="checkbox"],input[type="radio"] { width:auto !important; flex:0 0 aut
         .backend-settings-clean{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0}
         .backend-settings-clean input,.backend-settings-clean select{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
         .backend-settings-clean small{display:block;line-height:1.5;overflow-wrap:anywhere;margin:0 0 6px;color:var(--text-muted,#9ca3af)}
-        .phone-call-link{display:inline-flex;align-items:center;gap:5px;color:#0b8f58;font-weight:700;text-decoration:none;white-space:nowrap}.phone-call-link:hover{text-decoration:underline}
+        .phone-call-link{display:inline-flex;align-items:center;gap:5px;color:#0b8f58;font-weight:700;text-decoration:none;white-space:nowrap}
 
 /* Unified Radhe Krishn button system: consistent sizing, colors and touch targets */
 :root { --rk-btn-primary:#2563eb; --rk-btn-primary-dark:#1d4ed8; --rk-btn-success:#059669; --rk-btn-danger:#dc2626; --rk-btn-neutral:#e2e8f0; }
@@ -302,20 +302,10 @@ button:not(:disabled):not(.menu-item):not(#menuToggleBtn):not(.danger-action):no
 .btn-orange,.orange-action{background:linear-gradient(135deg,#fdba74,#f97316 58%,#c2410c)!important;color:#fff!important;border:1px solid rgba(255,237,213,.9)!important}
 .danger-action,.btn-danger,.delete-btn,button.delete,button[onclick*="delete" i],button[onclick*="Delete" i]{background:linear-gradient(135deg,#fda4af,#ef4444 58%,#b91c1c)!important;color:#fff!important;border:1px solid rgba(254,202,202,.9)!important}
 button:not(:disabled),input[type="button"],input[type="submit"],.btn,.action-btn,.glass-btn-blue,.glass-btn-cyan,.glass-btn-green,.glass-btn-whatsapp{position:relative;isolation:isolate;overflow:hidden;transition:transform .2s ease,box-shadow .25s ease,filter .25s ease!important;box-shadow:4px 5px 10px rgba(15,23,42,.22),inset 1px 1px 0 rgba(255,255,255,.55),inset -1px -1px 0 rgba(15,23,42,.12)!important}
-button:not(:disabled):not(.menu-item):not(#menuToggleBtn):hover,input[type="button"]:hover,input[type="submit"]:hover,.btn:hover,.action-btn:hover,.glass-btn-blue:hover,.glass-btn-cyan:hover,.glass-btn-green:hover,.glass-btn-whatsapp:hover{transform:translateY(-2px);filter:brightness(1.08) saturate(1.08);box-shadow:0 8px 18px rgba(15,23,42,.25),inset 0 1px 0 rgba(255,255,255,.78),inset 0 -1px 0 rgba(15,23,42,.12)!important}
 button:not(:disabled):not(.menu-item):not(#menuToggleBtn)::before,.btn::before,.action-btn::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.28) 28%,rgba(255,255,255,.06) 48%,transparent 68%);opacity:.7;transition:opacity .2s ease,transform .35s ease}
-button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before{opacity:1;transform:translateX(8%)}
 /* Each menu item has a distinct glass tint on hover/active. */
 .menu-item{position:relative;isolation:isolate;overflow:hidden;border:1px solid transparent!important;transition:background .22s ease,color .22s ease,box-shadow .22s ease,transform .22s ease!important}
-.menu-item:nth-child(6n+1):hover,.menu-item:nth-child(6n+1).active{background:linear-gradient(135deg,rgba(96,165,250,.96),rgba(37,99,235,.92))!important;color:#fff!important}
-.menu-item:nth-child(6n+2):hover,.menu-item:nth-child(6n+2).active{background:linear-gradient(135deg,rgba(45,212,191,.96),rgba(13,148,136,.92))!important;color:#fff!important}
-.menu-item:nth-child(6n+3):hover,.menu-item:nth-child(6n+3).active{background:linear-gradient(135deg,rgba(196,181,253,.98),rgba(124,58,237,.94))!important;color:#fff!important}
-.menu-item:nth-child(6n+4):hover,.menu-item:nth-child(6n+4).active{background:linear-gradient(135deg,rgba(253,186,116,.98),rgba(234,88,12,.94))!important;color:#fff!important}
-.menu-item:nth-child(6n+5):hover,.menu-item:nth-child(6n+5).active{background:linear-gradient(135deg,rgba(134,239,172,.98),rgba(22,163,74,.94))!important;color:#052e16!important}
-.menu-item:nth-child(6n):hover,.menu-item:nth-child(6n).active{background:linear-gradient(135deg,rgba(249,168,212,.98),rgba(219,39,119,.94))!important;color:#fff!important}
-.menu-item:hover{transform:translateX(3px);border-color:rgba(255,255,255,.75)!important;box-shadow:inset 1px 1px 0 rgba(255,255,255,.72),inset -1px -1px 0 rgba(15,23,42,.12),0 6px 14px rgba(15,23,42,.16)!important;backdrop-filter:blur(14px) saturate(1.35)}
 .menu-item::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 15%,rgba(255,255,255,.38) 42%,rgba(255,255,255,.05) 56%,transparent 78%);transform:translateX(-110%);transition:transform .5s ease}
-.menu-item:hover::after{transform:translateX(110%)}
 .menu-item.active{border-color:rgba(255,255,255,.6)!important;box-shadow:inset 1px 1px 0 rgba(255,255,255,.5),0 4px 12px rgba(15,23,42,.14)!important}
 @media(prefers-reduced-motion:reduce){button,.btn,.action-btn,.menu-item,input,select,textarea{transition:none!important}}
 </style>
@@ -332,7 +322,6 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 .table-responsive tbody tr:nth-child(4n+3){background-color:#fff8ed!important}
 .table-responsive tbody tr:nth-child(4n){background-color:#f8f4ff!important}
 .table-responsive tbody tr td{background-color:transparent!important;color:#182230}
-.table-responsive tbody tr:hover{filter:none!important;box-shadow:inset 0 0 0 1px rgba(76,112,160,.22)}
 /* Customer payment status: green = paid, blue = partial/due, red = no payment. Text stays black. */
 #customerTableBody tr.customer-paid,
 #customerTableBody tr.customer-paid td{background-color:#d9f3df!important;color:#111827!important}
@@ -340,9 +329,6 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 #customerTableBody tr.customer-due td{background-color:#dceaff!important;color:#111827!important}
 #customerTableBody tr.customer-unpaid,
 #customerTableBody tr.customer-unpaid td{background-color:#ffe0e0!important;color:#111827!important}
-#customerTableBody tr.customer-paid:hover,
-#customerTableBody tr.customer-due:hover,
-#customerTableBody tr.customer-unpaid:hover{filter:brightness(.985)!important}
 #customerTableBody tr td{border-bottom:1px solid rgba(100,116,139,.16)!important}
 @media(prefers-reduced-motion:reduce){.table-responsive tbody tr{transition:none}}
 </style>
@@ -499,7 +485,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 #adminPanel .sidebar{background:linear-gradient(180deg,#101a2b,#0a111e)!important;border-right:1px solid var(--rk-line)!important;box-shadow:12px 0 36px rgba(0,0,0,.22)}
 #adminPanel .sidebar-brand,#adminPanel .menu-item{background:rgba(255,255,255,.035)!important;color:#b7c5dc!important;border:1px solid transparent;box-shadow:none!important}
 #adminPanel .menu-item{border-radius:12px;transition:transform .18s ease,background .18s ease,border-color .18s ease}
-#adminPanel .menu-item:hover{transform:translateX(3px);background:rgba(107,157,236,.12)!important;border-color:rgba(127,174,245,.2)}
 #adminPanel .menu-item.active{background:linear-gradient(110deg,rgba(61,119,207,.42),rgba(32,77,139,.24))!important;border-color:rgba(126,177,255,.32);color:#fff!important;box-shadow:inset 3px 0 #8bb8ff,0 8px 24px rgba(0,0,0,.2)}
 #adminPanel .header{background:rgba(10,17,29,.78);border-bottom:1px solid var(--rk-line);backdrop-filter:blur(18px)}
 #adminPanel .content-body{scrollbar-color:#344b6d transparent}
@@ -511,14 +496,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 #adminPanel input::placeholder,#adminPanel textarea::placeholder,#customerFirstPortal input::placeholder,#customerFirstPortal textarea::placeholder{color:#73839c!important}
 #adminPanel button,.rk-customer-submit,.rk-customer-section button{border-radius:12px;transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
 #adminPanel button:not(:disabled),.rk-customer-submit,.rk-customer-section button:not(:disabled){box-shadow:0 8px 18px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.17)}
-#adminPanel button:not(:disabled):hover,.rk-customer-submit:hover,.rk-customer-section button:not(:disabled):hover{transform:translateY(-2px);filter:brightness(1.09);box-shadow:0 13px 26px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.35)}
 #adminPanel button:not(:disabled):active,.rk-customer-submit:active,.rk-customer-section button:not(:disabled):active{transform:translateY(1px) scale(.985);box-shadow:inset 3px 4px 9px rgba(0,0,0,.28)}
 #adminPanel .table-responsive{overflow:auto!important;border:1px solid rgba(143,176,225,.17);border-radius:15px;background:rgba(8,15,26,.62);box-shadow:0 14px 32px rgba(0,0,0,.2)}
 #adminPanel table,#customerFirstPortal table{width:100%;border-collapse:separate!important;border-spacing:0!important;color:#e9f0fc!important;font-size:13px}
 #adminPanel table thead th,#customerFirstPortal table thead th{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,#20334e,#17263b)!important;color:#dceaff!important;font-size:11px;font-weight:800;letter-spacing:.055em;text-transform:uppercase;padding:14px 13px!important;border-bottom:1px solid rgba(145,181,235,.25)!important;white-space:nowrap}
 #adminPanel table tbody td,#customerFirstPortal table tbody td{padding:13px!important;border-bottom:1px solid rgba(145,176,220,.10)!important;color:#d6e0ef!important;vertical-align:middle;background:rgba(15,25,41,.45)!important}
 #adminPanel table tbody tr:nth-child(even) td{background:rgba(24,37,57,.55)!important}
-#adminPanel table tbody tr:hover td{background:rgba(64,105,164,.19)!important}
 #adminPanel table tbody tr:last-child td,#customerFirstPortal table tbody tr:last-child td{border-bottom:0!important}
 #adminPanel td.table-actions{white-space:nowrap;min-width:150px}
 #adminPanel .table-responsive::-webkit-scrollbar,#customerFirstPortal .table-responsive::-webkit-scrollbar{height:8px;width:8px}
@@ -569,7 +552,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 #customerFirstPortal .rk-hero-copy h2 em{color:#f3c987;font-style:normal}
 #customerFirstPortal .rk-hero-description{max-width:440px;margin:17px 0 22px;color:rgba(255,255,255,.77);font-size:14px;line-height:1.85;font-weight:500}
 #customerFirstPortal .rk-hero-cta{display:inline-flex;align-items:center;gap:13px;min-height:48px;padding:0 22px;border:0;border-radius:14px;background:linear-gradient(135deg,#f8d99f,#dca85e);color:#241b24;font-size:14px;font-weight:900;box-shadow:0 10px 25px rgba(224,172,98,.27),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .2s}
-#customerFirstPortal .rk-hero-cta:hover{transform:translateY(-3px)}
 #customerFirstPortal .rk-hero-trust{display:flex;flex-wrap:wrap;gap:18px;margin-top:24px;color:rgba(255,255,255,.72);font-size:11px;font-weight:700}
 #customerFirstPortal .rk-hero-trust i{margin-right:6px;color:#f2c987}
 #customerFirstPortal .rk-hero-art{position:relative;min-height:300px;display:grid;place-items:center}
@@ -746,7 +728,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         <h2 id="rkAdminGateTitle">सुरक्षित व्यवस्थापक प्रवेश</h2>
         <p>Secret Admin Login — केवल अधिकृत स्टाफ के लिए।</p>
         <p class="rk-admin-howto">Desktop: Ctrl + Shift + K · Mobile: Shop Logo को 1–2 सेकंड दबाएँ या 5 बार टैप करें</p>
-        <form onsubmit="handleDirectAdminLogin(event)" autocomplete="off">
+        <form onsubmit="return window.handleDirectAdminLogin(event)" autocomplete="off">
           <label for="rkAdminAccessToken">Access Token</label>
           <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
           <button type="submit" class="glass-btn-green"><i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें</button>
@@ -898,6 +880,16 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 <div class="content-body">
                     <!-- Dashboard -->
                     <div id="dashboard" class="page-section active">
+                        <section id="adminpanelimeage-hero" aria-label="Radhe Krishn Tent House premium admin banner">
+                          <div class="rk-admin-hero-copy">
+                            <span class="rk-admin-hero-kicker">PREMIUM UTENSILS RENTAL MANAGEMENT</span>
+                            <h1>Radhe Krishn Tent House</h1>
+                            <p>Serve with Devotion · Manage with Excellence</p>
+                          </div>
+                          <div class="rk-admin-hero-art" aria-hidden="true">
+                            <span>🥣</span><span>🍽️</span><span>🥄</span><span>🍲</span><span>🥛</span>
+                          </div>
+                        </section>
                         <div class="glass-card-green" style="margin-bottom: 12px;">
                             <h3 style="color:var(--emerald-neon); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-chart-line"></i> आमदनी व खर्च का सारांश</h3>
                             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -1897,33 +1889,43 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(field)field.value='';
             document.getElementById('customerFirstPortal').style.display='flex';
         }
-        async function handleDirectAdminLogin(event) {
-            event.preventDefault();
+        window.handleDirectAdminLogin = async function(event) {
+            if(event){event.preventDefault();event.stopPropagation();}
             const field=document.getElementById('rkAdminAccessToken');
-            if(window.__rkRenderPreviewMode){
-                const previewToken='PREVIEW-DEMO-ONLY-ACCESS';
-                window.__rkVerifiedAdminToken=previewToken;
-                if(field)field.value='';
-                await loginWithGoogle(previewToken);
-                return;
-            }
-            const token=String(field?.value||'').trim();
-            if(token.length<32){showActionMessage('अमान्य एक्सेस टोकन।','error');return;}
-            const settings=safeGetStorage('softwareSettings',{});
-            const api=getBackendApiUrl(settings);
-            const submit=event.submitter;
-            if(submit){submit.disabled=true;submit.dataset.originalText=submit.innerHTML;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
+            const form=field?.closest('form');
+            const submit=(event?.submitter)||form?.querySelector('button[type="submit"]');
+            const original=submit?.innerHTML;
+            if(submit){submit.disabled=true;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
             try{
-                const response=await fetch(api+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
-                if(!response.ok)throw new Error(response.status===429?'बहुत अधिक प्रयास। कुछ समय बाद पुनः प्रयास करें।':'एक्सेस सत्यापित नहीं हुआ।');
+                const token=String(field?.value||'').trim();
+                if(window.__rkRenderPreviewMode){
+                    if(token!=='PREVIEW-DEMO-ONLY-ACCESS') throw new Error('Preview Token सही डालें: PREVIEW-DEMO-ONLY-ACCESS');
+                    window.__rkVerifiedAdminToken=token;
+                    if(field)field.value='';
+                    await loginWithGoogle(token);
+                    const admin=document.getElementById('adminPanel');
+                    if(admin && admin.style.display!=='block') throw new Error('Preview Admin खुल नहीं पाया। पेज को Refresh करके दोबारा प्रयास करें।');
+                    return false;
+                }
+                if(token.length<32) throw new Error('अमान्य एक्सेस टोकन।');
+                const settings=safeGetStorage('softwareSettings',{});
+                const api=getBackendApiUrl(settings);
+                if(!api) throw new Error('Backend API URL सेट नहीं है।');
+                const response=await fetch(api.replace(/\/+$/,'')+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
+                if(!response.ok) throw new Error(response.status===429?'बहुत अधिक प्रयास। कुछ समय बाद पुनः प्रयास करें।':'एक्सेस सत्यापित नहीं हुआ।');
                 const result=await response.json();
-                if(result.ok!==true)throw new Error('एक्सेस सत्यापित नहीं हुआ।');
+                if(result.ok!==true) throw new Error('एक्सेस सत्यापित नहीं हुआ।');
                 window.__rkVerifiedAdminToken=token;
                 if(field)field.value='';
                 await loginWithGoogle(token);
-            }catch(error){window.__rkVerifiedAdminToken='';showActionMessage(error.message||'व्यवस्थापक लॉगिन विफल।','error');}
-            finally{if(submit){submit.disabled=false;submit.innerHTML=submit.dataset.originalText||'सत्यापित करें और आगे बढ़ें';}}
-        }
+            }catch(error){
+                window.__rkVerifiedAdminToken='';
+                showActionMessage(error?.message||'व्यवस्थापक लॉगिन विफल।','error');
+            }finally{
+                if(submit){submit.disabled=false;submit.innerHTML=original||'<i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें';}
+            }
+            return false;
+        };
         function returnToCustomerPortal() {
             closeAppMenu();
             document.getElementById('adminPanel').style.display='none';
@@ -2222,10 +2224,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const esc=escapeHtml,cur=v=>'₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}),items=b.items||[],rows=[];
             let title='Booking Bill / Customer Statement';
             if(type==='dispatch'){title='Dispatch Slip';(b.dispatchEntries||[]).forEach(e=>rows.push('<tr><td>'+esc(e.itemName||items[Number(e.itemIndex)]?.name||'-')+'</td><td>'+esc(e.date||'-')+'</td><td>'+Number(e.qty||0)+'</td><td>'+cur(e.unitRent)+'</td></tr>'));}
-            else if(type==='return'){title='Return Slip';(b.returnEntries||[]).forEach(e=>(e.items||[]).forEach(i=>rows.push('<tr><td>'+esc(items[Number(i.itemIndex)]?.name||'-')+'</td><td>'+esc(e.date||'-')+'</td><td>'+Number(i.qty||0)+'</td><td>'+esc(e.mode||'-')+'</td></tr>')));}
+            else if(type==='return'){title='Return Slip';(b.returnEntries||[]).forEach(e=>(e.items||[]).forEach(i=>{const item=items[Number(i.itemIndex)]||{};rows.push('<tr><td>'+esc(item.name||'-')+'</td><td>'+esc(e.date||'-')+'</td><td>'+Number(i.qty||0)+'</td><td>'+Math.max(0,Number(item.missingQty)||0)+'</td></tr>')}));}
             else{title='Final Bill / Customer Account';items.forEach(i=>rows.push('<tr><td>'+esc(i.name)+'</td><td>'+Number(i.qty||0)+'</td><td>'+cur(i.rentPrice)+'</td><td>'+Number(i.returnedQty||0)+'</td><td>'+Number(i.missingQty||0)+'</td></tr>'));}
             if(type!=='bill'&&!rows.length){showActionMessage(title+' अभी तैयार नहीं हुई है।','info');return;}
-            const th=type==='bill'?'<tr><th>सामान</th><th>बुक मात्रा</th><th>दर</th><th>वापस</th><th>Missing</th></tr>':'<tr><th>सामान</th><th>तारीख</th><th>मात्रा</th><th>'+(type==='dispatch'?'प्रति इकाई किराया':'प्रकार')+'</th></tr>';
+            const th=type==='bill'?'<tr><th>सामान</th><th>बुक मात्रा</th><th>दर</th><th>वापस</th><th>Missing</th></tr>':type==='return'?'<tr><th>सामान</th><th>वापसी तारीख</th><th>वापस मिली मात्रा</th><th>Missing Item / मिसिंग मात्रा</th></tr>':'<tr><th>सामान</th><th>तारीख</th><th>भेजी मात्रा</th><th>प्रति इकाई किराया</th></tr>';
             const summary=type==='bill'?'<section class="summary"><p><span>कुल किराया / Bill Total</span><b>'+cur(b.totalAmount)+'</b></p><p><span>Other Charges</span><b>'+cur(b.otherCharges)+'</b></p><p><span>Discount</span><b>'+cur(b.discountAmount)+'</b></p><p><span>Advance</span><b>'+cur(b.advanceAmount)+'</b></p><p><span>जमा राशि</span><b>'+cur(b.totalPaid)+'</b></p><p class="due"><span>बाकी / Balance Due</span><b>'+cur(b.dueAmount)+'</b></p></section>':'';
             const win=window.open('','_blank','width=900,height=720');if(!win){showActionMessage('Print Popup खोलने की अनुमति दें।','error');return;}
             win.document.write('<!doctype html><html lang="hi"><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font:14px Arial,sans-serif;color:#172033;padding:28px;max-width:850px;margin:auto}header{border-bottom:3px solid #1f4b82;padding-bottom:14px;margin-bottom:18px}h1{margin:0 0 7px;font-size:24px;color:#14375e}p{margin:5px 0}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f1f5fb;padding:12px;border-radius:9px;margin:15px 0}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #cbd5e1;padding:10px;text-align:left}th{background:#e8eff8}.summary{margin:20px 0 0 auto;max-width:360px}.summary p{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:7px}.due{color:#b42318;font-weight:bold}.stamp{margin-top:28px;text-align:right;color:#64748b;font-size:12px}</style><body><header><h1>Radhe Krishn Bartan Tent House</h1><b>'+esc(title)+'</b></header><div class="meta"><p>Booking No: <b>#'+esc(b.id)+'</b></p><p>Status: <b>'+esc(b.status)+'</b></p><p>Customer: <b>'+esc(b.name)+'</b></p><p>Mobile: <b>'+esc(b.maskedMobile)+'</b></p><p>Event Date: '+esc(b.date)+'</p><p>Return Date: '+esc(b.returnDate)+'</p></div><table><thead>'+th+'</thead><tbody>'+rows.join('')+'</tbody></table>'+summary+'<div class="stamp">Customer Booking Portal · '+new Date().toLocaleString('en-IN')+'</div><script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>');
@@ -3837,9 +3839,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 #customer-list table tbody#customerTableBody tr.customer-paid { background:#c9f2d3 !important; }
 #customer-list table tbody#customerTableBody tr.customer-due { background:#d4e6ff !important; }
 #customer-list table tbody#customerTableBody tr.customer-unpaid { background:#ffdada !important; }
-#customer-list table tbody#customerTableBody tr.customer-paid:hover > td,
-#customer-list table tbody#customerTableBody tr.customer-due:hover > td,
-#customer-list table tbody#customerTableBody tr.customer-unpaid:hover > td { filter:brightness(.97); }
 #customer-list .customer-table-tools span { display:inline-block; padding:6px 10px; border-radius:8px; background:#fff; border:1px solid #cbd5e1; }
 </style>
 
@@ -3965,7 +3964,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
  .table-responsive table{min-width:680px;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
  .table-responsive thead th{position:sticky;top:0;z-index:2;background:linear-gradient(180deg,#dbeafe,#c7ddfa);color:#17365d;font-weight:800;white-space:nowrap;border-bottom:2px solid #9bb9df}
  .table-responsive tbody tr:nth-child(even){background:rgba(255,255,255,.55)}
- .table-responsive tbody tr:hover{filter:brightness(.97);outline:1px solid rgba(37,99,235,.25)}
  #customerTableBody tr.customer-paid{background:#dcfce7!important;color:#14532d}
  #customerTableBody tr.customer-due{background:#dbeafe!important;color:#1e3a8a}
  #customerTableBody tr.customer-unpaid{background:#fee2e2!important;color:#991b1b}
@@ -3980,7 +3978,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 .rk-ai-controls #aiSendButton,.rk-ai-controls #aiVoiceButton{width:auto!important;min-width:94px!important;min-height:44px!important;margin:0!important;border-radius:13px!important;box-shadow:0 7px 16px rgba(15,23,42,.18),inset 0 1px 0 rgba(255,255,255,.65)!important;white-space:nowrap}
 .rk-ai-controls #aiSendButton{background:linear-gradient(135deg,#0f766e,#14b8a6)!important;color:#fff!important}
 .rk-ai-controls #aiVoiceButton{background:linear-gradient(135deg,#6d28d9,#c026d3)!important;color:#fff!important}
-.rk-ai-controls #aiSendButton:hover,.rk-ai-controls #aiVoiceButton:hover{filter:brightness(1.12);box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 18px rgba(129,140,248,.48),inset 0 1px 0 rgba(255,255,255,.85)!important;transform:translateY(-1px)}
 .rk-inv-totals .rk-inv-paid td,.rk-inv-totals .rk-inv-due th{padding:9px 10px!important;line-height:1.25;border-top:1px solid rgba(100,116,139,.22)}
 .rk-inv-totals .rk-inv-paid{background:linear-gradient(100deg,#ecfdf5,#d1fae5)!important;color:#065f46!important}
 .rk-inv-totals .rk-inv-due{background:linear-gradient(100deg,#fff7ed,#ffedd5)!important;color:#9a3412!important}
@@ -4068,7 +4065,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       .sidebar-brand{background:linear-gradient(145deg,rgba(40,62,91,.78),rgba(14,24,39,.94))!important;color:#f1f7ff!important;border:1px solid var(--rk-border);box-shadow:var(--rk-shadow)!important;font-size:15px;letter-spacing:.025em}
       .menu-list{padding:10px 10px 72px}
       .menu-item{background:rgba(255,255,255,.025)!important;color:#aebed2!important;border:1px solid transparent;border-radius:13px;font-size:13px;font-weight:700;padding:11px 13px;transition:transform .22s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease}
-      .menu-item:hover{transform:translateX(3px);background:rgba(102,157,220,.11)!important;border-color:rgba(119,184,237,.18)}
       .menu-item.active{background:linear-gradient(135deg,rgba(69,132,220,.96),rgba(36,83,151,.94))!important;color:#fff!important;border-color:rgba(158,210,255,.34);box-shadow:0 8px 24px rgba(35,105,205,.28),inset 0 1px 0 rgba(255,255,255,.3)}
       .main-content{background:transparent}
       .header{background:rgba(10,17,29,.72)!important;border-bottom:1px solid var(--rk-border)!important;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);height:64px;padding:0 24px}
@@ -4086,7 +4082,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       select option{background:#101b2b;color:#eaf3ff}
       button,.glass-btn-blue,.glass-btn-cyan,.glass-btn-green,.glass-btn-whatsapp,.action-btn{font-family:'Manrope','DM Sans',sans-serif!important;font-weight:800!important;letter-spacing:.01em;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease!important}
       button:not(:disabled),.glass-btn-blue,.glass-btn-cyan,.glass-btn-green,.glass-btn-whatsapp,.action-btn{border:1px solid rgba(190,224,255,.24)!important;border-radius:13px!important;color:#f8fbff!important;background:linear-gradient(155deg,rgba(116,177,235,.95) 0%,rgba(56,111,187,.98) 46%,rgba(28,65,119,.99) 100%)!important;box-shadow:0 8px 18px rgba(0,0,0,.32),0 3px 0 rgba(9,26,48,.9),inset 0 1px 0 rgba(255,255,255,.48),inset 0 -1px 0 rgba(0,0,0,.22)!important;text-shadow:0 1px 2px rgba(0,0,0,.2)}
-      button:not(:disabled):hover,.glass-btn-blue:hover,.glass-btn-cyan:hover,.glass-btn-green:hover,.glass-btn-whatsapp:hover,.action-btn:hover{transform:translateY(-2px);filter:brightness(1.12);box-shadow:0 13px 25px rgba(0,0,0,.38),0 4px 0 rgba(9,26,48,.9),inset 0 1px 0 rgba(255,255,255,.58)!important}
       button:not(:disabled):active,.glass-btn-blue:active,.glass-btn-cyan:active,.glass-btn-green:active,.glass-btn-whatsapp:active,.action-btn:active{transform:translateY(1px);box-shadow:0 3px 8px rgba(0,0,0,.35),inset 0 3px 8px rgba(0,0,0,.25)!important}
       .glass-btn-cyan{background:linear-gradient(155deg,#bd8af5,#7950bb 55%,#4c327e)!important}
       .glass-btn-green{background:linear-gradient(155deg,#56d9b0,#159b79 55%,#0c5c4b)!important}
@@ -4097,7 +4092,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       table{color:var(--rk-text)}
       th{background:linear-gradient(180deg,#1b2d45,#142238)!important;color:#cfe5ff!important;border-bottom:1px solid rgba(139,184,230,.22);font-size:11px;letter-spacing:.055em;text-transform:uppercase}
       td{color:#d8e4f3!important;border-bottom:1px solid rgba(141,171,207,.1);font-size:12.5px}
-      tr:hover td{background:rgba(87,145,210,.055)}
       #actionToast{background:rgba(13,24,40,.96)!important;color:#eaf4ff!important;border:1px solid var(--rk-border)!important;box-shadow:0 18px 40px rgba(0,0,0,.45)!important}
       .form-grid{gap:16px}
       .page-section{min-width:0}
@@ -4119,22 +4113,21 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       .table-responsive th:first-child{border-radius:10px 0 0 0}.table-responsive th:last-child{border-radius:0 10px 0 0}
       .table-responsive td{padding:13px 15px!important;background:rgba(18,31,49,.72)!important;color:#dce7f5!important;border:0!important;border-bottom:1px solid rgba(133,164,202,.105)!important;font-size:12.5px!important;font-weight:560!important;line-height:1.5;vertical-align:middle;white-space:nowrap}
       .table-responsive tbody tr:nth-child(even) td{background:rgba(23,39,59,.78)!important}
-      .table-responsive tbody tr:hover td{background:linear-gradient(90deg,rgba(61,113,168,.2),rgba(37,73,111,.16))!important;color:#fff!important}
       .table-responsive tbody tr:last-child td{border-bottom:0!important}.table-responsive tbody tr:last-child td:first-child{border-radius:0 0 0 10px}.table-responsive tbody tr:last-child td:last-child{border-radius:0 0 10px 0}
-      .table-responsive tbody tr td:first-child{border-left:2px solid transparent!important}.table-responsive tbody tr:hover td:first-child{border-left-color:#70c8e6!important}
+      .table-responsive tbody tr td:first-child{border-left:2px solid transparent!important}
       .table-responsive td.table-actions{position:sticky;right:0;z-index:4;background:linear-gradient(90deg,rgba(17,31,49,.97),rgba(19,35,55,.99))!important;box-shadow:-9px 0 14px rgba(0,0,0,.18);white-space:nowrap}
       .table-responsive td.table-actions button,.table-responsive td:last-child button{margin:2px 3px!important;min-height:32px!important;padding:7px 10px!important;border-radius:9px!important;font-size:11px!important}
       .table-responsive .action-btn{background:linear-gradient(150deg,#334d6d,#1c3049)!important;border:1px solid rgba(166,202,237,.2)!important;color:#eaf4ff!important;box-shadow:0 3px 8px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.14)!important}
       .table-responsive .danger,.table-responsive .danger-btn,.table-responsive button.delete-btn{background:linear-gradient(150deg,#bd5260,#792d3b)!important}
       .table-responsive td[colspan]{padding:26px 16px!important;text-align:center!important;color:#91a7c1!important;font-weight:650!important}
       .table-responsive .status-badge,.table-responsive .status-pill,.table-responsive .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid rgba(145,180,220,.2);background:rgba(88,125,166,.15);color:#d9eaff;font-size:10.5px;font-weight:850;letter-spacing:.015em}
-      .table-responsive a{color:#83d9f0!important;text-decoration:none;font-weight:750}.table-responsive a:hover{text-decoration:underline}
+      .table-responsive a{color:#83d9f0!important;text-decoration:none;font-weight:750}
       .table-responsive input,.table-responsive select{min-width:92px!important;min-height:34px!important;padding:7px 9px!important;margin:0!important;border-radius:9px!important;font-size:12px!important}
       .table-responsive tr:focus-within td{background:rgba(49,91,139,.22)!important}
       .rk-developer-footer{position:relative;overflow:hidden;max-width:900px!important;margin:22px auto 8px!important;padding:22px 24px!important;border-radius:22px!important;text-align:center!important;background:radial-gradient(ellipse at 50% 0%,rgba(76,135,192,.2),transparent 58%),linear-gradient(145deg,rgba(18,31,49,.97),rgba(8,15,26,.98))!important;border:1px solid rgba(132,174,218,.24)!important;box-shadow:0 20px 46px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important;color:#e8f2ff!important}
       .rk-dev-title{display:inline-flex;align-items:center;gap:8px;color:#9fe7f4!important;font-size:10px!important;font-weight:900!important;letter-spacing:.18em!important;text-transform:uppercase}.rk-dev-title:before{content:"";width:20px;height:1px;background:linear-gradient(90deg,transparent,#72d8ec)}.rk-dev-title:after{content:"";width:20px;height:1px;background:linear-gradient(90deg,#72d8ec,transparent)}
       .rk-dev-byline{margin:0 auto 3px;color:#b7cbe2;font-size:12px;font-weight:650;letter-spacing:.015em}.rk-dev-byline strong{color:#e8f5ff;font-weight:850}.rk-dev-name{margin:10px 0 3px!important;color:#f5f8ff!important;font-size:19px!important;font-weight:850!important;letter-spacing:-.025em}.rk-dev-rights{max-width:680px!important;margin:8px auto 14px!important;color:#9fb1c8!important;font-size:11px!important;line-height:1.75!important}
-      .rk-dev-contact{display:flex!important;justify-content:center!important;align-items:center!important;gap:9px!important;flex-wrap:wrap}.rk-dev-contact a{min-height:36px;padding:8px 13px;border-radius:11px;border:1px solid rgba(143,184,226,.22);background:rgba(93,139,187,.13);color:#e6f4ff!important;font-size:11px;font-weight:800;text-decoration:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.rk-dev-contact a:hover{background:rgba(87,161,205,.24);transform:translateY(-1px)}.rk-dev-number{color:#8ea6c3!important;font-size:11px;font-weight:750}
+      .rk-dev-contact{display:flex!important;justify-content:center!important;align-items:center!important;gap:9px!important;flex-wrap:wrap}.rk-dev-contact a{min-height:36px;padding:8px 13px;border-radius:11px;border:1px solid rgba(143,184,226,.22);background:rgba(93,139,187,.13);color:#e6f4ff!important;font-size:11px;font-weight:800;text-decoration:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.rk-dev-number{color:#8ea6c3!important;font-size:11px;font-weight:750}
       .rk-admin-gate-card{border:1px solid rgba(126,190,235,.28)!important;box-shadow:0 28px 90px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.12)!important}.rk-admin-gate-mark{width:54px;height:54px;margin:0 auto 14px;border-radius:17px;display:grid;place-items:center;color:#a4e8f4;font-size:22px;background:linear-gradient(145deg,rgba(75,143,193,.28),rgba(21,40,62,.72));border:1px solid rgba(136,198,232,.28);box-shadow:0 10px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.2)}.rk-admin-gate-card h2{font-size:20px!important;margin-bottom:7px}.rk-admin-gate-card p{font-size:12px!important}.rk-admin-gate-card form{margin-top:18px;text-align:left}.rk-admin-gate-card form button{width:100%;margin-top:8px}.rk-admin-cancel{width:100%;margin-top:10px}.rk-admin-gate-note{margin-top:12px!important;font-size:10px!important;color:#7890aa!important}
       @media(max-width:700px){.table-responsive{max-height:58vh!important;padding:7px!important;border-radius:14px!important}.table-responsive th{padding:11px 12px!important;font-size:10px!important}.table-responsive td{padding:11px 12px!important;font-size:12px!important}.rk-developer-footer{padding:18px 14px!important;margin-top:16px!important}.rk-dev-name{font-size:17px!important}.rk-dev-contact{gap:7px!important}}
       @media(prefers-reduced-motion:reduce){.table-responsive tbody tr,.rk-dev-contact a{transition:none!important}}
@@ -4187,12 +4180,159 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       .rk-customer-form #onlinePaymentSection{background:rgba(5,12,22,.58)!important;border:1px solid rgba(131,171,213,.17);border-radius:15px!important}
       .rk-customer-form #portalQrHint{color:#a9bdd5!important}
       .rk-customer-submit{grid-column:1/-1!important;justify-self:stretch!important;width:100%!important;min-height:58px!important;margin:0!important;border-radius:16px!important;background:linear-gradient(155deg,#c49aff 0%,#8659cf 48%,#56358f 100%)!important;border:1px solid rgba(225,202,255,.36)!important;box-shadow:0 15px 28px rgba(71,43,125,.32),0 4px 0 #332057,inset 0 1px 0 rgba(255,255,255,.56)!important;font-size:15px!important;letter-spacing:.025em!important}
-      .rk-customer-submit:hover{filter:brightness(1.1);transform:translateY(-2px)}
       .rk-customer-submit:active{transform:translateY(2px);box-shadow:0 5px 12px rgba(0,0,0,.28),inset 0 3px 8px rgba(0,0,0,.22)!important}
       .rk-developer-footer{width:100%;max-width:1120px!important}
       @media(max-width:760px){.customer-scroll-wrap{padding:13px!important;gap:14px!important}.rk-customer-brand{min-height:90px;padding:15px!important;gap:12px;border-radius:18px}.rk-customer-brand-mark{width:48px;height:48px;flex-basis:48px;border-radius:14px;font-size:19px}.rk-customer-eyebrow{font-size:8px;letter-spacing:.14em}.rk-customer-brand h1{font-size:clamp(19px,5vw,25px)!important}.rk-customer-subtitle{font-size:10px;margin-top:4px}.rk-customer-brand-seal{padding:7px 9px;font-size:9px}.rk-customer-form{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}.rk-customer-section{padding:16px!important;border-radius:17px!important}.rk-customer-form .form-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}.rk-customer-submit{min-height:52px!important;font-size:14px!important}}
       @media(max-width:390px){.rk-customer-brand-seal{display:none}.rk-customer-brand{gap:10px}.rk-customer-brand-mark{width:43px;height:43px;flex-basis:43px}.rk-customer-section-title{font-size:14px!important}}
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
+
+/* Final customer/admin form contrast lock: override legacy light-theme and browser autofill rules. */
+#customerFirstPortal .rk-customer-form input:not([type="checkbox"]):not([type="radio"]),
+#customerFirstPortal .rk-customer-form select,
+#customerFirstPortal .rk-customer-form textarea,
+#customerFirstPortal .rk-customer-form input[type="file"],
+#welcomeOverlay .rk-admin-gate-card input,
+#adminPanel input:not([type="checkbox"]):not([type="radio"]),
+#adminPanel select,
+#adminPanel textarea {
+  background:linear-gradient(145deg,#0b1523 0%,#14243a 100%) !important;
+  background-color:#0d1929 !important;
+  color:#edf5ff !important;
+  -webkit-text-fill-color:#edf5ff !important;
+  border:1px solid rgba(126,174,220,.32) !important;
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),inset -1px -1px 3px rgba(140,184,226,.06),0 4px 12px rgba(0,0,0,.12) !important;
+  caret-color:#83d9f0 !important;
+}
+#customerFirstPortal .rk-customer-form input::placeholder,
+#customerFirstPortal .rk-customer-form textarea::placeholder,
+#welcomeOverlay input::placeholder,
+#adminPanel input::placeholder,
+#adminPanel textarea::placeholder { color:#8fa8c4 !important; opacity:1 !important; }
+#customerFirstPortal .rk-customer-form input:focus,
+#customerFirstPortal .rk-customer-form select:focus,
+#customerFirstPortal .rk-customer-form textarea:focus,
+#welcomeOverlay input:focus,
+#adminPanel input:focus,
+#adminPanel select:focus,
+#adminPanel textarea:focus {
+  border-color:#62c5df !important;
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.14) !important;
+  outline:none !important;
+}
+#customerFirstPortal .rk-customer-form select option,
+#adminPanel select option { background:#101d2e !important; color:#edf5ff !important; }
+#customerFirstPortal input:-webkit-autofill,
+#customerFirstPortal input:-webkit-autofill:hover,
+#customerFirstPortal input:-webkit-autofill:focus,
+#welcomeOverlay input:-webkit-autofill,
+#adminPanel input:-webkit-autofill {
+  -webkit-text-fill-color:#edf5ff !important;
+  -webkit-box-shadow:0 0 0 1000px #0d1929 inset !important;
+  transition:background-color 99999s ease-out 0s !important;
+}
+@media(max-width:760px){
+ #customerFirstPortal .rk-customer-form input:not([type="checkbox"]):not([type="radio"]),
+ #customerFirstPortal .rk-customer-form select,
+ #customerFirstPortal .rk-customer-form textarea { min-height:46px !important; }
+}
+
+/* Admin workspace v3: opaque surfaces, aligned shell, no transparent code bleed-through. */
+#adminPanel{position:fixed!important;inset:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)!important;width:100%!important;height:auto!important;min-height:0!important;overflow:hidden!important;background:#0b1220!important;color:#edf4ff!important;isolation:isolate!important}
+#adminPanel::before,#adminPanel::after,#adminPanel .admin-container::before,#adminPanel .admin-container::after,#adminPanel .main-content::before,#adminPanel .main-content::after{content:none!important;display:none!important}
+#adminPanel .admin-container{width:100%!important;height:100%!important;min-height:0!important;display:flex!important;overflow:hidden!important;background:#0b1220!important;position:relative!important}
+#adminPanel .sidebar{flex:0 0 264px!important;width:264px!important;min-width:264px!important;height:100%!important;position:relative!important;inset:auto!important;z-index:30!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;padding:14px 10px!important;background:#0e1929!important;border-right:1px solid #263951!important;box-shadow:8px 0 26px rgba(0,0,0,.28)!important;backdrop-filter:none!important}
+#adminPanel .admin-container.sidebar-collapsed .sidebar{width:264px!important;min-width:264px!important;padding:14px 10px!important;border-right:1px solid #263951!important}
+#adminPanel .admin-container.sidebar-collapsed .sidebar>*{display:revert!important}
+#adminPanel .sidebar-brand{flex:0 0 auto!important;margin:4px 4px 14px!important;padding:16px!important;min-height:58px!important;border-radius:15px!important;background:#172943!important;color:#f1f7ff!important;border:1px solid #304967!important;box-shadow:0 8px 22px rgba(0,0,0,.22)!important}
+#adminPanel .menu-list{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:4px 3px 18px!important}
+#adminPanel .menu-item{min-height:42px!important;margin:0 0 5px!important;padding:10px 12px!important;border-radius:11px!important;background:#132136!important;color:#b9c9dc!important;border:1px solid #223650!important;box-shadow:none!important;transform:none!important;font-size:12.5px!important;line-height:1.35!important}
+#adminPanel .menu-item.active{background:linear-gradient(110deg,#2864a9,#193e6d)!important;border-color:#5489c4!important;color:#fff!important;box-shadow:inset 3px 0 #8bdcf0,0 5px 14px rgba(0,0,0,.22)!important}
+#adminPanel .main-content{flex:1 1 auto!important;min-width:0!important;width:calc(100% - 264px)!important;height:100%!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:#0b1422!important}
+#adminPanel .header{flex:0 0 64px!important;height:64px!important;min-height:64px!important;padding:0 22px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:14px!important;position:relative!important;z-index:10!important;background:#111e30!important;border-bottom:1px solid #2a3d56!important;backdrop-filter:none!important}
+#adminPanel #pageTitle{margin:0!important;color:#f3f7ff!important;font-size:16px!important;font-weight:850!important;line-height:1.3!important}
+#adminPanel #menuToggleBtn{min-width:42px!important;min-height:40px!important;flex:0 0 42px!important}
+#adminPanel .content-body{flex:1 1 auto!important;min-height:0!important;min-width:0!important;width:100%!important;overflow:auto!important;overscroll-behavior:contain!important;padding:22px 24px 34px!important;background:#0b1422!important;scrollbar-color:#38516f #0b1422!important}
+#adminPanel .page-section{width:100%!important;max-width:1600px!important;min-width:0!important;margin:0 auto!important}
+#adminPanel .page-section.active{display:block!important}
+#adminPanel .page-section>h2,#adminPanel .page-section>h3{margin:0 0 18px!important;color:#f4f7ff!important;font-size:clamp(21px,2vw,28px)!important;line-height:1.25!important}
+#adminPanel .glass-card-blue,#adminPanel .glass-card-green,#adminPanel .glass-card-purple,#adminPanel .welcome-card,#adminPanel .stat-card,#adminPanel .dashboard-card,#adminPanel .settings-section,#adminPanel .form-section,#adminPanel .section-card{background:#142238!important;background-image:linear-gradient(145deg,#182a42,#111d2e)!important;color:#edf4ff!important;border:1px solid #2b405b!important;border-radius:17px!important;box-shadow:0 10px 28px rgba(0,0,0,.24)!important;backdrop-filter:none!important}
+#adminPanel [style*="background:rgba(255,255,255"],#adminPanel [style*="background: rgba(255,255,255"],#adminPanel [style*="background:#e4ebf5"],#adminPanel [style*="background: #e4ebf5"]{background:#1a2b42!important;color:#eaf2ff!important;border:1px solid #344d6b!important;box-shadow:none!important}
+#adminPanel [style*="color:#1e3a8a"],#adminPanel [style*="color: #1e3a8a"],#adminPanel [style*="color:#334155"],#adminPanel [style*="color: #334155"],#adminPanel [style*="color:#475569"],#adminPanel [style*="color: #475569"]{color:#d2e0f2!important}
+#adminPanel label{display:block!important;color:#b9cce3!important;margin:0 0 7px!important}
+#adminPanel input:not([type=checkbox]):not([type=radio]):not([type=range]),#adminPanel select,#adminPanel textarea{background:#0c192a!important;background-image:linear-gradient(145deg,#0c192a,#13243a)!important;color:#eef5ff!important;-webkit-text-fill-color:#eef5ff!important;border:1px solid #344c69!important;border-radius:11px!important;box-shadow:inset 2px 3px 8px rgba(0,0,0,.32)!important}
+#adminPanel input::placeholder,#adminPanel textarea::placeholder{color:#8fa6c0!important;opacity:1!important}
+#adminPanel .table-responsive{background:#0e1a2a!important;border:1px solid #2b405b!important;border-radius:14px!important;box-shadow:none!important;max-width:100%!important}
+#adminPanel table{width:100%;border-collapse:separate!important;border-spacing:0!important}
+#adminPanel .table-responsive th{background:#1c304a!important;color:#e1edfc!important}
+#adminPanel .table-responsive td{background:#101e30!important;color:#d9e5f4!important}
+#adminPanel .table-responsive tr:nth-child(even) td{background:#14243a!important}
+#adminPanel button{max-width:100%;white-space:normal}
+@media(min-width:701px){#adminPanel .admin-container.sidebar-collapsed .sidebar{flex-basis:264px!important}}
+@media(max-width:700px){
+#adminPanel .sidebar{position:absolute!important;left:0!important;top:0!important;bottom:0!important;width:min(84vw,292px)!important;min-width:0!important;flex-basis:auto!important;z-index:1002!important;box-shadow:18px 0 40px rgba(0,0,0,.5)!important;transition:transform .2s ease!important}
+#adminPanel .admin-container.sidebar-collapsed .sidebar{width:min(84vw,292px)!important;min-width:0!important;padding:14px 10px!important;transform:translateX(-105%)!important}
+#adminPanel .admin-container.sidebar-collapsed .sidebar>*{display:revert!important}
+#adminPanel .admin-container:not(.sidebar-collapsed) .sidebar{transform:translateX(0)!important}
+#adminPanel .main-content{width:100%!important}
+#adminPanel .header{height:56px!important;min-height:56px!important;flex-basis:56px!important;padding:0 12px!important}
+#adminPanel .content-body{padding:13px 12px 28px!important}
+#adminPanel .page-section>h2,#adminPanel .page-section>h3{font-size:21px!important;margin-bottom:14px!important}
+#adminPanel .glass-card-blue,#adminPanel .glass-card-green,#adminPanel .glass-card-purple,#adminPanel .welcome-card{padding:15px!important;border-radius:14px!important}
+}
+@media(prefers-reduced-motion:reduce){#adminPanel .sidebar,#adminPanel .menu-item{transition:none!important}}
+
+
+/* Matching adminpanelimeage print language: white paper, navy rules and restrained gold accents. */
+@media print {
+  #printableSlipArea .rk-slip, #printableSlipArea .rk-slip table { color:#172033!important; font-family:Arial,"Noto Sans Devanagari",sans-serif!important; }
+  #printableSlipArea .rk-slip header, #printableSlipArea .rk-slip>div:first-child { border-color:#b88935!important; }
+  #printableSlipArea .rk-slip h2 { color:#173b63!important; letter-spacing:.02em; }
+  #printableSlipArea .rk-slip h3 { color:#173b63!important; }
+  #printableSlipArea .rk-slip th { background:#eaf1f8!important; color:#173b63!important; border:1px solid #b88935!important; }
+  #printableSlipArea .rk-slip td { border:1px solid #9aa9b9!important; color:#172033!important; }
+}
+/* ADMINPANELIMEAGE — visual reference implementation: preserve existing data/actions. */
+#adminPanel{background:#050c18!important;color:#edf5ff!important}
+#adminPanel .admin-container{background:#050c18!important}
+#adminPanel .sidebar{background:linear-gradient(180deg,#061225 0%,#091a31 55%,#061225 100%)!important;border-right:1px solid rgba(43,147,255,.55)!important;box-shadow:8px 0 32px rgba(0,91,190,.16)!important}
+#adminPanel .sidebar-brand{position:relative!important;min-height:132px!important;justify-content:center!important;align-items:center!important;text-align:center!important;padding:18px 12px!important;margin:2px 4px 16px!important;border:1px solid rgba(65,161,255,.65)!important;border-radius:16px!important;background:radial-gradient(ellipse at 50% 0%,rgba(22,121,255,.28),transparent 65%),linear-gradient(145deg,#102b4c,#071426)!important;color:#ffd978!important;box-shadow:0 0 22px rgba(0,113,255,.2),inset 0 1px 0 rgba(255,255,255,.13)!important}
+#adminPanel .sidebar-brand:before{content:"🪶";display:block;font-size:30px;line-height:1.1;margin-bottom:8px;filter:drop-shadow(0 0 8px rgba(255,199,78,.5))}
+#adminPanel .sidebar-brand #overlayShopName{font-size:18px!important;line-height:1.25!important;font-weight:900!important;color:#ffdc83!important;text-shadow:0 0 12px rgba(255,183,62,.22)}
+#adminPanel .menu-item{background:rgba(13,34,59,.92)!important;border:1px solid rgba(70,130,190,.22)!important;color:#d7e8fc!important;border-radius:11px!important;min-height:43px!important}
+#adminPanel .menu-item i{width:20px;text-align:center;color:#70cfff!important;font-size:15px!important}
+#adminPanel .menu-item.active{background:linear-gradient(100deg,#a86b12,#f3c75b 52%,#a76a12)!important;color:#101a29!important;border:1px solid #ffe39a!important;box-shadow:0 0 18px rgba(255,190,63,.38),inset 0 1px 0 rgba(255,255,255,.6)!important}
+#adminPanel .menu-item.active i{color:#14243a!important}
+#adminPanel .main-content{background:#06101e!important}
+#adminPanel .header{background:linear-gradient(90deg,#071426,#0d2037 70%,#071426)!important;border-bottom:1px solid rgba(44,145,255,.45)!important;box-shadow:0 5px 22px rgba(0,0,0,.24)!important}
+#adminPanel #pageTitle{color:#f2f7ff!important;font-size:17px!important;font-weight:850!important}
+#adminPanel .content-body{background:radial-gradient(ellipse at 70% 0%,rgba(12,73,133,.16),transparent 40%),#06101e!important;padding:20px 22px 36px!important}
+#adminpanelimeage-hero{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:170px;margin:0 0 18px;padding:25px 30px;overflow:hidden;border:1px solid rgba(69,164,255,.72);border-radius:19px;background:radial-gradient(ellipse at 10% 50%,rgba(27,113,220,.28),transparent 40%),radial-gradient(ellipse at 95% 0%,rgba(255,186,64,.18),transparent 35%),linear-gradient(112deg,#07172d 0%,#102b4d 50%,#071426 100%);box-shadow:0 12px 30px rgba(0,0,0,.32),0 0 22px rgba(0,114,255,.13),inset 0 1px 0 rgba(255,255,255,.13)}
+#adminpanelimeage-hero:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(74,163,255,.09) 58%,transparent 72%);pointer-events:none}
+#adminpanelimeage-hero:after{content:"";position:absolute;z-index:-1;right:19%;top:-125px;width:280px;height:280px;border:1px solid rgba(255,205,111,.18);border-radius:50%;box-shadow:0 0 0 22px rgba(255,205,111,.035),0 0 0 48px rgba(255,205,111,.025),0 0 45px rgba(0,136,255,.15)}
+.rk-admin-hero-copy{min-width:0;position:relative;z-index:1}
+.rk-admin-hero-kicker{display:block;margin-bottom:9px;color:#80d9f4;font-size:9px;font-weight:900;letter-spacing:.22em}
+.rk-admin-hero-copy h1{margin:0!important;color:#ffda8a!important;font-family:'Great Vibes','Plus Jakarta Sans',cursive!important;font-size:clamp(29px,4vw,47px)!important;line-height:1.15!important;font-weight:800!important;text-shadow:0 2px 16px rgba(255,183,61,.2)!important}
+.rk-admin-hero-copy p{margin:7px 0 0!important;color:#edf4ff!important;font-size:clamp(12px,1.5vw,17px)!important;font-weight:650!important;letter-spacing:.025em}
+.rk-admin-hero-art{display:flex;align-items:center;justify-content:center;gap:clamp(2px,1.2vw,14px);flex:0 0 auto;min-width:32%;padding:12px 15px;border:1px solid rgba(255,206,119,.22);border-radius:16px;background:linear-gradient(145deg,rgba(3,10,19,.58),rgba(14,35,58,.7));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.2)}
+.rk-admin-hero-art span{font-size:clamp(25px,3vw,43px);filter:drop-shadow(0 5px 7px rgba(0,0,0,.55))}
+#adminPanel .glass-card-green,#adminPanel .glass-card-blue,#adminPanel .glass-card-purple{background:linear-gradient(145deg,#102641,#09182b)!important;border:1px solid rgba(68,145,218,.42)!important;box-shadow:0 9px 25px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.07)!important}
+#adminPanel .glass-card-green h3,#adminPanel .glass-card-blue h3,#adminPanel .glass-card-purple h3{color:#eaf4ff!important}
+#adminPanel .table-responsive{background:#071526!important;border:1px solid rgba(67,137,203,.42)!important;box-shadow:0 8px 24px rgba(0,0,0,.2)!important}
+#adminPanel .table-responsive th{background:#183554!important;color:#e8f4ff!important;border-bottom:1px solid #42678e!important}
+#adminPanel .table-responsive td{background:#0b1c30!important;color:#dceafa!important;border-bottom:1px solid rgba(77,121,165,.2)!important}
+#adminPanel .table-responsive tr:nth-child(even) td{background:#10243b!important}
+#adminPanel button:not(.menu-item):not(#menuToggleBtn){border-radius:10px!important;box-shadow:0 5px 14px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.18)!important}
+@media(max-width:700px){
+ #adminPanel .content-body{padding:12px 11px 26px!important}
+ #adminpanelimeage-hero{min-height:128px;padding:17px 15px;margin-bottom:13px;border-radius:15px}
+ .rk-admin-hero-kicker{font-size:8px;letter-spacing:.13em}
+ .rk-admin-hero-copy h1{font-size:clamp(24px,7vw,34px)!important}
+ .rk-admin-hero-copy p{font-size:11px!important;max-width:220px}
+ .rk-admin-hero-art{min-width:0;gap:2px;padding:8px 6px;flex-direction:column}
+ .rk-admin-hero-art span{font-size:20px}
+}
+@media(max-width:390px){#adminpanelimeage-hero{gap:8px;padding:14px 11px}.rk-admin-hero-art{padding:6px 4px}.rk-admin-hero-art span{font-size:17px}}
+
 </style>
 </body>
 </html>
