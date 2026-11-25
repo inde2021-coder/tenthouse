@@ -294,6 +294,6 @@ test('CORS preflight permits the admin CRUD methods used by the frontend', async
     });
     assert.equal(response.status, 204);
     assert.equal(response.headers.get('access-control-allow-origin'), 'https://erp.example.test');
-    assert.match(response.headers.get('access-control-allow-methods') || '', new RegExp('\\\\b' + method + '\\\\b'));
+    assert.match(response.headers.get('access-control-allow-methods') || '', new RegExp('\\b' + method + '\\b'));
   }
 });
