@@ -281,7 +281,7 @@ test('public customer stock catalog is loaded from backend rather than relying o
 test('customer booking rent and quantity are validated against server stock, not client values', () => {
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   assert.ok(backend.includes("storeGet('tent_erp_data/stock')"));
-  assert.ok(backend.includes("if(qty>Math.max(0,Number(stockItem.qty)||0))"));
+  assert.ok(backend.includes('qty+alreadyReserved>physicalAvailable'));
   assert.ok(backend.includes("return {...item,rentPrice,missingCharge:0,source:'admin',partyName:''}"));
   assert.ok(backend.includes("if(!adminDb)return res.status(503)"));
 });
