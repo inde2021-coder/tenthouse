@@ -738,7 +738,7 @@ test('backend rejects dispatch and return workflow quantities that cannot reconc
   const helperEnd=backend.indexOf("app.put('/api/customer/bookings/:id/workflow'",helperStart);
   assert.ok(start>=0&&isoEnd>start&&helperStart>isoEnd&&helperEnd>helperStart);
   const context={Date,Number,String,Array,Math};
-  vm.runInNewContext(backend.slice(start,isoEnd)+'\\n'+backend.slice(helperStart,helperEnd)+`
+  vm.runInNewContext(backend.slice(start,isoEnd)+'\n'+backend.slice(helperStart,helperEnd)+`
     result = {
       valid: validateBookingWorkflowConsistency(
         {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
