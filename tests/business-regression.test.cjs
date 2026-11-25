@@ -91,7 +91,7 @@ test('base rent excludes missing-item fees', () => {
   assert.equal(total, 400);
 });
 
-function runReturn(mode) {
+async function runReturn(mode) {
   const bookings = [{ id: 42, status: 'Dispatched', date: '2026-11-01', returnDate: '2026-11-05',
     lastDispatchDate: '2026-11-01', items: [{ name: 'Chair', qty: 5, returnedQty: 0, source: 'admin' }],
     dispatchEntries: [{ itemIndex: 0, itemName: 'Chair', qty: 5, date: '2026-11-01', unitRent: 100 }] }];
@@ -109,7 +109,7 @@ function runReturn(mode) {
   };
   const answers = ['2026-11-03', mode];
   const context = {
-    activeReturnBookingId: 42, Math, Number, String, Array, Date,
+    activeReturnBookingId: 42, Math, Number, String, Array, Date, isValidCalendarDate: value => { const m=String(value||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/); if(!m)return false; const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]),dt=new Date(y,mo-1,d); return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d; },
     prompt: () => answers.shift(),
     document,
     safeGetStorage: key => store[key],
@@ -117,13 +117,14 @@ function runReturn(mode) {
     localStorage: mockStorageForBatch(store), syncToCloud: () => {}, console,
     showActionMessage: () => {}, loadAllFirebaseData: () => {}, renderMissingItems: () => {}
   };
-  const code = sourceBetween('function completeManualReturnProcess()', '        window.onload = function()');
-  vm.runInNewContext(`${storageBatchSource()}\n${code}\ncompleteManualReturnProcess();`, context);
+  const code = sourceBetween('async function completeManualReturnProcess()', '        window.onload = function()');
+  vm.runInNewContext(`${storageBatchSource()}\n${code}\nresult = completeManualReturnProcess();`, context);
+  await context.result;
   return { booking: store.softwareBookings[0], missing: store.missingItemsDatabase, stock: store.realStockDatabase[0] };
 }
 
-test('partial return keeps unreturned items pending, not missing', () => {
-  const result = runReturn('PARTIAL');
+test('partial return keeps unreturned items pending, not missing', async () => {
+  const result = await runReturn('PARTIAL');
   assert.equal(result.booking.status, 'Partially Returned');
   assert.equal(result.booking.items[0].returnedQty, 2);
   assert.equal(result.booking.items[0].missingQty || 0, 0);
@@ -131,8 +132,8 @@ test('partial return keeps unreturned items pending, not missing', () => {
   assert.equal(result.stock.qty, 2);
 });
 
-test('final return records only the unreturned balance as missing quantity', () => {
-  const result = runReturn('FINAL');
+test('final return records only the unreturned balance as missing quantity', async () => {
+  const result = await runReturn('FINAL');
   assert.equal(result.booking.status, 'Returned');
   assert.equal(result.booking.items[0].returnedQty, 2);
   assert.equal(result.booking.items[0].missingQty, 3);
@@ -142,7 +143,7 @@ test('final return records only the unreturned balance as missing quantity', () 
 });
 
 test('return and missing recovery fail when the source stock row is absent', () => {
-  const code = sourceBetween('function completeManualReturnProcess()', 'window.onload = function()');
+  const code = sourceBetween('async function completeManualReturnProcess()', 'window.onload = function()');
   assert.ok(code.includes('if(!row){showActionMessage(\'Return stock record नहीं मिला: \'+item.name'));
   assert.ok(html.includes("if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला"));
   assert.ok(code.includes("safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])"));
@@ -151,7 +152,7 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
 
-test('dispatch decrements admin stock by the actual dispatched quantity', () => {
+test('dispatch decrements admin stock by the actual dispatched quantity', async () => {
   const store = {
     softwareBookings: [{
       id: 42, status: 'Confirmed', date: '2026-11-01', returnDate: '2026-11-05', mob: '',
@@ -173,8 +174,9 @@ test('dispatch decrements admin stock by the actual dispatched quantity', () => 
     sendWhatsAppMessage: () => {},
     syncCustomerBookingWorkflow: () => {}
   };
-  const code = sourceBetween('function completeDispatch(id)', 'function printDispatchSlip');
-  vm.runInNewContext(storageBatchSource() + '\n' + code + '\ncompleteDispatch(42);', context);
+  const code = sourceBetween('async function completeDispatch(id)', 'function printDispatchSlip');
+  vm.runInNewContext(storageBatchSource() + '\n' + code + '\nresult = completeDispatch(42);', context);
+  await context.result;
   assert.equal(store.realStockDatabase[0].qty, 2);
   assert.equal(store.softwareBookings[0].dispatchEntries[0].qty, 3);
   assert.equal(store.softwareBookings[0].status, 'Dispatched');
@@ -707,7 +709,7 @@ test('dispatch, return and missing recovery await customer backend workflow sync
   assert.match(html, /previousState\.missing/);
   assert.match(html, /previousState\.adminStock/);
   assert.match(html, /previousState\.vendorStock/);
-  assert.match(html, /if\(previous===null\) localStorage\.removeItem\(key\)/);
+  assert.ok(html.includes('if (previous === null) localStorage.removeItem(key)'));
   assert.match(html, /syncToCloud\(key, previous === null \? null : JSON\.parse\(previous\)\)/);
 });
 
