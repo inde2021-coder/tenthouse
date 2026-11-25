@@ -877,7 +877,9 @@ test('branded app icon is referenced by the public shell', () => {
   for (const path of ['icon.svg', 'public/icon.svg', 'backend/public/icon.svg']) {
     const icon = fs.readFileSync(require('node:path').join(__dirname, '..', path), 'utf8');
     assert.ok(icon.includes('Radhe Krishn'));
-    assert.ok(icon.includes('TENT HOUSE'));
+    assert.ok(icon.includes('Bartan Tent House Manager'));
+    assert.ok(icon.includes('stainless steel plate stack'));
+    assert.ok(!/mandap|wedding tent|peacock feather/i.test(icon));
   }
 });
 

@@ -28,6 +28,10 @@ jobs:
           node-version: 22
       - name: Install backend dependencies
         run: npm install --prefix backend --no-audit --no-fund
+      - name: Report dependency security advisories
+        run: |
+          npm audit --prefix backend --json > "$RUNNER_TEMP/npm-audit.json" || true
+          node -e "try { const fs=require('node:fs'); const a=JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP+'/npm-audit.json','utf8')); console.log('npm audit summary:', JSON.stringify(a.metadata?.vulnerabilities || {})); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log('npm audit package:', name, 'severity='+v.severity, 'fixAvailable='+JSON.stringify(v.fixAvailable), 'via='+v.via.map(x=>typeof x==='string'?x:x.title).join('; ')); } catch(e) { console.log('npm audit report unavailable:', e.message); }"
       - name: Check backend JavaScript syntax
         run: npm run api:check
       - name: Run business regression tests
