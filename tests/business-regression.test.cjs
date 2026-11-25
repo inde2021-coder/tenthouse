@@ -315,7 +315,7 @@ test('customer booking rent and quantity are validated against server stock, not
   assert.ok(backend.includes("storeGet('tent_erp_data/stock')"));
   assert.ok(backend.includes('qty+alreadyReserved>physicalAvailable'));
   assert.ok(backend.includes("return {...item,rentPrice,missingCharge:0,source:'admin',partyName:''}"));
-  assert.ok(backend.includes("if(!adminDb)return res.status(503)"));
+  assert.ok(backend.includes("if(!adminDb && !isPreviewMode)return res.status(503)"));
 });
 
 
@@ -786,7 +786,7 @@ test('customer workflow failures are queued and retried after reconnect or admin
   assert.ok(html.includes("localStorage.setItem('rkPendingCustomerWorkflowSync',JSON.stringify(queue))"));
   assert.ok(html.includes('async function flushPendingCustomerWorkflowSync()'));
   assert.ok(html.includes("window.addEventListener('online', () => { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); })"));
-  assert.ok(html.includes('await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();'));
+  assert.ok(/await flushPendingCustomerWorkflowSync\(\);\s*await syncCustomerBookingsFromBackend\(\);/.test(html));
   const dispatch=sourceBetween('async function completeDispatch(id)','function printDispatchSlip(id)');
   const ret=sourceBetween('async function completeManualReturnProcess()','let currentDocumentItems');
   const recover=sourceBetween('async function recoverMissingItem(recordId,rowIndex)','let currentDocumentItems');
