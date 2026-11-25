@@ -211,6 +211,16 @@ test('tax invoice calculates intra-state CGST/SGST from the editable GST rate', 
   assert.equal(result.total, 230.1);
 });
 
+test('intra-state GST split preserves the exact rounded GST paise total', () => {
+  const code = sourceBetween('function businessDocumentTotals()', 'function renderBusinessDocumentItems()');
+  const values = { docDiscount: '0', docOtherCharges: '0', docType: 'tax-invoice', docGstRate: '5', docTaxType: 'intra' };
+  const context = { currentDocumentItems: [{ name: 'Item', qty: 1, rate: 0.2 }], document: { getElementById: id => ({ value: values[id] }) }, Math, Number, result: null };
+  vm.runInNewContext(code + '\nresult=businessDocumentTotals();', context);
+  const result = JSON.parse(JSON.stringify(context.result));
+  assert.equal(result.gst, 0.01);
+  assert.equal(result.cgst + result.sgst, result.gst);
+});
+
 test('tax invoice uses IGST for inter-state supply and quotation does not add GST', () => {
   const code = sourceBetween('function businessDocumentTotals()', 'function renderBusinessDocumentItems()');
   const values = { docDiscount: '0', docOtherCharges: '0', docType: 'tax-invoice', docGstRate: '18', docTaxType: 'inter' };
