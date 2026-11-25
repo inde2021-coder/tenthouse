@@ -1470,6 +1470,36 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             return Number.isFinite(rate) && rate > 0 ? rate : 0;
         }
 
+        // Allocate returns against the oldest matching dispatch entry first. Each dispatch batch
+        // stops accruing rent on the date its quantity was actually returned.
+        function getDispatchEntryRentalSlices(b){
+            const entries=Array.isArray(b?.dispatchEntries)?b.dispatchEntries:[];
+            const allocated=entries.map(()=>0),slices=[];
+            const returns=(Array.isArray(b?.returnEntries)?b.returnEntries:[])
+                .flatMap(r=>(r.items||[]).map(item=>({date:r.date||b.actualReturnDate||b.returnDate,itemIndex:Number(item.itemIndex),qty:Math.max(0,Number(item.qty)||0)})))
+                .sort((a,z)=>String(a.date||'').localeCompare(String(z.date||'')));
+            returns.forEach(ret=>{
+                let remaining=ret.qty;
+                entries.map((entry,index)=>({entry,index}))
+                    .filter(x=>Number(x.entry.itemIndex)===ret.itemIndex)
+                    .sort((a,z)=>String(a.entry.date||'').localeCompare(String(z.entry.date||'')))
+                    .forEach(({entry,index})=>{
+                        if(remaining<=0)return;
+                        const available=Math.max(0,(Number(entry.qty)||0)-allocated[index]);
+                        const take=Math.min(available,remaining);
+                        if(take>0){slices.push({entry,qty:take,endDate:ret.date||b.actualReturnDate||b.returnDate||entry.date});allocated[index]+=take;remaining-=take;}
+                    });
+            });
+            const today=new Date().toLocaleDateString('en-CA');
+            const scheduled=String(b.returnDate||today);
+            const openEnd=scheduled>today?scheduled:today;
+            entries.forEach((entry,index)=>{
+                const remaining=Math.max(0,(Number(entry.qty)||0)-allocated[index]);
+                if(remaining>0)slices.push({entry,qty:remaining,endDate:b.fullyReturnedAt?(b.actualReturnDate||b.returnDate||entry.date):openEnd});
+            });
+            return slices;
+        }
+
         function calculateBookingTotalRent(b){
             const items=Array.isArray(b.items)?b.items:[];
             const entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
