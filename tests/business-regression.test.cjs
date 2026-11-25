@@ -864,3 +864,13 @@ test('customer hero is responsive, admin-editable, and safely persisted with exi
   assert.ok(html.includes("document.getElementById('portalCustName').scrollIntoView"));
   assert.ok(html.includes('onsubmit="saveCustomerBooking(event)"'));
 });
+
+
+test('branded app icon is referenced by the public shell', () => {
+  assert.ok(html.includes('<link rel="icon" href="./icon.svg" type="image/svg+xml">'));
+  for (const path of ['icon.svg', 'public/icon.svg', 'backend/public/icon.svg']) {
+    const icon = fs.readFileSync(require('node:path').join(__dirname, '..', path), 'utf8');
+    assert.ok(icon.includes('Radhe Krishn'));
+    assert.ok(icon.includes('TENT HOUSE'));
+  }
+});
