@@ -2604,7 +2604,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 }
                 if(!safeSetStorage('rkPaymentLedger',ledger))return;loadPaymentLedgerTable();loadMasterLedgerData();
                 showActionMessage(verified?'Online भुगतान सत्यापित और जमा राशि में शामिल हुआ':'Online भुगतान अस्वीकार हुआ; जमा राशि में शामिल नहीं है','success');
-                if(b?.mob)sendWhatsAppMessage(b.id,verified?'payment-verified':'payment-rejected');
+                const alertBooking=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(p.bookingId));if(alertBooking?.mob)sendWhatsAppMessage(alertBooking.id,verified?'payment-verified':'payment-rejected');
             }catch(error){showActionMessage('Online भुगतान सत्यापन विफल: '+error.message,'error');}
         }
         function printReturnSlip(){
