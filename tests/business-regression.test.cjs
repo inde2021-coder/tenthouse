@@ -21,26 +21,26 @@ function runRentFunction(functionName, booking) {
   assert.notEqual(start, -1);
   assert.notEqual(next, -1);
   const code = html.slice(start, next);
-  const context = { calculateRentalDays: () => 2, Math, Number, Array, result: null };
+  const context = { calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, result: null };
   vm.runInNewContext(`${code}\nresult = ${functionName}(booking);`, context);
   return context.result;
 }
 
-test('missing quantities and missing rates never increase booking total', () => {
+test('missing quantity is charged once at the saved per-unit missing rate', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
     items: [{ name: 'Chair', qty: 2, rentPrice: 100, missingQty: 2, missingCharge: 9999 }]
   });
-  assert.equal(total, 400);
+  assert.equal(total, 20398);
 });
 
-test('booking total applies other charges and discount, not missing charges', () => {
+test('booking total adds missing charge, other charges and discount exactly once', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
     items: [{ name: 'Chair', qty: 2, rentPrice: 100, missingQty: 2, missingCharge: 9999 }],
     otherCharges: 50, discountAmount: 25
   });
-  assert.equal(total, 425);
+  assert.equal(total, 20423);
 });
 
 test('rent uses actual dispatch quantities and their saved unit rate', () => {
@@ -119,6 +119,43 @@ test('WhatsApp send calls backend endpoint and does not claim success before res
   const code = sourceBetween('async function sendWhatsAppMessage', 'function loadStockDropdowns');
   assert.match(code, /\/api\/whatsapp\/send/);
   assert.match(code, /if\(!response\.ok\)throw/);
+});
+
+
+test('customer can submit a booking with no selected items', () => {
+  const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
+  assert.match(backend, /items:[\\s\\S]*?\\.max\\(100\\)\\.default\\(\\[\\]\\)/);
+  const code = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
+  assert.doesNotMatch(code, /कम-से-कम एक सामान चुनें/);
+  assert.match(code, /items:customerCart\\.map/);
+});
+
+test('customer online advance requires UTR and QR uses configured UPI ID plus exact amount', () => {
+  const code = sourceBetween('function updateDynamicPaymentQR()', 'function addItemToPendingBookingDispatch()');
+  assert.match(code, /settings\\.upiId/);
+  assert.match(code, /amount\\.toFixed\\(2\\)/);
+  assert.match(code, /portalQrHint/);
+  assert.doesNotMatch(code, /8120727987@upi/);
+  const booking = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
+  assert.match(booking, /utrNumber\\.length<6/);
+});
+
+test('admin booking list displays UTR and payment verification controls', () => {
+  assert.match(html, /UTR नंबर/);
+  assert.match(html, /verifyCustomerAdvance/);
+  assert.match(html, /advancePaymentVerified/);
+  assert.match(html, /\\/advance/);
+});
+
+test('missing charge appears separately in invoice and total', () => {
+  assert.match(html, /मिसिंग सामान चार्ज/);
+  assert.match(html, /missingChargeTotal/);
+  assert.match(html, /getEffectiveMissingCharge/);
+});
+
+test('admin edits for customer portal bookings are sent to backend', () => {
+  assert.match(html, /method:'PUT'/);
+  assert.match(html, /api\\/customer\\/bookings/);
 });
 
 test('root and public app copies are kept in sync', () => {
