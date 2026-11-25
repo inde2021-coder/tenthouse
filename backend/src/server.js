@@ -285,7 +285,7 @@ function getReservedAdminStockByItem(bookings, date, returnDate) {
   for (const booking of bookings || []) {
     if (!booking || !activeStatuses.has(String(booking.status || ''))) continue;
     const start = String(booking.date || ''), end = String(booking.returnDate || start);
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(start) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(end)) continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) continue;
     if (start > returnDate || end < date) continue;
     for (const item of booking.items || []) {
       if (item?.source === 'third-party') continue;
