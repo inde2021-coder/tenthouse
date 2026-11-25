@@ -237,6 +237,58 @@ app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
 
+const bookingLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+const customerBookingSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  mob: phoneSchema,
+  address: z.string().trim().min(2).max(500),
+  eventType: z.string().trim().min(1).max(80),
+  guestCount: z.number().int().min(1).max(100000),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  advanceAmount: z.number().finite().min(0).max(10000000),
+  payMode: z.string().trim().min(1).max(40),
+  utrNumber: z.string().max(80).optional().default(''),
+  items: z.array(z.object({
+    name: z.string().trim().min(1).max(120),
+    qty: z.number().int().positive().max(100000),
+    rentPrice: z.number().finite().min(0).max(1000000).default(500),
+    source: z.enum(['admin','third-party']).optional().default('admin'),
+    partyName: z.string().max(120).optional().default('')
+  })).min(1).max(100)
+}).refine(data => data.returnDate >= data.date, { message: 'Return date must not be before booking date.', path: ['returnDate'] });
+app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (req,res) => {
+  const parsed=customerBookingSchema.safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'बुकिंग विवरण सही भरें।',details:parsed.error.flatten()});
+  if(parsed.data.date < new Date().toISOString().slice(0,10))return res.status(400).json({error:'बुकिंग तारीख आज या भविष्य की होनी चाहिए।'});
+  try{
+    let id=Date.now();
+    while(await storeGet('erpData/customerBookings/'+String(id)))id++;
+    const booking={id,...parsed.data,status:'Pending Approval',partPayments:[],createdAt:new Date().toISOString(),source:'customer-portal'};
+    const saved=await storeCreateIfAbsent('erpData/customerBookings/'+String(id),booking);
+    if(!saved)return res.status(409).json({error:'बुकिंग ID दोबारा बन गई; कृपया फिर प्रयास करें।'});
+    res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई।'});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+app.get('/api/customer/bookings', authAdmin, requireDurableStore, async (_req,res) => {
+  try{
+    const bookings=(await storeList('erpData/customerBookings')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+    res.json({bookings});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, async (req,res) => {
+  if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
+  const parsed=z.object({status:z.enum(['Confirmed','Rejected','Cancelled'])}).safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'Invalid booking status.'});
+  try{
+    const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
+    if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    booking.status=parsed.data.status;booking.updatedAt=new Date().toISOString();
+    if(booking.status==='Confirmed')booking.confirmedAt=booking.updatedAt;
+    await storeSet(path,booking);res.json({ok:true,booking});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+
 app.post('/api/whatsapp/send', authAdmin, async (req,res) => {
   const parsed = z.object({ to: phoneSchema, message: z.string().min(1).max(4000) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid to and message are required.' });
