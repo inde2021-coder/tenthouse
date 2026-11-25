@@ -810,8 +810,10 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                                 <div><label>पार्टी नाम</label><input type="text" id="tpPartyName" required placeholder="पार्टी नाम"></div>
                                 <div><label>सामान नाम</label><input type="text" id="tpItemName" required placeholder="सामान"></div>
                                 <div><label>मात्रा</label><input type="number" id="tpItemQty" min="1" required placeholder="10"></div>
-                                <div><label>देना किराया (Cost)</label><input type="number" id="tpItemCost" min="0" required placeholder="400"></div>
-                                <div><label>लेना किराया (Charge)</label><input type="number" id="tpItemCharge" min="0" required placeholder="600"></div>
+                                <div><label>वेंडर किराया लागत / दिन (₹)</label><input type="number" id="tpItemCost" min="0" step="0.01" required placeholder="400"></div>
+                                <div><label>ग्राहक किराया / दिन (₹)</label><input type="number" id="tpItemCharge" min="0" step="0.01" required placeholder="600"></div>
+                                <div><label>वेंडर Missing / Replacement Cost (₹)</label><input type="number" id="tpVendorMissingCost" min="0" step="0.01" placeholder="वेंडर को देना"></div>
+                                <div><label>ग्राहक Missing Charge (₹)</label><input type="number" id="tpMissingCharge" min="0" step="0.01" placeholder="ग्राहक से लेना"></div>
                                 <button type="submit" class="glass-btn-blue" style="grid-column: 1/-1;">सेव करें</button>
                             </div>
                         </form>
@@ -1751,7 +1753,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 requirements.push({row,qty:x.qty});
             }
             requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty));
-            b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
+            b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,vendorMissingCost:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorMissingCost)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
             if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('realStockDatabase',stock)||!safeSetStorage('thirdPartyDatabase',thirdParty)){showActionMessage('Dispatch सेव नहीं हुआ; स्टॉक जाँचें','error');return;}
             if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
@@ -1902,7 +1904,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             let b = bookings.find(x => x.id.toString() === searchId);
             if(b) {
                 if(!b.items) b.items = [];
-                b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
+                b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),vendorMissingCost:Math.max(0,Number(vendorRow.vendorMissingCost)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
                 safeSetStorage('softwareBookings', bookings);
                 loadDispatchTable();
                 showActionMessage("थर्ड-पार्टी सामान डिस्पैच में जोड़ा गया", "success");
@@ -2476,10 +2478,10 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             event.preventDefault();
             let tpList = safeGetStorage('thirdPartyDatabase', []);
             const partyName=document.getElementById('tpPartyName').value.trim(), itemName=document.getElementById('tpItemName').value.trim(), qty=Number(document.getElementById('tpItemQty').value)||1;
-            const costPrice=Number(document.getElementById('tpItemCost').value)||0, chargePrice=Number(document.getElementById('tpItemCharge').value)||0;
+            const costPrice=Number(document.getElementById('tpItemCost').value)||0,chargePrice=Number(document.getElementById('tpItemCharge').value)||0,vendorMissingCost=Number(document.getElementById('tpVendorMissingCost')?.value)||0,missingCharge=Number(document.getElementById('tpMissingCharge')?.value)||0;
             const existing=tpList.find(x=>String(x.partyName||'').toLowerCase()===partyName.toLowerCase()&&String(x.item||'').toLowerCase()===itemName.toLowerCase());
-            if(existing){existing.qty=(Number(existing.qty)||0)+qty;existing.purchasedQty=(Number(existing.purchasedQty ?? existing.qty-qty)||0)+qty;existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.source='third-party';}
-            else tpList.push({partyName,item:itemName,qty,purchasedQty:qty,costPrice,chargePrice,source:'third-party',updatedAt:new Date().toISOString()});
+            if(existing){existing.qty=(Number(existing.qty)||0)+qty;existing.purchasedQty=(Number(existing.purchasedQty ?? existing.qty-qty)||0)+qty;existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.vendorMissingCost=vendorMissingCost;existing.missingCharge=missingCharge;existing.source='third-party';}
+            else tpList.push({partyName,item:itemName,qty,purchasedQty:qty,costPrice,chargePrice,vendorMissingCost,missingCharge,source:'third-party',updatedAt:new Date().toISOString()});
             if(!safeSetStorage('thirdPartyDatabase', tpList)) return;
             event.target.reset(); loadThirdPartyLedger(); loadThirdPartyDropdownsForDispatch();
             showActionMessage('वेंडर सामान सेव हुआ; स्टॉक/वेंडर लेजर अपडेट हुआ','success');
