@@ -109,6 +109,8 @@ const adminLoginLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, standardH
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
 const authAdmin = (req, res, next) => {
+  // This public demo token is accepted only on the isolated, non-production preview instance.
+  if (isPreviewMode && req.header('x-admin-token') === 'PREVIEW-DEMO-ONLY-ACCESS') return next();
   const expected = process.env.ADMIN_API_TOKEN;
   if (!expected || expected.length < 32) return res.status(503).json({ error: 'Server admin token is not configured securely.' });
   const got = String(req.header('x-admin-token') || '').trim();

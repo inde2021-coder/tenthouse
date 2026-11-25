@@ -628,6 +628,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 </style>
 </head>
 <body>
+<div id="rkPreviewBanner" style="display:none;position:sticky;top:0;z-index:2147483000;padding:9px 14px;text-align:center;background:linear-gradient(90deg,#7c2d12,#b45309);color:#fff;font:800 12px/1.4 system-ui;letter-spacing:.3px;box-shadow:0 3px 14px #0003">TEST PREVIEW · DEMO DATA ONLY · PRODUCTION FIREBASE DISABLED · BOOKINGS ARE TEMPORARY</div>
+<script>if(location.hostname.toLowerCase().endsWith('.onrender.com'))document.getElementById('rkPreviewBanner').style.display='block';</script>
 
 
     <div id="actionToast"></div>
@@ -1243,6 +1245,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         // Render preview must never connect to the production Firebase project.
         window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com'));
+        if (window.__rkRenderPreviewMode) {
+            const previewSettings = safeGetStorage('softwareSettings', {});
+            previewSettings.backendApiUrl = location.origin;
+            previewSettings.aiAccessToken = 'PREVIEW-DEMO-ONLY-ACCESS';
+            safeSetStorage('softwareSettings', previewSettings);
+        }
         let firebaseApp, dbRef = null;
         let currentCalendarDate = new Date();
         let cloudListenerAttached = false;
@@ -1768,6 +1776,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         async function handleDirectAdminLogin(event) {
             event.preventDefault();
             const field=document.getElementById('rkAdminAccessToken');
+            if(window.__rkRenderPreviewMode){
+                const previewToken='PREVIEW-DEMO-ONLY-ACCESS';
+                window.__rkVerifiedAdminToken=previewToken;
+                if(field)field.value='';
+                await loginWithGoogle(previewToken);
+                return;
+            }
             const token=String(field?.value||'').trim();
             if(token.length<32){showActionMessage('अमान्य एक्सेस टोकन।','error');return;}
             const settings=safeGetStorage('softwareSettings',{});
