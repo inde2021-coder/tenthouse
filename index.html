@@ -71,7 +71,7 @@ button:disabled { cursor:not-allowed!important; opacity:.55!important; }
         #actionToast {
             position: fixed; top: 15px; right: -400px; background: rgba(230, 235, 245, 0.95); backdrop-filter: blur(12px);
             color: var(--primary-blue); padding: 10px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 700; z-index: 99999;
+            box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.5), -6px -6px 12px rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 700; z-index: 2147483001 !important;
             transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #actionToast.show { right: 20px; }
