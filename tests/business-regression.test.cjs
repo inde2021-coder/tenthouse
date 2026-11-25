@@ -151,7 +151,9 @@ test('dispatch decrements admin stock by the actual dispatched quantity', () => 
 });
 
 test('return slip prints missing quantities only and never a missing charge', () => {
-  const code = sourceBetween('function printReturnSlip()', 'function printInvoice');
+  const start = html.indexOf('function printReturnSlip()');
+  const end = html.indexOf('function ', start + 20);
+  const code = html.slice(start, end);
   assert.ok(code.includes('मिसिंग मात्रा'));
   assert.ok(code.includes('मिसिंग सामान की अलग सूची (केवल गिनती)'));
   assert.ok(!code.includes('मिसिंग चार्ज'));
