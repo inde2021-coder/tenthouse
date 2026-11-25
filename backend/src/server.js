@@ -279,6 +279,24 @@ function isValidIsoDate(value) {
   return day <= daysInMonth[month - 1];
 }
 
+function getReservedAdminStockByItem(bookings, date, returnDate) {
+  const reserved = new Map();
+  const activeStatuses = new Set(['Pending Approval', 'Confirmed']);
+  for (const booking of bookings || []) {
+    if (!booking || !activeStatuses.has(String(booking.status || ''))) continue;
+    const start = String(booking.date || ''), end = String(booking.returnDate || start);
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(start) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(end)) continue;
+    if (start > returnDate || end < date) continue;
+    for (const item of booking.items || []) {
+      if (item?.source === 'third-party') continue;
+      const key = String(item?.name || '').trim().toLowerCase();
+      const qty = Math.max(0, Math.floor(Number(item?.qty) || 0));
+      if (key && qty) reserved.set(key, (reserved.get(key) || 0) + qty);
+    }
+  }
+  return reserved;
+}
+
 const customerBookingSchema = z.object({
   name: z.string().trim().min(2).max(120),
   mob: phoneSchema,
@@ -312,6 +330,17 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
       if(!adminDb)return res.status(503).json({error:'सामान और सही किराया सत्यापित करने के लिए Firebase stock catalog उपलब्ध नहीं है।'});
       const stockValue=await storeGet('tent_erp_data/stock');
       const stockRows=Array.isArray(stockValue)?stockValue:Object.values(stockValue||{});
+      // Reserve un-dispatched bookings for overlapping rental dates so two customers
+      // cannot both book the same physical stock before dispatch updates inventory.
+      const [portalBookings, adminBookings] = await Promise.all([
+        storeList('erpData/customerBookings'),
+        storeList('tent_erp_data/bookings')
+      ]);
+      const allBookings = new Map();
+      for (const booking of [...adminBookings, ...portalBookings]) {
+        if (booking && booking.id != null) allBookings.set(String(booking.id), booking);
+      }
+      const reservedByName = getReservedAdminStockByItem([...allBookings.values()], parsed.data.date, parsed.data.returnDate);
       const requestedByName=new Map();
       for(const item of customerItems){
         if(item.source==='third-party')return res.status(400).json({error:'Customer portal से केवल Admin stock चुना जा सकता है।'});
@@ -321,7 +350,9 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
       for(const [key,qty] of requestedByName){
         const stockItem=stockRows.find(row=>String(row.name||row.item||'').trim().toLowerCase()===key);
         if(!stockItem)return res.status(409).json({error:'चुना गया सामान अब stock catalog में उपलब्ध नहीं है: '+key});
-        if(qty>Math.max(0,Number(stockItem.qty)||0))return res.status(409).json({error:'चुने गए सामान का उपलब्ध stock कम है: '+key});
+        const physicalAvailable=Math.max(0,Number(stockItem.qty)||0);
+        const alreadyReserved=reservedByName.get(key)||0;
+        if(qty+alreadyReserved>physicalAvailable)return res.status(409).json({error:'चुनी गई तारीखों में सामान उपलब्ध नहीं है: '+key+' (स्टॉक '+physicalAvailable+', पहले से बुक '+alreadyReserved+')'});
       }
       customerItems=customerItems.map(item=>{
         const stockItem=stockRows.find(row=>String(row.name||row.item||'').trim().toLowerCase()===String(item.name||'').trim().toLowerCase());
