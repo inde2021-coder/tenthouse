@@ -647,7 +647,8 @@ test('premium design layer loads after legacy styles so the new theme wins the c
 });
 
 test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
-  assert.ok(html.includes('Alt+Shift+K'));
+  assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
+  assert.ok(html.includes('setTimeout(show,3200)'));
   assert.ok(html.includes('setTimeout(show,2200)'));
   assert.ok(html.includes('/api/admin/session'));
   assert.ok(html.includes("'x-admin-token':token"));
@@ -666,6 +667,10 @@ test('enterprise table and developer footer styling is applied in the final prem
   assert.ok(html.includes('.table-responsive thead{position:sticky'));
   assert.ok(html.includes('.table-responsive tbody tr:nth-child(even) td'));
   assert.ok(html.includes('.table-responsive td.table-actions'));
+  assert.ok(html.includes('.table-search-toolbar'));
+  assert.ok(html.includes('.table-search-count'));
+  assert.ok(html.includes('इस टेबल में खोजें'));
+  assert.ok(html.includes("count.textContent=q?visible+' / '+rows.length+' दिख रहे':'कुल '+rows.length"));
   assert.ok(html.includes('.rk-developer-footer{position:relative'));
   assert.ok(html.includes('.rk-admin-gate-card'));
 });
