@@ -474,6 +474,7 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
   const returnEntries = Array.isArray(booking.returnEntries) ? booking.returnEntries : [];
   const dispatched = items.map(() => 0);
   const returnedInEntries = items.map(() => 0);
+  const firstDispatchDates = items.map(() => null);
   for (const entry of dispatchEntries) {
     const index = Number(entry?.itemIndex);
     if (!Number.isInteger(index) || index < 0 || index >= items.length) return 'Dispatch entry में सामान का संदर्भ गलत है।';
@@ -485,6 +486,7 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
     const qty = Number(entry.qty);
     if (!Number.isInteger(qty) || qty <= 0) return 'Dispatch मात्रा सही पूर्ण संख्या होनी चाहिए।';
     dispatched[index] += qty;
+    if (!firstDispatchDates[index] || entry.date < firstDispatchDates[index]) firstDispatchDates[index] = entry.date;
     if (dispatched[index] > Math.max(0, Number(item.qty) || 0)) return 'कुल Dispatch मात्रा Booking में तय मात्रा से अधिक नहीं हो सकती।';
     if (booking.date && entry.date < booking.date) return 'Dispatch तारीख Booking तारीख से पहले नहीं हो सकती।';
     if (booking.returnDate && entry.date > booking.returnDate) return 'Dispatch तारीख Booking की वापसी तारीख के बाद नहीं हो सकती।';
@@ -492,11 +494,11 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
   for (const entry of returnEntries) {
     const date = String(entry?.date || '');
     if (!isValidIsoDate(date)) return 'Return entry में वास्तविक तारीख दर्ज करें।';
-    if (booking.lastDispatchDate && date < booking.lastDispatchDate) return 'Return तारीख आखिरी Dispatch से पहले नहीं हो सकती।';
     for (const returned of entry.items || []) {
       const index = Number(returned?.itemIndex), qty = Number(returned?.qty);
       if (!Number.isInteger(index) || index < 0 || index >= items.length) return 'Return entry में सामान का संदर्भ गलत है।';
       if (!Number.isInteger(qty) || qty < 0) return 'Return मात्रा सही पूर्ण संख्या होनी चाहिए।';
+      if (firstDispatchDates[index] && date < firstDispatchDates[index]) return 'Return तारीख उस सामान के पहले Dispatch से पहले नहीं हो सकती।';
       returnedInEntries[index] += qty;
       if (returnedInEntries[index] > dispatched[index]) return 'कुल Return मात्रा वास्तविक Dispatch मात्रा से अधिक नहीं हो सकती।';
     }
