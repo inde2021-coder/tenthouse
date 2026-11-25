@@ -120,6 +120,34 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(recovery.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('missingItemsDatabase',missing)"));
 });
 
+test('dispatch decrements admin stock by the actual dispatched quantity', () => {
+  const store = {
+    softwareBookings: [{
+      id: 42, status: 'Confirmed', date: '2026-11-01', returnDate: '2026-11-05', mob: '',
+      items: [{ name: 'Chair', qty: 5, rentPrice: 100, source: 'admin' }],
+      dispatchEntries: []
+    }],
+    realStockDatabase: [{ name: 'Chair', qty: 5, singleRent: 100 }],
+    thirdPartyDatabase: []
+  };
+  const answers = ['2026-11-02', '', '3'];
+  const context = {
+    Math, Number, String, Array, Date, JSON,
+    prompt: () => answers.shift(),
+    safeGetStorage: key => store[key],
+    safeSetStorage: (key, value) => { store[key] = value; return true; },
+    showActionMessage: () => {},
+    loadAllFirebaseData: () => {},
+    sendWhatsAppMessage: () => {},
+    syncCustomerBookingWorkflow: () => {}
+  };
+  const code = sourceBetween('function completeDispatch(id)', 'function printDispatchSlip');
+  vm.runInNewContext(code + '\ncompleteDispatch(42);', context);
+  assert.equal(store.realStockDatabase[0].qty, 2);
+  assert.equal(store.softwareBookings[0].dispatchEntries[0].qty, 3);
+  assert.equal(store.softwareBookings[0].status, 'Dispatched');
+});
+
 test('dispatch slip uses actual dispatch entries, not full booking quantities', () => {
   const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
   assert.match(code, /b\.dispatchEntries/);
