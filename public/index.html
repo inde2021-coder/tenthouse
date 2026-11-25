@@ -1384,7 +1384,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     try {
                         if (previous === null) localStorage.removeItem(key);
                         else localStorage.setItem(key, previous);
-                        if (previous !== null) syncToCloud(key, JSON.parse(previous));
+                        // Mirror deletions too: null removes a stale Firebase path during rollback.
+                        syncToCloud(key, previous === null ? null : JSON.parse(previous));
                     } catch (rollbackError) {
                         console.error('Storage rollback failed:', key, rollbackError);
                     }
@@ -1548,6 +1549,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             window.__rkVerifiedAdminToken='';
             try{firebase.auth().signOut();}catch(_){}
         }
+
+        function isValidCalendarDate(value){const m=String(value||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);if(!m)return false;const y=Number(m[1]),month=Number(m[2]),day=Number(m[3]);const d=new Date(y,month-1,day);return d.getFullYear()===y&&d.getMonth()===month-1&&d.getDate()===day;}
 
         function calculateRentalDays(dateStr1, dateStr2) {
             // Parse date-only values in local time to avoid UTC/time-zone off-by-one errors.
@@ -1857,13 +1860,14 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             }
         }
 
-        function completeDispatch(id) {
+        async function completeDispatch(id) {
             const bookings = safeGetStorage('softwareBookings', []);
             const b = bookings.find(x => String(x.id) === String(id));
             if (!b) { showActionMessage('बुकिंग नहीं मिली', 'error'); return; }
             if (!['Confirmed','Dispatched','Partially Returned'].includes(b.status) || b.fullyReturnedAt) { showActionMessage('पहले बुकिंग Confirm करें और उसका Return पूरा न हुआ हो', 'error'); return; }
             const items = Array.isArray(b.items) ? b.items.map(item=>({...item})) : [];
             const adminStock=safeGetStorage('realStockDatabase',[]),vendorStock=safeGetStorage('thirdPartyDatabase',[]);
+            const previousState={bookings:JSON.parse(JSON.stringify(bookings)),adminStock:JSON.parse(JSON.stringify(adminStock)),vendorStock:JSON.parse(JSON.stringify(vendorStock))};
             const catalog=[
                 ...adminStock.filter(x=>Math.max(0,Number(x.qty)||0)>0).map(x=>({row:x,source:'admin',label:(x.name||'सामान')+' · Admin · उपलब्ध '+Number(x.qty||0)})),
                 ...vendorStock.filter(x=>Math.max(0,Number(x.qty)||0)>0).map(x=>({row:x,source:'third-party',label:(x.item||x.name||'सामान')+' · Vendor '+(x.partyName||'')+' · उपलब्ध '+Number(x.qty||0)}))
@@ -1927,7 +1931,10 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,vendorMissingCost:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorMissingCost)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
             if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty]])){showActionMessage('Dispatch सेव नहीं हुआ; कोई आंशिक अपडेट लागू नहीं रखा गया।','error');return;}
-            if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+            if(b.source==='customer-portal'){
+                const remoteSaved=await syncCustomerBookingWorkflow(b);
+                if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock]]);loadAllFirebaseData();return;}
+            }
             loadAllFirebaseData();showActionMessage('Dispatch सेव हुआ; बुकिंग Return पूरा होने तक सूची में रहेगी','success');
             if(b.mob&&typeof sendWhatsAppMessage==='function')sendWhatsAppMessage(id,'dispatch');
         }
@@ -2790,13 +2797,39 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             activeReturnBookingId=b.id;const already=!!b.fullyReturnedAt;const sentFor=(it,i)=>{const ds=Array.isArray(b.dispatchEntries)?b.dispatchEntries.filter(e=>Number(e.itemIndex)===i).reduce((n,e)=>n+Math.max(0,Number(e.qty)||0),0):Number(it.qty)||0;return ds;};const renderRows=(third)=>b.items.map((it,i)=>({it,i})).filter(({it})=>(it.source==='third-party')===third).map(({it,i})=>{const sent=sentFor(it,i),returned=Number(it.returnedQty)||0,remaining=Math.max(0,sent-returned);return `<tr>${it.source==='third-party'?`<td>${escapeHtml(it.partyName||'वेंडर')}</td>`:''}<td>${escapeHtml(it.name)}<small style="display:block">Dispatch कुल: ${sent}, पहले Return: ${returned}</small></td><td>${remaining}</td><td><input type="number" min="0" max="${remaining}" value="${remaining}" data-return-index="${i}" class="return-qty-input" ${already?'disabled':''}></td></tr>`}).join('')||`<tr><td colspan="${third?4:3}">इस स्रोत का सामान नहीं है</td></tr>`;document.getElementById('returnAdminCountingTableBody').innerHTML=renderRows(false);document.getElementById('returnVendorCountingTableBody').innerHTML=renderRows(true);section.style.display='block';renderMissingRecoveryRows(b);const completeBtn=section.querySelector('button[onclick="completeManualReturnProcess()"]');if(completeBtn)completeBtn.disabled=already;showActionMessage(already?'पहले सेव की गई रिटर्न एंट्री दिखाई गई है; दोबारा स्टॉक नहीं बदलेगा।':'एडमिन और वेंडर की अलग-अलग रिटर्न काउंटिंग लोड हुई: #'+b.id,'success');
         }
         function renderMissingRecoveryRows(b){const body=document.getElementById('missingRecoveryBody');if(!body)return;const rows=safeGetStorage('missingItemsDatabase',[]).filter(m=>String(m.bookingId)===String(b.id)&&!m.resolved&&(Number(m.qty)||0)>0);body.innerHTML=rows.length?rows.map((m,i)=>`<tr><td>${escapeHtml(m.item)}<small style="display:block">${m.source==='third-party'?'वेंडर: '+escapeHtml(m.partyName||'-'):'एडमिन स्टॉक'}</small></td><td>${Number(m.qty)||0}</td><td><input type="number" min="1" max="${Number(m.qty)||0}" step="1" id="recoverMissingQty_${i}" value="${Number(m.qty)||0}" style="width:85px"></td><td><button type="button" class="action-btn" onclick="recoverMissingItem('${String(m.id)}',${i})">वापसी दर्ज करें</button></td></tr>`).join(''):'<tr><td colspan="4">इस बुकिंग में वापस मिलने वाला खुला मिसिंग सामान नहीं है</td></tr>';}
-        function recoverMissingItem(recordId,rowIndex){const bId=activeReturnBookingId;if(bId==null)return;const missing=safeGetStorage('missingItemsDatabase',[]),m=missing.find(x=>String(x.id)===String(recordId)&&String(x.bookingId)===String(bId));if(!m){showActionMessage('मिसिंग रिकॉर्ड नहीं मिला','error');return}const input=document.getElementById('recoverMissingQty_'+rowIndex),qty=Number(input?.value),remaining=Math.max(0,Number(m.qty)||0);if(!Number.isInteger(qty)||qty<1||qty>remaining){showActionMessage('वापस मिली मात्रा 1 से मिसिंग बाकी मात्रा तक भरें','error');return}const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(bId));if(!b){showActionMessage('बुकिंग नहीं मिली','error');return}const it=(b.items||[]).find(x=>String(x.name)===String(m.item)&&String(x.source==='third-party'?'third-party':'admin')===String(m.source||'admin')&&String(x.partyName||'')===String(m.partyName||''));if(!it){showActionMessage('बुकिंग में संबंधित सामान नहीं मिला; स्टॉक नहीं बदला गया','error');return}it.missingQty=Math.max(0,(Number(it.missingQty)||0)-qty);it.returnedQty=(Number(it.returnedQty)||0)+qty;m.qty=remaining-qty;m.penalty=0;m.resolved=m.qty===0;m.recoveryEntries=Array.isArray(m.recoveryEntries)?m.recoveryEntries:[];m.recoveryEntries.push({qty,date:new Date().toLocaleDateString('en-CA'),createdAt:new Date().toISOString()});const stockKey=m.source==='third-party'?'thirdPartyDatabase':'realStockDatabase',stock=safeGetStorage(stockKey,[]),row=stock.find(x=>String(x.name||x.item)===String(m.item)&&(m.source!=='third-party'||String(x.partyName||'')===String(m.partyName||'')));if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला; Missing Recovery सेव नहीं हुई','error');return}row.qty=Math.max(0,Number(row.qty)||0)+qty;if(!safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){showActionMessage('Missing Recovery सेव नहीं हुई; आंशिक अपडेट वापस करने की कोशिश की गई।','error');return}if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);loadAllFirebaseData();const q=document.getElementById('returnBarcodeInput');if(q)q.value=String(bId);loadReturnBookingForCounting();showActionMessage('मिसिंग सामान की वापसी दर्ज हुई और स्टॉक अपडेट हुआ','success');}
-        function completeManualReturnProcess(){
+        async function recoverMissingItem(recordId,rowIndex){
+            const bId=activeReturnBookingId;if(bId==null)return;
+            const missing=safeGetStorage('missingItemsDatabase',[]),m=missing.find(x=>String(x.id)===String(recordId)&&String(x.bookingId)===String(bId));
+            if(!m){showActionMessage('मिसिंग रिकॉर्ड नहीं मिला','error');return;}
+            const input=document.getElementById('recoverMissingQty_'+rowIndex),qty=Number(input?.value),remaining=Math.max(0,Number(m.qty)||0);
+            if(!Number.isInteger(qty)||qty<1||qty>remaining){showActionMessage('वापस मिली मात्रा 1 से मिसिंग बाकी मात्रा तक भरें','error');return;}
+            const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(bId));
+            if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
+            const it=(b.items||[]).find(x=>String(x.name)===String(m.item)&&String(x.source==='third-party'?'third-party':'admin')===String(m.source||'admin')&&String(x.partyName||'')===String(m.partyName||''));
+            if(!it){showActionMessage('बुकिंग में संबंधित सामान नहीं मिला; स्टॉक नहीं बदला गया','error');return;}
+            const stockKey=m.source==='third-party'?'thirdPartyDatabase':'realStockDatabase',stock=safeGetStorage(stockKey,[]);
+            const row=stock.find(x=>String(x.name||x.item)===String(m.item)&&(m.source!=='third-party'||String(x.partyName||'')===String(m.partyName||'')));
+            if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला; Missing Recovery सेव नहीं हुई','error');return;}
+            const previousState={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(missing)),stock:JSON.parse(JSON.stringify(stock))};
+            it.missingQty=Math.max(0,(Number(it.missingQty)||0)-qty);it.returnedQty=(Number(it.returnedQty)||0)+qty;
+            m.qty=remaining-qty;m.penalty=0;m.resolved=m.qty===0;m.recoveryEntries=Array.isArray(m.recoveryEntries)?m.recoveryEntries:[];
+            m.recoveryEntries.push({qty,date:new Date().toLocaleDateString('en-CA'),createdAt:new Date().toISOString()});
+            row.qty=Math.max(0,Number(row.qty)||0)+qty;
+            if(!safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){showActionMessage('Missing Recovery सेव नहीं हुई; आंशिक अपडेट वापस करने की कोशिश की गई।','error');return;}
+            if(b.source==='customer-portal'){
+                const remoteSaved=await syncCustomerBookingWorkflow(b);
+                if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['missingItemsDatabase',previousState.missing],[stockKey,previousState.stock]]);loadAllFirebaseData();return;}
+            }
+            loadAllFirebaseData();const q=document.getElementById('returnBarcodeInput');if(q)q.value=String(bId);
+            loadReturnBookingForCounting();showActionMessage('मिसिंग सामान की वापसी दर्ज हुई और स्टॉक अपडेट हुआ','success');
+        }
+        async function completeManualReturnProcess(){
             if(activeReturnBookingId==null){showActionMessage('पहले बुकिंग लोड करें','error');return;}
             const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(activeReturnBookingId));
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
             if(!['Dispatched','Partially Returned'].includes(b.status)){showActionMessage('Return से पहले सामान Dispatch होना आवश्यक है','error');return;}
             const missing=safeGetStorage('missingItemsDatabase',[]),stock=safeGetStorage('realStockDatabase',[]),thirdParty=safeGetStorage('thirdPartyDatabase',[]);
+            const previousState={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(missing)),adminStock:JSON.parse(JSON.stringify(stock)),vendorStock:JSON.parse(JSON.stringify(thirdParty))};
             const returnDate=prompt('वास्तविक Return की तारीख (YYYY-MM-DD)',new Date().toLocaleDateString('en-CA'));
             if(returnDate===null)return;
             if(!/^\d{4}-\d{2}-\d{2}$/.test(returnDate)||(b.lastDispatchDate&&returnDate<b.lastDispatchDate)){showActionMessage('Return तारीख Dispatch तारीख से पहले नहीं हो सकती','error');return;}
@@ -2849,7 +2882,10 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])){
               showActionMessage('Return सेव नहीं हुआ; कोई आंशिक अपडेट लागू नहीं रखा गया।','error');return;
             }
-            if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+            if(b.source==='customer-portal'){
+              const remoteSaved=await syncCustomerBookingWorkflow(b);
+              if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock],['missingItemsDatabase',previousState.missing]]);loadAllFirebaseData();return;}
+            }
             activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();
             showActionMessage(fullyReturned?'Return पूरा हुआ; Missing सामान अलग सूची में दर्ज है, कोई Missing चार्ज बिल में नहीं जुड़ेगा':'Partial Return सेव हुआ; बाकी सामान अभी Missing नहीं माना गया, बाद में Return करें','success');
         }
