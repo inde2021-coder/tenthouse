@@ -82,3 +82,5 @@
 - सभी deployable HTML shells synchronized; regression coverage और bartan preview branch CI trigger जोड़ा।
 
 - Frontend contrast stylesheet को सभी inline scripts के बाद document के अंत में रखा, ताकि script parsing प्रभावित न हो।
+
+- Customer booking print HTML की escaped script closing के बाद आए accidental newline हटाए; सभी 7 inline JavaScript blocks को syntax-parse करके जाँचा।
