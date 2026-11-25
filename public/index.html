@@ -2374,7 +2374,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const paymentSelect=document.getElementById('tpPaymentParty');
             if(paymentSelect){const prev=paymentSelect.value;paymentSelect.innerHTML='<option value="">वेंडर चुनें</option>'+parties.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');if(parties.includes(prev))paymentSelect.value=prev;}
             const money=n=>'₹'+(Number(n)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-            container=document.getElementById('partyWiseTablesContainer');if(!container)return;
+            const container=document.getElementById('partyWiseTablesContainer');if(!container)return;
             container.innerHTML=parties.length===0?'<p>कोई वेंडर डेटा नहीं</p>':parties.map(party=>{
                 const items=tpList.filter(x=>x.partyName===party);
                 const vendorEntries=bookings.flatMap(booking=>(Array.isArray(booking.dispatchEntries)?booking.dispatchEntries:[]).filter(e=>e.source==='third-party'&&String(e.partyName||'')===String(party)).map(e=>({booking,e})));
