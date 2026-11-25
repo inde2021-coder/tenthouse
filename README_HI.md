@@ -23,6 +23,7 @@
 7. Backend अब Firebase Admin SDK के जरिए OTP, UTR/payment ledger, WhatsApp inbox और customer booking requests को Realtime Database में persist कर सकता है। इसके लिए `FIREBASE_SERVICE_ACCOUNT_JSON` और `FIREBASE_DATABASE_URL` दोनों server environment में सेट करना अनिवार्य है। Production में database configuration न होने पर ये data APIs 503 लौटाती हैं; वे चुपचाप memory में data नहीं खोतीं। Backups, restore drill, retention/cleanup और per-user authorization फिर भी जरूरी हैं।
 
 ## 3. API endpoints
+- `GET /api/customer/stock` — ग्राहक पैनल के लिए केवल उपलब्ध Admin stock, मात्रा और किराया दरों का सुरक्षित public catalog।
 - `GET /health`
 - `POST /api/otp/send` body: `{ "phone": "+919876543210", "channel": "sms|whatsapp|both" }`
 - `POST /api/otp/verify` body: `{ "phone": "+919876543210", "otp": "123456" }`
