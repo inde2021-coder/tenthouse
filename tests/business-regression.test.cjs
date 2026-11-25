@@ -15,6 +15,7 @@ test('Vercel backend serves the synced frontend and PWA assets from its project 
   assert.equal(fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8'), html);
   assert.equal(fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8'), html);
   assert.ok(html.includes("window.location.origin"), 'backend API should default to the current deployment origin');
+  assert.ok(html.includes('appassets.androidplatform.net'), 'Android WebView should retain the configured remote backend default');
   for (const asset of ['icon.svg', 'manifest.webmanifest', 'sw.js']) {
     assert.ok(fs.existsSync(path.join(publicDir, asset)), `missing backend public asset: ${asset}`);
   }
