@@ -77,6 +77,49 @@ after(async () => {
   if (child.exitCode === null) child.kill('SIGKILL');
 });
 
+test('production readiness fails closed when Firebase credentials are absent', async () => {
+  const port = await reservePort();
+  const productionServer = spawn(process.execPath, [path.join(__dirname, '..', 'backend', 'src', 'server.js')], {
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      PORT: String(port),
+      FIREBASE_SERVICE_ACCOUNT_JSON: '',
+      FIREBASE_DATABASE_URL: '',
+      ADMIN_API_TOKEN: adminToken,
+      OTP_HMAC_SECRET: otpSecret
+    },
+    stdio: 'ignore'
+  });
+  try {
+    let response = null;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      if (productionServer.exitCode !== null) throw new Error('Production backend exited before readiness check.');
+      try {
+        response = await fetch('http://127.0.0.1:' + port + '/ready');
+        break;
+      } catch (_) {
+        await delay(50);
+      }
+    }
+    assert.ok(response, 'Production backend did not respond to readiness check.');
+    assert.equal(response.status, 503);
+    const data = await response.json();
+    assert.equal(data.ok, false);
+    assert.equal(data.environment, 'production');
+    assert.equal(data.persistentDatabaseReady, false);
+  } finally {
+    if (productionServer.exitCode === null) {
+      productionServer.kill('SIGTERM');
+      await Promise.race([
+        new Promise(resolve => productionServer.once('exit', resolve)),
+        delay(2000)
+      ]);
+      if (productionServer.exitCode === null) productionServer.kill('SIGKILL');
+    }
+  }
+});
+
 test('readiness endpoint reports database configuration without exposing secrets', async () => {
   const response = await request('/ready');
   assert.equal(response.status, 200);
