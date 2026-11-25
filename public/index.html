@@ -1510,10 +1510,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate): (scheduled>today?scheduled:today);
                 rentalTotal=items.reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rentPrice??500))*calculateRentalDays(b.date,endDate),0);
             }
-            const missingTotal=items.reduce((sum,item)=>sum+Math.max(0,Number(item.missingQty)||0)*getEffectiveMissingCharge(item),0);
+            // Missing items are recorded as quantities only; never auto-charge them to the customer.
             const other=Math.max(0,Number(b.otherCharges)||0),discount=Math.max(0,Number(b.discountAmount)||0);
-            b.missingChargeTotal=Math.round(missingTotal*100)/100;
-            return Math.max(0,Math.round((rentalTotal+missingTotal+other-discount)*100)/100);
+            return Math.max(0,Math.round((rentalTotal+other-discount)*100)/100);
         }
 
         function loadAllFirebaseData() {
@@ -2423,7 +2422,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                         <tbody>${(Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length?b.dispatchEntries.map(e=>({name:e.itemName||b.items?.[Number(e.itemIndex)]?.name||'सामान',qty:Number(e.qty)||0,rate:Number(e.unitRent??b.items?.[Number(e.itemIndex)]?.rentPrice??500),date:e.date||b.date})):((b.items||[]).map(i=>({name:i.name,qty:Number(i.qty)||0,rate:Number(i.rentPrice??500),date:b.date})))).map(e=>`<tr><td>${escapeHtml(e.name)}</td><td>${e.qty}</td><td>${escapeHtml(e.date)} → ${escapeHtml(b.actualReturnDate||b.returnDate)} (${calculateRentalDays(e.date,b.actualReturnDate||b.returnDate)} दिन)</td><td>₹${e.qty*e.rate*calculateRentalDays(e.date,b.actualReturnDate||b.returnDate)}</td></tr>`).join('')}</tbody>
                     </table>
                     ${(b.items||[]).some(i=>Math.max(0,Number(i.missingQty)||0)>0)?`<section style="margin-top:12px;border:1px solid #dc2626;border-radius:8px;padding:10px;background:#fff7f7"><h3 style="color:#991b1b;margin:0 0 8px">मिसिंग सामान की अलग सूची (केवल मात्रा)</h3><table style="width:100%;border-collapse:collapse" border="1"><thead><tr><th>सामान</th><th>मिसिंग मात्रा</th></tr></thead><tbody>${(b.items||[]).filter(i=>Math.max(0,Number(i.missingQty)||0)>0).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Math.max(0,Number(i.missingQty)||0)}</td></tr>`).join('')}</tbody></table></section>`:''}
-                    <div style="margin-top:10px;text-align:right"><p>किराया: ₹${Math.max(0,totalRent-(Number(b.missingChargeTotal)||0)-(Number(b.otherCharges)||0)+(Number(b.discountAmount)||0)).toFixed(2)}</p><p>मिसिंग सामान चार्ज: ₹${(Number(b.missingChargeTotal)||0).toFixed(2)}</p><p>अन्य चार्ज: ₹${(Number(b.otherCharges)||0).toFixed(2)}</p><p>डिस्काउंट: −₹${(Number(b.discountAmount)||0).toFixed(2)}</p><h3 style="color:#2b6cb0">कुल देय राशि: ₹${totalRent.toFixed(2)}</h3><p>पहले जमा: ₹${getBookingPaidAmount(b).toFixed(2)} · बाकी: ₹${Math.max(0,totalRent-getBookingPaidAmount(b)).toFixed(2)}</p></div>
+                    <div style="margin-top:10px;text-align:right"><p>किराया: ₹${Math.max(0,totalRent-(Number(b.missingChargeTotal)||0)-(Number(b.otherCharges)||0)+(Number(b.discountAmount)||0)).toFixed(2)}</p><p>मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)</p><p>अन्य चार्ज: ₹${(Number(b.otherCharges)||0).toFixed(2)}</p><p>डिस्काउंट: −₹${(Number(b.discountAmount)||0).toFixed(2)}</p><h3 style="color:#2b6cb0">कुल देय राशि: ₹${totalRent.toFixed(2)}</h3><p>पहले जमा: ₹${getBookingPaidAmount(b).toFixed(2)} · बाकी: ₹${Math.max(0,totalRent-getBookingPaidAmount(b)).toFixed(2)}</p></div>
                     ${settings.termsConditions ? `<section style="margin-top:12px;border-top:1px solid #cbd5e1;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(settings.termsConditions)}</p></section>` : ''}
                     <div style="margin-top:15px; display:flex; gap:10px;">
                         <button onclick="printInvoice()" class="glass-btn-green" style="flex:0 1 auto;"><i class="fa-solid fa-print"></i> प्रिंट इनवॉइस</button>
@@ -2564,14 +2563,13 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 const vendorMissingLiability=bookings.reduce((sum,booking)=>sum+(booking.items||[]).filter(item=>item.source==='third-party'&&String(item.partyName||'')===String(party)).reduce((part,item)=>part+Math.max(0,Number(item.missingQty)||0)*Math.max(0,Number(item.vendorMissingCost)||0),0),0);
                 const vendorCost=vendorRentCost+vendorMissingLiability;
                 const customerRent=vendorEntries.reduce((sum,{booking,e,qty,endDate})=>{const days=calculateRentalDays(e.date||booking.date,endDate);return sum+Math.max(0,Number(qty)||0)*Math.max(0,Number(e.unitRent)||0)*days;},0);
-                const customerMissingRevenue=bookings.reduce((sum,booking)=>sum+(booking.items||[]).filter(item=>item.source==='third-party'&&String(item.partyName||'')===String(party)).reduce((part,item)=>part+Math.max(0,Number(item.missingQty)||0)*Math.max(0,Number(item.missingCharge)||0),0),0);
                 const paid=payments.filter(x=>x.partyName===party).reduce((sum,x)=>sum+Math.max(0,Number(x.amount)||0),0);
-                const due=Math.max(0,vendorCost-paid),margin=customerRent+customerMissingRevenue-vendorCost;
+                const due=Math.max(0,vendorCost-paid),margin=customerRent-vendorCost;
                 return `<section class="glass-card-blue" style="margin:10px 0"><h4>वेंडर: ${escapeHtml(party)}</h4>
                   <p>वेंडर किराया लागत (वास्तविक Dispatch × दिन): <b>${money(vendorRentCost)}</b></p>
                   <p>Missing Vendor सामान की Replacement Liability: <b>${money(vendorMissingLiability)}</b></p>
                   <p>वेंडर को कुल देय: <b>${money(vendorCost)}</b></p>
-                  <p>ग्राहक किराया: ${money(customerRent)} | ग्राहक Missing Charge: ${money(customerMissingRevenue)} | अनुमानित मार्जिन: ${money(margin)}</p>
+                  <p>ग्राहक किराया: ${money(customerRent)} | Missing सामान का ग्राहक से कोई शुल्क नहीं | अनुमानित मार्जिन: ${money(margin)}</p>
                   <p>वेंडर को भुगतान: ${money(paid)} | बाकी देय: <b>${money(due)}</b></p>
                   <div class="table-responsive"><table><thead><tr><th>सामान</th><th>उपलब्ध मात्रा</th><th>दर्ज मात्रा</th><th>वेंडर लागत / दिन</th><th>ग्राहक किराया / दिन</th><th>एक्शन</th></tr></thead><tbody>${items.map(i=>`<tr><td>${escapeHtml(i.item||i.name||'')}</td><td>${Number(i.qty)||0}</td><td>${Number(i.purchasedQty??i.qty)||0}</td><td>${money(i.costPrice)}</td><td>${money(i.chargePrice)}</td><td><button type="button" onclick="editThirdPartyEntry(${JSON.stringify(String(i.partyName)).replace(/"/g,'&quot;')},${JSON.stringify(String(i.item||i.name||'')).replace(/"/g,'&quot;')})">संपादित</button> <button type="button" onclick="deleteThirdPartyEntry(${JSON.stringify(String(i.partyName)).replace(/"/g,'&quot;')},${JSON.stringify(String(i.item||i.name||'')).replace(/"/g,'&quot;')})">हटाएँ</button></td></tr>`).join('')||'<tr><td colspan="6">कोई सामान नहीं</td></tr>'}</tbody></table></div></section>`;
             }).join('');
