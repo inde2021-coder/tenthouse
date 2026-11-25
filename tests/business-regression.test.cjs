@@ -934,3 +934,35 @@ test('Render preview is visibly labeled and isolated from production Firebase', 
   assert.ok(backend.includes("if (isPreviewMode && req.header('x-admin-token') === 'PREVIEW-DEMO-ONLY-ACCESS') return next();"));
   assert.ok(backend.includes("if(!adminDb && !isPreviewMode)return res.status(503)"));
 });
+
+
+test('bartan rental hero, customer search and customer documents are wired into the public portal', () => {
+  assert.ok(html.includes('BARTAN &amp; CROCKERY RENTALS'));
+  assert.ok(html.includes('src="./bartan-hero.svg"'));
+  assert.ok(html.includes('id="customerStatusQuery"'));
+  assert.ok(html.includes('id="customerStatusMobile"'));
+  assert.ok(html.includes("fetch(api+'/api/customer/lookup'"));
+  assert.ok(html.includes('window.printCustomerRecord=function(id,type)'));
+  assert.ok(html.includes('event.detail>=3'));
+  assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
+  assert.ok(backend.includes("app.post('/api/customer/lookup', bookingLimiter, requireDurableStore"));
+  assert.ok(backend.includes("if(normalizePhone(b.mob)!==mobile)return false;"));
+  assert.ok(backend.includes('dispatchEntries:(b.dispatchEntries||[])'));
+  assert.ok(backend.includes('returnEntries:(b.returnEntries||[])'));
+});
+
+test('customer advance defaults to Cash and only shows UPI QR/UTR for a positive online advance', () => {
+  assert.ok(html.includes('<option value="Cash" selected>नकद (Cash) · Default</option>'));
+  assert.ok(html.includes("sec.style.display=mode==='UPI'?'block':'none'"));
+  assert.ok(html.includes("utrWrap.style.display=isUpi&&amount>0?'block':'none'"));
+  assert.ok(html.includes("utr.required=isUpi&&amount>0"));
+});
+
+test('all customer input controls share a readable style and section labels have distinct colors', () => {
+  assert.ok(html.includes('#customerFirstPortal input:not([type=checkbox])'));
+  assert.ok(html.includes('.rk-customer-identity label{color:#80d5ff'));
+  assert.ok(html.includes('.rk-customer-event label{color:#c3a7ff'));
+  assert.ok(html.includes('.rk-customer-items label{color:#7fe5bc'));
+  assert.ok(html.includes('.rk-customer-payment label{color:#ffd38b'));
+  assert.ok(html.includes('#customerFirstPortal #portalShopTitle{'));
+});

@@ -671,19 +671,25 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
     <!-- Customer Portal -->
     <div id="customerFirstPortal" class="no-print" style="display: flex;">
         <div class="customer-scroll-wrap">
-<section class="rk-customer-hero" aria-label="Radhe Krishn Tent House">
-<div class="rk-hero-copy"><div class="rk-hero-kicker"><i class="fa-solid fa-sparkles"></i> YOUR CELEBRATION, OUR ARRANGEMENT</div><p class="rk-hero-eyebrow">हर खुशी के मौके पर</p><h2>यादगार समारोह की<br><em>शानदार शुरुआत</em></h2><p class="rk-hero-description">शादी, जन्मदिन और हर खास अवसर के लिए टेंट, फर्नीचर और इवेंट सामान की आसान बुकिंग करें।</p><button type="button" class="rk-hero-cta" onclick="document.getElementById('portalCustName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName').focus();">बुकिंग शुरू करें <i class="fa-solid fa-arrow-down"></i></button><div class="rk-hero-trust"><span><i class="fa-solid fa-shield-heart"></i> भरोसेमंद सेवा</span><span><i class="fa-solid fa-calendar-check"></i> आसान बुकिंग</span></div></div>
-<div class="rk-hero-art" aria-hidden="true"><div class="rk-hero-orbit"></div><div class="rk-hero-stage"><div class="rk-stage-roof"></div><div class="rk-stage-curtain left"></div><div class="rk-stage-curtain right"></div><div class="rk-stage-arch"><div class="rk-stage-inner"></div><div class="rk-stage-lights"></div></div><div class="rk-stage-floor"></div><span class="rk-stage-star s1">✦</span><span class="rk-stage-star s2">✧</span></div><div class="rk-hero-float f1"><i class="fa-solid fa-champagne-glasses"></i> Special Events</div><div class="rk-hero-float f2"><i class="fa-solid fa-couch"></i> Complete Setup</div></div>
-<div class="rk-hero-bottomline"><span>RADHE KRISHN TENT HOUSE</span><span>CELEBRATE BEAUTIFULLY · BOOK EASILY</span></div></section>
+<section class="rk-customer-hero" aria-label="बर्तन और क्रॉकरी रेंटल"><div class="rk-hero-copy"><div class="rk-hero-kicker"><i class="fa-solid fa-utensils"></i> BARTAN &amp; CROCKERY RENTALS</div><p class="rk-hero-eyebrow">हर आयोजन के लिए साफ़-सुथरे बर्तन</p><h2>बर्तन की पूरी व्यवस्था<br><em>अब आसान बुकिंग के साथ</em></h2><p class="rk-hero-description">स्टील थाली, कटोरी, गिलास, कप, भगोने और सर्विंग सेट—जरूरत के अनुसार सामान और तारीख चुनकर बुक करें।</p><button type="button" class="rk-hero-cta" onclick="document.getElementById('portalCustName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName').focus();">बर्तन बुक करें <i class="fa-solid fa-arrow-down"></i></button><div class="rk-hero-trust"><span><i class="fa-solid fa-boxes-stacked"></i> अलग-अलग मात्रा</span><span><i class="fa-solid fa-calendar-check"></i> तारीख के अनुसार बुकिंग</span></div></div><div class="rk-hero-art"><img src="./bartan-hero.svg" alt="स्टील की थाली, कटोरी, गिलास, भगोने और सर्विंग बर्तन" loading="eager"></div><div class="rk-hero-bottomline"><span>RADHE KRISHN BARTAN TENT HOUSE</span><span>THALI · GLASS · BOWLS · COOKWARE · SERVING SETS</span></div></section>
             <header class="rk-customer-brand">
                 <div class="rk-customer-brand-mark" aria-hidden="true"><i class="fa-solid fa-crown"></i></div>
                 <div class="rk-customer-brand-copy">
                     <div class="rk-customer-eyebrow">RADHE KRISHN · TENT HOUSE</div>
-                    <h1 id="portalShopTitle"><span id="displayShopName">राधा कृष्णा टेंट हाउस</span></h1>
+                    <h1 id="portalShopTitle" onclick="handleShopNameTripleClick(event)" title="Shop identity"><span id="displayShopName">राधा कृष्णा टेंट हाउस</span></h1>
                     <div class="rk-customer-subtitle">कस्टमर बुकिंग पोर्टल</div>
                 </div>
                 <div class="rk-customer-brand-seal"><i class="fa-solid fa-shield-check" aria-hidden="true"></i><span>Direct Booking</span></div>
             </header>
+            <section class="rk-customer-tracker" aria-label="ग्राहक बुकिंग स्थिति और दस्तावेज़">
+              <div class="rk-tracker-heading"><span class="rk-tracker-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span><div><h2>अपनी बुकिंग और स्लिप देखें</h2><p>नाम, मोबाइल या Booking ID से खोजें। सुरक्षा के लिए बुकिंग में दर्ज मोबाइल नंबर भी भरें।</p></div></div>
+              <form class="rk-tracker-form" onsubmit="event.preventDefault();checkCustomerBookingStatus()">
+                <div><label for="customerStatusQuery">खोजें · ग्राहक नाम / मोबाइल / Booking ID</label><input type="text" id="customerStatusQuery" maxlength="120" placeholder="नाम, 10 अंकों का मोबाइल या Booking ID"></div>
+                <div><label for="customerStatusMobile">बुकिंग में दर्ज मोबाइल नंबर</label><input type="tel" id="customerStatusMobile" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="सुरक्षा के लिए 10 अंक"></div>
+                <button type="submit" class="rk-tracker-search"><i class="fa-solid fa-magnifying-glass"></i> बुकिंग खोजें</button>
+              </form>
+              <div id="customerStatusResultBox" class="rk-customer-results" aria-live="polite" style="display:none"></div>
+            </section>
             <div class="rk-customer-shell">
                 <form class="rk-customer-form" onsubmit="saveCustomerBooking(event)">
                     <div class="glass-card-blue rk-customer-section rk-customer-identity">
@@ -722,12 +728,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         <div class="rk-customer-section-title"><i class="fa-solid fa-credit-card"></i> एडवांस पेमेंट</div>
                         <div class="form-grid">
                             <div><label>एडवांस पेमेंट / Advance Payment (₹)</label><input type="number" id="portalAdvanceAmount" min="0" placeholder="0" oninput="updateDynamicPaymentQR()"></div>
-                            <div><label>मोड</label><select id="portalPayMode" onchange="togglePaymentFields()"><option value="Cash">नकद (Cash)</option><option value="UPI">ऑनलाइन (UPI/QR)</option></select></div>
+                            <div><label>मोड</label><select id="portalPayMode" onchange="togglePaymentFields()"><option value="Cash" selected>नकद (Cash) · Default</option><option value="UPI">ऑनलाइन (UPI / QR)</option></select></div>
                         </div>
                         <div id="onlinePaymentSection" style="display: none; margin-top: 10px; text-align: center; padding: 10px; background: #e4ebf5; border-radius: 14px;">
                             <canvas id="dynamicQrCanvas" width="180" height="180" aria-label="Advance payment QR" style="width:180px;height:180px;max-width:100%;background:#fff;margin-bottom:6px"></canvas>
-                            <p id="portalQrHint" style="font-size:12px;margin:4px 0 8px">Advance राशि डालने पर उसी राशि का QR बनेगा।</p>
-                            <div><label>UTR नंबर (भुगतान के बाद)</label><input type="text" id="portalUtrNumber" maxlength="80" placeholder="UPI UTR दर्ज करें" style="margin-bottom:0;"></div>
+                            <p id="portalQrHint" style="font-size:12px;margin:4px 0 8px">पहले Advance राशि भरें। QR उसी राशि का बनेगा।</p>
+                            <div class="rk-utr-field" style="display:none"><label>UTR नंबर (UPI भुगतान के बाद)</label><input type="text" id="portalUtrNumber" maxlength="80" placeholder="UPI UTR दर्ज करें" style="margin-bottom:0;"></div>
                         </div>
                     </div>
                     <button type="submit" class="glass-btn-cyan rk-customer-submit"><i class="fa-solid fa-paper-plane"></i> बुकिंग सबमिट करें</button>
@@ -1194,7 +1200,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                                 <div style="grid-column:1/-1;padding:14px;border:1px solid #d8dfeb;border-radius:14px;background:#f8fafc">
                                     <label for="settingCustomerHeroFile">Customer Website Hero इमेज बदलें</label>
                                     <input type="file" id="settingCustomerHeroFile" accept="image/png,image/jpeg,image/webp" onchange="handleImageUpload(event, 'customerHeroImage')">
-                                    <small>अपनी टेंट/डेकोरेशन की फोटो चुनें। यह ग्राहक वेबसाइट के Hero में अपने-आप फिट होगी और Firebase सेटिंग्स में सिंक होगी।</small>
+                                    <small>बर्तन, क्रॉकरी, थाली, गिलास या कुकवेयर की फोटो चुनें। यह ग्राहक वेबसाइट के Hero में अपने-आप फिट होगी और सेटिंग्स में सिंक होगी।</small>
                                     <button type="button" class="action-btn" style="width:auto;margin-top:8px" onclick="removeCustomerHeroImage()"><i class="fa-solid fa-trash"></i> Default Hero वापस लगाएं</button>
                                 </div>
 
@@ -1765,7 +1771,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             showActionMessage('व्यवस्थापक प्रवेश लॉक है।','info');
             return false;
         }
-        function handleShopNameTripleClick(event) { return openCustomerLogin(event); }
+        function handleShopNameTripleClick(event) { if(event)event.preventDefault(); if(event && event.detail>=3){revealAdminGate();showActionMessage('Secret Admin Gate खुल गया। अब Backend Admin Token से सत्यापन करें।','info');} return false; }
         function closeWelcomeOverlay() {
             const gate=document.getElementById('welcomeOverlay');
             if(gate)gate.style.display='none';
@@ -2308,7 +2314,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         function updateDynamicPaymentQR() {
             const amount=Number(document.getElementById('portalAdvanceAmount')?.value||0),settings=safeGetStorage('softwareSettings',{}),upiId=String(settings.upiId||'').trim();
             const canvas=document.getElementById('dynamicQrCanvas'),hint=document.getElementById('portalQrHint'),utr=document.getElementById('portalUtrNumber');
-            if(utr)utr.required=document.getElementById('portalPayMode')?.value==='UPI'&&amount>0;
+            const isUpi=document.getElementById('portalPayMode')?.value==='UPI';
+            if(utr)utr.required=isUpi&&amount>0;
+            const utrWrap=utr?.closest('.rk-utr-field');
+            if(utrWrap)utrWrap.style.display=isUpi&&amount>0?'block':'none';
             if(!canvas)return;
             if(!(amount>0)||!Number.isFinite(amount)||!upiId||!window.QRious){
                 canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
@@ -3641,52 +3650,106 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
 <script>
 (function(){
-  function esc(v){if(typeof window.escapeHtml==='function')return window.escapeHtml(v==null?'':String(v));return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function money(v){return '₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=v=>'₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const digits=v=>String(v||'').replace(/\D/g,'').slice(-10);
+  const dayCount=(start,end)=>{
+    const a=new Date(String(start||'').slice(0,10)+'T12:00:00'),b=new Date(String(end||'').slice(0,10)+'T12:00:00');
+    if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime())||b<a)return 1;
+    return Math.max(1,Math.round((b-a)/86400000));
+  };
+  function financials(b){
+    const items=Array.isArray(b.items)?b.items:[],entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[],returns=Array.isArray(b.returnEntries)?b.returnEntries:[];
+    const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),openEnd=scheduled>today?scheduled:today;
+    let rental=0,lines=[];
+    if(entries.length){
+      const allocated=entries.map(()=>0),slices=[];
+      returns.flatMap(r=>(r.items||[]).map(x=>({date:r.date||b.actualReturnDate||b.returnDate,itemIndex:Number(x.itemIndex),qty:Math.max(0,Number(x.qty)||0)})))
+        .sort((a,z)=>String(a.date).localeCompare(String(z.date))).forEach(ret=>{
+          let left=ret.qty;
+          entries.map((entry,index)=>({entry,index})).filter(x=>Number(x.entry.itemIndex)===ret.itemIndex)
+            .sort((a,z)=>String(a.entry.date||'').localeCompare(String(z.entry.date||''))).forEach(({entry,index})=>{
+              if(left<=0)return;
+              const qty=Math.min(Math.max(0,(Number(entry.qty)||0)-allocated[index]),left);
+              if(qty){slices.push({entry,qty,endDate:ret.date});allocated[index]+=qty;left-=qty;}
+            });
+        });
+      entries.forEach((entry,index)=>{
+        const qty=Math.max(0,(Number(entry.qty)||0)-allocated[index]);
+        if(qty)slices.push({entry,qty,endDate:b.fullyReturnedAt?(b.actualReturnDate||b.returnDate||entry.date):openEnd});
+      });
+      rental=slices.reduce((sum,x)=>{
+        const rate=Math.max(0,Number(x.entry.unitRent??items[Number(x.entry.itemIndex)]?.rentPrice)||0),days=dayCount(x.entry.date||b.date,x.endDate),amount=x.qty*rate*days;
+        lines.push({name:x.entry.itemName||items[Number(x.entry.itemIndex)]?.name||'सामान',qty:x.qty,rate,days,amount});return sum+amount;
+      },0);
+    }else{
+      const endDate=b.actualReturnDate||b.returnDate||today;
+      rental=items.reduce((sum,item)=>{
+        const qty=Math.max(0,Number(item.qty)||0),rate=Math.max(0,Number(item.rentPrice??500)||0),days=dayCount(b.date,endDate),amount=qty*rate*days;
+        lines.push({name:item.name,qty,rate,days,amount});return sum+amount;
+      },0);
+    }
+    const other=Math.max(0,Number(b.otherCharges)||0),discount=Math.max(0,Number(b.discountAmount)||0),total=Math.max(0,Math.round((rental+other-discount)*100)/100);
+    const advance=b.advancePaymentVerified===true?Math.max(0,Number(b.advanceAmount)||0):0;
+    const installments=Array.isArray(b.partPayments)?b.partPayments.reduce((sum,p)=>sum+Math.max(0,Number(p.amount)||0),0):0;
+    const paid=Math.max(0,Number(b.totalPaid)||0,Number(b.paidAmt)||0,advance+installments);
+    return {lines,total,paid,due:Math.max(0,total-paid),advance,installments,other,discount};
+  }
+  function statusClass(status){
+    if(['Returned','Confirmed','Dispatched','Partially Returned'].includes(String(status)))return 'good';
+    if(['Rejected','Cancelled'].includes(String(status)))return 'bad';
+    return 'pending';
+  }
+  function renderBooking(b){
+    const f=financials(b),items=Array.isArray(b.items)?b.items:[],dispatch=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[],returns=Array.isArray(b.returnEntries)?b.returnEntries:[],status=String(b.status||'Pending Approval');
+    const dispatchRows=dispatch.length?dispatch.map(e=>'<tr><td>'+esc(e.itemName||items[Number(e.itemIndex)]?.name||'सामान')+'</td><td>'+Math.max(0,Number(e.qty)||0)+'</td><td>'+esc(e.date||'-')+'</td></tr>').join(''):'<tr><td colspan="3">अभी Dispatch नहीं हुआ</td></tr>';
+    const returnRows=returns.length?returns.flatMap(r=>(r.items||[]).map(x=>'<tr><td>'+esc(items[Number(x.itemIndex)]?.name||'सामान')+'</td><td>'+Math.max(0,Number(x.qty)||0)+'</td><td>'+esc(r.date||'-')+'</td><td>'+esc(r.mode||'RETURN')+'</td></tr>')).join(''):'<tr><td colspan="4">अभी Return दर्ज नहीं हुआ</td></tr>';
+    const stages=[['Booking Received',true],['Admin Confirmed',!['Pending Approval','Rejected','Cancelled'].includes(status)],['Dispatch',dispatch.length>0],['Return',returns.length>0||status==='Returned']];
+    const stageHtml=stages.map(([label,done])=>'<span class="rk-track-stage '+(done?'done':'')+'"><i class="fa-solid '+(done?'fa-circle-check':'fa-circle')+'"></i> '+label+'</span>').join('');
+    return '<article class="rk-customer-booking-card"><header class="rk-customer-booking-head"><div><small>BOOKING ID</small><strong>#'+esc(b.id)+'</strong></div><span class="rk-status-pill '+statusClass(status)+'">'+esc(status)+'</span></header>'+
+      '<div class="rk-customer-grid"><div class="rk-detail"><small>ग्राहक</small><strong>'+esc(b.name)+'</strong></div><div class="rk-detail"><small>मोबाइल</small><strong>'+esc(b.mob)+'</strong></div><div class="rk-detail"><small>कार्यक्रम</small><strong>'+esc(b.eventType||'-')+'</strong></div><div class="rk-detail"><small>डिस्पैच तारीख</small><strong>'+esc(b.date||'-')+'</strong></div><div class="rk-detail"><small>वापसी तारीख</small><strong>'+esc(b.returnDate||'-')+'</strong></div><div class="rk-detail"><small>Advance</small><strong>'+money(b.advanceAmount||0)+' · '+(b.advancePaymentVerified?'सत्यापित':esc(b.advancePaymentStatus||'नहीं दिया'))+'</strong></div></div>'+
+      '<div class="rk-customer-stage-line">'+stageHtml+'</div><h4>बुकिंग में चुना गया सामान</h4><div class="rk-tracker-table-wrap"><table><thead><tr><th>सामान</th><th>बुक मात्रा</th><th>वापस</th><th>Missing</th></tr></thead><tbody>'+
+      (items.length?items.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+Math.max(0,Number(x.qty)||0)+'</td><td>'+Math.max(0,Number(x.returnedQty)||0)+'</td><td>'+Math.max(0,Number(x.missingQty)||0)+'</td></tr>').join(''):'<tr><td colspan="4">कोई सामान दर्ज नहीं</td></tr>')+
+      '</tbody></table></div><div class="rk-tracker-doc-grid"><section><h4><i class="fa-solid fa-truck"></i> Dispatch Slip History</h4><div class="rk-tracker-table-wrap"><table><thead><tr><th>सामान</th><th>मात्रा</th><th>तारीख</th></tr></thead><tbody>'+dispatchRows+'</tbody></table></div></section>'+
+      '<section><h4><i class="fa-solid fa-box-open"></i> Return Slip History</h4><div class="rk-tracker-table-wrap"><table><thead><tr><th>सामान</th><th>वापस</th><th>तारीख</th><th>मोड</th></tr></thead><tbody>'+returnRows+'</tbody></table></div></section></div>'+
+      '<div class="rk-customer-bill-total"><div><small>कुल बिल</small><strong>'+money(f.total)+'</strong></div><div><small>सत्यापित जमा</small><strong>'+money(f.paid)+'</strong></div><div><small>बाकी</small><strong>'+money(f.due)+'</strong></div></div>'+
+      '<div class="rk-tracker-actions"><button type="button" onclick="printCustomerRecord(\''+esc(b.id)+'\',\'dispatch\')" '+(dispatch.length?'':'disabled')+'><i class="fa-solid fa-print"></i> Dispatch Slip</button><button type="button" onclick="printCustomerRecord(\''+esc(b.id)+'\',\'return\')" '+(returns.length?'':'disabled')+'><i class="fa-solid fa-print"></i> Return Slip</button><button type="button" onclick="printCustomerRecord(\''+esc(b.id)+'\',\'bill\')"><i class="fa-solid fa-file-invoice"></i> Bill देखें / प्रिंट</button></div>'+
+      '<p class="rk-customer-safe-note">Missing सामान केवल मात्रा के रूप में दिखाया गया है; उसे इस ग्राहक बिल में स्वतः चार्ज नहीं किया गया। UPI Advance केवल Admin verification के बाद जमा माना जाएगा।</p></article>';
+  }
+  window.customerLookupRecords=[];
   window.checkCustomerBookingStatus=async function(){
-    const id=(document.getElementById('customerStatusQuery')?.value||'').trim();
-    const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\D/g,'').slice(-10);
-    const box=document.getElementById('customerStatusResultBox');if(!box)return;
-    box.style.display='block';
-    if(!/^\d{10,16}$/.test(id)||!/^\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
-    box.innerHTML='<p>बुकिंग सर्वर से सुरक्षित जानकारी लाई जा रही है…</p>';
+    const query=(document.getElementById('customerStatusQuery')?.value||'').trim(),mobile=digits(document.getElementById('customerStatusMobile')?.value||''),box=document.getElementById('customerStatusResultBox');
+    if(!box)return;box.style.display='block';
+    if(query.length<2||!/^\d{10}$/.test(mobile)){box.innerHTML='<p class="rk-tracker-error">नाम, मोबाइल या Booking ID के साथ बुकिंग में दर्ज सही 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
+    box.innerHTML='<p class="rk-tracker-loading"><i class="fa-solid fa-spinner fa-spin"></i> आपकी बुकिंग खोजी जा रही है…</p>';
     try{
       let settings={};try{settings=JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){}
       const api=String(settings.backendApiUrl||(typeof DEFAULT_BACKEND_API_URL!=='undefined'?DEFAULT_BACKEND_API_URL:'')).replace(/\/$/,'');
-      if(!api)throw new Error('बुकिंग सर्वर URL सेट नहीं है');
-      const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(id)+'/status?mobile='+encodeURIComponent(mobile),{headers:{Accept:'application/json'},cache:'no-store'});
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(data.error||'बुकिंग नहीं मिली');
-      const b=data.booking;if(!b)throw new Error('बुकिंग विवरण उपलब्ध नहीं है');
-      const items=Array.isArray(b.items)?b.items:[],entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
-      const days=(start,end)=>{const a=new Date(String(start||'').slice(0,10)+'T12:00:00'),z=new Date(String(end||'').slice(0,10)+'T12:00:00');if(Number.isNaN(a.getTime())||Number.isNaN(z.getTime())||z<a)return 1;return Math.max(1,Math.round((z-a)/86400000));};
-      const endDate=b.actualReturnDate||b.returnDate||new Date().toLocaleDateString('en-CA');
-      let rental=0;
-      if(entries.length){
-        const allocated=entries.map(()=>0),slices=[];
-        const returns=(Array.isArray(b.returnEntries)?b.returnEntries:[]).flatMap(r=>(r.items||[]).map(item=>({date:r.date,itemIndex:Number(item.itemIndex),qty:Math.max(0,Number(item.qty)||0)}))).sort((a,z)=>String(a.date).localeCompare(String(z.date)));
-        returns.forEach(ret=>{let remaining=ret.qty;entries.map((entry,index)=>({entry,index})).filter(x=>Number(x.entry.itemIndex)===ret.itemIndex).sort((a,z)=>String(a.entry.date||'').localeCompare(String(z.entry.date||''))).forEach(({entry,index})=>{if(remaining<=0)return;const available=Math.max(0,(Number(entry.qty)||0)-allocated[index]),take=Math.min(available,remaining);if(take>0){slices.push({entry,qty:take,endDate:ret.date});allocated[index]+=take;remaining-=take;}});});
-        const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),openEnd=scheduled>today?scheduled:today;
-        entries.forEach((entry,index)=>{const remaining=Math.max(0,(Number(entry.qty)||0)-allocated[index]);if(remaining>0)slices.push({entry,qty:remaining,endDate:b.fullyReturnedAt?(b.actualReturnDate||b.returnDate||entry.date):openEnd});});
-        rental=slices.reduce((sum,slice)=>sum+slice.qty*Math.max(0,Number(slice.entry.unitRent)||0)*days(slice.entry.date||b.date,slice.endDate),0);
-      }else rental=items.reduce((sum,i)=>sum+Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500))*days(b.date,endDate),0);
-      // Customer status mirrors the invoice: missing items are quantity-only, never billable.
-      const total=Math.max(0,rental+Math.max(0,Number(b.otherCharges)||0)-Math.max(0,Number(b.discountAmount)||0));
-      const advance=b.advancePaymentVerified===true?Math.max(0,Number(b.advanceAmount)||0):0;
-      const installments=Array.isArray(b.partPayments)?b.partPayments.reduce((sum,p)=>sum+Math.max(0,Number(p.amount)||0),0):0;
-      const paid=Math.max(Number(b.totalPaid)||0,Number(b.paidAmt)||0,advance+installments);
-      const due=Math.max(0,total-paid),status=String(b.status||'Pending');
-      const detail=(label,value)=>'<div class="rk-detail"><small>'+label+'</small><strong>'+value+'</strong></div>';
-      const dispatchRows=entries.map(e=>'<tr><td>'+esc(e.itemName||items[Number(e.itemIndex)]?.name||'सामान')+'</td><td>'+Math.max(0,Number(e.qty)||0)+'</td><td>'+esc(e.date||'-')+'</td></tr>').join('');
-      box.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:#fff">बुकिंग विवरण</h3><span class="rk-status-pill">'+esc(status)+'</span></div>'+
-      '<div class="rk-customer-grid">'+detail('बुकिंग ID','#'+esc(b.id))+detail('ग्राहक',esc(b.name))+detail('मोबाइल',esc(b.mob))+detail('कार्यक्रम',esc(b.eventType||'-'))+detail('डिस्पैच तारीख',esc(b.date||'-'))+detail('वापसी तारीख',esc(b.returnDate||'-'))+detail('Advance सत्यापन',esc(b.advancePaymentVerified?'सत्यापित':(b.advancePaymentStatus||'नहीं दिया')))+detail('कुल देय',money(total))+detail('सत्यापित जमा',money(paid))+detail('बाकी',money(due))+'</div>'+
-      '<h4 style="margin:12px 0 4px;color:#bae6fd">बुकिंग के आइटम</h4><div style="overflow-x:auto"><table><thead><tr><th>सामान</th><th>मांगी मात्रा</th><th>वापस</th><th>Missing</th></tr></thead><tbody>'+
-      (items.length?items.map(i=>'<tr><td>'+esc(i.name)+'</td><td>'+Math.max(0,Number(i.qty)||0)+'</td><td>'+Math.max(0,Number(i.returnedQty)||0)+'</td><td>'+Math.max(0,Number(i.missingQty)||0)+'</td></tr>').join(''):'<tr><td colspan="4">अभी कोई सामान नहीं चुना गया। Admin Dispatch में सामान जोड़ेगा।</td></tr>')+
-      '</tbody></table></div><h4 style="margin:12px 0 4px;color:#bae6fd">वास्तविक Dispatch History</h4><div style="overflow-x:auto"><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>तारीख</th></tr></thead><tbody>'+(dispatchRows||'<tr><td colspan="3">अभी Dispatch नहीं हुआ</td></tr>')+'</tbody></table></div>'+
-      '<p style="margin:12px 0 0;font-size:12px;color:#cbd5e1">ऑनलाइन Advance UTR की पुष्टि Admin द्वारा होने के बाद ही वह जमा राशि में गिना जाएगा।</p>';
-    }catch(error){box.innerHTML='<p style="margin:0;font-weight:700">'+esc(error.message)+'</p>';}
+      if(!api)throw new Error('बुकिंग सर्वर URL सेट नहीं है।');
+      const response=await fetch(api+'/api/customer/lookup',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},cache:'no-store',body:JSON.stringify({query,mobile})});
+      const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'बुकिंग नहीं मिली।');
+      const rows=Array.isArray(data.bookings)?data.bookings:[];window.customerLookupRecords=rows;
+      box.innerHTML=rows.length?'<div class="rk-tracker-result-heading"><strong>'+rows.length+' बुकिंग मिली</strong><span>नीचे हर बुकिंग की स्थिति और उपलब्ध स्लिप देखें।</span></div>'+rows.map(renderBooking).join(''):'<p class="rk-tracker-error">इस नाम / मोबाइल / Booking ID से कोई बुकिंग नहीं मिली।</p>';
+    }catch(error){window.customerLookupRecords=[];box.innerHTML='<p class="rk-tracker-error">'+esc(error.message)+'</p>';}
+  };
+  window.printCustomerRecord=function(id,type){
+    const b=window.customerLookupRecords.find(x=>String(x.id)===String(id));if(!b)return;
+    const f=financials(b),items=Array.isArray(b.items)?b.items:[],dispatch=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[],returns=Array.isArray(b.returnEntries)?b.returnEntries:[];
+    const title=type==='dispatch'?'DISPATCH SLIP':type==='return'?'RETURN SLIP':'CUSTOMER BILL';let body='';
+    if(type==='dispatch'){
+      body='<h2>Dispatch Details</h2><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>तारीख</th><th>दर / दिन</th></tr></thead><tbody>'+dispatch.map(e=>'<tr><td>'+esc(e.itemName||items[Number(e.itemIndex)]?.name||'सामान')+'</td><td>'+Number(e.qty||0)+'</td><td>'+esc(e.date||'-')+'</td><td>'+money(e.unitRent||items[Number(e.itemIndex)]?.rentPrice||0)+'</td></tr>').join('')+'</tbody></table>';
+    }else if(type==='return'){
+      body='<h2>Return Details</h2><table><thead><tr><th>सामान</th><th>वापस मात्रा</th><th>तारीख</th><th>प्रकार</th></tr></thead><tbody>'+returns.flatMap(r=>(r.items||[]).map(x=>'<tr><td>'+esc(items[Number(x.itemIndex)]?.name||'सामान')+'</td><td>'+Number(x.qty||0)+'</td><td>'+esc(r.date||'-')+'</td><td>'+esc(r.mode||'RETURN')+'</td></tr>')).join('')+'</tbody></table><p>Missing मात्रा (केवल रिकॉर्ड): '+items.reduce((sum,x)=>sum+Math.max(0,Number(x.missingQty)||0),0)+'</p>';
+    }else{
+      body='<h2>Bill / किराया विवरण</h2><table><thead><tr><th>सामान</th><th>मात्रा</th><th>दिन</th><th>दर</th><th>राशि</th></tr></thead><tbody>'+f.lines.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.qty+'</td><td>'+x.days+'</td><td>'+money(x.rate)+'</td><td>'+money(x.amount)+'</td></tr>').join('')+'</tbody></table><div class="summary"><p>अन्य शुल्क: '+money(f.other)+'</p><p>छूट: '+money(f.discount)+'</p><h2>कुल बिल: '+money(f.total)+'</h2><p>सत्यापित जमा: '+money(f.paid)+'</p><h2>बाकी: '+money(f.due)+'</h2></div><p>Missing सामान की राशि इस बिल में स्वतः नहीं जोड़ी गई है।</p>';
+    }
+    const w=window.open('','_blank','width=900,height=720');if(!w){alert('प्रिंट दस्तावेज़ खोलने के लिए Popup अनुमति दें।');return;}
+    w.document.write('<!doctype html><html lang="hi"><head><meta charset="utf-8"><title>'+title+' #'+esc(b.id)+'</title><style>body{font-family:Arial,sans-serif;color:#111;padding:26px}header{border-bottom:2px solid #222;padding-bottom:12px}h1{margin:0 0 5px;font-size:22px}h2{font-size:17px;margin:20px 0 9px}p{margin:5px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #bbb;padding:9px;text-align:left}th{background:#eef2f7}.summary{text-align:right;margin-top:20px}.muted{color:#555;font-size:12px}@media print{body{padding:0}}</style></head><body><header><h1>RADHE KRISHN BARTAN TENT HOUSE</h1><strong>'+title+'</strong><p>Booking #'+esc(b.id)+' · '+esc(b.name)+' · '+esc(b.mob)+'</p><p>कार्यक्रम: '+esc(b.eventType||'-')+' · Dispatch: '+esc(b.date||'-')+' · Return: '+esc(b.returnDate||'-')+'</p><p class="muted">स्थिति: '+esc(b.status||'Pending')+'</p></header>'+body+'<p class="muted" style="margin-top:28px">ग्राहक प्रति · '+new Date().toLocaleString('en-IN')+'</p><script>window.onload=()=>setTimeout(()=>window.print(),250)<\\/script></body></html>');
+    w.document.close();
   };
   ['customerStatusQuery','customerStatusMobile'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.checkCustomerBookingStatus();}}));
+  const query=document.getElementById('customerStatusQuery'),mobile=document.getElementById('customerStatusMobile');
+  if(query&&mobile)query.addEventListener('input',()=>{const d=digits(query.value);if(/^\d{10}$/.test(d)&&!mobile.value)mobile.value=d;});
 })();
 </script>
 
@@ -3924,4 +3987,74 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       @media(max-width:760px){.customer-scroll-wrap{padding:13px!important;gap:14px!important}.rk-customer-brand{min-height:90px;padding:15px!important;gap:12px;border-radius:18px}.rk-customer-brand-mark{width:48px;height:48px;flex-basis:48px;border-radius:14px;font-size:19px}.rk-customer-eyebrow{font-size:8px;letter-spacing:.14em}.rk-customer-brand h1{font-size:clamp(19px,5vw,25px)!important}.rk-customer-subtitle{font-size:10px;margin-top:4px}.rk-customer-brand-seal{padding:7px 9px;font-size:9px}.rk-customer-form{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}.rk-customer-section{padding:16px!important;border-radius:17px!important}.rk-customer-form .form-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}.rk-customer-submit{min-height:52px!important;font-size:14px!important}}
       @media(max-width:390px){.rk-customer-brand-seal{display:none}.rk-customer-brand{gap:10px}.rk-customer-brand-mark{width:43px;height:43px;flex-basis:43px}.rk-customer-section-title{font-size:14px!important}}
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
+
+/* Bartan rental hero, booking tracking, readable unified controls and label colors */
+#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1.03fr) minmax(360px,.97fr)!important;min-height:clamp(360px,38vw,470px)!important;background:radial-gradient(ellipse at 82% 48%,rgba(65,137,177,.2),transparent 40%),linear-gradient(115deg,#071426 0%,#10233d 54%,#0a1729 100%)!important;border:1px solid rgba(206,174,117,.34)!important}
+#customerFirstPortal .rk-hero-copy{max-width:620px!important;z-index:4}
+#customerFirstPortal .rk-hero-kicker{color:#f6d59b!important;background:rgba(5,14,27,.45)!important}
+#customerFirstPortal .rk-hero-copy h2{font-size:clamp(30px,4vw,49px)!important;line-height:1.18!important;letter-spacing:-.8px!important}
+#customerFirstPortal .rk-hero-description{color:#d7e5f4!important;max-width:530px!important}
+#customerFirstPortal .rk-hero-art{display:grid!important;position:relative!important;min-height:300px!important;align-items:center!important;justify-items:center!important;z-index:2}
+#customerFirstPortal .rk-hero-art img{display:block;width:100%;max-width:610px;max-height:365px;object-fit:contain;filter:drop-shadow(0 22px 28px rgba(0,0,0,.42))}
+#customerFirstPortal .rk-hero-bottomline{color:rgba(220,232,246,.68)!important}
+#customerFirstPortal .rk-customer-brand{background:linear-gradient(110deg,rgba(20,40,66,.98),rgba(14,27,47,.98) 58%,rgba(23,54,68,.96))!important;border:1px solid rgba(224,190,127,.3)!important;box-shadow:0 18px 42px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12)!important}
+#customerFirstPortal .rk-customer-brand-copy{min-width:0;position:relative;z-index:2}
+#customerFirstPortal #portalShopTitle,#customerFirstPortal #displayShopName{color:#fff!important;opacity:1!important;text-shadow:0 2px 12px rgba(0,0,0,.7),0 0 1px #fff!important;font-weight:900!important;overflow-wrap:anywhere}
+#customerFirstPortal #portalShopTitle{display:inline-block;max-width:100%;padding:5px 12px;border-radius:12px;background:linear-gradient(90deg,rgba(4,11,22,.76),rgba(4,11,22,.25))!important;border-left:3px solid #e7bd75!important;font-size:clamp(22px,3.5vw,34px)!important;line-height:1.28!important;cursor:pointer;user-select:none}
+#customerFirstPortal .rk-customer-eyebrow{color:#f2cd8e!important}
+#customerFirstPortal .rk-customer-subtitle{color:#d0deef!important}
+#customerFirstPortal .rk-customer-tracker{width:100%;max-width:1180px;margin:0 auto 18px;padding:20px clamp(15px,2.5vw,26px);border:1px solid rgba(109,171,224,.24);border-radius:20px;background:linear-gradient(145deg,rgba(21,37,59,.97),rgba(10,20,35,.98));box-shadow:0 17px 42px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06)}
+#customerFirstPortal .rk-tracker-heading{display:flex;align-items:center;gap:13px;margin-bottom:15px}
+#customerFirstPortal .rk-tracker-heading h2{margin:0;color:#f2f7ff!important;font-size:clamp(17px,2vw,21px)!important}
+#customerFirstPortal .rk-tracker-heading p{margin:4px 0 0;color:#a9bbd1!important;font-size:12px;line-height:1.55}
+#customerFirstPortal .rk-tracker-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#244f7d,#142a46);color:#9bdcff;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+#customerFirstPortal .rk-tracker-form{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(230px,.8fr) auto;align-items:end;gap:12px}
+#customerFirstPortal .rk-tracker-form>div{min-width:0}
+#customerFirstPortal .rk-tracker-form label{display:block;margin-bottom:7px!important;color:#8fd9ff!important;font-size:11px!important;font-weight:850!important}
+#customerFirstPortal .rk-tracker-search{min-height:46px;padding:0 18px;border:1px solid rgba(255,255,255,.26);border-radius:12px;background:linear-gradient(135deg,#e6c17d,#c38c4b);color:#172033;font-weight:900;white-space:nowrap;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.24)}
+#customerFirstPortal .rk-tracker-search:hover{transform:translateY(-2px)}
+#customerFirstPortal .rk-customer-results{margin-top:16px}
+#customerFirstPortal .rk-customer-booking-card{margin-top:13px;padding:16px;border:1px solid rgba(128,171,218,.2);border-radius:16px;background:linear-gradient(145deg,rgba(13,26,44,.96),rgba(18,34,54,.96));color:#e9f2ff}
+#customerFirstPortal .rk-customer-booking-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+#customerFirstPortal .rk-customer-booking-head small,#customerFirstPortal .rk-detail small{display:block;color:#98aec8!important;font-size:10px!important;letter-spacing:.07em;font-weight:800}
+#customerFirstPortal .rk-customer-booking-head strong{font-size:18px;color:#fff}
+#customerFirstPortal .rk-status-pill{display:inline-flex;padding:6px 11px;border-radius:999px;background:rgba(245,190,91,.15);border:1px solid rgba(245,190,91,.38);color:#ffd58f;font-size:11px;font-weight:900}
+#customerFirstPortal .rk-status-pill.good{background:rgba(39,190,133,.14);border-color:rgba(73,221,166,.38);color:#80f0c1}
+#customerFirstPortal .rk-status-pill.bad{background:rgba(235,82,96,.14);border-color:rgba(235,82,96,.38);color:#ff9ba5}
+#customerFirstPortal .rk-customer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+#customerFirstPortal .rk-detail{min-width:0;padding:10px 12px;border:1px solid rgba(120,164,210,.13);border-radius:11px;background:rgba(255,255,255,.035)}
+#customerFirstPortal .rk-detail strong{display:block;margin-top:4px;color:#f3f7ff;font-size:13px;overflow-wrap:anywhere}
+#customerFirstPortal .rk-customer-stage-line{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;padding:10px;border-radius:12px;background:rgba(1,8,18,.32)}
+#customerFirstPortal .rk-track-stage{padding:6px 9px;border-radius:999px;color:#8094ac;font-size:10px;font-weight:800}
+#customerFirstPortal .rk-track-stage.done{background:rgba(44,186,135,.12);color:#8cecc6}
+#customerFirstPortal .rk-customer-booking-card h4{margin:14px 0 7px;color:#a9dfff!important;font-size:13px!important;font-weight:850}
+#customerFirstPortal .rk-tracker-table-wrap{overflow-x:auto;border:1px solid rgba(139,174,217,.14);border-radius:11px}
+#customerFirstPortal .rk-customer-booking-card table{min-width:420px;font-size:12px}
+#customerFirstPortal .rk-customer-booking-card th{background:#1b3451!important;color:#d7eaff!important}
+#customerFirstPortal .rk-customer-booking-card td{background:rgba(7,16,29,.75)!important;color:#e6effb!important}
+#customerFirstPortal .rk-tracker-doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#customerFirstPortal .rk-customer-bill-total{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0}
+#customerFirstPortal .rk-customer-bill-total>div{padding:12px;border-radius:12px;border:1px solid rgba(132,180,226,.18);background:rgba(255,255,255,.035)}
+#customerFirstPortal .rk-customer-bill-total small{display:block;color:#9fb3cb!important;font-size:10px!important;font-weight:800}
+#customerFirstPortal .rk-customer-bill-total strong{display:block;color:#fff;font-size:18px;margin-top:4px}
+#customerFirstPortal .rk-tracker-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#customerFirstPortal .rk-tracker-actions button{min-height:40px;border:1px solid rgba(143,184,226,.25);border-radius:10px;padding:9px 13px;background:linear-gradient(145deg,#1d4267,#142b47);color:#eaf5ff;font-size:11px;font-weight:850;cursor:pointer}
+#customerFirstPortal .rk-tracker-actions button:disabled{opacity:.35;cursor:not-allowed}
+#customerFirstPortal .rk-tracker-actions button:last-child{background:linear-gradient(135deg,#e6c17d,#c18d4e);color:#182238;border-color:#f0d49d}
+#customerFirstPortal .rk-customer-safe-note,#customerFirstPortal .rk-tracker-loading,#customerFirstPortal .rk-tracker-result-heading span{color:#9fb2ca!important;font-size:11px;line-height:1.6}
+#customerFirstPortal .rk-tracker-error{padding:12px 14px;border:1px solid rgba(248,113,113,.28);border-radius:11px;background:rgba(127,29,29,.14);color:#ffb4bb!important;font-size:12px;font-weight:750}
+#customerFirstPortal .rk-tracker-result-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;color:#d7eaff}
+#customerFirstPortal input:not([type=checkbox]):not([type=radio]):not([type=range]),#customerFirstPortal select,#customerFirstPortal textarea{width:100%!important;min-height:46px!important;padding:11px 14px!important;border-radius:12px!important;background:linear-gradient(145deg,#081321,#122238)!important;color:#f2f7ff!important;border:1px solid rgba(129,172,217,.34)!important;box-shadow:inset 4px 4px 9px rgba(0,0,0,.48),inset -1px -1px 4px rgba(136,183,226,.07),0 1px 0 rgba(255,255,255,.035)!important;font-size:14px!important;font-weight:600!important;line-height:1.4}
+#customerFirstPortal input::placeholder,#customerFirstPortal textarea::placeholder{color:#8194ac!important;opacity:1}
+#customerFirstPortal input:focus,#customerFirstPortal select:focus,#customerFirstPortal textarea:focus{outline:none!important;border-color:#72c8f4!important;box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(64,170,231,.16)!important}
+#customerFirstPortal select option{background:#0d1a2a;color:#f2f7ff}
+#customerFirstPortal input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.85)}
+#customerFirstPortal .rk-customer-identity label{color:#80d5ff!important}
+#customerFirstPortal .rk-customer-event label{color:#c3a7ff!important}
+#customerFirstPortal .rk-customer-items label{color:#7fe5bc!important}
+#customerFirstPortal .rk-customer-payment label{color:#ffd38b!important}
+#customerFirstPortal .rk-customer-tracker label{color:#8fd9ff!important}
+#customerFirstPortal .rk-customer-payment #onlinePaymentSection{background:linear-gradient(145deg,#071423,#12263d)!important;border:1px solid rgba(255,208,136,.25)!important}
+@media(max-width:760px){#customerFirstPortal .rk-customer-hero{grid-template-columns:1fr!important;min-height:0!important;padding:24px 20px 46px!important}#customerFirstPortal .rk-hero-copy h2{font-size:clamp(30px,8vw,42px)!important}#customerFirstPortal .rk-hero-art{min-height:190px!important;margin-top:0!important}#customerFirstPortal .rk-hero-art img{max-height:230px}#customerFirstPortal .rk-customer-tracker{padding:15px!important}#customerFirstPortal .rk-tracker-form{grid-template-columns:1fr!important}#customerFirstPortal .rk-tracker-search{width:100%}#customerFirstPortal .rk-tracker-doc-grid{grid-template-columns:1fr}#customerFirstPortal .rk-customer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#customerFirstPortal .rk-customer-bill-total{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){#customerFirstPortal .rk-customer-grid{grid-template-columns:1fr 1fr}#customerFirstPortal .rk-customer-bill-total strong{font-size:15px}#customerFirstPortal .rk-customer-booking-card{padding:11px}}
 </style>

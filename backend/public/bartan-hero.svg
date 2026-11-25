@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+<title id="title">Steel utensils and crockery rental collection</title><desc id="desc">Polished steel plates, bowls, cooking pots, tumblers, serving dishes and cutlery arranged on premium dark shelves.</desc>
+<defs>
+ <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fbff"/><stop offset=".18" stop-color="#9baaba"/><stop offset=".38" stop-color="#fff"/><stop offset=".58" stop-color="#78899a"/><stop offset=".78" stop-color="#e7edf5"/><stop offset="1" stop-color="#657789"/></linearGradient>
+ <linearGradient id="steelDark" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f7fbff"/><stop offset=".24" stop-color="#9baebe"/><stop offset=".55" stop-color="#526477"/><stop offset=".8" stop-color="#dfe7ef"/><stop offset="1" stop-color="#788b9d"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#9b692f"/><stop offset=".5" stop-color="#f7d79a"/><stop offset="1" stop-color="#9b692f"/></linearGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#c8eeff" stop-opacity=".18"/><stop offset=".45" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#83b8d5" stop-opacity=".2"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="10"/></filter>
+ <filter id="glow"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<ellipse cx="790" cy="492" rx="390" ry="34" fill="#020812" opacity=".58" filter="url(#shadow)"/>
+<path d="M290 92H1170M290 270H1170M290 448H1170" stroke="#b18a50" stroke-opacity=".42" stroke-width="3"/>
+<path d="M305 97H1150M305 275H1150M305 453H1150" stroke="#fff" stroke-opacity=".1" stroke-width="2"/>
+<path d="M360 80V465M1132 80V465" stroke="#8da0b4" stroke-opacity=".2" stroke-width="8"/>
+<!-- stacked serving plates -->
+<g transform="translate(405 160)">
+ <ellipse cy="72" rx="115" ry="25" fill="#020812" opacity=".35" filter="url(#shadow)"/>
+ <g fill="url(#steelDark)" stroke="#e8f0f8" stroke-opacity=".72" stroke-width="2">
+  <ellipse cy="48" rx="110" ry="27"/><ellipse cy="34" rx="110" ry="27"/><ellipse cy="20" rx="110" ry="27"/><ellipse cy="6" rx="110" ry="27"/>
+ </g>
+ <g fill="none" stroke="#647789" stroke-opacity=".7"><ellipse cy="48" rx="88" ry="17"/><ellipse cy="34" rx="88" ry="17"/><ellipse cy="20" rx="88" ry="17"/><ellipse cy="6" rx="88" ry="17"/></g>
+ <ellipse cy="5" rx="82" ry="15" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="3"/>
+</g>
+<!-- tall steel tumblers -->
+<g transform="translate(590 126)">
+ <g fill="url(#steel)" stroke="#edf4fa" stroke-width="2">
+  <path d="M0 8Q0 0 22 0H62Q84 0 84 8L77 102Q75 112 62 112H22Q9 112 7 102Z"/>
+  <path d="M96 12Q96 4 115 4H148Q166 4 166 12L160 100Q158 110 147 110H116Q104 110 102 100Z"/>
+  <path d="M184 9Q184 1 204 1H239Q258 1 258 9L252 106Q250 116 238 116H205Q193 116 191 106Z"/>
+ </g>
+ <g stroke="#fff" stroke-opacity=".78" stroke-width="5"><path d="M19 14L22 93M115 17L117 91M203 15L205 96"/></g>
+ <g stroke="#536a7c" stroke-opacity=".6" stroke-width="2"><path d="M7 102H77M102 100H160M191 106H252"/></g>
+</g>
+<!-- cooking pots and stock pot -->
+<g transform="translate(730 330)">
+ <ellipse cx="110" cy="122" rx="145" ry="25" fill="#020812" opacity=".42" filter="url(#shadow)"/>
+ <path d="M-12 14Q-10 0 15 0H206Q230 0 232 14L220 111Q216 132 194 132H27Q5 132 0 111Z" fill="url(#steelDark)" stroke="#e9f1f8" stroke-width="3"/>
+ <path d="M-25 16H245Q254 16 253 26Q252 36 241 36H-21Q-32 36-33 26Q-34 16-25 16Z" fill="url(#steel)" stroke="#fff" stroke-width="2"/>
+ <path d="M67 -6Q72 -38 107 -38Q142 -38 148 -6" fill="none" stroke="url(#steel)" stroke-width="10" stroke-linecap="round"/>
+ <path d="M35 44L39 105M190 43L186 105" stroke="#fff" stroke-opacity=".65" stroke-width="6"/>
+ <path d="M-28 54Q-62 40-74 69Q-78 84-48 87L-3 82M249 54Q283 40 295 69Q299 84 269 87L224 82" fill="none" stroke="url(#steel)" stroke-width="12" stroke-linecap="round"/>
+</g>
+<!-- buffet chafers -->
+<g transform="translate(990 215)">
+ <ellipse cx="100" cy="185" rx="125" ry="19" fill="#020812" opacity=".45" filter="url(#shadow)"/>
+ <path d="M2 88Q8 52 97 50Q185 52 192 88L180 160H15Z" fill="url(#steelDark)" stroke="#e7eff8" stroke-width="3"/>
+ <path d="M-2 88Q-6 73 96 70Q199 73 194 88Q190 105 96 106Q2 105-2 88Z" fill="url(#steel)" stroke="#fff" stroke-width="3"/>
+ <path d="M10 72Q20 8 96 2Q172 8 183 72Q153 88 96 88Q39 88 10 72Z" fill="url(#steel)" stroke="#f8fbff" stroke-width="3"/>
+ <path d="M64 0Q68 -20 96 -20Q124 -20 128 0" fill="none" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+ <path d="M18 111H176M23 150H171" stroke="#fff" stroke-opacity=".75" stroke-width="4"/>
+ <path d="M44 160L36 185M148 160L157 185" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+</g>
+<!-- nested bowls -->
+<g transform="translate(370 390)">
+ <ellipse cx="80" cy="98" rx="100" ry="16" fill="#020812" opacity=".35" filter="url(#shadow)"/>
+ <path d="M0 18Q12 106 80 106Q148 106 160 18Q138 38 80 40Q22 38 0 18Z" fill="url(#steelDark)" stroke="#f2f7fb" stroke-width="3"/>
+ <ellipse cx="80" cy="18" rx="80" ry="22" fill="url(#steel)" stroke="#fff" stroke-width="3"/>
+ <ellipse cx="80" cy="18" rx="58" ry="13" fill="none" stroke="#73879a" stroke-width="2"/>
+ <path d="M28 35Q45 80 80 83Q115 80 132 35" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="5"/>
+</g>
+<!-- glassware -->
+<g transform="translate(540 384)" fill="url(#glass)" stroke="#d9f1ff" stroke-width="3">
+ <path d="M0 0H70L62 100Q60 112 35 112Q10 112 8 100Z"/>
+ <path d="M82 8H147L140 100Q138 112 114 112Q90 112 88 100Z"/>
+ <path d="M162 0H229L221 100Q219 112 195 112Q171 112 169 100Z"/>
+ <path d="M12 15L17 93M94 22L98 93M174 15L179 93" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="4"/>
+</g>
+<!-- cutlery silhouettes -->
+<g transform="translate(313 300)" stroke="url(#steel)" stroke-width="9" stroke-linecap="round" fill="none">
+ <path d="M0 0V125M-12 0V44M0 0V44M12 0V44M68 0Q35 45 68 67V125M68 67V0"/>
+ <path d="M-18 127H18M55 127H81" stroke-width="4"/>
+</g>
+<!-- top lights and glints -->
+<g fill="#ffe4ad"><circle cx="510" cy="82" r="4"/><circle cx="820" cy="84" r="4"/><circle cx="1090" cy="83" r="4"/></g>
+<g stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".72"><path d="M780 172l7-15 7 15 15 7-15 7-7 15-7-15-15-7z" fill="#fff" fill-opacity=".35"/><path d="M1070 348l4-10 4 10 10 4-10 4-4 10-4-10-10-4z" fill="#fff" fill-opacity=".28"/></g>
+</svg>

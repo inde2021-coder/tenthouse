@@ -622,6 +622,40 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
   }catch(error){res.status(503).json({error:error.message});}
 });
 
+app.post('/api/customer/lookup', bookingLimiter, requireDurableStore, async (req,res) => {
+  const parsed=z.object({
+    query:z.string().trim().min(2).max(120),
+    mobile:z.string().trim().regex(/^\+?[1-9]\d{9,14}$/)
+  }).safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'नाम / मोबाइल / Booking ID और सही पंजीकृत मोबाइल नंबर दर्ज करें।'});
+  const normalizePhone=value=>String(value||'').replace(/\D/g,'').slice(-10);
+  const mobile=normalizePhone(parsed.data.mobile),query=parsed.data.query.trim(),queryDigits=normalizePhone(query);
+  if(!/^\d{10}$/.test(mobile))return res.status(400).json({error:'पंजीकृत मोबाइल नंबर 10 अंकों का होना चाहिए।'});
+  try{
+    const all=await storeList('erpData/customerBookings');
+    const q=query.toLowerCase();
+    const matches=all.filter(b=>{
+      if(normalizePhone(b.mob)!==mobile)return false;
+      const id=String(b.id||''),name=String(b.name||'').trim().toLowerCase();
+      return id===query || name.includes(q) || (/^\d{10}$/.test(queryDigits)&&queryDigits===mobile);
+    }).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).slice(0,10);
+    const bookings=matches.map(b=>({
+      id:b.id,name:b.name,mob:b.mob,eventType:b.eventType,guestCount:b.guestCount,date:b.date,returnDate:b.returnDate,status:b.status,
+      items:(b.items||[]).map(x=>({name:x.name,qty:x.qty,rentPrice:x.rentPrice,returnedQty:x.returnedQty||0,missingQty:x.missingQty||0})),
+      dispatchEntries:(b.dispatchEntries||[]).map(x=>({itemIndex:x.itemIndex,itemName:x.itemName,qty:x.qty,date:x.date,unitRent:x.unitRent})),
+      returnEntries:(b.returnEntries||[]).map(x=>({date:x.date,mode:x.mode,items:(x.items||[]).map(r=>({itemIndex:r.itemIndex,qty:r.qty}))})),
+      actualReturnDate:b.actualReturnDate||null,fullyReturnedAt:b.fullyReturnedAt||null,
+      advanceAmount:b.advanceAmount||0,advancePaymentStatus:b.advancePaymentStatus||'not-applicable',advancePaymentVerified:b.advancePaymentVerified===true,
+      payMode:b.payMode||'Cash',otherCharges:b.otherCharges||0,discountAmount:b.discountAmount||0,
+      totalPaid:b.totalPaid||0,paidAmt:b.paidAmt||0,
+      partPayments:(b.partPayments||[]).map(p=>({amount:p.amount,method:p.method||'',date:p.date||''})),
+      updatedAt:b.updatedAt||b.createdAt
+    }));
+    res.set('Cache-Control','no-store');
+    res.json({ok:true,bookings});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+
 app.get('/api/customer/bookings/:id/status', requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const mobile=String(req.query.mobile||'').replace(/\D/g,'').slice(-10);
