@@ -94,3 +94,5 @@
 - Regression suite में premium field stylesheet की सही cascade position और utensil icon branding के checks अपडेट किए; CI में dependency advisory report step जोड़ा।
 
 - npm audit में मिली 8 moderate + 1 high advisories के लिए Firebase Admin 14.5.1 और Zod 4.6.7 पर upgrade; Node engine >=22 किया।
+
+- Sanitized backend credential guide और empty .env.example जोड़े; old main-branch webhook token को integration में दोबारा नहीं रखा; audit report में 103/103 tests और npm audit 0 दर्ज किए।
