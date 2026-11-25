@@ -874,3 +874,24 @@ test('branded app icon is referenced by the public shell', () => {
     assert.ok(icon.includes('TENT HOUSE'));
   }
 });
+
+
+test('Tent House AI assistant is a dedicated chat interface with quick prompts and voice input', () => {
+  assert.ok(html.includes('class="rk-ai-shell"'));
+  assert.ok(html.includes('id="aiAssistantResponse"'));
+  assert.ok(html.includes('id="aiCommandInput"'));
+  assert.ok(html.includes('id="aiVoiceButton"'));
+  assert.ok(html.includes('function askAiSuggestion(question)'));
+  assert.ok(html.includes('function clearAiChat()'));
+  assert.ok(html.includes("fetch(api+'/api/ai/chat'"));
+  assert.ok(html.includes('rk-ai-messages'));
+  assert.ok(html.includes('rk-ai-suggestions'));
+});
+
+test('AI chat redesign preserves the customer booking submit and verification handlers', () => {
+  assert.ok(html.includes('function saveCustomerBooking(event)'));
+  assert.ok(html.includes('function sendCustomerOtp()'));
+  assert.ok(html.includes('function verifyCustomerOtp()'));
+  assert.ok(html.includes('function startVoiceRecognition()'));
+  assert.ok(html.includes("id=" + "'portalCustMob'"));
+});
