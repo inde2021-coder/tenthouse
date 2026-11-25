@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
 
 function sourceBetween(startMarker, endMarker) {
   const start = html.indexOf(startMarker);
@@ -536,4 +537,21 @@ test('date-only daily and purchase records use the device local calendar date, n
   assert.ok(html.includes("new Date().toLocaleDateString('en-CA')"));
   const expense=sourceBetween('function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
   assert.ok(expense.includes("date: new Date().toLocaleDateString('en-CA')"));
+});
+
+
+test('OTP verification has a dedicated brute-force rate limit', () => {
+  assert.match(backend, /const otpVerifyLimiter = rateLimit\(\{ windowMs: 15 \* 60_000, limit: 10/);
+  assert.match(backend, /app\.post\('\/api\/otp\/verify', otpVerifyLimiter, requireDurableStore/);
+});
+
+test('AI chat and TTS endpoints have server-side cost-abuse rate limits', () => {
+  assert.match(backend, /const aiLimiter = rateLimit\(\{ windowMs: 60_000, limit: 20/);
+  assert.match(backend, /app\.post\('\/api\/ai\/chat', aiLimiter, authAdmin/);
+  assert.match(backend, /app\.post\('\/api\/ai\/tts', aiLimiter, authAdmin/);
+});
+
+test('WhatsApp send endpoint has an explicit per-minute rate limit', () => {
+  assert.match(backend, /const whatsappSendLimiter = rateLimit\(\{ windowMs: 60_000, limit: 20/);
+  assert.match(backend, /app\.post\('\/api\/whatsapp\/send', whatsappSendLimiter, authAdmin/);
 });
