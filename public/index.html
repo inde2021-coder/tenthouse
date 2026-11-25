@@ -53,11 +53,19 @@ button:disabled { cursor:not-allowed!important; opacity:.55!important; }
             #customerFirstPortal, #adminPanel { height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
         }
 
+        @page { size: A4; margin: 10mm; }
         @media print {
-            body * { visibility: hidden; }
-            #printableSlipArea, #printableSlipArea * { visibility: visible; }
-            #printableSlipArea { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; display: block !important; padding: 20px; }
-            .no-print { display: none !important; }
+            html,body { width:100% !important; min-height:0 !important; height:auto !important; margin:0 !important; padding:0 !important; background:#fff !important; color:#111 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            body * { visibility:hidden; }
+            #printableSlipArea,#printableSlipArea * { visibility:visible; }
+            #printableSlipArea { position:absolute; left:0; top:0; width:100% !important; max-width:none !important; box-sizing:border-box !important; background:#fff !important; color:#111 !important; display:block !important; padding:0 !important; margin:0 !important; box-shadow:none !important; font-family:Arial,"Noto Sans Devanagari",sans-serif !important; font-size:10pt !important; }
+            #printableSlipArea h1,#printableSlipArea h2,#printableSlipArea h3 { color:#111 !important; page-break-after:avoid; }
+            #printableSlipArea table { width:100% !important; border-collapse:collapse !important; page-break-inside:auto; }
+            #printableSlipArea thead { display:table-header-group; }
+            #printableSlipArea tr { page-break-inside:avoid; break-inside:avoid; }
+            #printableSlipArea th,#printableSlipArea td { border:1px solid #333 !important; padding:6px !important; color:#111 !important; }
+            #printableSlipArea img { max-width:100% !important; object-fit:contain !important; }
+            .no-print { display:none !important; }
         }
 
         #actionToast {
@@ -1733,8 +1741,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const settings=safeGetStorage('softwareSettings',{});
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
             const rows=Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length
-              ? b.dispatchEntries.map(e=>({name:e.itemName||b.items?.[Number(e.itemIndex)]?.name||'सामान',qty:Number(e.qty)||0,date:e.date||b.date||'-'}))
-              : (b.items||[]).map(i=>({name:i.name,qty:Number(i.qty)||0,date:b.date||'-'}));
+              ? b.dispatchEntries.map(e=>({name:e.itemName||b.items?.[Number(e.itemIndex)]?.name||'सामान',source:e.source==='third-party'?'वेंडर: '+(e.partyName||'-'):'एडमिन स्टॉक',qty:Number(e.qty)||0,date:e.date||b.date||'-'}))
+              : (b.items||[]).map(i=>({name:i.name,source:i.source==='third-party'?'वेंडर: '+(i.partyName||'-'):'एडमिन स्टॉक',qty:Number(i.qty)||0,date:b.date||'-'}));
             const area=document.getElementById('printableSlipArea');area.style.display='block';
             area.innerHTML=`
               <div class="rk-slip rk-dispatch-slip" style="text-align:center;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px">
@@ -1745,8 +1753,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
               <p><b>ग्राहक:</b> ${escapeHtml(b.name||'-')} | <b>मोबाइल:</b> ${escapeHtml(b.mob||'-')}</p>
               <p><b>पता:</b> ${escapeHtml(b.address||'-')}</p>
               <table style="width:100%;border-collapse:collapse;margin-top:15px" border="1">
-                <thead><tr><th>सामान</th><th>वास्तविक भेजी मात्रा</th><th>Dispatch तारीख</th></tr></thead>
-                <tbody>${rows.map(e=>`<tr><td>${escapeHtml(e.name)}</td><td>${e.qty}</td><td>${escapeHtml(e.date)}</td></tr>`).join('')}</tbody>
+                <thead><tr><th>सामान</th><th>स्रोत / वेंडर</th><th>वास्तविक भेजी मात्रा</th><th>Dispatch तारीख</th></tr></thead>
+                <tbody>${rows.map(e=>`<tr><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.source||'एडमिन स्टॉक')}</td><td>${e.qty}</td><td>${escapeHtml(e.date)}</td></tr>`).join('')}</tbody>
               </table>
               <div style="margin-top:24px;border-top:1px solid #aaa;padding-top:12px;display:flex;justify-content:space-between;gap:20px;align-items:flex-end">
                 <p>प्राप्तकर्ता हस्ताक्षर</p><div style="text-align:center;min-width:150px">${settings.dispatchStamp?`<img src="${escapeHtml(settings.dispatchStamp)}" style="display:block;max-width:130px;max-height:65px;object-fit:contain;margin:0 auto 5px">`:''}<p>ओनर हस्ताक्षर / स्टाम्प</p></div><p>स्टोर इंचार्ज</p>
