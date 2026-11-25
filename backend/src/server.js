@@ -338,7 +338,7 @@ const customerBookingSchema = z.object({
     vendorRentRate: z.number().finite().min(0).max(1000000).optional().default(0),
     source: z.enum(['admin','third-party']).optional().default('admin'),
     partyName: z.string().max(120).optional().default('')
-  })).max(100).default([])
+  })).min(1, 'कम-से-कम एक सामान चुनना आवश्यक है।').max(100)
 }).refine(data => data.returnDate >= data.date, { message: 'Return date must not be before booking date.', path: ['returnDate'] })
   .refine(data => isValidIsoDate(data.date) && isValidIsoDate(data.returnDate), { message: 'बुकिंग और वापसी की तारीख वास्तविक कैलेंडर तारीख होनी चाहिए।', path: ['date'] })
   .refine(data => data.payMode !== 'UPI' || data.advanceAmount === 0 || String(data.utrNumber || '').trim().length >= 6, { message: 'UTR is required for online advance payment.', path: ['utrNumber'] });

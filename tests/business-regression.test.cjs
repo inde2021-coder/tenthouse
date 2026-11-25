@@ -316,12 +316,14 @@ test('customer booking rent and quantity are validated against server stock, not
 });
 
 
-test('customer can submit a booking with no selected items', () => {
+test('customer booking requires at least one selected stock item in both UI and API', () => {
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   assert.ok(backend.includes("items: z.array("));
-  assert.ok(backend.includes(")).max(100).default([])"));
+  assert.ok(backend.includes(")).min(1, 'कम-से-कम एक सामान चुनना आवश्यक है।').max(100)"));
+  assert.ok(!backend.includes(")).max(100).default([])"));
   const code = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
-  assert.ok(!code.includes('कम-से-कम एक सामान चुनें'));
+  assert.ok(code.includes('customerCart.length===0'));
+  assert.ok(code.includes('कम-से-कम एक सामान चुनें'));
   assert.ok(code.includes('items:customerCart.map'));
 });
 

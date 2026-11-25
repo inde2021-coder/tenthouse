@@ -1739,6 +1739,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if(dispatchDate<todayLocal){showActionMessage('डिस्पैच तारीख आज या भविष्य की होनी चाहिए','error');return;}
             if(returnDate<dispatchDate){showActionMessage('वापसी की तारीख डिस्पैच तारीख से पहले नहीं हो सकती','error');return;}
             if(!Array.isArray(customerCart))customerCart=[];
+            if(customerCart.length===0){showActionMessage('बुकिंग सबमिट करने से पहले कम-से-कम एक सामान चुनें','error');document.getElementById('portalStockSelect')?.focus();return;}
             const advance=Number(document.getElementById('portalAdvanceAmount')?.value||0);
             if(!Number.isFinite(advance)||advance<0){showActionMessage('एडवांस राशि शून्य या उससे अधिक होनी चाहिए','error');return;}
             const otpSettings=safeGetStorage('softwareSettings',{}),otpMode=otpSettings.otpChannel||'off',phoneForOtp=document.getElementById('portalCustMob').value.trim();
