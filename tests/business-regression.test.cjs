@@ -179,6 +179,53 @@ test('login error toast stays above the blurred welcome overlay', () => {
   assert.ok(html.includes('#welcomeOverlay{z-index:2147483000!important'));
 });
 
+test('ERP menu contains 19 modules including Business Card and documents', () => {
+  const menuCount = [...html.matchAll(/<li class="menu-item(?: active)?"/g)].length;
+  assert.equal(menuCount, 19);
+  assert.ok(html.includes('id="business-card"'));
+  assert.ok(html.includes('id="documents"'));
+  assert.ok(html.includes("quotationDatabase: 'quotations'"));
+  assert.ok(html.includes("taxInvoiceDatabase: 'taxInvoices'"));
+  assert.ok(html.includes('function saveBusinessCard()'));
+  assert.ok(html.includes('function saveBusinessDocument()'));
+  assert.ok(html.includes('function printBusinessDocument()'));
+});
+
+test('tax invoice calculates intra-state CGST/SGST from the editable GST rate', () => {
+  const code = sourceBetween('function businessDocumentTotals()', 'function renderBusinessDocumentItems()');
+  const values = { docDiscount: '10', docOtherCharges: '5', docType: 'tax-invoice', docGstRate: '18', docTaxType: 'intra' };
+  const context = {
+    currentDocumentItems: [{ name: 'Chair', qty: 2, rate: 100 }],
+    document: { getElementById: id => ({ value: values[id] }) },
+    Math, Number, result: null
+  };
+  vm.runInNewContext(code + '\nresult=businessDocumentTotals();', context);
+  const result = JSON.parse(JSON.stringify(context.result));
+  assert.equal(result.subtotal, 200);
+  assert.equal(result.taxable, 195);
+  assert.equal(result.cgst, 17.55);
+  assert.equal(result.sgst, 17.55);
+  assert.equal(result.igst, 0);
+  assert.equal(result.total, 230.1);
+});
+
+test('tax invoice uses IGST for inter-state supply and quotation does not add GST', () => {
+  const code = sourceBetween('function businessDocumentTotals()', 'function renderBusinessDocumentItems()');
+  const values = { docDiscount: '0', docOtherCharges: '0', docType: 'tax-invoice', docGstRate: '18', docTaxType: 'inter' };
+  const context = { currentDocumentItems: [{ name: 'Chair', qty: 1, rate: 100 }], document: { getElementById: id => ({ value: values[id] }) }, Math, Number, result: null };
+  vm.runInNewContext(code + '\nresult=businessDocumentTotals();', context);
+  let result = JSON.parse(JSON.stringify(context.result));
+  assert.equal(result.igst, 18);
+  assert.equal(result.cgst, 0);
+  assert.equal(result.sgst, 0);
+  values.docType = 'quotation';
+  vm.runInNewContext(code + '\nresult=businessDocumentTotals();', context);
+  result = JSON.parse(JSON.stringify(context.result));
+  assert.equal(result.rate, 0);
+  assert.equal(result.gst, 0);
+  assert.equal(result.total, 100);
+});
+
 test('public customer stock catalog is loaded from backend rather than relying on admin localStorage', () => {
   assert.ok(html.includes("fetch(api+'/api/customer/stock'"));
   assert.ok(html.includes('publicCustomerStockCatalog'));
