@@ -466,6 +466,62 @@ app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req
   }catch(error){res.status(503).json({error:error.message});}
 });
 
+
+function validateBookingWorkflowConsistency(currentBooking, updates) {
+  const booking = { ...(currentBooking || {}), ...(updates || {}) };
+  const items = Array.isArray(booking.items) ? booking.items : [];
+  const dispatchEntries = Array.isArray(booking.dispatchEntries) ? booking.dispatchEntries : [];
+  const returnEntries = Array.isArray(booking.returnEntries) ? booking.returnEntries : [];
+  const dispatched = items.map(() => 0);
+  const returnedInEntries = items.map(() => 0);
+  for (const entry of dispatchEntries) {
+    const index = Number(entry?.itemIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= items.length) return 'Dispatch entry में सामान का संदर्भ गलत है।';
+    const item = items[index];
+    if (String(entry.itemName || '').trim().toLowerCase() !== String(item.name || '').trim().toLowerCase()) return 'Dispatch entry का सामान Booking item से मेल नहीं खाता।';
+    const source = entry.source === 'third-party' ? 'third-party' : 'admin';
+    const itemSource = item.source === 'third-party' ? 'third-party' : 'admin';
+    if (source !== itemSource || (source === 'third-party' && String(entry.partyName || '') !== String(item.partyName || ''))) return 'Dispatch entry का stock source Booking item से मेल नहीं खाता।';
+    const qty = Number(entry.qty);
+    if (!Number.isInteger(qty) || qty <= 0) return 'Dispatch मात्रा सही पूर्ण संख्या होनी चाहिए।';
+    dispatched[index] += qty;
+    if (dispatched[index] > Math.max(0, Number(item.qty) || 0)) return 'कुल Dispatch मात्रा Booking में तय मात्रा से अधिक नहीं हो सकती।';
+    if (booking.date && entry.date < booking.date) return 'Dispatch तारीख Booking तारीख से पहले नहीं हो सकती।';
+    if (booking.returnDate && entry.date > booking.returnDate) return 'Dispatch तारीख Booking की वापसी तारीख के बाद नहीं हो सकती।';
+  }
+  for (const entry of returnEntries) {
+    const date = String(entry?.date || '');
+    if (!isValidIsoDate(date)) return 'Return entry में वास्तविक तारीख दर्ज करें।';
+    if (booking.lastDispatchDate && date < booking.lastDispatchDate) return 'Return तारीख आखिरी Dispatch से पहले नहीं हो सकती।';
+    for (const returned of entry.items || []) {
+      const index = Number(returned?.itemIndex), qty = Number(returned?.qty);
+      if (!Number.isInteger(index) || index < 0 || index >= items.length) return 'Return entry में सामान का संदर्भ गलत है।';
+      if (!Number.isInteger(qty) || qty < 0) return 'Return मात्रा सही पूर्ण संख्या होनी चाहिए।';
+      returnedInEntries[index] += qty;
+      if (returnedInEntries[index] > dispatched[index]) return 'कुल Return मात्रा वास्तविक Dispatch मात्रा से अधिक नहीं हो सकती।';
+    }
+  }
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
+    const returned = Math.max(0, Number(item.returnedQty) || 0);
+    const missing = Math.max(0, Number(item.missingQty) || 0);
+    if (returned > dispatched[index]) return 'वापस आई मात्रा Dispatch मात्रा से अधिक नहीं हो सकती।';
+    if (returned < returnedInEntries[index]) return 'Return entries और Booking की returned quantity में अंतर है।';
+    if (missing > dispatched[index] - returned) return 'Missing मात्रा Dispatch के बाद बची हुई मात्रा से अधिक नहीं हो सकती।';
+  }
+  if (booking.fullyReturnedAt) {
+    if (booking.status !== 'Returned') return 'पूरी वापसी का समय केवल Returned स्थिति में दर्ज हो सकता है।';
+    for (let index = 0; index < items.length; index++) {
+      const returned = Math.max(0, Number(items[index].returnedQty) || 0);
+      const missing = Math.max(0, Number(items[index].missingQty) || 0);
+      if (returned + missing !== dispatched[index]) return 'Final Return में हर Dispatch मात्रा Returned या Missing के रूप में दर्ज होनी चाहिए।';
+    }
+  } else if (booking.status === 'Returned') {
+    return 'Returned स्थिति के लिए Final Return रिकॉर्ड आवश्यक है।';
+  }
+  return null;
+}
+
 app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const itemSchema=z.object({
@@ -503,6 +559,8 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
   try{
     const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    const workflowError=validateBookingWorkflowConsistency(booking,parsed.data);
+    if(workflowError)return res.status(400).json({error:workflowError});
     Object.assign(booking,parsed.data,{updatedAt:new Date().toISOString()});
     await storeSet(path,booking);res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
