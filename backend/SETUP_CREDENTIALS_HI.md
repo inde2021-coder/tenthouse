@@ -1,81 +1,55 @@
-# Radhe Krishn Tent House Manager — सुरक्षित Credentials Setup (Hindi)
+# सुरक्षित Environment Setup — Radhe Krishn Bartan ERP
 
-यह निर्देश केवल Audit Preview के लिए हैं। Production Vercel project या Meta Callback URL को अभी न बदलें।
+## जरूरी Runtime
+- Node.js **22 या नया**।
+- Backend root directory: `backend`
+- Install: `npm install`
+- Start: `npm start`
+- Process check: `/health`
+- Persistent database readiness: `/ready`
 
-## 1. Firebase Admin Service Account की नई key बनाएँ
+## Production Environment Variables
+इन variables को केवल Render/Vercel के Environment Variables / Secret UI में रखें:
 
-पहले चैट में साझा हुई पुरानी Service Account private key को दोबारा इस्तेमाल न करें। Firebase Console में पुरानी key revoke/delete करके नई key बनाएँ।
+| Variable | उपयोग |
+|---|---|
+| `NODE_ENV` | Production में `production` |
+| `PREVIEW_MODE` | Production में unset या `false` |
+| `PUBLIC_ORIGIN` | Comma-separated allowed website origins; scheme सहित, trailing slash के बिना |
+| `FIREBASE_DATABASE_URL` | Firebase Realtime Database URL |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Service account का पूरा JSON, एक environment value में |
+| `FIREBASE_PROJECT_ID` | वैकल्पिक split credential |
+| `FIREBASE_CLIENT_EMAIL` | वैकल्पिक split credential |
+| `FIREBASE_PRIVATE_KEY` | वैकल्पिक split credential; newline को `\\n` रखें |
+| `ADMIN_API_TOKEN` | कम-से-कम 32 अक्षरों का अलग random admin secret |
+| `OTP_HMAC_SECRET` | कम-से-कम 32 अक्षरों का अलग random HMAC secret |
+| `WHATSAPP_ACCESS_TOKEN` | Meta WhatsApp Cloud API token |
+| `WHATSAPP_PHONE_NUMBER_ID` | WhatsApp phone number ID |
+| `WHATSAPP_BUSINESS_ACCOUNT_ID` | WABA ID |
+| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | Meta webhook verification token; Meta dashboard से exact match |
+| `META_APP_SECRET` | Webhook signature validation |
+| `AI_API_KEY` | वैकल्पिक AI provider key |
+| `AI_BASE_URL` | वैकल्पिक AI provider base URL |
+| `AI_MODEL` | वैकल्पिक AI model name |
 
-1. https://console.firebase.google.com/ खोलें।
-2. Project `radhe-krishna-online-booking` चुनें।
-3. Project settings → Service accounts खोलें।
-4. Firebase Admin SDK में Generate new private key चुनें।
-5. डाउनलोड हुई JSON फाइल अपने फोन/कंप्यूटर पर सुरक्षित रखें। इसे चैट, GitHub, frontend या APK में न डालें।
+Firebase credentials के लिए `FIREBASE_SERVICE_ACCOUNT_JSON` **या** तीनों split fields में से एक तरीका चुनें। दोनों तरीकों के private credentials कभी GitHub, frontend HTML, screenshots, logs या chat में paste न करें।
 
-## 2. Vercel Preview में Firebase key जोड़ें
+## Isolated Render Preview
+Preview service के लिए ही:
+- `NODE_ENV=development`
+- `PREVIEW_MODE=true`
+- `PUBLIC_ORIGIN=https://tenthouse-feature-preview-kvt3.onrender.com`
 
-1. Vercel → `tenthouse-audit-preview` project → Settings → Environment Variables खोलें।
-2. नया variable बनाएँ:
-   - Key: `FIREBASE_SERVICE_ACCOUNT_JSON`
-   - Value: डाउनलोड की गई JSON फाइल का पूरा content
-   - Target: Preview
-   - Git Branch: `audit/deep-audit-fixes-2026-11`
-3. पहले से मौजूद `FIREBASE_DATABASE_URL` को रहने दें। उसका मान Firebase Realtime Database URL होना चाहिए:
-   `https://radhe-krishna-online-booking-default-rtdb.firebaseio.com`
-4. Save करें। Secret को GitHub या ChatGPT में paste न करें।
+यह mode in-memory demo data उपयोग करता है। Preview में की गई booking/stock/payment entries persistent production records नहीं हैं। Production Firebase या live customer data preview mode में न डालें।
 
-## 2A. Backend Admin Token और OTP सुरक्षा
+## Production चालू करने से पहले
+1. Render/Vercel में production secrets configure करें; `.env.example` के खाली fields को Git में भरकर commit न करें।
+2. Firebase Admin credentials और database URL set करें।
+3. `ADMIN_API_TOKEN` और `OTP_HMAC_SECRET` अलग-अलग strong random values रखें।
+4. `PUBLIC_ORIGIN` में सिर्फ trusted origins रखें।
+5. `/ready` healthy और Firebase persistence उपलब्ध होने की पुष्टि करें।
+6. Meta webhook verify token और app secret को Meta dashboard से मिलाएँ।
+7. UPI QR/UTR को payment proof समझें; bank/gateway confirmation के बिना payment को auto-settled न मानें।
 
-Preview में ये variables भी बनाना जरूरी है:
-
-- `ADMIN_API_TOKEN` — कम-से-कम 32 अक्षरों का random secret। इसे Vercel में encrypted रखें।
-- `OTP_HMAC_SECRET` — `ADMIN_API_TOKEN` से अलग कम-से-कम 32 अक्षरों का random secret।
-
-Admin token को वेबसाइट में Settings → Backend / AI / OTP → “AI Access Token (ADMIN_API_TOKEN)” में भी दर्ज करें और Backend सेटिंग सेव करें। यह token उस मोबाइल के local storage में रहेगा; साझा मोबाइल पर सेव न करें।
-
-`PUBLIC_ORIGIN` branch preview के लिए सेट किया गया है:
-`https://tenthouse-audit-preview-git-audit-deep-audit-fixes-6872d4-inde3.vercel.app`
-इसी स्थिर Preview लिंक से वेबसाइट खोलें, ताकि CORS origin मेल खाए।
-
-वैकल्पिक तरीका: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, और `FIREBASE_PRIVATE_KEY` तीनों variables अलग-अलग दे सकते हैं। एक साथ JSON और split credentials देना आवश्यक नहीं है।
-
-## 3. WhatsApp Cloud API के लिए बाकी secrets
-
-इसी Preview target और इसी branch में ये दो encrypted variables जोड़ें:
-
-- `WHATSAPP_ACCESS_TOKEN` — Meta WhatsApp Cloud API का valid access token
-- `WHATSAPP_APP_SECRET` — Meta App Dashboard → App settings → Basic में App Secret
-
-पहले से मौजूद variables:
-- `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — इसका मान `8120727987` है; इसे न बदलें।
-- `WHATSAPP_PHONE_NUMBER_ID` — पहले से Preview में मौजूद है।
-
-Meta App ID और WhatsApp Business Account ID जानकारी के लिए उपयोगी हैं, लेकिन वर्तमान webhook signature check और message-send code में इन दो secrets की जगह नहीं लेते।
-
-## 3A. AI सहायक
-
-यदि Preview में Shraddha AI चलाना है, तो Preview target में ये variables भी जोड़ें:
-
-- `AI_PROVIDER=gemini`
-- `AI_API_KEY` — अपनी Gemini API key
-- `AI_MODEL=gemini-2.5-flash`
-- `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta`
-
-AI key केवल Vercel में रखें। Frontend/GitHub में न डालें।
-
-## 4. Save के बाद जाँच
-
-Environment Variables बदलने के बाद उसी Preview branch का नया deployment बनाएँ। फिर ये endpoints जाँचें:
-
-- `/api/health` — API चल रही हो तो HTTP 200
-- `/api/ready` — Firebase Admin जुड़ने पर HTTP 200 और `persistentDatabaseReady: true`
-- `/api/webhook?hub.mode=subscribe&hub.verify_token=8120727987&hub.challenge=TEST123` — response body `TEST123`
-- `/webhooks/whatsapp` — यही legacy route भी उपलब्ध है
-
-Firebase credentials के बिना `/api/ready` का HTTP 503 देना जानबूझकर fail-safe व्यवहार है। इससे production-जैसे वातावरण में booking, OTP और payment data अस्थायी memory में save होने का जोखिम नहीं रहता।
-
-## 5. सुरक्षा
-
-- Service Account JSON, private key, Meta App Secret और Access Token किसी को चैट में न भेजें।
-- Secrets केवल Vercel Environment Variables में रखें।
-- Preview ठीक होने और पूरे परीक्षण पास होने से पहले Production में secrets copy न करें और Meta Callback URL न बदलें।
+## Credential Rotation
+यदि कोई Firebase private key, Meta token, webhook verify token, admin token या OTP secret कभी chat, Git commit या public log में आ चुका हो, तो केवल file हटाना पर्याप्त नहीं है। संबंधित provider में पुराना credential revoke/rotate करें और नया value केवल hosting provider के secret settings में रखें। Git history में पुरानी commit मौजूद रह सकती है।

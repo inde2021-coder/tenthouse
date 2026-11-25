@@ -77,3 +77,22 @@ Production `main` और Vercel को इस branch audit/fix में नह�
 - App icon को stainless-steel plates, serving handi और utensils वाले navy/gold emblem से बदला।
 - Root, public और backend/public में icon, manifest और service-worker shell synchronized; cache version v4 में icon precache।
 - `/favicon.ico` को उसी SVG icon पर route किया, ताकि browser favicon request पर 404 न आए।
+
+
+## Latest verified state — 26 नवंबर 2026
+- Isolated branch CI: **103/103 tests pass**, 0 failures।
+- CI `npm audit`: **0 vulnerabilities** after Firebase Admin 14.5.1 and Zod 4.6.7 upgrade.
+- Node engine is `>=22`; Render build used Node 26.13.1.
+- Render preview deployment `dep-dc3j3b4ipgvc738q28eg` is **live**; configured `/health` health check passed.
+- Render preview environment is explicitly `NODE_ENV=development`, `PREVIEW_MODE=true`, and its own `PUBLIC_ORIGIN`; it uses demo/in-memory data only.
+- Seven inline JavaScript blocks were syntax-parsed after the print-document string repair.
+- Root, public and backend/public HTML copies remain synchronized.
+
+## Remaining production gates (not falsely marked passed)
+- Production Firebase Admin credentials and `/ready` on Vercel have not been independently verified; hosting secret values are not readable through this audit.
+- Real Meta webhook delivery, WhatsApp outbound/inbound, OTP provider delivery, and UPI/bank settlement require provider credentials and live test events.
+- Desktop/mobile visual and print-device checks still require a real browser/device session.
+- The old main-branch setup guide contains a previously used webhook verification token in clear text. The integration copy replaces it with placeholders; rotate that token in Meta because deleting a file does not erase Git history.
+- A Firebase service-account private key was previously exposed in chat; rotate/revoke it in Google Cloud before production use, then set the replacement only in hosting secrets.
+
+Main remains untouched and is not merged yet. Branches will be integrated only after the remaining production gates are explicitly verified.

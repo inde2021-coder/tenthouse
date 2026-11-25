@@ -1046,3 +1046,14 @@ test('backend uses patched Firebase Admin and Zod releases on supported Node 22+
   assert.equal(pkg.dependencies['firebase-admin'],'14.5.1');
   assert.equal(pkg.dependencies.zod,'4.6.7');
 });
+
+test('credential setup examples contain placeholders only and never include live secrets',()=>{
+  const root=require('node:path').join(__dirname,'..');
+  const env=fs.readFileSync(require('node:path').join(root,'backend','.env.example'),'utf8');
+  const guide=fs.readFileSync(require('node:path').join(root,'backend','SETUP_CREDENTIALS_HI.md'),'utf8');
+  assert.match(env,/^WHATSAPP_WEBHOOK_VERIFY_TOKEN=$/m);
+  assert.match(env,/^FIREBASE_SERVICE_ACCOUNT_JSON=$/m);
+  assert.ok(!/-----BEGIN PRIVATE KEY-----\\s*[A-Za-z0-9+/]{40}/.test(env));
+  assert.ok(!/WHATSAPP_WEBHOOK_VERIFY_TOKEN\\s*=\\s*[^#\\s]{10,}/.test(guide));
+  assert.ok(guide.includes('Node.js **22 या नया**'));
+});
