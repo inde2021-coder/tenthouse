@@ -733,11 +733,12 @@ test('calendar date validation rejects impossible dates and accepts leap days', 
 
 test('backend rejects dispatch and return workflow quantities that cannot reconcile to the booking', () => {
   const start=backend.indexOf('function isValidIsoDate(');
-  const helperStart=backend.indexOf('function validateBookingWorkflowConsistency(',start);
+  const isoEnd=backend.indexOf('function getReservedAdminStockByItem(',start);
+  const helperStart=backend.indexOf('function validateBookingWorkflowConsistency(');
   const helperEnd=backend.indexOf("app.put('/api/customer/bookings/:id/workflow'",helperStart);
-  assert.ok(start>=0&&helperStart>start&&helperEnd>helperStart);
+  assert.ok(start>=0&&isoEnd>start&&helperStart>isoEnd&&helperEnd>helperStart);
   const context={Date,Number,String,Array,Math};
-  vm.runInNewContext(backend.slice(start,helperEnd)+`
+  vm.runInNewContext(backend.slice(start,isoEnd)+'\\n'+backend.slice(helperStart,helperEnd)+`
     result = {
       valid: validateBookingWorkflowConsistency(
         {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
