@@ -730,3 +730,40 @@ test('calendar date validation rejects impossible dates and accepts leap days', 
   vm.runInNewContext(html.slice(start,end)+`\nresult=['2026-02-28','2026-02-30','2024-02-29','2025-02-29','2026-13-01'].map(isValidCalendarDate);`,context);
   assert.deepEqual(Array.from(context.result),[true,false,true,false,false]);
 });
+
+test('backend rejects dispatch and return workflow quantities that cannot reconcile to the booking', () => {
+  const start=backend.indexOf('function isValidIsoDate(');
+  const helperStart=backend.indexOf('function validateBookingWorkflowConsistency(',start);
+  const helperEnd=backend.indexOf("app.put('/api/customer/bookings/:id/workflow'",helperStart);
+  assert.ok(start>=0&&helperStart>start&&helperEnd>helperStart);
+  const context={Date,Number,String,Array,Math};
+  vm.runInNewContext(backend.slice(start,helperEnd)+`
+    result = {
+      valid: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {status:'Partially Returned',lastDispatchDate:'2027-01-01',items:[{name:'Chair',qty:5,source:'admin',returnedQty:2,missingQty:0}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:5,date:'2027-01-01',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'PARTIAL',items:[{itemIndex:0,qty:2}]}]}
+      ),
+      excessDispatch: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {items:[{name:'Chair',qty:5,source:'admin'}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:6,date:'2027-01-01',source:'admin'}]}
+      ),
+      excessReturn: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {lastDispatchDate:'2027-01-01',items:[{name:'Chair',qty:5,source:'admin',returnedQty:6}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:5,date:'2027-01-01',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'FINAL',items:[{itemIndex:0,qty:6}]}]}
+      ),
+      incompleteFinal: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {status:'Returned',fullyReturnedAt:'2027-01-03T10:00:00.000Z',lastDispatchDate:'2027-01-01',items:[{name:'Chair',qty:5,source:'admin',returnedQty:2,missingQty:1}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:5,date:'2027-01-01',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'FINAL',items:[{itemIndex:0,qty:2}]}]}
+      ),
+      recoveredMissing: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-03',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {status:'Returned',fullyReturnedAt:'2027-01-03T10:00:00.000Z',lastDispatchDate:'2027-01-01',items:[{name:'Chair',qty:5,source:'admin',returnedQty:3,missingQty:2}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:5,date:'2027-01-01',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'FINAL',items:[{itemIndex:0,qty:2}]}]}
+      )
+    };
+  `,context);
+  assert.equal(context.result.valid,null);
+  assert.match(context.result.excessDispatch,/Dispatch मात्रा/);
+  assert.match(context.result.excessReturn,/Dispatch मात्रा/);
+  assert.match(context.result.incompleteFinal,/Final Return/);
+  assert.equal(context.result.recoveredMissing,null);
+});
