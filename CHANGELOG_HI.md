@@ -62,3 +62,14 @@
 - Customer Panel के दुकान नाम पर एक टैप से मौजूदा Gmail/Password लॉगिन ओवरले खुलेगा।
 - पुराने triple-tap handler नाम को compatibility के लिए रखा गया है।
 - मुख्य HTML में orphaned speech-recognition JavaScript fragment हटाया गया, जो पूरा script parse होने से रोक रहा था।
+
+
+## Customer Booking Front — Premium Redesign (25 नवंबर 2026)
+- ग्राहक वेबसाइट को front-facing public booking experience के रूप में रखा गया है; ग्राहक के booking form, OTP, stock selection, UPI/advance और `saveCustomerBooking(event)` flow को बदले बिना hero section जोड़ा गया।
+- Mobile-first responsive hero, Hindi headline, booking CTA, trust indicators और event-stage visual बनाया गया।
+- Admin Settings में “Customer Website Hero इमेज बदलें” विकल्प जोड़ा। PNG/JPG/WEBP upload resize/compress होकर मौजूदा `softwareSettings` object में save और Firebase sync queue में जाता है; Default Hero वापस लगाने का विकल्प भी है।
+- Customer hero settings load पर लागू होती हैं; custom image desktop और mobile दोनों layouts में अपने-आप fit होती है।
+- Root, `public/` और `backend/public/` की तीनों HTML copies synchronized रखी गईं।
+- App icon SVG को Radhe Krishn navy/gold tent-house branding के अनुसार refresh किया और सभी app-shell copies में favicon link जोड़ा।
+- Customer hero / editable upload / existing booking submit handler के लिए regression test जोड़ा।
+- GitHub Actions पर backend syntax, business regression tests और JSON validation सफल।
