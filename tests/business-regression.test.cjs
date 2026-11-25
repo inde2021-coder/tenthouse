@@ -414,12 +414,22 @@ test('dispatch rent allocation stops returned quantities on each actual return d
   assert.equal(context.result.filter(slice=>slice.endDate==='2026-11-05').reduce((sum,slice)=>sum+slice.qty,0),4);
 });
 
-test('customer status lookup is private and checks booking ID plus registered mobile', () => {
+test('customer front page exposes booking only and keeps admin workspace separate', () => {
+  const portal = html.slice(html.indexOf('<!-- Customer Portal -->'), html.indexOf('<!-- Admin Panel -->'));
+  assert.ok(portal.includes('onsubmit="saveCustomerBooking(event)"'));
+  assert.ok(portal.includes('id="portalCustName"'));
+  assert.ok(portal.includes('id="portalEventDate"'));
+  assert.ok(portal.includes('id="portalStockSelect"'));
+  assert.ok(portal.includes('id="portalAdvanceAmount"'));
+  assert.ok(!portal.includes('customerStatusQuery'));
+  assert.ok(!portal.includes('checkCustomerBookingStatus'));
+  assert.ok(!portal.includes('adminPanel'));
+  assert.ok(portal.includes('class="rk-customer-brand"'));
+  assert.ok(portal.includes('class="rk-customer-form"'));
+  assert.ok(!portal.includes('onclick="openCustomerLogin(event)"'));
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   assert.ok(backend.includes("app.get('/api/customer/bookings/:id/status'"));
-  assert.ok(backend.includes("!==mobile"));
-  assert.ok(html.includes('id="customerStatusMobile"'));
-  assert.ok(html.includes('/status?mobile='));
+  assert.ok(backend.includes("!==mobile"), 'private booking status endpoint remains mobile-verified');
 });
 
 test('customer item selection uses configured stock rent and safely renders item names', () => {
@@ -675,4 +685,15 @@ test('enterprise table and developer footer styling is applied in the final prem
   assert.ok(html.includes("count.textContent=q?visible+' / '+rows.length+' दिख रहे':'कुल '+rows.length"));
   assert.ok(html.includes('.rk-developer-footer{position:relative'));
   assert.ok(html.includes('.rk-admin-gate-card'));
+});
+
+test('premium customer booking page uses a responsive two-column desktop layout and single-column mobile layout', () => {
+  const start = html.indexOf('<style id="rk-premium-enterprise-visual-system">');
+  const end = html.indexOf('</style>', start);
+  const css = html.slice(start, end);
+  assert.ok(css.includes('.rk-customer-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))'));
+  assert.ok(css.includes('@media(max-width:760px){.customer-scroll-wrap'));
+  assert.ok(css.includes('grid-template-columns:minmax(0,1fr)!important'));
+  assert.ok(css.includes('.rk-customer-submit{grid-column:1/-1'));
+  assert.ok(css.includes('.rk-customer-brand{'));
 });
