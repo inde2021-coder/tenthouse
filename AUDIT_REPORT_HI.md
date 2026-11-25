@@ -125,3 +125,12 @@ Main पर मिले root causes:
 - The connected GitHub installation currently exposes six repositories and does not expose `inde2021-coder/tenthouse`; direct GitHub API lookup for that repository returns 404 from this connection.
 - Therefore this branch and PR #3 are audit-preview-only working material. **Do not merge PR #3 as a production change.** Port the reviewed fixes only after the production repository is made accessible and its branches are audited.
 - Production Vercel metadata currently points to `main` commit `91754c406d151c0ed3fb61e2cb31c8a0317873a6`; the latest observed production build succeeded. Build warnings include an open-ended Node engine range (`>=20`) and an unrecognized npm `cache-dir` setting.
+
+
+## Production Vercel metadata review (read-only)
+- Team `inde3` currently lists only two Tent House projects: `tenthouse2026` and `tenthouse-audit-preview`.
+- `tenthouse2026` domains returned by Vercel are `tenthouse2026.vercel.app`, `tenthouse2026-inde3.vercel.app`, and its main-branch alias; `tenthouse.vercel.app` is not listed on this project.
+- Latest production deployment `dpl_FeLVVHBKuZzgqZ48PkwUih3azJvn` is READY and was built from `main` commit `91754c406d151c0ed3fb61e2cb31c8a0317873a6` (2026-10-28). Build completed successfully.
+- The production project's visible environment-variable names (values not decrypted/read) are `FIREBASE_DATABASE_URL`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_PROJECT_ID`, `AI_API_KEY`, and `ADMIN_API_TOKEN`. No WhatsApp, OTP-HMAC, or `PUBLIC_ORIGIN` variable names appeared in the returned production list. The actual application requirements cannot be confirmed until the production repo is accessible.
+- Production build warnings: open-ended Node engine `>=20` and unsupported npm `cache-dir` configuration. Latest production build itself succeeded.
+- A 30-minute production runtime-log query returned no matching error/warning entries; this is not proof of zero runtime errors, especially on the Hobby retention tier.
