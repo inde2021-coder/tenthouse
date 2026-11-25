@@ -979,6 +979,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
     </div>
 
     <script>
+        const DEFAULT_BACKEND_API_URL = 'https://tenthouse.vercel.app';
         const firebaseConfig = {
             apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I",
             authDomain: "radhe-krishna-online-booking.firebaseapp.com",
@@ -1175,7 +1176,34 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 
         let customerCart = [];
 
-        function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});firebase.auth().signInWithPopup(provider).then(result=>{document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();showActionMessage('Google लॉगिन सफल: '+(result.user.email||''),'success');}).catch(error=>{const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('Google लॉगिन विफल: '+(hints[error.code]||error.code+': '+error.message),'error');});}catch(e){showActionMessage('Google लॉगिन शुरू नहीं हुआ: '+e.message,'error');}}
+        async function syncCustomerBookingsFromBackend(){
+            const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,''),token=String(settings.aiAccessToken||'').trim();
+            if(!api||!token||!navigator.onLine)return;
+            try{
+                const response=await fetch(api+'/api/customer/bookings',{headers:{'x-admin-token':token}});
+                const data=await response.json().catch(()=>({}));
+                if(!response.ok)throw new Error(data.error||'Customer bookings sync failed');
+                const local=safeGetStorage('softwareBookings',[]),byId=new Map(local.map(item=>[String(item.id),item]));
+                let added=0,updated=0;
+                (Array.isArray(data.bookings)?data.bookings:[]).forEach(remote=>{
+                    const key=String(remote.id),existing=byId.get(key);
+                    if(!existing){local.push(remote);byId.set(key,remote);added++;}
+                    else if(remote.updatedAt&&(!existing.updatedAt||remote.updatedAt>existing.updatedAt)){Object.assign(existing,remote);updated++;}
+                });
+                if(added||updated){safeSetStorage('softwareBookings',local);loadAllFirebaseData();showActionMessage(\`\${added} नई ग्राहक बुकिंग और \${updated} अपडेट सिंक हुए\`,'success');}
+            }catch(error){showActionMessage('ग्राहक बुकिंग सिंक नहीं हुआ: '+error.message,'error');}
+        }
+        async function updateRemoteCustomerBookingStatus(id,status){
+            const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,''),token=String(settings.aiAccessToken||'').trim();
+            if(!api||!token||!navigator.onLine)return false;
+            try{
+                const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/status',{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({status})});
+                const data=await response.json().catch(()=>({}));
+                if(!response.ok)throw new Error(data.error||'Status update failed');
+                return true;
+            }catch(error){showActionMessage('लोकल स्थिति सेव हुई, Backend अपडेट विफल: '+error.message,'error');return false;}
+        }
+        function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});firebase.auth().signInWithPopup(provider).then(result=>{document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();syncCustomerBookingsFromBackend();showActionMessage('Google लॉगिन सफल: '+(result.user.email||''),'success');}).catch(error=>{const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('Google लॉगिन विफल: '+(hints[error.code]||error.code+': '+error.message),'error');});}catch(e){showActionMessage('Google लॉगिन शुरू नहीं हुआ: '+e.message,'error');}}
         // Keep local writes immediate, then mirror each dataset to Firebase for other devices.
         function syncToCloud(key, value) {
             if (applyingCloudSnapshot) return Promise.resolve(false);
@@ -1516,48 +1544,47 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         async function sendCustomerOtp(){const mob=(document.getElementById('portalCustMob')?.value||'').trim();if(!/^\d{10}$/.test(mob)){showActionMessage('पहले 10 अंकों का मोबाइल नंबर डालें','error');return}const s=safeGetStorage('softwareSettings',{}),mode=s.otpChannel||'off',api=(s.backendApiUrl||'').replace(/\/$/,'');if(mode==='off'){window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='OTP बंद है; इस सेटिंग में verification आवश्यक नहीं।';return}if(mode==='demo'&&!api){window.customerOtpLocalCode=String(Math.floor(100000+Math.random()*900000));alert(window.customerOtpLocalCode);document.getElementById('customerOtpStatus').textContent='Demo OTP स्क्रीन पर दिखाया गया है (testing only).';return}if(!api){showActionMessage('Live OTP के लिए Settings में Backend API URL भरें','error');return}try{const channel=mode==='both'?'both':(mode==='whatsapp'?'whatsapp':'sms');const r=await fetch(api+'/api/otp/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:'+91'+mob,channel})});const d=await r.json();if(!r.ok)throw Error(d.error||'OTP send failed');if(d.demoOtp){window.customerOtpLocalCode=String(d.demoOtp);alert(window.customerOtpLocalCode)}document.getElementById('customerOtpStatus').textContent=d.message||'OTP भेजने का अनुरोध स्वीकार हुआ।';showActionMessage('OTP अनुरोध भेजा गया','success')}catch(e){showActionMessage('OTP नहीं भेजा गया: '+e.message,'error')}}
         async function verifyCustomerOtp(){const mob=(document.getElementById('portalCustMob')?.value||'').trim(),otp=(document.getElementById('customerOtpInput')?.value||'').trim(),s=safeGetStorage('softwareSettings',{}),api=(s.backendApiUrl||'').replace(/\/$/,'');if(!/^\d{10}$/.test(mob)||!/^\d{6}$/.test(otp)){showActionMessage('मोबाइल और 6 अंकों का OTP भरें','error');return}if(s.otpChannel==='off'){window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='OTP बंद है।';return}if(window.customerOtpLocalCode&&otp===window.customerOtpLocalCode){window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='Demo OTP verify हुआ (testing only).';showActionMessage('OTP verify हुआ','success');return}if(!api){showActionMessage('Backend API URL आवश्यक है','error');return}try{const r=await fetch(api+'/api/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:'+91'+mob,otp})});const d=await r.json();if(!r.ok||!d.verified)throw Error(d.error||'OTP गलत है');window.customerOtpVerifiedPhone=mob;document.getElementById('customerOtpStatus').textContent='मोबाइल नंबर verified ✓';showActionMessage('मोबाइल OTP verified','success')}catch(e){showActionMessage('OTP verify नहीं हुआ: '+e.message,'error')}}
 
-        function saveCustomerBooking(event) {
+        async function saveCustomerBooking(event) {
             event.preventDefault();
-            const dispatchDate = document.getElementById('portalEventDate')?.value || '';
-            const returnDate = document.getElementById('portalReturnDate')?.value || '';
-            const today = new Date(); today.setHours(0,0,0,0);
-            const todayLocal = new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
-            if (!dispatchDate || !returnDate) { showActionMessage('डिस्पैच और वापसी की तारीख दोनों भरें','error'); return; }
-            if (dispatchDate < todayLocal) { showActionMessage('डिस्पैच तारीख आज या भविष्य की होनी चाहिए','error'); return; }
-            if (returnDate < dispatchDate) { showActionMessage('वापसी की तारीख डिस्पैच तारीख से पहले नहीं हो सकती','error'); return; }
-            const advance = Number(document.getElementById('portalAdvanceAmount')?.value || 0);
-            if (!Number.isFinite(advance) || advance < 0) { showActionMessage('एडवांस राशि शून्य या उससे अधिक होनी चाहिए','error'); return; }
-            const otpSettings=safeGetStorage('softwareSettings',{}), otpMode=otpSettings.otpChannel||'off', phoneForOtp=document.getElementById('portalCustMob').value.trim();
-            if(otpMode!=='off' && window.customerOtpVerifiedPhone!==phoneForOtp){showActionMessage('बुकिंग से पहले मोबाइल OTP verify करें','error');return;}
-            let bookings = safeGetStorage('softwareBookings', []);
-            let newId = Math.max(1000, ...bookings.map(x => Number(x.id)||0)) + 1;
-            let adv = advance;
-            let payMode = document.getElementById('portalPayMode').value;
-            let utr = document.getElementById('portalUtrNumber').value || '';
-
-            bookings.push({
-                id: newId,
-                name: document.getElementById('portalCustName').value.trim(),
-                mob: document.getElementById('portalCustMob').value.trim(),
-                address: document.getElementById('portalCustAddress').value.trim(),
-                eventType: document.getElementById('portalEventType').value,
-                guestCount: Number(document.getElementById('portalGuestCount').value) || 100,
-                date: dispatchDate,
-                returnDate: returnDate,
-                advanceAmount: adv,
-                payMode: payMode,
-                utrNumber: utr,
-                items: [...customerCart],
-                status: 'Pending Approval',
-                partPayments: []
-            });
-
-            safeSetStorage('softwareBookings', bookings);
-            customerCart = [];
-            renderCustomerCart();
-            event.target.reset();
-            alert(`बुकिंग सफलतापूर्वक सबमिट हुई! ID: #${newId}`);
-            loadAllFirebaseData();
+            const dispatchDate=document.getElementById('portalEventDate')?.value||'';
+            const returnDate=document.getElementById('portalReturnDate')?.value||'';
+            const today=new Date();today.setHours(0,0,0,0);
+            const todayLocal=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+            if(!dispatchDate||!returnDate){showActionMessage('डिस्पैच और वापसी की तारीख दोनों भरें','error');return;}
+            if(dispatchDate<todayLocal){showActionMessage('डिस्पैच तारीख आज या भविष्य की होनी चाहिए','error');return;}
+            if(returnDate<dispatchDate){showActionMessage('वापसी की तारीख डिस्पैच तारीख से पहले नहीं हो सकती','error');return;}
+            if(!Array.isArray(customerCart)||!customerCart.length){showActionMessage('बुकिंग से पहले कम-से-कम एक सामान चुनें','error');return;}
+            const advance=Number(document.getElementById('portalAdvanceAmount')?.value||0);
+            if(!Number.isFinite(advance)||advance<0){showActionMessage('एडवांस राशि शून्य या उससे अधिक होनी चाहिए','error');return;}
+            const otpSettings=safeGetStorage('softwareSettings',{}),otpMode=otpSettings.otpChannel||'off',phoneForOtp=document.getElementById('portalCustMob').value.trim();
+            if(otpMode!=='off'&&window.customerOtpVerifiedPhone!==phoneForOtp){showActionMessage('बुकिंग से पहले मोबाइल OTP verify करें','error');return;}
+            const payload={
+                name:document.getElementById('portalCustName').value.trim(),
+                mob:phoneForOtp,
+                address:document.getElementById('portalCustAddress').value.trim(),
+                eventType:document.getElementById('portalEventType').value,
+                guestCount:Number(document.getElementById('portalGuestCount').value)||100,
+                date:dispatchDate,returnDate,advanceAmount:advance,
+                payMode:document.getElementById('portalPayMode').value,
+                utrNumber:document.getElementById('portalUtrNumber').value||'',
+                items:customerCart.map(item=>({name:String(item.name||'').trim(),qty:Number(item.qty),rentPrice:Number(item.rentPrice??500),source:item.source==='third-party'?'third-party':'admin',partyName:String(item.partyName||'')}))
+            };
+            if(!payload.name||payload.name.length<2||!payload.mob||!payload.address){showActionMessage('ग्राहक का नाम, मोबाइल और पता सही भरें','error');return;}
+            if(!navigator.onLine){showActionMessage('बुकिंग सर्वर तक पहुँचाने के लिए इंटरनेट आवश्यक है। विवरण सुरक्षित रखें और ऑनलाइन होने पर फिर सबमिट करें।','error');return;}
+            const api=String(otpSettings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,'');
+            try{
+                const response=await fetch(api+'/api/customer/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+                const data=await response.json().catch(()=>({}));
+                if(!response.ok)throw new Error(data.error||'बुकिंग सर्वर पर सेव नहीं हुई');
+                const booking=data.booking;
+                if(!booking||booking.id==null)throw new Error('सर्वर से सही Booking ID नहीं मिली');
+                const bookings=safeGetStorage('softwareBookings',[]);
+                if(!bookings.some(x=>String(x.id)===String(booking.id)))bookings.push(booking);
+                safeSetStorage('softwareBookings',bookings);
+                customerCart=[];renderCustomerCart();event.target.reset();
+                alert(\`बुकिंग सफलतापूर्वक Admin Approval के लिए भेजी गई! ID: #\${booking.id}\`);
+                loadAllFirebaseData();
+            }catch(error){showActionMessage('बुकिंग सर्वर पर नहीं पहुँची: '+error.message,'error');}
         }
 
         function loadBookingsListTable() {
@@ -1578,11 +1605,12 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 b.confirmedAt = b.confirmedAt || new Date().toISOString();
                 safeSetStorage('softwareBookings', bookings);
                 loadAllFirebaseData();
+                updateRemoteCustomerBookingStatus(id,'Confirmed');
                 showActionMessage("बुकिंग कन्फर्म हो गई; अब Dispatch में उपलब्ध है", "success");
             }
         }
 
-        function rejectBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;b.status='Rejected';safeSetStorage('softwareBookings',rows);loadAllFirebaseData();showActionMessage('बुकिंग रिजेक्ट हुई','success');}
+        function rejectBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;b.status='Rejected';safeSetStorage('softwareBookings',rows);loadAllFirebaseData();updateRemoteCustomerBookingStatus(id,'Rejected');showActionMessage('बुकिंग रिजेक्ट हुई','success');}
         function deleteBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} स्थायी रूप से हटाएँ? इससे इस बुकिंग के Cash/Online भुगतान रिकॉर्ड भी हटेंगे। यह क्रिया वापस नहीं होगी।`))return;const nextBookings=rows.filter(x=>String(x.id)!==String(id));const ledger=safeGetStorage('rkPaymentLedger',[]).filter(x=>String(x.bookingId)!==String(id));if(!safeSetStorage('softwareBookings',nextBookings))return;if(!safeSetStorage('rkPaymentLedger',ledger))return;loadCustomerList();loadInstallmentsTable();loadPaymentLedgerTable();loadMasterLedgerData();loadAllFirebaseData();showActionMessage('बुकिंग और उससे जुड़े Cash/Online भुगतान रिकॉर्ड हटाए गए','success');}
         function editBooking(id){const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;const name=prompt('ग्राहक का नाम',b.name||'');if(name===null)return;const mob=prompt('मोबाइल नंबर',b.mob||'');if(mob===null)return;const date=prompt('Dispatch date (YYYY-MM-DD)',b.date||'');if(date===null)return;const ret=prompt('Return date (YYYY-MM-DD)',b.returnDate||'');if(ret===null)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{4}-\d{2}-\d{2}$/.test(ret)||ret<date){showActionMessage('तारीख YYYY-MM-DD में भरें और वापसी तारीख डिस्पैच से पहले न हो','error');return}b.name=name.trim();b.mob=mob.trim();b.date=date;b.returnDate=ret;safeSetStorage('softwareBookings',rows);loadCustomerList();loadInstallmentsTable();loadAllFirebaseData();showActionMessage('बुकिंग अपडेट हुई','success');}
         function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||nums.some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज अपडेट हुए','success');}
