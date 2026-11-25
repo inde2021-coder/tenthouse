@@ -636,3 +636,12 @@ test('premium dark glass enterprise UI system is present and all served frontend
     assert.equal(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), root, file + ' must match root frontend');
   }
 });
+
+
+test('premium design layer loads after legacy styles so the new theme wins the cascade', () => {
+  const start = html.indexOf('<style id="rk-premium-enterprise-visual-system">');
+  const end = html.indexOf('</style>', start);
+  assert.ok(start > html.lastIndexOf('</style>', start - 1), 'premium layer is not duplicated');
+  assert.equal(end, html.lastIndexOf('</style>'), 'premium layer must be the final stylesheet in the document');
+  assert.ok(start > html.lastIndexOf('</script>', start), 'premium layer must load after legacy scripts and styles');
+});
