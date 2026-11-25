@@ -532,22 +532,18 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
     <!-- Customer Portal -->
     <div id="customerFirstPortal" class="no-print" style="display: flex;">
         <div class="customer-scroll-wrap">
-            <div class="glass-card-blue" style="max-width: 800px; margin: 0 auto 12px auto; width: 100%; text-align: center;">
-                <h1 id="portalShopTitle" style="color: var(--primary-blue); font-size: 26px; font-weight: 800; cursor: pointer;" onclick="openCustomerLogin(event)" title="लॉगिन खोलने के लिए टैप करें" aria-label="दुकान का नाम; लॉगिन खोलने के लिए टैप करें"><span id="displayShopName">राधा कृष्णा टेंट हाउस</span></h1>
-            </div>
-            <div style="margin: 0 auto; width: 100%; max-width: 800px; flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 40px;">
-                <div class="glass-card-green" style="border: 2px solid var(--emerald-neon);">
-                    <div style="font-size: 14px; font-weight: 800; color: var(--emerald-neon); margin-bottom: 8px;"><i class="fa-solid fa-magnifying-glass"></i> बुकिंग स्टेटस और ड्यू पेमेंट</div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="customerStatusQuery" inputmode="numeric" placeholder="बुकिंग ID" style="flex:1;min-width:130px;margin-bottom:0;">
-                        <input type="tel" id="customerStatusMobile" inputmode="numeric" maxlength="10" placeholder="रजिस्टर्ड मोबाइल नंबर" style="flex:1;min-width:150px;margin-bottom:0;">
-                        <button type="button" onclick="checkCustomerBookingStatus()" class="glass-btn-green" style="width: auto; padding: 10px 18px; margin-top:0;"><i class="fa-solid fa-eye"></i> देखें</button>
-                    </div>
-                    <div id="customerStatusResultBox" style="display: none; margin-top: 12px; background: rgba(255,255,255,0.9); padding: 14px; border-radius: 14px;"></div>
+            <header class="rk-customer-brand">
+                <div class="rk-customer-brand-mark" aria-hidden="true"><i class="fa-solid fa-crown"></i></div>
+                <div class="rk-customer-brand-copy">
+                    <div class="rk-customer-eyebrow">RADHE KRISHN · TENT HOUSE</div>
+                    <h1 id="portalShopTitle"><span id="displayShopName">राधा कृष्णा टेंट हाउस</span></h1>
+                    <div class="rk-customer-subtitle">कस्टमर बुकिंग पोर्टल</div>
                 </div>
-
-                <form onsubmit="saveCustomerBooking(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="glass-card-blue">
+                <div class="rk-customer-brand-seal"><i class="fa-solid fa-shield-check" aria-hidden="true"></i><span>Direct Booking</span></div>
+            </header>
+            <div class="rk-customer-shell">
+                <form class="rk-customer-form" onsubmit="saveCustomerBooking(event)">
+                    <div class="glass-card-blue rk-customer-section rk-customer-identity">
                         <div style="font-size: 14px; font-weight: 800; color: var(--primary-blue); margin-bottom: 8px;"><i class="fa-solid fa-user"></i> ग्राहक विवरण</div>
                         <div class="form-grid">
                             <div><label>नाम</label><input type="text" id="portalCustName" required placeholder="पूरा नाम"></div>
@@ -556,8 +552,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                             <div style="grid-column: 1/-1;"><label>पूरा पता</label><textarea id="portalCustAddress" rows="1.5" required placeholder="पता दर्ज करें"></textarea></div>
                         </div>
                     </div>
-                    <div class="glass-card-purple">
-                        <div style="font-size: 14px; font-weight: 800; color: var(--pink-neon); margin-bottom: 8px;"><i class="fa-solid fa-calendar-days"></i> कार्यक्रम विवरण</div>
+                    <div class="glass-card-purple rk-customer-section rk-customer-event">
+                        <div class="rk-customer-section-title"><i class="fa-solid fa-calendar-days"></i> कार्यक्रम विवरण</div>
                         <div class="form-grid">
                             <div><label>फंक्शन</label><select id="portalEventType" required><option value="" disabled selected>फंक्शन चुनें</option><option value="Marriage">शादी</option><option value="Birthday">जन्मदिन</option><option value="Party">पार्टी</option><option value="Other">अन्य</option></select></div>
                             <div><label>गेस्ट काउंट</label><input type="number" id="portalGuestCount" min="1" required placeholder="संख्या"></div>
@@ -565,8 +561,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                             <div><label>वापसी दिनांक</label><input type="date" id="portalReturnDate" required></div>
                         </div>
                     </div>
-                    <div class="glass-card-green">
-                        <div style="font-size: 14px; font-weight: 800; color: var(--emerald-neon); margin-bottom: 8px;"><i class="fa-solid fa-boxes-stacked"></i> सामान चुनें</div>
+                    <div class="glass-card-green rk-customer-section rk-customer-items">
+                        <div class="rk-customer-section-title"><i class="fa-solid fa-boxes-stacked"></i> सामान चुनें</div>
                         <div class="form-grid" style="margin-bottom: 6px;">
                             <div><label>सामान</label><select id="portalStockSelect"><option value="" disabled selected>सामान चुनें</option></select></div>
                             <div><label>मात्रा</label><input type="number" id="portalItemQty" min="1"></div>
@@ -579,8 +575,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                             </table>
                         </div>
                     </div>
-                    <div class="glass-card-blue">
-                        <div style="font-size: 14px; font-weight: 800; color: var(--amber-neon); margin-bottom: 8px;"><i class="fa-solid fa-credit-card"></i> एडवांस पेमेंट</div>
+                    <div class="glass-card-blue rk-customer-section rk-customer-payment">
+                        <div class="rk-customer-section-title"><i class="fa-solid fa-credit-card"></i> एडवांस पेमेंट</div>
                         <div class="form-grid">
                             <div><label>एडवांस पेमेंट / Advance Payment (₹)</label><input type="number" id="portalAdvanceAmount" min="0" placeholder="0" oninput="updateDynamicPaymentQR()"></div>
                             <div><label>मोड</label><select id="portalPayMode" onchange="togglePaymentFields()"><option value="Cash">नकद (Cash)</option><option value="UPI">ऑनलाइन (UPI/QR)</option></select></div>
@@ -591,7 +587,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                             <div><label>UTR नंबर (भुगतान के बाद)</label><input type="text" id="portalUtrNumber" maxlength="80" placeholder="UPI UTR दर्ज करें" style="margin-bottom:0;"></div>
                         </div>
                     </div>
-                    <button type="submit" class="glass-btn-cyan"><i class="fa-solid fa-paper-plane"></i> बुकिंग सबमिट करें</button>
+                    <button type="submit" class="glass-btn-cyan rk-customer-submit"><i class="fa-solid fa-paper-plane"></i> बुकिंग सबमिट करें</button>
                 </form>
                 <footer class="rk-developer-footer" aria-label="सॉफ्टवेयर डेवलपर और कॉपीराइट">
                   <div class="rk-dev-title">SOFTWARE DESIGN &amp; DEVELOPMENT</div>
@@ -3562,4 +3558,35 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
       .table-responsive .status-neutral{color:#c6d7eb!important;background:rgba(104,133,167,.14)!important;border-color:rgba(145,174,207,.2)!important}
       @media(max-width:650px){.table-search-toolbar{padding:0 2px}.table-search-shell>.table-search-input{min-height:42px!important;font-size:13px!important}.table-responsive{overscroll-behavior-x:contain;touch-action:pan-x pan-y}.table-responsive td.table-actions{right:0}}
       @media(prefers-reduced-motion:reduce){.table-responsive tbody tr{transition:none!important}}
+
+      /* Customer booking experience: editorial hierarchy, clear two-column flow, no admin surface. */
+      #customerFirstPortal{position:fixed!important;inset:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)!important;width:100%!important;height:auto!important;min-height:0!important;overflow:hidden!important;background:radial-gradient(ellipse at 14% 5%,rgba(70,128,191,.23),transparent 34%),radial-gradient(ellipse at 90% 18%,rgba(38,166,169,.13),transparent 30%),linear-gradient(145deg,#080d16 0%,#101b2b 52%,#080d16 100%)!important}
+      .customer-scroll-wrap{width:min(100%,1440px)!important;height:100%!important;margin:0 auto!important;padding:clamp(14px,3vw,34px)!important;overflow-x:hidden!important;overflow-y:auto!important;gap:20px!important}
+      .rk-customer-brand{position:relative;isolation:isolate;display:flex;align-items:center;gap:18px;width:100%;max-width:1120px;min-height:116px;margin:0 auto!important;padding:22px 28px!important;overflow:hidden;border:1px solid rgba(144,190,235,.23);border-radius:24px;background:radial-gradient(ellipse at 0% 0%,rgba(80,143,207,.22),transparent 48%),linear-gradient(125deg,rgba(23,39,60,.96),rgba(10,19,32,.97));box-shadow:0 24px 58px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.1)}
+      .rk-customer-brand:after{content:"";position:absolute;z-index:-1;right:-55px;top:-100px;width:270px;height:270px;border:1px solid rgba(137,196,231,.1);border-radius:50%;box-shadow:0 0 0 22px rgba(137,196,231,.025),0 0 0 48px rgba(137,196,231,.02)}
+      .rk-customer-brand-mark{display:grid;place-items:center;flex:0 0 62px;width:62px;height:62px;border:1px solid rgba(176,216,255,.3);border-radius:19px;background:linear-gradient(145deg,#527eae,#172c47 72%);color:#e4f6ff;font-size:25px;box-shadow:0 12px 26px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.38),inset 0 -5px 12px rgba(0,0,0,.18)}
+      .rk-customer-brand-copy{min-width:0;flex:1}.rk-customer-eyebrow{margin-bottom:5px;color:#83d6e8;font-size:9px;font-weight:900;letter-spacing:.2em}.rk-customer-brand h1{margin:0!important;color:#f4f8ff!important;font-size:clamp(23px,3vw,34px)!important;line-height:1.15!important;font-weight:850!important;letter-spacing:-.04em!important;cursor:default!important}.rk-customer-subtitle{margin-top:7px;color:#a8bdd5;font-size:12px;font-weight:650;letter-spacing:.035em}
+      .rk-customer-brand-seal{display:flex;align-items:center;gap:8px;flex:0 0 auto;padding:10px 13px;border:1px solid rgba(116,202,219,.2);border-radius:999px;background:rgba(62,139,161,.1);color:#a9e7ef;font-size:10px;font-weight:850;letter-spacing:.04em}.rk-customer-brand-seal i{font-size:12px}
+      .rk-customer-shell{width:100%;max-width:1120px;margin:0 auto!important;padding:0 0 28px;flex:1;display:flex;flex-direction:column;gap:18px}
+      .rk-customer-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:18px!important;width:100%;margin:0}
+      .rk-customer-section{position:relative;min-width:0;margin:0!important;padding:22px!important;border-radius:20px!important;overflow:hidden}
+      .rk-customer-section:before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,rgba(193,225,255,.34),transparent);pointer-events:none}
+      .rk-customer-section-title{display:flex;align-items:center;gap:10px;margin:0 0 17px!important;color:#eaf4ff!important;font-size:15px!important;font-weight:850!important;letter-spacing:-.01em}.rk-customer-section-title i{display:grid;place-items:center;width:31px;height:31px;border:1px solid rgba(139,195,235,.22);border-radius:10px;background:rgba(89,145,196,.14);color:#9fe5f0;font-size:13px}
+      .rk-customer-identity>div:first-child{color:#eaf4ff!important;font-size:15px!important;font-weight:850!important;margin-bottom:17px!important}.rk-customer-identity>div:first-child i{color:#9fe5f0;margin-right:7px}
+      .rk-customer-form .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 14px!important}
+      .rk-customer-form label{display:block!important;margin-bottom:7px!important;color:#b9cde4!important;font-size:11px!important;font-weight:800!important;letter-spacing:.035em}
+      .rk-customer-form input:not([type=checkbox]),.rk-customer-form select,.rk-customer-form textarea{min-height:46px!important;margin:0!important;border-radius:12px!important}
+      .rk-customer-form textarea{min-height:76px!important;resize:vertical}
+      .rk-customer-form .table-responsive{margin:14px 0 0!important;max-height:260px!important}
+      .rk-customer-form .table-responsive th{font-size:10px!important}
+      .rk-customer-form .table-responsive td{font-size:12px!important}
+      .rk-customer-form #onlinePaymentSection{background:rgba(5,12,22,.58)!important;border:1px solid rgba(131,171,213,.17);border-radius:15px!important}
+      .rk-customer-form #portalQrHint{color:#a9bdd5!important}
+      .rk-customer-submit{grid-column:1/-1!important;justify-self:stretch!important;width:100%!important;min-height:58px!important;margin:0!important;border-radius:16px!important;background:linear-gradient(155deg,#c49aff 0%,#8659cf 48%,#56358f 100%)!important;border:1px solid rgba(225,202,255,.36)!important;box-shadow:0 15px 28px rgba(71,43,125,.32),0 4px 0 #332057,inset 0 1px 0 rgba(255,255,255,.56)!important;font-size:15px!important;letter-spacing:.025em!important}
+      .rk-customer-submit:hover{filter:brightness(1.1);transform:translateY(-2px)}
+      .rk-customer-submit:active{transform:translateY(2px);box-shadow:0 5px 12px rgba(0,0,0,.28),inset 0 3px 8px rgba(0,0,0,.22)!important}
+      .rk-developer-footer{width:100%;max-width:1120px!important}
+      @media(max-width:760px){.customer-scroll-wrap{padding:13px!important;gap:14px!important}.rk-customer-brand{min-height:90px;padding:15px!important;gap:12px;border-radius:18px}.rk-customer-brand-mark{width:48px;height:48px;flex-basis:48px;border-radius:14px;font-size:19px}.rk-customer-eyebrow{font-size:8px;letter-spacing:.14em}.rk-customer-brand h1{font-size:clamp(19px,5vw,25px)!important}.rk-customer-subtitle{font-size:10px;margin-top:4px}.rk-customer-brand-seal{padding:7px 9px;font-size:9px}.rk-customer-form{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}.rk-customer-section{padding:16px!important;border-radius:17px!important}.rk-customer-form .form-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}.rk-customer-submit{min-height:52px!important;font-size:14px!important}}
+      @media(max-width:390px){.rk-customer-brand-seal{display:none}.rk-customer-brand{gap:10px}.rk-customer-brand-mark{width:43px;height:43px;flex-basis:43px}.rk-customer-section-title{font-size:14px!important}}
+      @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
 </style>
