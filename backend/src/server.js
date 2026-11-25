@@ -14,6 +14,9 @@ const app = express();
 const port = Number(process.env.PORT || 8080);
 const isProd = process.env.NODE_ENV === 'production';
 app.disable('x-powered-by');
+// Vercel terminates TLS/proxies requests; trust the single platform proxy so rate-limit
+// keys use the client address instead of throwing on X-Forwarded-For.
+app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(new Error('Origin not allowed')); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization','X-Admin-Token'] }));
