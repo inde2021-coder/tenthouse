@@ -179,10 +179,12 @@ input[type="checkbox"],input[type="radio"] { width:auto !important; flex:0 0 aut
  #printableSlipArea th,#printableSlipArea td { border:1px solid #777 !important; padding:5px !important; font-size:10pt !important; white-space:normal !important; }
  #printableSlipArea th { background:#dbeafe !important; color:#1e3a8a !important; }
  .no-print { display:none !important; }
- #barcodePrintModal, #barcodePrintModal * { visibility:visible !important; }
- #barcodePrintModal { position:absolute !important; inset:0 !important; display:block !important; height:auto !important; width:100% !important; padding:0 !important; background:#fff !important; color:#111 !important; }
- #barcodePrintModal > div { box-shadow:none !important; background:#fff !important; color:#111 !important; }
- #barcodePrintModal svg { display:block !important; max-width:100% !important; }
+ #barcodePrintModal, #barcodePrintModal * { visibility:hidden !important; }
+ #barcodePrintModal.barcode-print-active, #barcodePrintModal.barcode-print-active * { visibility:visible !important; }
+ #barcodePrintModal { display:none !important; }
+ #barcodePrintModal.barcode-print-active { position:absolute !important; inset:0 !important; display:block !important; height:auto !important; width:100% !important; padding:0 !important; background:#fff !important; color:#111 !important; }
+ #barcodePrintModal.barcode-print-active > div { box-shadow:none !important; background:#fff !important; color:#111 !important; }
+ #barcodePrintModal.barcode-print-active svg { display:block !important; max-width:100% !important; }
 }
 
         
@@ -1130,7 +1132,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             }
             printWithStampImages();
         }
-        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area&&['invoice','return'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}});
+        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area&&['invoice','return','dispatch'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
         function initFirebaseConnection() {
             try {
@@ -1893,7 +1895,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const rows=Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length
               ? b.dispatchEntries.map(e=>({name:e.itemName||b.items?.[Number(e.itemIndex)]?.name||'सामान',source:e.source==='third-party'?'वेंडर: '+(e.partyName||'-'):'एडमिन स्टॉक',qty:Number(e.qty)||0,date:e.date||b.date||'-'}))
               : (b.items||[]).map(i=>({name:i.name,source:i.source==='third-party'?'वेंडर: '+(i.partyName||'-'):'एडमिन स्टॉक',qty:Number(i.qty)||0,date:b.date||'-'}));
-            const area=document.getElementById('printableSlipArea');area.style.display='block';
+            const area=document.getElementById('printableSlipArea');area.dataset.printRestore='dispatch';area.style.display='block';
             area.innerHTML=`
               <div class="rk-slip rk-dispatch-slip" style="text-align:center;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px">
                 <h2 style="color:#2b6cb0">${escapeHtml(settings.businessName||'राधा कृष्णा टेंट हाउस')}</h2>
@@ -2154,7 +2156,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 
         function loadRealStockList() {
             let stock = mergeDuplicateStockRows(safeGetStorage('realStockDatabase', []));
-            safeSetStorage('realStockDatabase',stock);
+            const usedBarcodes=new Set(stock.map(item=>String(item.barcode||'').trim()).filter(Boolean));
+            stock.forEach(item=>{if(!String(item.barcode||'').trim()||stock.filter(other=>other!==item&&String(other.barcode||'').trim()===String(item.barcode||'').trim()).length){let code='';do{code='ITM-'+Math.floor(100000+Math.random()*900000)}while(usedBarcodes.has(code));item.barcode=code;usedBarcodes.add(code);}});
+            if(!safeSetStorage('realStockDatabase',stock)){showActionMessage('Barcode सहित स्टॉक सेव नहीं हुआ; प्रिंट से पहले स्टोरेज ठीक करें।','error');return;}
             let tbody = document.getElementById('stockTableBody');
             if(tbody) tbody.innerHTML = stock.length === 0 ? `<tr><td colspan="8" style="text-align:center;">कोई स्टॉक नहीं</td></tr>` : stock.map((s, i) => `
                 <tr>
@@ -2171,15 +2175,29 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         function printSingleBarcode(name, code) {
-            document.getElementById('printItemName').textContent = name;
-            document.getElementById('barcodePrintModal').style.display = 'flex';
+            const modal=document.getElementById('barcodePrintModal');
+            const svg=document.getElementById('barcodeSvgElement');
+            const value=String(code||'').trim();
+            if(!modal||!svg||!value){showActionMessage('इस सामान का Barcode उपलब्ध नहीं है। पहले स्टॉक रिकॉर्ड अपडेट करें।','error');return;}
+            if(typeof JsBarcode!=='function'){showActionMessage('Barcode लाइब्रेरी लोड नहीं हुई। इंटरनेट कनेक्शन जाँचें और फिर प्रयास करें।','error');return;}
             try {
-                JsBarcode("#barcodeSvgElement", code, { format: "CODE128", width: 2, height: 60, displayValue: true });
-            } catch(e) {}
+                svg.innerHTML='';
+                JsBarcode(svg,value,{format:'CODE128',width:2,height:60,displayValue:true,margin:8});
+                document.getElementById('printItemName').textContent=String(name||'');
+                modal.classList.add('barcode-print-active');
+                modal.style.display='flex';
+            } catch(error) {
+                modal.classList.remove('barcode-print-active');
+                modal.style.display='none';
+                showActionMessage('Barcode जनरेट नहीं हुआ: '+(error.message||'अमान्य Barcode'),'error');
+            }
         }
 
         function closeBarcodeModal() {
-            document.getElementById('barcodePrintModal').style.display = 'none';
+            const modal=document.getElementById('barcodePrintModal');
+            if(!modal)return;
+            modal.classList.remove('barcode-print-active');
+            modal.style.display='none';
         }
 
         function importStockFromCSV(event) {
@@ -2189,22 +2207,19 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             reader.onload = function(e) {
                 let lines = e.target.result.split('\n');
                 let stock = safeGetStorage('realStockDatabase', []);
+                let imported=0,skipped=0;
                 for(let i=1; i<lines.length; i++) {
-                    let cols = lines[i].split(',');
-                    if(cols.length >= 5) {
-                        stock.push({
-                            name: cols[0].trim(),
-                            qty: Number(cols[1]) || 10,
-                            setRent: Number(cols[2]) || 500,
-                            singleRent: Number(cols[3]) || 700,
-                            missingCharge: Number(cols[4]) || 100,
-                            barcode: 'ITM-' + Math.floor(100000 + Math.random() * 900000)
-                        });
-                    }
+                    const line=lines[i].trim();if(!line)continue;
+                    let cols = line.split(',');
+                    const name=String(cols[0]||'').trim(),qty=Number(cols[1]),setRent=Number(cols[2]),singleRent=Number(cols[3]),missingCharge=Number(cols[4]);
+                    if(cols.length<5||!name||!Number.isInteger(qty)||qty<0||![setRent,singleRent,missingCharge].every(v=>Number.isFinite(v)&&v>=0)){skipped++;continue;}
+                    stock.push({name,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
+                    imported++;
                 }
-                safeSetStorage('realStockDatabase', stock);
+                if(!imported){showActionMessage('कोई वैध CSV पंक्ति नहीं मिली; स्टॉक में बदलाव नहीं हुआ।','error');return;}
+                if(!safeSetStorage('realStockDatabase',mergeDuplicateStockRows(stock)))return;
                 loadAllFirebaseData();
-                showActionMessage("एक्सेल स्टॉक इम्पोर्ट सफल", "success");
+                showActionMessage(imported+' स्टॉक रिकॉर्ड इम्पोर्ट हुए; '+skipped+' गलत पंक्तियाँ छोड़ी गईं।','success');
             };
             reader.readAsText(file);
         }
@@ -2216,7 +2231,10 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const pur=safeGetStorage('purchaseDatabase',[]); pur.push({id:Date.now(),date:document.getElementById('purDate').value||new Date().toISOString().slice(0,10),itemName,qty,price,supplier:document.getElementById('purSupplier').value.trim()});
             let stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[])); const old=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===itemName.toLowerCase());
             if(old){old.qty=Math.max(0,Number(old.qty)||0)+qty;old.singleRent=singleRent;old.setRent=setRent;old.missingCharge=missingCharge;old.missingUnitPrice=missingCharge;}else stock.push({name:itemName,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
-            safeSetStorage('purchaseDatabase',pur);safeSetStorage('realStockDatabase',mergeDuplicateStockRows(stock));event.target.reset();document.getElementById('purDate').value=new Date().toISOString().slice(0,10);loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड सेव हुआ; उसी सामान की स्टॉक मात्रा मौजूदा रिकॉर्ड में जोड़ी गई','success');
+            const nextStock=mergeDuplicateStockRows(stock),previousPurchases=safeGetStorage('purchaseDatabase',[]);
+            if(!safeSetStorage('purchaseDatabase',pur))return;
+            if(!safeSetStorage('realStockDatabase',nextStock)){safeSetStorage('purchaseDatabase',previousPurchases);showActionMessage('स्टॉक सेव नहीं हुआ; परचेज रिकॉर्ड वापस पुरानी स्थिति में रखा गया।','error');return;}
+            event.target.reset();document.getElementById('purDate').value=new Date().toISOString().slice(0,10);loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड सेव हुआ; उसी सामान की स्टॉक मात्रा मौजूदा रिकॉर्ड में जोड़ी गई','success');
         }
         function loadPurchaseTable() {
             let pur = safeGetStorage('purchaseDatabase', []);
@@ -2231,7 +2249,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if (!desc || !Number.isFinite(amount) || amount <= 0) { showActionMessage('खर्च का विवरण और शून्य से अधिक सही राशि भरें', 'error'); return; }
             const list = safeGetStorage('incomeExpenseDatabase', []);
             list.push({ date: new Date().toISOString().slice(0,10), desc, type: 'Expense', amount });
-            safeSetStorage('incomeExpenseDatabase', list);
+            if(!safeSetStorage('incomeExpenseDatabase', list))return;
             event.target.reset();
             loadAllFirebaseData();
             showActionMessage('खर्च दर्ज हुआ', 'success');
