@@ -604,6 +604,28 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(max-width:720px){#customerFirstPortal .rk-customer-hero.has-custom-image::after{top:auto;left:0;right:0;bottom:0;width:100%;height:44%;border-radius:0 0 23px 23px;background-image:linear-gradient(180deg,#111a35 0%,rgba(17,26,53,.18) 55%),var(--rk-hero-bg)}#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-copy{max-width:100%;padding-bottom:125px}}
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
+
+<style id="rk-ai-chat-styles">
+.rk-ai-page{max-width:1120px;margin:0 auto!important;padding:clamp(8px,2vw,20px)!important}
+.rk-ai-shell{min-height:min(760px,calc(100dvh - 145px));display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(126,165,224,.2);border-radius:24px;background:radial-gradient(ellipse at 12% 0%,rgba(48,104,177,.23),transparent 38%),linear-gradient(155deg,#111d31 0%,#0b1423 56%,#101b2e 100%);box-shadow:0 24px 70px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.08);color:#edf4ff}
+.rk-ai-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid rgba(169,197,239,.13);background:rgba(17,30,50,.72)}
+.rk-ai-brand{display:flex;align-items:center;gap:13px;min-width:0}.rk-ai-avatar{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border-radius:16px;background:linear-gradient(145deg,#9b8cff,#4d75df 60%,#39c7d8);color:white;font-size:20px;box-shadow:0 8px 22px rgba(77,117,223,.35),inset 0 1px 1px #ffffff80}
+.rk-ai-title{font-size:18px;font-weight:850;letter-spacing:.2px}.rk-ai-brand p{margin:3px 0 0;color:#9fb1cb;font-size:12px}.rk-ai-live{margin-left:8px;color:#85e8c1;font-size:10px;font-weight:750;vertical-align:middle;white-space:nowrap}.rk-ai-live i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#48dda2;box-shadow:0 0 9px #48dda2;margin-right:4px}
+.rk-ai-clear{display:flex;align-items:center;gap:7px;border:1px solid rgba(161,190,231,.2)!important;border-radius:11px!important;background:rgba(255,255,255,.055)!important;color:#c9d8ed!important;padding:9px 12px!important;font-size:12px!important;box-shadow:none!important}
+.rk-ai-context{display:flex;align-items:flex-start;gap:9px;margin:14px 18px 4px;padding:10px 12px;border:1px solid rgba(92,153,224,.18);border-radius:12px;background:rgba(38,87,145,.12);color:#a9bfdc;font-size:11px;line-height:1.55}.rk-ai-context i{color:#81b9ff;margin-top:2px}
+.rk-ai-messages{flex:1;min-height:260px;max-height:calc(100dvh - 430px);overflow:auto;padding:22px 20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.rk-ai-message{display:flex;align-items:flex-start;gap:10px;max-width:min(88%,760px)}.rk-ai-message.user{align-self:flex-end;flex-direction:row-reverse}.rk-ai-message-avatar{width:30px;height:30px;flex:0 0 30px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,#687ee9,#36b9ca);color:white;font-size:12px}.rk-ai-message.user .rk-ai-message-avatar{background:linear-gradient(145deg,#247c9d,#2751a1)}
+.rk-ai-bubble{padding:12px 15px;border:1px solid rgba(160,190,230,.13);border-radius:4px 16px 16px 16px;background:linear-gradient(145deg,rgba(35,52,78,.9),rgba(21,34,54,.94));box-shadow:0 7px 22px rgba(0,0,0,.14);min-width:0}.rk-ai-message.user .rk-ai-bubble{border-radius:16px 4px 16px 16px;background:linear-gradient(145deg,#254f83,#1d416d);border-color:rgba(121,170,255,.2)}
+.rk-ai-sender{font-size:11px;font-weight:850;color:#a9caff;margin-bottom:6px}.rk-ai-sender span{font-size:9px;color:#8399b8;font-weight:600;margin-left:6px}.rk-ai-bubble p{margin:0;color:#e7eef9;font-size:13px;line-height:1.72;white-space:pre-wrap;overflow-wrap:anywhere}.rk-ai-bubble time{display:block;text-align:right;color:#8296b3;font-size:9px;margin-top:7px}
+.rk-ai-message.pending .rk-ai-bubble p{color:#9fb9dc}.rk-ai-dots{display:inline-flex;gap:4px;margin-left:4px}.rk-ai-dots i{width:5px;height:5px;border-radius:50%;background:#8dbbff;animation:rkAiPulse 1s infinite ease-in-out}.rk-ai-dots i:nth-child(2){animation-delay:.15s}.rk-ai-dots i:nth-child(3){animation-delay:.3s}@keyframes rkAiPulse{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
+.rk-ai-suggestions{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 15px}.rk-ai-suggestions button{border:1px solid rgba(127,172,231,.22)!important;border-radius:999px!important;background:rgba(63,105,160,.13)!important;color:#c4d8f5!important;padding:8px 12px!important;font-size:11px!important;box-shadow:none!important}.rk-ai-suggestions button i{margin-right:5px;color:#8ec2ff}
+.rk-ai-composer{display:flex;align-items:center;gap:9px;margin:0 16px;padding:9px;border:1px solid rgba(143,179,230,.22);border-radius:17px;background:rgba(4,11,21,.62);box-shadow:inset 0 3px 9px rgba(0,0,0,.25),0 8px 22px rgba(0,0,0,.15)}
+.rk-ai-input-wrap{display:flex;align-items:center;gap:9px;flex:1;min-width:0;padding:0 8px;color:#8eaed8}.rk-ai-input-wrap input{flex:1;min-width:0;margin:0!important;padding:10px 0!important;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;color:#f2f6ff!important;font-size:13px!important}.rk-ai-input-wrap input::placeholder{color:#7187a7}
+.rk-ai-mic,.rk-ai-send{width:40px!important;height:40px!important;min-width:40px!important;padding:0!important;display:grid;place-items:center;border-radius:13px!important}.rk-ai-mic{background:rgba(67,124,186,.2)!important;color:#9dcaff!important;border:1px solid rgba(127,172,231,.2)!important;box-shadow:none!important}.rk-ai-send{background:linear-gradient(145deg,#7b9cff,#5274e5)!important;color:white!important;box-shadow:0 6px 15px rgba(82,116,229,.32)!important}
+.rk-ai-footnote{padding:11px 18px 14px;text-align:center;color:#7085a4;font-size:10px}.rk-ai-footnote i{color:#7ea9dc;margin-right:4px}
+@media(max-width:640px){.rk-ai-page{padding:4px!important}.rk-ai-shell{min-height:calc(100dvh - 105px);border-radius:17px}.rk-ai-header{padding:13px}.rk-ai-avatar{width:40px;height:40px;flex-basis:40px}.rk-ai-title{font-size:16px}.rk-ai-brand p{font-size:10px}.rk-ai-clear{padding:8px!important}.rk-ai-context{margin:10px 10px 2px;font-size:10px}.rk-ai-messages{padding:16px 11px;max-height:calc(100dvh - 390px)}.rk-ai-message{max-width:96%}.rk-ai-bubble{padding:10px 12px}.rk-ai-bubble p{font-size:12px}.rk-ai-suggestions{padding:0 10px 11px;gap:6px}.rk-ai-suggestions button{font-size:10px!important;padding:7px 9px!important}.rk-ai-composer{margin:0 9px;padding:7px;gap:6px}.rk-ai-mic,.rk-ai-send{width:38px!important;height:38px!important;min-width:38px!important}.rk-ai-footnote{font-size:9px;padding:9px 10px 11px}}
+@media(prefers-reduced-motion:reduce){.rk-ai-messages{scroll-behavior:auto}.rk-ai-dots i{animation:none}}
+</style>
 </head>
 <body>
 
@@ -795,19 +817,33 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         </div>
                     </div>
 
-                    <!-- AI Assistant -->
-                    <div id="ai-assistant" class="page-section">
-                        <div class="glass-card-blue">
-                            <h3 style="color: var(--primary-blue); font-size: 15px; margin-bottom: 8px;"><i class="fa-solid fa-robot"></i> एडवांस AI असिस्टेंट कंट्रोल सेंटर</h3>
-                            <div class="rk-ai-controls" style="display: flex; gap: 8px; margin-top: 6px;">
-                                <input type="text" id="aiCommandInput" placeholder="मुझसे बोलें या निर्देश लिखें…" autocomplete="off" style="margin-bottom:0;flex:1;min-width:160px;">
-                                <button type="button" id="aiSendButton" onclick="executeAiCommand()" class="glass-btn-blue" style="width:auto;padding:10px 18px;margin-top:0;"><i class="fa-solid fa-paper-plane"></i> पूछें</button>
-                                <button type="button" id="aiVoiceButton" onclick="startVoiceRecognition()" class="glass-btn-cyan" style="width:auto;padding:10px 16px;margin-top:0;"><i class="fa-solid fa-microphone"></i> बोलें</button>
+                    <!-- Tent House AI Chat: interface only; all ERP data/actions remain in existing app modules -->
+                    <div id="ai-assistant" class="page-section rk-ai-page" data-title="AI चैट">
+                        <section class="rk-ai-shell">
+                            <header class="rk-ai-header">
+                                <div class="rk-ai-brand">
+                                    <div class="rk-ai-avatar" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                                    <div><div class="rk-ai-title">श्रद्धा <span class="rk-ai-live"><i></i> AI ऑनलाइन</span></div><p>Radhe Krishn Tent House की स्मार्ट बिज़नेस सहायक</p></div>
+                                </div>
+                                <button type="button" class="rk-ai-clear" onclick="clearAiChat()" title="चैट साफ करें"><i class="fa-solid fa-rotate-left"></i><span>नई चैट</span></button>
+                            </header>
+                            <div class="rk-ai-context"><i class="fa-solid fa-shield-halved"></i><span>आपके सवाल का जवाब उपलब्ध टेंट हाउस रिकॉर्ड और कॉन्फ़िगर किए गए AI से मिलेगा। कोई रिकॉर्ड बदले बिना सिर्फ जानकारी दी जाएगी।</span></div>
+                            <div id="aiAssistantResponse" class="rk-ai-messages" role="log" aria-live="polite" aria-label="AI चैट संदेश">
+                                <article class="rk-ai-message assistant"><div class="rk-ai-message-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div><div class="rk-ai-bubble"><div class="rk-ai-sender">श्रद्धा <span>AI सहायक</span></div><p>नमस्ते! मैं श्रद्धा हूँ। आपकी टेंट हाउस बुकिंग, स्टॉक, डिस्पैच, रिटर्न और हिसाब-किताब समझने में मदद कर सकती हूँ। आज किस काम में मदद चाहिए?</p><time>अभी</time></div></article>
                             </div>
-                            <div id="aiAssistantResponse" style="margin-top: 12px; background: rgba(255,255,255,0.9); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--emerald-neon);">
-                                AI असिस्टेंट सक्रिय है... निर्देश दें।
+                            <div class="rk-ai-suggestions" aria-label="त्वरित सवाल">
+                                <button type="button" onclick="askAiSuggestion('आज की बुकिंग और आने वाले इवेंट बताओ')"><i class="fa-regular fa-calendar"></i> आज की बुकिंग</button>
+                                <button type="button" onclick="askAiSuggestion('किस सामान का स्टॉक कम है?')"><i class="fa-solid fa-boxes-stacked"></i> कम स्टॉक</button>
+                                <button type="button" onclick="askAiSuggestion('कितना पेमेंट बाकी है?')"><i class="fa-solid fa-indian-rupee-sign"></i> बाकी पेमेंट</button>
+                                <button type="button" onclick="askAiSuggestion('आज के आय और खर्च का सारांश बताओ')"><i class="fa-solid fa-chart-line"></i> आय-खर्च</button>
                             </div>
-                        </div>
+                            <form class="rk-ai-composer" onsubmit="event.preventDefault();executeAiCommand();">
+                                <label class="rk-ai-input-wrap" for="aiCommandInput"><i class="fa-regular fa-message"></i><input type="text" id="aiCommandInput" placeholder="श्रद्धा से कुछ भी पूछें…" autocomplete="off" aria-label="अपना सवाल लिखें"></label>
+                                <button type="button" id="aiVoiceButton" class="rk-ai-mic" onclick="startVoiceRecognition()" aria-label="आवाज़ से सवाल पूछें" title="बोलकर पूछें"><i class="fa-solid fa-microphone"></i></button>
+                                <button type="submit" id="aiSendButton" class="rk-ai-send" aria-label="सवाल भेजें"><i class="fa-solid fa-arrow-up"></i></button>
+                            </form>
+                            <footer class="rk-ai-footnote"><i class="fa-solid fa-lock"></i> निजी API keys सर्वर पर सुरक्षित रहेंगी · AI जवाबों को महत्वपूर्ण निर्णय से पहले रिकॉर्ड से मिलाएँ</footer>
+                        </section>
                     </div>
 
                     <!-- Customer List -->
@@ -2926,39 +2962,63 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         window.onNativeSpeechResult=function(text){const input=document.getElementById('aiCommandInput');if(!text){aiStatus('आवाज़ पहचान नहीं हो सकी। फिर बोलकर देखें।',true);return;}if(input)input.value=text;executeAiCommand();};
         document.addEventListener('DOMContentLoaded',()=>{const input=document.getElementById('aiCommandInput');if(input)input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();executeAiCommand();}});});
 
-        // Shraddha assistant: keyboard + speech input, real backend AI when configured, useful local answers offline.
-        function aiStatus(message, isError=false){ const el=document.getElementById('aiAssistantResponse'); if(el) el.textContent=message; if(isError) showActionMessage(message,'error'); }
+        // Tent House AI chat UI. Backend contract and business-data boundaries are preserved.
+        let rkAiChatBusy=false;
+        function aiStatus(message,isError=false){
+            const host=document.getElementById('aiAssistantResponse');if(!host)return;
+            const bubble=host.querySelector('.rk-ai-message.pending .rk-ai-bubble p');
+            if(bubble)bubble.textContent=String(message||'');
+            if(isError)showActionMessage(String(message||'AI त्रुटि'), 'error');
+        }
+        function addAiChatMessage(role,message,options={}){
+            const host=document.getElementById('aiAssistantResponse');if(!host)return null;
+            const item=document.createElement('article');item.className='rk-ai-message '+(role==='user'?'user':'assistant')+(options.pending?' pending':'');
+            const avatar=document.createElement('div');avatar.className='rk-ai-message-avatar';avatar.innerHTML=role==='user'?'<i class="fa-solid fa-user"></i>':'<i class="fa-solid fa-wand-magic-sparkles"></i>';
+            const bubble=document.createElement('div');bubble.className='rk-ai-bubble';
+            const sender=document.createElement('div');sender.className='rk-ai-sender';sender.textContent=role==='user'?'आप':'श्रद्धा';
+            if(role!=='user'){const tag=document.createElement('span');tag.textContent='AI सहायक';sender.appendChild(tag);}
+            const p=document.createElement('p');p.textContent=String(message||'');
+            const time=document.createElement('time');time.textContent=new Date().toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});
+            bubble.append(sender,p,time);item.append(avatar,bubble);host.appendChild(item);host.scrollTop=host.scrollHeight;return item;
+        }
+        function clearAiChat(){
+            if(rkAiChatBusy){showActionMessage('पहले चल रहा AI जवाब पूरा होने दें।','error');return;}
+            const host=document.getElementById('aiAssistantResponse');if(!host)return;
+            host.innerHTML='';addAiChatMessage('assistant','नई चैट शुरू हुई। बताइए, टेंट हाउस के किस काम में मदद चाहिए?');
+            const input=document.getElementById('aiCommandInput');if(input)input.value='';
+        }
+        function askAiSuggestion(question){const input=document.getElementById('aiCommandInput');if(input){input.value=question;executeAiCommand();}}
         async function executeAiCommand(){
-            const input=document.getElementById('aiCommandInput'); const question=(input?.value||'').trim(); if(!question){aiStatus('कृपया प्रश्न लिखें या माइक्रोफ़ोन से बोलें।',true);return;}
-            const settings=safeGetStorage('softwareSettings',{}); aiStatus('श्रद्धा सोच रही है…');
-            const api=getBackendApiUrl(settings); const token=(settings.aiAccessToken||'').trim();
-            if(api && token && navigator.onLine){
-              try {
-                // AI receives only the app's current local snapshot. Firebase cloud sync updates this snapshot when signed in/online.
-                // Never send Firebase config/API keys or Gemini secrets to the model.
-                const aiBusinessSnapshot = {
-                  bookings: safeGetStorage('softwareBookings', []),
-                  stock: safeGetStorage('realStockDatabase', []),
-                  expenses: safeGetStorage('incomeExpenseDatabase', []),
-                  vendorStock: safeGetStorage('thirdPartyDatabase', []),
-                  vendorPayments: safeGetStorage('thirdPartyPayments', []),
-                  lastCloudSync: safeGetStorage('rkLastCloudSyncAt', null)
-                };
-                let snapshotText = JSON.stringify(aiBusinessSnapshot);
-                if (snapshotText.length > 14000) snapshotText = snapshotText.slice(0, 14000) + '… [डेटा सीमा के कारण बाकी हिस्सा छोड़ा गया]';
-                const aiUserMessage = 'उपयोगकर्ता का प्रश्न: ' + question + '\n\nऐप का उपलब्ध व्यावसायिक डेटा (यह लोकल snapshot है; Firebase से नवीनतम sync की पुष्टि केवल lastCloudSync से करें):\n' + snapshotText + '\n\nकेवल दिए गए डेटा के आधार पर उत्तर दें। डेटा मौजूद न हो तो स्पष्ट बताएं; अनुमान लगाकर रकम/रिकॉर्ड न बनाएं।';
-                const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[{role:'system',content:'आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।'}, {role:'user',content:aiUserMessage}]})}); const data=await r.json(); if(!r.ok) throw Error(data.error||('AI HTTP '+r.status)); if(data.reply){aiStatus(data.reply); let geminiVoicePlayed=false; try { const tr=await fetch(api+'/api/ai/tts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({text:data.reply})}); const td=await tr.json(); if(tr.ok && td.audioBase64){ const audio=new Audio('data:'+(td.mimeType||'audio/wav')+';base64,'+td.audioBase64); await audio.play(); geminiVoicePlayed=true; } else { console.warn('Gemini TTS unavailable:',td.error||tr.status); } } catch(te){ console.warn('Gemini TTS unavailable',te); } if(!geminiVoicePlayed && 'speechSynthesis' in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(data.reply);u.lang='hi-IN';window.speechSynthesis.speak(u);} return;} throw Error('AI उत्तर खाली है'); }
-              catch(e){ console.warn('AI backend unavailable',e); aiStatus('AI सर्वर से उत्तर नहीं मिला: '+e.message+'। नीचे उपलब्ध लोकल जानकारी दे रही हूँ।',true); }
-            }
-            const q=question.toLowerCase(); const bookings=safeGetStorage('softwareBookings',[]), stock=safeGetStorage('realStockDatabase',[]), expenses=safeGetStorage('incomeExpenseDatabase',[]);
-            let answer='ऑनलाइन AI चालू करने के लिए Settings में Backend API URL और सुरक्षित Admin API Token भरें। अभी मैं स्थानीय डेटा से सीमित उत्तर दे सकती हूँ।';
-            if(/बुकिंग|booking|ग्राहक|customer/.test(q)) answer='स्थानीय रिकॉर्ड में कुल '+bookings.length+' बुकिंग हैं। क्लाउड सिंक के लिए इंटरनेट और Firebase login आवश्यक है।';
-            else if(/स्टॉक|stock|सामान|inventory/.test(q)) answer='स्थानीय स्टॉक रिकॉर्ड में '+(Array.isArray(stock)?stock.length:Object.keys(stock||{}).length)+' रिकॉर्ड हैं।';
-            else if(/खर्च|आय|income|expense|लेखा/.test(q)) answer='आय/खर्च के स्थानीय रिकॉर्ड: '+(Array.isArray(expenses)?expenses.length:Object.keys(expenses||{}).length)+'।';
-            else if(/नमस्ते|हेलो|hello|hi/.test(q)) answer='नमस्ते! मैं श्रद्धा हूँ। आप बुकिंग, स्टॉक या आय-खर्च के बारे में पूछ सकते हैं।';
-            aiStatus(answer); if('speechSynthesis' in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(answer);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(_){}}
+            const input=document.getElementById('aiCommandInput');const question=(input?.value||'').trim();
+            if(!question||rkAiChatBusy){if(!question)showActionMessage('पहले अपना सवाल लिखें या बोलें।','error');return;}
+            rkAiChatBusy=true;const send=document.getElementById('aiSendButton'),mic=document.getElementById('aiVoiceButton');
+            if(send)send.disabled=true;if(mic)mic.disabled=true;
+            addAiChatMessage('user',question);if(input)input.value='';
+            const pending=addAiChatMessage('assistant','जवाब तैयार कर रही हूँ…');
+            const settings=safeGetStorage('softwareSettings',{});const api=getBackendApiUrl(settings);const token=(settings.aiAccessToken||'').trim();
+            let answer='';
+            try{
+                if(api&&token&&navigator.onLine){
+                    const aiBusinessSnapshot={bookings:safeGetStorage('softwareBookings',[]),stock:safeGetStorage('realStockDatabase',[]),expenses:safeGetStorage('incomeExpenseDatabase',[]),vendorStock:safeGetStorage('thirdPartyDatabase',[]),vendorPayments:safeGetStorage('thirdPartyPayments',[]),lastCloudSync:safeGetStorage('rkLastCloudSyncAt',null)};
+                    let snapshotText=JSON.stringify(aiBusinessSnapshot);if(snapshotText.length>14000)snapshotText=snapshotText.slice(0,14000)+'… [डेटा सीमा के कारण बाकी हिस्सा छोड़ा गया]';
+                    const aiUserMessage='उपयोगकर्ता का प्रश्न: '+question+'\n\nऐप का उपलब्ध व्यावसायिक डेटा (यह लोकल snapshot है; Firebase से नवीनतम sync की पुष्टि केवल lastCloudSync से करें):\n'+snapshotText+'\n\nकेवल दिए गए डेटा के आधार पर उत्तर दें। डेटा मौजूद न हो तो स्पष्ट बताएं; अनुमान लगाकर रकम/रिकॉर्ड न बनाएं।';
+                    const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[{role:'system',content:'आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।'},{role:'user',content:aiUserMessage}]})});
+                    const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||('AI HTTP '+r.status));if(!data.reply)throw Error('AI उत्तर खाली है');answer=String(data.reply);
+                }else{
+                    const q=question.toLowerCase(),bookings=safeGetStorage('softwareBookings',[]),stock=safeGetStorage('realStockDatabase',[]),expenses=safeGetStorage('incomeExpenseDatabase',[]);
+                    answer='ऑनलाइन AI चालू करने के लिए Settings में Backend API URL और सुरक्षित Admin API Token भरें। अभी मैं स्थानीय डेटा से सीमित उत्तर दे सकती हूँ।';
+                    if(/बुकिंग|booking|ग्राहक|customer/.test(q))answer='स्थानीय रिकॉर्ड में कुल '+bookings.length+' बुकिंग हैं। क्लाउड सिंक के लिए इंटरनेट और Firebase login आवश्यक है।';
+                    else if(/स्टॉक|stock|सामान|inventory/.test(q))answer='स्थानीय स्टॉक रिकॉर्ड में '+(Array.isArray(stock)?stock.length:Object.keys(stock||{}).length)+' रिकॉर्ड हैं।';
+                    else if(/खर्च|आय|income|expense|लेखा/.test(q))answer='आय/खर्च के स्थानीय रिकॉर्ड: '+(Array.isArray(expenses)?expenses.length:Object.keys(expenses||{}).length)+'।';
+                    else if(/नमस्ते|हेलो|hello|hi\b/.test(q))answer='नमस्ते! मैं श्रद्धा हूँ। आप बुकिंग, स्टॉक, डिस्पैच, रिटर्न या आय-खर्च के बारे में पूछ सकते हैं।';
+                }
+            }catch(e){console.warn('Tent House AI chat failed',e);answer='AI सर्वर से उत्तर नहीं मिला: '+e.message+'। Backend URL, Admin Token और AI provider सेटिंग जाँचें।';}
+            finally{rkAiChatBusy=false;if(send)send.disabled=false;if(mic)mic.disabled=false;}
+            if(pending){pending.classList.remove('pending');const p=pending.querySelector('.rk-ai-bubble p');if(p)p.textContent=answer;const t=pending.querySelector('time');if(t)t.textContent=new Date().toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});const host=document.getElementById('aiAssistantResponse');if(host)host.scrollTop=host.scrollHeight;}
+            if('speechSynthesis'in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(answer);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(_){}}
         }
         function startVoiceRecognition(){
+            if(rkAiChatBusy)return;
             const Native=window.SpeechRecognition||window.webkitSpeechRecognition;
             if(Native){const rec=new Native();rec.lang='hi-IN';rec.interimResults=false;rec.maxAlternatives=1;rec.onresult=e=>{const text=e.results?.[0]?.[0]?.transcript||'';const input=document.getElementById('aiCommandInput');if(input)input.value=text;executeAiCommand();};rec.onerror=e=>aiStatus('माइक्रोफ़ोन त्रुटि: '+(e.error||'अनुमति जाँचें'),true);rec.start();return;}
             if(window.AndroidBridge&&typeof window.AndroidBridge.startVoiceRecognition==='function'){window.AndroidBridge.startVoiceRecognition();return;}
