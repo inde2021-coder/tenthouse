@@ -342,11 +342,30 @@ const customerBookingSchema = z.object({
 }).refine(data => data.returnDate >= data.date, { message: 'Return date must not be before booking date.', path: ['returnDate'] })
   .refine(data => isValidIsoDate(data.date) && isValidIsoDate(data.returnDate), { message: 'बुकिंग और वापसी की तारीख वास्तविक कैलेंडर तारीख होनी चाहिए।', path: ['date'] })
   .refine(data => data.payMode !== 'UPI' || data.advanceAmount === 0 || String(data.utrNumber || '').trim().length >= 6, { message: 'UTR is required for online advance payment.', path: ['utrNumber'] });
+
+async function acquireBookingReservationLock(database=adminDb) {
+  if (!database) return async () => {};
+  const ref = database.ref('erpPrivate/bookingReservationLock');
+  const owner = crypto.randomUUID();
+  const result = await ref.transaction(current => {
+    if (current && Number(current.expiresAt) > Date.now()) return;
+    return { owner, expiresAt: Date.now() + 60000 };
+  });
+  if (!result.committed) return null;
+  return async () => {
+    await ref.transaction(current => current && current.owner === owner ? null : undefined);
+  };
+}
+
 app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (req,res) => {
   const parsed=customerBookingSchema.safeParse(req.body);
   if(!parsed.success)return res.status(400).json({error:'बुकिंग विवरण सही भरें।',details:parsed.error.flatten()});
   if(parsed.data.date < new Date().toISOString().slice(0,10))return res.status(400).json({error:'बुकिंग तारीख आज या भविष्य की होनी चाहिए।'});
+  let releaseReservationLock=null;
   try{
+    // Serialize overlapping customer booking checks and the durable booking write.
+    releaseReservationLock=await acquireBookingReservationLock();
+    if(!releaseReservationLock)return res.status(409).json({error:'दूसरी बुकिंग का स्टॉक सत्यापन चल रहा है; कुछ सेकंड बाद पुनः प्रयास करें।'});
     let customerItems=parsed.data.items;
     if(customerItems.length){
       if(!adminDb)return res.status(503).json({error:'सामान और सही किराया सत्यापित करने के लिए Firebase stock catalog उपलब्ध नहीं है।'});
@@ -402,6 +421,7 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
     }
     res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई। Advance payment UTR सत्यापन के लिए Pending है।'});
   }catch(error){res.status(503).json({error:error.message});}
+  finally{if(releaseReservationLock){try{await releaseReservationLock();}catch(lockError){console.error('Customer booking reservation lock release failed:',lockError.message);}}}
 });
 app.get('/api/customer/stock', requireDurableStore, async (_req,res) => {
   try {
