@@ -105,3 +105,10 @@ Main पर मिले root causes:
 - Root/backend package JSON and PWA manifest JSON validation: PASS.
 - The subsequent commit only adds this audit note; no application code changed after the passing run.
 - Vercel preview remains blocked by the account's daily deployment API quota, so live browser/Firebase/Google OAuth/provider/device checks are still not claimed as passed.
+
+
+## Final security-doc scan and latest CI
+- Main की `backend/SETUP_CREDENTIALS_HI.md` में WhatsApp webhook verification token का वास्तविक मान मिला था। नई audit branch की guide से वह मान हटाकर placeholder रखा गया और Git history में पुराने मान के मौजूद होने की चेतावनी जोड़ी गई।
+- Regression test अब सुनिश्चित करता है कि webhook token documentation lines में कोई 10+ digit secret न हो।
+- Production webhook token को Hosting और Meta दोनों में rotate करना अभी user-side production action है; Git history में पुराने commit को केवल file edit से मिटाया नहीं जा सकता।
+- Latest CI run `45690158490` on code head `9cbabf68a90f040d9cc41f5d2dfa7ba54d0226f5`: backend syntax PASS, **92/92 tests PASS**, package/manifest JSON validation PASS.
