@@ -166,6 +166,7 @@ test('WhatsApp send calls backend endpoint and does not claim success before res
 test('public customer stock catalog is loaded from backend rather than relying on admin localStorage', () => {
   assert.ok(html.includes("fetch(api+'/api/customer/stock'"));
   assert.ok(html.includes('publicCustomerStockCatalog'));
+  assert.ok(html.includes('let publicCustomerStockCatalog = null;'));
   assert.ok(html.includes("localStorage.setItem('publicCustomerStockCache'"));
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   const start = backend.indexOf("app.get('/api/customer/stock'");
