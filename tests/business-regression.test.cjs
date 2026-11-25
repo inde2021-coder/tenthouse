@@ -29,21 +29,21 @@ function runRentFunction(functionName, booking) {
   return context.result;
 }
 
-test('missing quantity is charged once at the saved per-unit missing rate', () => {
+test('missing quantity is recorded but excluded from customer rent total', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
     items: [{ name: 'Chair', qty: 2, rentPrice: 100, missingQty: 2, missingCharge: 9999 }]
   });
-  assert.equal(total, 20398);
+  assert.equal(total, 400);
 });
 
-test('booking total adds missing charge, other charges and discount exactly once', () => {
+test('booking total adds rent, other charges and discount but excludes missing items', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
     items: [{ name: 'Chair', qty: 2, rentPrice: 100, missingQty: 2, missingCharge: 9999 }],
     otherCharges: 50, discountAmount: 25
   });
-  assert.equal(total, 20423);
+  assert.equal(total, 425);
 });
 
 test('rent uses actual dispatch quantities and their saved unit rate', () => {
@@ -151,10 +151,11 @@ test('admin booking list displays UTR and payment verification controls', () => 
   assert.ok(html.includes('/advance'));
 });
 
-test('missing charge appears separately in invoice and total', () => {
-  assert.ok(html.includes('मिसिंग सामान चार्ज'));
-  assert.ok(html.includes('missingChargeTotal'));
-  assert.ok(html.includes('getEffectiveMissingCharge(item)'));
+test('missing items are shown as quantity only and never added to the customer invoice', () => {
+  assert.ok(html.includes('मिसिंग सामान की अलग सूची (केवल मात्रा)'));
+  assert.ok(html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
+  assert.doesNotMatch(html, /मिसिंग सामान चार्ज:/);
+  assert.doesNotMatch(html, /rentalTotal\\+missingTotal/);
 });
 
 test('admin edits for customer portal bookings are sent to backend', () => {
@@ -173,7 +174,9 @@ test('vendor rent and missing replacement liability remain separate from custome
   assert.ok(html.includes('vendorRentRate'));
   assert.ok(html.includes('const vendorRentCost=vendorEntries.reduce'));
   assert.ok(html.includes('const vendorMissingLiability=bookings.reduce'));
-  assert.ok(html.includes('const customerMissingRevenue=bookings.reduce'));
+  assert.ok(!html.includes('customerMissingRevenue'));
+  assert.ok(html.includes('margin=customerRent-vendorCost'));
+  assert.ok(html.includes('Missing सामान का ग्राहक से कोई शुल्क नहीं'));
   assert.ok(html.includes('Missing Vendor सामान की Replacement Liability'));
   assert.ok(html.includes('वास्तविक Dispatch × दिन'));
 });
