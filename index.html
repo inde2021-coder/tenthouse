@@ -1190,7 +1190,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     if(!existing){local.push(remote);byId.set(key,remote);added++;}
                     else if(remote.updatedAt&&(!existing.updatedAt||remote.updatedAt>existing.updatedAt)){Object.assign(existing,remote);updated++;}
                 });
-                if(added||updated){safeSetStorage('softwareBookings',local);loadAllFirebaseData();showActionMessage(\`\${added} नई ग्राहक बुकिंग और \${updated} अपडेट सिंक हुए\`,'success');}
+                if(added||updated){safeSetStorage('softwareBookings',local);loadAllFirebaseData();showActionMessage(`${added} नई ग्राहक बुकिंग और ${updated} अपडेट सिंक हुए`,'success');}
             }catch(error){showActionMessage('ग्राहक बुकिंग सिंक नहीं हुआ: '+error.message,'error');}
         }
         async function updateRemoteCustomerBookingStatus(id,status){
