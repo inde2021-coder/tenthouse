@@ -163,6 +163,13 @@ test('WhatsApp send calls backend endpoint and does not claim success before res
 });
 
 
+test('login error toast stays above the blurred welcome overlay', () => {
+  const toast = html.match(/#actionToast\s*\{[^}]*\}/s);
+  assert.ok(toast);
+  assert.match(toast[0], /z-index:\s*2147483001\s*!important/);
+  assert.ok(html.includes('#welcomeOverlay{z-index:2147483000!important'));
+});
+
 test('public customer stock catalog is loaded from backend rather than relying on admin localStorage', () => {
   assert.ok(html.includes("fetch(api+'/api/customer/stock'"));
   assert.ok(html.includes('publicCustomerStockCatalog'));
