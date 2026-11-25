@@ -77,6 +77,17 @@ after(async () => {
   if (child.exitCode === null) child.kill('SIGKILL');
 });
 
+test('readiness endpoint reports database configuration without exposing secrets', async () => {
+  const response = await request('/ready');
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.equal(data.ok, true);
+  assert.equal(data.environment, 'development');
+  assert.equal(data.persistentDatabaseReady, false);
+  assert.equal(Object.hasOwn(data, 'serviceAccount'), false);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+});
+
 test('public customer stock endpoint returns a safe catalog array', async () => {
   const response = await request('/api/customer/stock');
   assert.equal(response.status, 200);
