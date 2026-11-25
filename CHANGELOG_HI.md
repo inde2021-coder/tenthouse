@@ -90,3 +90,5 @@
 - Backend API regression test को phone-only/name-only lookup के लिए 400 और गलत mobile के लिए 404 assert करने हेतु अपडेट किया।
 
 - PWA icon को bartan utensils brand के अनुरूप बदला; favicon.ico alias, dark manifest और service-worker cache v4 जोड़ा।
+
+- Regression suite में premium field stylesheet की सही cascade position और utensil icon branding के checks अपडेट किए; CI में dependency advisory report step जोड़ा।
