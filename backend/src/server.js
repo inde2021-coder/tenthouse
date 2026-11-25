@@ -22,8 +22,18 @@ let adminDb = null;
 try {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const databaseURL = process.env.FIREBASE_DATABASE_URL;
-  if (serviceAccountJson && databaseURL) {
-    const serviceAccount = JSON.parse(serviceAccountJson);
+  // Support both a single JSON credential and the split variables already used
+  // by the existing Vercel production project. Never log or expose credential data.
+  const serviceAccount = serviceAccountJson
+    ? JSON.parse(serviceAccountJson)
+    : (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY
+      ? {
+          project_id: process.env.FIREBASE_PROJECT_ID,
+          client_email: process.env.FIREBASE_CLIENT_EMAIL,
+          private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        }
+      : null);
+  if (serviceAccount && databaseURL) {
     const adminApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert(serviceAccount), databaseURL });
     adminDb = getDatabase(adminApp);
   }
