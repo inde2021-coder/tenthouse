@@ -899,8 +899,8 @@ test('secret admin gate is reachable from shop-name action and hidden keyboard/m
 
 test('admin login explains backend configuration, invalid token, missing route and network errors', () => {
   const login = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
-  for (const marker of ['response.status===401','response.status===403','response.status===404','response.status===429','response.status===503','Backend से संपर्क नहीं हो पाया']) {
-    if (marker === 'response.status===403') continue;
+  assert.ok(login.includes("api.replace(/\\/+$/,''"));
+  for (const marker of ['response.status===401','response.status===404','response.status===429','response.status===503','Backend से संपर्क नहीं हो पाया']) {
     assert.ok(login.includes(marker), 'missing actionable login diagnostic: '+marker);
   }
 });
