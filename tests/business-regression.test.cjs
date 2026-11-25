@@ -223,6 +223,28 @@ test('intra-state GST split preserves the exact rounded GST paise total', () => 
   assert.equal(result.cgst + result.sgst, result.gst);
 });
 
+test('tax invoice supports per-item HSN and different GST rates with proportional discount', () => {
+  const code = sourceBetween('function businessDocumentTotals()', 'function renderBusinessDocumentItems()');
+  const values = { docDiscount: '20', docOtherCharges: '10', docType: 'tax-invoice', docGstRate: '12', docTaxType: 'intra' };
+  const context = {
+    currentDocumentItems: [
+      { name: 'Chair', hsn: '9401', qty: 1, rate: 100, gstRate: 5 },
+      { name: 'Light', hsn: '9405', qty: 1, rate: 100, gstRate: 18 }
+    ],
+    document: { getElementById: id => ({ value: values[id] }) },
+    Math, Number, result: null
+  };
+  vm.runInNewContext(code + '\nresult=businessDocumentTotals();', context);
+  const result = JSON.parse(JSON.stringify(context.result));
+  assert.equal(result.subtotal, 200);
+  assert.equal(result.taxable, 190);
+  assert.equal(result.gst, 21.85);
+  assert.equal(result.cgst + result.sgst, result.gst);
+  assert.equal(result.total, 211.85);
+  assert.ok(html.includes('HSN/SAC'));
+  assert.ok(html.includes('item.gstRate??rate'));
+});
+
 test('tax invoice uses IGST for inter-state supply and quotation does not add GST', () => {
   const code = sourceBetween('function businessDocumentTotals()', 'function renderBusinessDocumentItems()');
   const values = { docDiscount: '0', docOtherCharges: '0', docType: 'tax-invoice', docGstRate: '18', docTaxType: 'inter' };
