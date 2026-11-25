@@ -422,10 +422,14 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
   });
 });
 
-test('Firebase Realtime Database sync stays safely disabled until databaseURL is configured', () => {
-  assert.match(html, /if \(!firebaseConfig\.databaseURL\) \{ console\.warn/);
+test('Firebase Realtime Database uses the approved radhe-krishna-online-booking project', () => {
+  assert.match(html, /apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I"/);
+  assert.match(html, /authDomain: "radhe-krishna-online-booking\.firebaseapp\.com"/);
+  assert.match(html, /databaseURL: "https:\/\/radhe-krishna-online-booking-default-rtdb\.firebaseio\.com"/);
+  assert.match(html, /projectId: "radhe-krishna-online-booking"/);
+  assert.match(html, /appId: "1:1010400653483:web:fb2a78ec593b3c2888c7ee"/);
+  assert.doesNotMatch(html, /if \(!firebaseConfig\.databaseURL\) \{ console\.warn/);
   assert.match(html, /if \(!firebaseConfig\.databaseURL \|\| !navigator\.onLine/);
-  assert.match(html, /databaseURL will be added after the Realtime Database is enabled/);
 });
 
 test('root and public app copies are kept in sync', () => {
