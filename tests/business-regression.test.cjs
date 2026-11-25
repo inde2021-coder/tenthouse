@@ -893,7 +893,7 @@ test('AI chat redesign preserves the customer booking submit and verification ha
   assert.ok(html.includes('function sendCustomerOtp()'));
   assert.ok(html.includes('function verifyCustomerOtp()'));
   assert.ok(html.includes('function startVoiceRecognition()'));
-  assert.ok(html.includes("id=" + "'portalCustMob'"));
+  assert.ok(html.includes('id="portalCustMob"'));
 });
 
 
