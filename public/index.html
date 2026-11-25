@@ -1755,6 +1755,12 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const settings=safeGetStorage('softwareSettings',{});
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
             let message=`नमस्ते ${b.name}, आपकी बुकिंग #${b.id} (${b.eventType}) के लिए अपडेट है। राधा कृष्णा टेंट हाउस।`;
+            if(type==='dispatch'){
+              const lastDate=b.lastDispatchDate||b.date;
+              const rows=(b.dispatchEntries||[]).filter(e=>String(e.date||'')===String(lastDate||''));
+              if(rows.length)message+=` इस Dispatch में भेजा गया सामान: ${rows.map(e=>(e.itemName||'सामान')+' × '+(Number(e.qty)||0)).join(', ')}। Dispatch तारीख: ${lastDate}।`;
+              message+=' सामान वापस करने तक यही Booking ID सुरक्षित रखें। अतिरिक्त सामान इसी बुकिंग पर लिया जा सकता है।';
+            }
             if(type==='bill'){const total=calculateBookingTotalRent(b),paid=getBookingPaidAmount(b);message+=` कुल देय ₹${total.toFixed(2)}, जमा ₹${paid.toFixed(2)}, बाकी ₹${Math.max(0,total-paid).toFixed(2)}।`;}
             const api=String(settings.backendApiUrl||'').replace(/\/$/,'');
             const token=String(settings.aiAccessToken||'').trim();
