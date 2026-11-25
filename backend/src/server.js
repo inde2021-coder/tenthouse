@@ -401,6 +401,7 @@ app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req
     items:z.array(z.object({name:z.string().trim().min(1).max(120),qty:z.number().int().positive().max(100000),rentPrice:z.number().finite().min(0).max(1000000),source:z.enum(['admin','third-party']).optional(),partyName:z.string().max(120).optional()})).max(100).optional()
   }).strict().safeParse(req.body);
   if(!parsed.success)return res.status(400).json({error:'Invalid booking edits.',details:parsed.error.flatten()});
+  if([parsed.data.date,parsed.data.returnDate].filter(Boolean).some(date=>!isValidIsoDate(date)))return res.status(400).json({error:'बुकिंग और वापसी की तारीख वास्तविक कैलेंडर तारीख होनी चाहिए।'});
   try{
     const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
@@ -442,6 +443,8 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
     totalPaid:z.number().finite().min(0).optional(),paidAmt:z.number().finite().min(0).optional(),dueAmount:z.number().finite().min(0).optional()
   }).strict().safeParse(req.body);
   if(!parsed.success)return res.status(400).json({error:'Invalid booking workflow update.',details:parsed.error.flatten()});
+  const workflowDates=[parsed.data.actualReturnDate,parsed.data.lastDispatchDate,parsed.data.lastReturnDate,...(parsed.data.dispatchEntries||[]).map(entry=>entry.date),...(parsed.data.returnEntries||[]).map(entry=>entry.date),...(parsed.data.items||[]).map(item=>item.lastReturnDate)].filter(Boolean);
+  if(workflowDates.some(date=>!isValidIsoDate(date)))return res.status(400).json({error:'Workflow में वास्तविक कैलेंडर तारीख दर्ज करें।'});
   try{
     const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
