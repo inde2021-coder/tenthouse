@@ -874,3 +874,13 @@ test('branded app icon is referenced by the public shell', () => {
     assert.ok(icon.includes('TENT HOUSE'));
   }
 });
+
+
+test('supplied hero artwork is shipped with all three app shells', () => {
+  assert.ok(html.includes('src="./customer-hero.svg"'));
+  for (const path of ['customer-hero.svg', 'public/customer-hero.svg', 'backend/public/customer-hero.svg']) {
+    const asset = fs.readFileSync(require('node:path').join(__dirname, '..', path), 'utf8');
+    assert.ok(asset.includes('data:image/webp;base64,'));
+    assert.ok(asset.includes('Radhe Krishn'));
+  }
+});
