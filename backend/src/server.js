@@ -292,6 +292,7 @@ app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async
 });
 
 const bookingLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+const customerLookupLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'बहुत अधिक Booking Status खोज प्रयास हुए हैं। 15 मिनट बाद फिर प्रयास करें।' } });
 function isValidIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split('-').map(Number);
@@ -608,7 +609,7 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
   }catch(error){res.status(503).json({error:error.message});}
 });
 
-app.get('/api/customer/bookings/:id/status', requireDurableStore, async (req,res) => {
+app.get('/api/customer/bookings/:id/status', customerLookupLimiter, requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const mobile=String(req.query.mobile||'').replace(/\D/g,'').slice(-10);
   if(!/^\d{10}$/.test(mobile))return res.status(400).json({error:'बुकिंग मोबाइल नंबर दर्ज करें।'});
