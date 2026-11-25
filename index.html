@@ -1222,6 +1222,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if (!s.businessName || !s.contactNo) { showActionMessage('दुकान का नाम और संपर्क नंबर भरें।','error'); return false; }
             if (!safeSetStorage('softwareSettings', s)) return false;
             loadSettingsToUI();
+            renderBusinessCard();
             showActionMessage('दुकान की सेटिंग इस डिवाइस में सेव हो गई। इंटरनेट/लॉगिन उपलब्ध होने पर क्लाउड सिंक होगा।','success');
             return false;
         }
@@ -2859,6 +2860,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             // Local-first admin data; public customers load the safe stock catalog from the backend.
             loadAllFirebaseData();
             refreshPublicCustomerStock();
+            clearBusinessDocument();
         };
     
         // Explicit global exports for inline onclick handlers throughout every table.
