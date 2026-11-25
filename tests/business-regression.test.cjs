@@ -697,3 +697,24 @@ test('premium customer booking page uses a responsive two-column desktop layout 
   assert.ok(css.includes('.rk-customer-submit{grid-column:1/-1'));
   assert.ok(css.includes('.rk-customer-brand{'));
 });
+
+test('dispatch, return and missing recovery await customer backend workflow sync and roll back local changes on failure', () => {
+  assert.match(html, /async function completeDispatch\(id\)/);
+  assert.match(html, /const remoteSaved=await syncCustomerBookingWorkflow\(b\)/);
+  assert.match(html, /async function completeManualReturnProcess\(\)/);
+  assert.match(html, /async function recoverMissingItem\(recordId,rowIndex\)/);
+  assert.match(html, /previousState\.bookings/);
+  assert.match(html, /previousState\.missing/);
+  assert.match(html, /previousState\.adminStock/);
+  assert.match(html, /previousState\.vendorStock/);
+  assert.match(html, /if\(previous===null\) localStorage\.removeItem\(key\)/);
+  assert.match(html, /syncToCloud\(key, previous === null \? null : JSON\.parse\(previous\)\)/);
+});
+
+test('dispatch and return reject impossible calendar dates before changing stock', () => {
+  assert.match(html, /function isValidCalendarDate\(value\)/);
+  const dispatch = sourceBetween('async function completeDispatch(id)', 'function printDispatchSlip(id)');
+  assert.ok(dispatch.includes('!isValidCalendarDate(dispatchDate)'));
+  const ret = sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems'));
+  assert.ok(ret.includes('!isValidCalendarDate(returnDate)'));
+});
