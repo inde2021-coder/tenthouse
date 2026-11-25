@@ -94,6 +94,7 @@ const otpLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, message: { error
 const otpVerifyLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, message: { verified: false, error: 'बहुत अधिक OTP सत्यापन प्रयास; कुछ देर बाद नया OTP लें।' } });
 const aiLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'AI अनुरोध सीमा पूरी हुई; एक मिनट बाद प्रयास करें।' } });
 const whatsappSendLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'WhatsApp संदेश सीमा पूरी हुई; एक मिनट बाद प्रयास करें।' } });
+const adminLoginLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'बहुत अधिक व्यवस्थापक लॉगिन प्रयास; 15 मिनट बाद पुनः प्रयास करें।' } });
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
 const authAdmin = (req, res, next) => {
@@ -120,6 +121,8 @@ const readinessCheck = (_req, res) => {
 };
 app.get('/ready', readinessCheck);
 app.get('/api/ready', readinessCheck);
+// Secret admin gate: validate the server-held token without ever returning it.
+app.get('/api/admin/session', adminLoginLimiter, authAdmin, (_req, res) => res.set('Cache-Control', 'no-store').json({ ok: true, scope: 'admin' }));
 // Reports presence/configuration only; never returns secret values.
 app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
   const provider = (process.env.OTP_PROVIDER || 'none').toLowerCase();
