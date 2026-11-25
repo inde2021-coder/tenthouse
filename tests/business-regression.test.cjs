@@ -471,7 +471,7 @@ test('root and public app copies are kept in sync', () => {
 test('customer booking portal submits to the persistent public backend endpoint', () => {
   const code = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
   assert.match(code, /\/api\/customer\/bookings/);
-  assert.match(code, /DEFAULT_BACKEND_API_URL/);
+  assert.match(code, /getBackendApiUrl\(otpSettings\)/);
   assert.match(html, /async function syncCustomerBookingsFromBackend/);
   assert.match(html, /updateRemoteCustomerBookingStatus\(id,'Confirmed'\)/);
 });
