@@ -1182,16 +1182,16 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if(!api||!token||!navigator.onLine)return;
             try{
                 const response=await fetch(api+'/api/customer/bookings',{headers:{'x-admin-token':token}});
-                const data=await response.json().catch(()=>({}));
-                if(!response.ok)throw new Error(data.error||'Customer bookings sync failed');
+                const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Customer bookings sync failed');
                 const local=safeGetStorage('softwareBookings',[]),byId=new Map(local.map(item=>[String(item.id),item]));
-                let added=0,updated=0;
+                let added=0,updated=0,removed=0;
                 (Array.isArray(data.bookings)?data.bookings:[]).forEach(remote=>{
                     const key=String(remote.id),existing=byId.get(key);
+                    if(remote.status==='Cancelled'){if(existing){const index=local.findIndex(x=>String(x.id)===key);if(index>=0){local.splice(index,1);removed++;}}return;}
                     if(!existing){local.push(remote);byId.set(key,remote);added++;}
                     else if(remote.updatedAt&&(!existing.updatedAt||remote.updatedAt>existing.updatedAt)){Object.assign(existing,remote);updated++;}
                 });
-                if(added||updated){safeSetStorage('softwareBookings',local);loadAllFirebaseData();showActionMessage(`${added} नई ग्राहक बुकिंग और ${updated} अपडेट सिंक हुए`,'success');}
+                if(added||updated||removed){safeSetStorage('softwareBookings',local);loadAllFirebaseData();showActionMessage(`${added} नई ग्राहक बुकिंग, ${updated} अपडेट और ${removed} रद्द रिकॉर्ड सिंक हुए`,'success');}
             }catch(error){showActionMessage('ग्राहक बुकिंग सिंक नहीं हुआ: '+error.message,'error');}
         }
         async function updateRemoteCustomerBookingStatus(id,status){
@@ -1604,22 +1604,26 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             }).join('');
         }
 
-        function approveBooking(id) {
-            let bookings = safeGetStorage('softwareBookings', []);
-            // Booking IDs may be stored as numbers in older records and strings in newer records.
-            let b = bookings.find(x => String(x.id) === String(id));
-            if(b) {
-                b.status = 'Confirmed';
-                b.confirmedAt = b.confirmedAt || new Date().toISOString();
-                safeSetStorage('softwareBookings', bookings);
-                loadAllFirebaseData();
-                updateRemoteCustomerBookingStatus(id,'Confirmed');
-                showActionMessage("बुकिंग कन्फर्म हो गई; अब Dispatch में उपलब्ध है", "success");
-            }
+        async function approveBooking(id){
+            const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(id));if(!b)return;
+            if(b.source==='customer-portal'&&!await updateRemoteCustomerBookingStatus(id,'Confirmed')){showActionMessage('Backend पर बुकिंग Confirm नहीं हुई; दोबारा प्रयास करें','error');return;}
+            b.status='Confirmed';b.confirmedAt=b.confirmedAt||new Date().toISOString();b.updatedAt=new Date().toISOString();
+            if(!safeSetStorage('softwareBookings',bookings))return;loadAllFirebaseData();showActionMessage('बुकिंग कन्फर्म हो गई; अब Dispatch में उपलब्ध है','success');
         }
-
-        function rejectBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;b.status='Rejected';safeSetStorage('softwareBookings',rows);loadAllFirebaseData();updateRemoteCustomerBookingStatus(id,'Rejected');showActionMessage('बुकिंग रिजेक्ट हुई','success');}
-        function deleteBooking(id){const rows=safeGetStorage('softwareBookings',[]);const b=rows.find(x=>String(x.id)===String(id));if(!b)return;if(!confirm(`बुकिंग #${id} स्थायी रूप से हटाएँ? इससे इस बुकिंग के Cash/Online भुगतान रिकॉर्ड भी हटेंगे। यह क्रिया वापस नहीं होगी।`))return;if(b.source==='customer-portal')updateRemoteCustomerBookingStatus(id,'Cancelled');const nextBookings=rows.filter(x=>String(x.id)!==String(id));const ledger=safeGetStorage('rkPaymentLedger',[]).filter(x=>String(x.bookingId)!==String(id));if(!safeSetStorage('softwareBookings',nextBookings))return;if(!safeSetStorage('rkPaymentLedger',ledger))return;loadCustomerList();loadInstallmentsTable();loadPaymentLedgerTable();loadMasterLedgerData();loadAllFirebaseData();showActionMessage('बुकिंग और उससे जुड़े Cash/Online भुगतान रिकॉर्ड हटाए गए','success');}
+        async function rejectBooking(id){
+            const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;
+            if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;
+            if(b.source==='customer-portal'&&!await updateRemoteCustomerBookingStatus(id,'Rejected')){showActionMessage('Backend पर बुकिंग Reject नहीं हुई; दोबारा प्रयास करें','error');return;}
+            b.status='Rejected';b.updatedAt=new Date().toISOString();if(!safeSetStorage('softwareBookings',rows))return;loadAllFirebaseData();showActionMessage('बुकिंग रिजेक्ट हुई','success');
+        }
+        async function deleteBooking(id){
+            const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;
+            if(!confirm(`बुकिंग #${id} स्थायी रूप से हटाएँ? इससे इस बुकिंग के Cash/Online भुगतान रिकॉर्ड भी हटेंगे। यह क्रिया वापस नहीं होगी।`))return;
+            if(b.source==='customer-portal'&&!await updateRemoteCustomerBookingStatus(id,'Cancelled')){showActionMessage('Backend पर बुकिंग Cancel नहीं हुई; रिकॉर्ड नहीं हटाया गया','error');return;}
+            const nextBookings=rows.filter(x=>String(x.id)!==String(id)),ledger=safeGetStorage('rkPaymentLedger',[]).filter(x=>String(x.bookingId)!==String(id));
+            if(!safeSetStorage('softwareBookings',nextBookings)||!safeSetStorage('rkPaymentLedger',ledger))return;
+            loadCustomerList();loadInstallmentsTable();loadPaymentLedgerTable();loadMasterLedgerData();loadAllFirebaseData();showActionMessage('बुकिंग और उससे जुड़े भुगतान रिकॉर्ड हटाए गए','success');
+        }
         async function editBooking(id){
             const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;
             const name=prompt('ग्राहक का नाम',b.name||'');if(name===null)return;
