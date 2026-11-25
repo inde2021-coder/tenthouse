@@ -336,11 +336,10 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
         storeList('erpData/customerBookings'),
         storeList('tent_erp_data/bookings')
       ]);
-      const allBookings = new Map();
-      for (const booking of [...adminBookings, ...portalBookings]) {
-        if (booking && booking.id != null) allBookings.set(String(booking.id), booking);
-      }
-      const reservedByName = getReservedAdminStockByItem([...allBookings.values()], parsed.data.date, parsed.data.returnDate);
+      // Keep admin and customer-portal collections separate: their numeric IDs
+      // are generated independently and may legitimately collide.
+      const allBookings = [...adminBookings, ...portalBookings];
+      const reservedByName = getReservedAdminStockByItem(allBookings, parsed.data.date, parsed.data.returnDate);
       const requestedByName=new Map();
       for(const item of customerItems){
         if(item.source==='third-party')return res.status(400).json({error:'Customer portal से केवल Admin stock चुना जा सकता है।'});
