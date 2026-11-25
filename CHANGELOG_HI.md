@@ -88,3 +88,5 @@
 - Customer Booking Tracker अब वास्तविक customer panel में दिखता है; search को exact Booking Number + registered mobile तक सीमित किया और server bulk mobile-history response बंद किया।
 
 - Backend API regression test को phone-only/name-only lookup के लिए 400 और गलत mobile के लिए 404 assert करने हेतु अपडेट किया।
+
+- PWA icon को bartan utensils brand के अनुरूप बदला; favicon.ico alias, dark manifest और service-worker cache v4 जोड़ा।
