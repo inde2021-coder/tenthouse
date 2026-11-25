@@ -109,6 +109,26 @@ test('public customer booking persists and status lookup requires the matching m
   assert.equal(statusData.booking.status, 'Pending Approval');
 });
 
+test('customer item bookings fail closed when the server stock catalog is unavailable', async () => {
+  const response = await request('/api/customer/bookings', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'Price Tamper Test',
+      mob: '9876543212',
+      address: 'Test Address',
+      eventType: 'Wedding',
+      guestCount: 50,
+      date: '2026-12-01',
+      returnDate: '2026-12-02',
+      advanceAmount: 0,
+      payMode: 'Cash',
+      items: [{ name: 'Chair', qty: 1, rentPrice: 0, source: 'admin' }]
+    })
+  });
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /stock catalog/);
+});
+
 test('admin-only booking list rejects missing token and accepts the configured token', async () => {
   const denied = await request('/api/customer/bookings');
   assert.equal(denied.status, 401);
