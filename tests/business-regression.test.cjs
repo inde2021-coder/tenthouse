@@ -155,6 +155,7 @@ test('missing items are shown as quantity only and never added to the customer i
   assert.ok(html.includes('मिसिंग सामान की अलग सूची (केवल मात्रा)'));
   assert.ok(html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
   assert.doesNotMatch(html, /मिसिंग सामान चार्ज:/);
+  assert.doesNotMatch(html, /totalRent-\(Number\(b\.missingChargeTotal\)/);
   assert.doesNotMatch(html, /rentalTotal\+missingTotal/);
 });
 
