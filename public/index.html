@@ -3809,7 +3809,38 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 </div>
 
 <script id="rk-secret-admin-entry">
-(()=>{let holdTimer=null;const show=()=>{if(typeof window.revealAdminGate==='function')window.revealAdminGate();};document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&e.shiftKey&&!e.repeat&&(e.key||'').toLowerCase()==='k'){e.preventDefault();show();}});const bind=()=>{const mark=document.querySelector('.rk-customer-brand-mark');if(!mark||mark.dataset.secretEntryBound)return;mark.dataset.secretEntryBound='1';mark.setAttribute('aria-label','Secret Admin Login: 3 सेकंड दबाएँ');mark.addEventListener('contextmenu',e=>e.preventDefault());mark.addEventListener('pointerdown',e=>{if(e.button!==0)return;clearTimeout(holdTimer);holdTimer=setTimeout(show,3200);});['pointerup','pointerleave','pointercancel','blur'].forEach(name=>mark.addEventListener(name,()=>{clearTimeout(holdTimer);holdTimer=null;}));};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();})();
+(()=> {
+  let holdTimer=null, clickCount=0, clickWindow=null;
+  const show=()=>{
+    if(typeof window.revealAdminGate==='function') window.revealAdminGate();
+    else {
+      const gate=document.getElementById('welcomeOverlay');
+      if(gate){gate.style.display='flex';gate.style.visibility='visible';gate.style.opacity='1';}
+    }
+  };
+  const isLogo=(target)=>target instanceof Element ? target.closest('.rk-customer-brand-mark') : null;
+  document.addEventListener('keydown',e=>{
+    const key=String(e.key||'').toLowerCase();
+    if(e.ctrlKey&&e.altKey&&e.shiftKey&&(key==='k'||e.code==='KeyK')){
+      e.preventDefault(); e.stopPropagation(); show();
+    }
+  },true);
+  document.addEventListener('pointerdown',e=>{
+    if(!isLogo(e.target)|| (e.pointerType==='mouse'&&e.button!==0)) return;
+    clearTimeout(holdTimer);
+    holdTimer=setTimeout(show,1200);
+  },true);
+  ['pointerup','pointercancel','pointerleave','mouseup','touchend','touchcancel'].forEach(type=>{
+    document.addEventListener(type,()=>{clearTimeout(holdTimer);holdTimer=null;},true);
+  });
+  document.addEventListener('click',e=>{
+    if(!isLogo(e.target)) return;
+    clickCount++;
+    clearTimeout(clickWindow);
+    if(clickCount>=5){clickCount=0;show();return;}
+    clickWindow=setTimeout(()=>{clickCount=0;},2200);
+  },true);
+})();
 </script>
 </body></html>');w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print()},250)};
 
