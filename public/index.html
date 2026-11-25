@@ -3072,8 +3072,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         entries.forEach((entry,index)=>{const remaining=Math.max(0,(Number(entry.qty)||0)-allocated[index]);if(remaining>0)slices.push({entry,qty:remaining,endDate:b.fullyReturnedAt?(b.actualReturnDate||b.returnDate||entry.date):openEnd});});
         rental=slices.reduce((sum,slice)=>sum+slice.qty*Math.max(0,Number(slice.entry.unitRent)||0)*days(slice.entry.date||b.date,slice.endDate),0);
       }else rental=items.reduce((sum,i)=>sum+Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500))*days(b.date,endDate),0);
-      const missing=items.reduce((sum,i)=>sum+Math.max(0,Number(i.missingQty)||0)*Math.max(0,Number(i.missingCharge??i.missingUnitPrice)||0),0);
-      const total=Math.max(0,rental+missing+Math.max(0,Number(b.otherCharges)||0)-Math.max(0,Number(b.discountAmount)||0));
+      // Customer status mirrors the invoice: missing items are quantity-only, never billable.
+      const total=Math.max(0,rental+Math.max(0,Number(b.otherCharges)||0)-Math.max(0,Number(b.discountAmount)||0));
       const advance=b.advancePaymentVerified===true?Math.max(0,Number(b.advanceAmount)||0):0;
       const installments=Array.isArray(b.partPayments)?b.partPayments.reduce((sum,p)=>sum+Math.max(0,Number(p.amount)||0),0):0;
       const paid=Math.max(Number(b.totalPaid)||0,Number(b.paidAmt)||0,advance+installments);
