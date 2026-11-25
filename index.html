@@ -616,6 +616,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     <li class="menu-item" onclick="switchTab('payment-ledger', this)"><i class="fa-solid fa-receipt"></i> कैश/ऑनलाइन हिसाब</li>
                     <li class="menu-item" onclick="switchTab('calendar-view', this)"><i class="fa-solid fa-calendar-days"></i> कैलेंडर</li>
                     <li class="menu-item" onclick="switchTab('bill', this)"><i class="fa-solid fa-file-invoice-dollar"></i> बिलिंग</li>
+                    <li class="menu-item" onclick="switchTab('business-card', this)"><i class="fa-solid fa-id-card"></i> बिजनेस कार्ड</li>
+                    <li class="menu-item" onclick="switchTab('documents', this)"><i class="fa-solid fa-file-invoice"></i> कोटेशन / टैक्स इनवॉइस</li>
                     <li class="menu-item" onclick="switchTab('setting', this)"><i class="fa-solid fa-gear"></i> सेटिंग्स</li>
                 </ul>
             </div>
@@ -937,6 +939,66 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                         <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="glass-btn-blue" style="width:auto" onclick="generatePaymentQr()">Online QR बनाएं</button><button type="button" class="glass-btn-green" style="width:auto" onclick="savePaymentEntry()">पेमेंट सेव / UTR सबमिट</button></div>
                         <div id="paymentQrArea" style="display:none;background:white;color:#111;text-align:center;padding:12px;margin-top:12px;border-radius:12px"><canvas id="paymentQrCanvas"></canvas><p id="paymentQrCaption"></p><small>भुगतान ऐप में UPI भुगतान करें, फिर UTR भरकर सबमिट करें। QR स्कैन होना भुगतान की पुष्टि नहीं है।</small></div>
                         </div>
+                    </div>
+
+                    <!-- Business Card -->
+                    <div id="business-card" class="page-section" data-title="Business Card">
+                        <div class="glass-card-blue">
+                            <h3>Business Card / बिजनेस कार्ड</h3>
+                            <div class="form-grid">
+                                <div><label>दुकान का नाम</label><input id="cardBusinessName" type="text"></div>
+                                <div><label>मालिक / Owner Name</label><input id="cardOwnerName" type="text"></div>
+                                <div><label>मोबाइल / Phone</label><input id="cardPhone" type="tel"></div>
+                                <div><label>ईमेल / Email</label><input id="cardEmail" type="email"></div>
+                                <div><label>पता / Address</label><input id="cardAddress" type="text"></div>
+                                <div><label>GSTIN (वैकल्पिक)</label><input id="cardGstin" type="text" maxlength="15"></div>
+                                <div><label>UPI ID</label><input id="cardUpi" type="text"></div>
+                                <div><label>Tagline</label><input id="cardTagline" type="text" placeholder="आपके हर आयोजन का भरोसेमंद साथी"></div>
+                            </div>
+                            <div class="settings-actions" style="margin-top:12px">
+                                <button type="button" class="glass-btn-blue" onclick="saveBusinessCard()">सेव करें</button>
+                                <button type="button" class="glass-btn-green" onclick="printBusinessCard()">प्रिंट / PDF</button>
+                            </div>
+                        </div>
+                        <div id="businessCardPreview" style="margin-top:14px"></div>
+                    </div>
+
+                    <!-- Quotations and Tax Invoices -->
+                    <div id="documents" class="page-section" data-title="Quotation / Tax Invoice">
+                        <div class="glass-card-blue">
+                            <h3>Quotation / Tax Invoice — कोटेशन और टैक्स इनवॉइस</h3>
+                            <div class="form-grid">
+                                <div><label>दस्तावेज़ प्रकार</label><select id="docType" onchange="renderBusinessDocumentPreview()"><option value="quotation">Quotation / कोटेशन</option><option value="tax-invoice">Tax Invoice / टैक्स इनवॉइस</option></select></div>
+                                <div><label>Document Number</label><input id="docNumber" type="text" placeholder="खाली छोड़ें तो Auto Number"></div>
+                                <div><label>तारीख / Date</label><input id="docDate" type="date"></div>
+                                <div><label>Quotation Valid Until</label><input id="docValidUntil" type="date"></div>
+                                <div><label>ग्राहक का नाम</label><input id="docCustomerName" type="text"></div>
+                                <div><label>ग्राहक मोबाइल</label><input id="docCustomerPhone" type="tel"></div>
+                                <div><label>ग्राहक पता</label><input id="docCustomerAddress" type="text"></div>
+                                <div><label>ग्राहक GSTIN (वैकल्पिक)</label><input id="docCustomerGstin" type="text" maxlength="15"></div>
+                                <div><label>GST दर % (Tax Invoice के लिए)</label><input id="docGstRate" type="number" min="0" max="28" step="0.01" value="0"></div>
+                                <div><label>Tax Type</label><select id="docTaxType"><option value="intra">CGST + SGST (Same State)</option><option value="inter">IGST (Other State)</option></select></div>
+                                <div><label>Discount ₹</label><input id="docDiscount" type="number" min="0" step="0.01" value="0"></div>
+                                <div><label>Other Charges ₹</label><input id="docOtherCharges" type="number" min="0" step="0.01" value="0"></div>
+                            </div>
+                        </div>
+                        <div class="glass-card-blue" style="margin-top:12px">
+                            <h4>सामान जोड़ें / Add Items</h4>
+                            <div class="form-grid">
+                                <div><label>सामान का नाम</label><input id="docItemName" type="text"></div>
+                                <div><label>मात्रा / Qty</label><input id="docItemQty" type="number" min="1" step="1" value="1"></div>
+                                <div><label>दर ₹ / Rate</label><input id="docItemRate" type="number" min="0" step="0.01" value="0"></div>
+                                <div style="display:flex;align-items:flex-end"><button type="button" class="glass-btn-blue" onclick="addBusinessDocumentItem()">सामान जोड़ें</button></div>
+                            </div>
+                            <div class="table-responsive"><table><thead><tr><th>सामान</th><th>मात्रा</th><th>दर</th><th>राशि</th><th></th></tr></thead><tbody id="docItemsBody"><tr><td colspan="5">अभी कोई सामान नहीं</td></tr></tbody></table></div>
+                            <div class="settings-actions" style="margin-top:12px">
+                                <button type="button" class="glass-btn-blue" onclick="saveBusinessDocument()">दस्तावेज़ सेव करें</button>
+                                <button type="button" class="glass-btn-green" onclick="printBusinessDocument()">प्रिंट / PDF</button>
+                                <button type="button" class="action-btn" onclick="clearBusinessDocument()">नया दस्तावेज़</button>
+                            </div>
+                        </div>
+                        <div id="businessDocumentPreview" class="glass-card-blue" style="margin-top:12px"></div>
+                        <div class="glass-card-blue" style="margin-top:12px"><h4>Saved Quotations / Tax Invoices</h4><div id="businessDocumentRecentList">अभी कोई दस्तावेज़ सेव नहीं है।</div></div>
                     </div>
 
                     <!-- Settings with Gateway, UPI, Stamps & Image Upload -->
