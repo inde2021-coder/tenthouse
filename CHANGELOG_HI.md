@@ -84,3 +84,5 @@
 - Frontend contrast stylesheet को सभी inline scripts के बाद document के अंत में रखा, ताकि script parsing प्रभावित न हो।
 
 - Customer booking print HTML की escaped script closing के बाद आए accidental newline हटाए; सभी 7 inline JavaScript blocks को syntax-parse करके जाँचा।
+
+- Customer Booking Tracker अब वास्तविक customer panel में दिखता है; search को exact Booking Number + registered mobile तक सीमित किया और server bulk mobile-history response बंद किया।
