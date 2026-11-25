@@ -700,7 +700,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     <div id="dispatch" class="page-section">
                         <div class="glass-card-blue">
                             <div class="dispatch-search-top form-grid" style="margin-bottom:12px;padding:12px;border:1px solid rgba(43,108,176,.22);border-radius:12px;background:rgba(255,255,255,.68)">
-                                <div><label for="dispatchSearchId">बुकिंग आईडी / मोबाइल सर्च</label><input type="search" id="dispatchSearchId" placeholder="बुकिंग आईडी या मोबाइल..." autocomplete="off"></div>
+                                <div><label for="dispatchSearchId">बुकिंग आईडी / मोबाइल सर्च</label><div style="display:flex;gap:6px;min-width:0"><input type="search" id="dispatchSearchId" placeholder="बुकिंग आईडी या मोबाइल..." autocomplete="off" style="min-width:0;flex:1"><button type="button" class="action-btn" onclick="startBarcodeCameraScan('dispatchSearchId')">कैमरा स्कैन</button></div></div>
                                 <div class="search-action"><button type="button" onclick="searchDispatchBooking()" class="glass-btn-blue">खोजें</button></div>
                             </div>
                             <h3 style="color: var(--primary-blue); margin-bottom: 8px; font-size: 15px;"><i class="fa-solid fa-truck-ramp-box"></i> डिस्पैच</h3>
@@ -746,7 +746,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                         <div class="glass-card-purple">
                             <h3 style="color: var(--pink-neon); margin-bottom: 6px; font-size: 15px;"><i class="fa-solid fa-rotate-right"></i> रिटर्न (सामान वापसी)</h3>
                             <div class="form-grid" style="margin-bottom: 10px;">
-                                <div><label>बुकिंग आईडी / मोबाइल</label><input type="text" id="returnBarcodeInput" placeholder="आईडी दर्ज करें..."></div>
+                                <div><label for="returnBarcodeInput">बुकिंग आईडी / मोबाइल</label><div style="display:flex;gap:6px;min-width:0"><input type="text" id="returnBarcodeInput" placeholder="आईडी दर्ज करें..." style="min-width:0;flex:1"><button type="button" class="action-btn" onclick="startBarcodeCameraScan('returnBarcodeInput')">कैमरा स्कैन</button></div></div>
                                 <div style="display: flex; align-items: flex-end;"><button type="button" onclick="loadReturnBookingForCounting()" class="glass-btn-blue" style="margin-top:0;">लोड करें</button></div>
                             </div>
                             <div id="returnManualCountingSection" style="display: none; background: #fff; padding: 12px; border-radius: 12px;">
@@ -774,7 +774,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     <div id="stock" class="page-section">
                         <form onsubmit="saveStockItemReal(event)" class="glass-card-green">
                             <h3 style="color:var(--emerald-neon); margin-bottom:8px; font-size:15px;"><i class="fa-solid fa-square-plus"></i> नया सामान जोड़ें</h3>
-                            <div style="margin-bottom: 10px;"><label class="glass-btn-cyan" style="cursor:pointer; display:inline-flex; width:auto; padding:8px 16px;"><i class="fa-solid fa-camera"></i> OCR से टेक्स्ट स्कैन करें <input type="file" id="ocrImageInput" accept="image/*" onchange="runOcrScan(event)" style="display:none;"></label></div>
+                            <div style="margin-bottom:10px"><label class="glass-btn-cyan" style="cursor:pointer;display:inline-flex;width:auto;padding:8px 16px"><i class="fa-solid fa-camera"></i> OCR से टेक्स्ट स्कैन करें <input type="file" id="ocrImageInput" accept="image/*" onchange="runOcrScan(event)" style="display:none"></label><textarea id="stockOcrTextPreview" rows="3" readonly placeholder="OCR से पढ़ा गया टेक्स्ट यहाँ दिखेगा; सेव करने से पहले नाम और मात्रा जाँचें" style="width:100%;margin-top:8px"></textarea></div>
                             <div class="form-grid">
                                 <div><label>नाम</label><input type="text" id="stockItemName" required placeholder="सामान नाम"></div>
                                 <div><label>मात्रा</label><input type="number" id="stockItemQty" required min="1" placeholder="10"></div>
@@ -1826,12 +1826,72 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             (Array.isArray(rows)?rows:[]).forEach(raw=>{const x={...raw},key=String(x.name||x.item||'').trim().toLowerCase();if(!key)return;const prior=byName.get(key);if(prior){prior.qty=Math.max(0,Number(prior.qty)||0)+Math.max(0,Number(x.qty)||0);['singleRent','setRent','missingCharge','missingUnitPrice'].forEach(k=>{if(x[k]!==undefined&&x[k]!==null&&x[k]!=='' )prior[k]=Number(x[k])||0});if(!prior.barcode&&x.barcode)prior.barcode=x.barcode;}else{if(x.missingCharge==null&&x.missingUnitPrice!=null)x.missingCharge=Number(x.missingUnitPrice)||0;if(x.missingUnitPrice==null&&x.missingCharge!=null)x.missingUnitPrice=Number(x.missingCharge)||0;byName.set(key,x);merged.push(x);}});return merged;
         }
 
-        function runOcrScan(event) {
-            let file = event.target.files[0];
-            if(!file) return;
-            showActionMessage("OCR स्कैनिंग सफल: सामान का नाम स्वतः दर्ज किया गया", "success");
-            document.getElementById('stockItemName').value = "Scanned Tent Item";
-            document.getElementById('stockItemQty').value = "10";
+        let barcodeCameraStream=null,barcodeCameraFrame=0,barcodeCameraActive=false,barcodeCameraTargetId=null,barcodeDetectorInstance=null;
+        async function startBarcodeCameraScan(targetInputId){
+            if(!navigator.mediaDevices?.getUserMedia){showActionMessage('इस ब्राउज़र में कैमरा उपलब्ध नहीं है; HTTPS और कैमरा अनुमति जाँचें','error');return;}
+            if(!('BarcodeDetector' in window)){showActionMessage('इस ब्राउज़र में Barcode Detection समर्थित नहीं है। Android Chrome में खोलकर प्रयास करें।','error');return;}
+            try{
+                const formats=await BarcodeDetector.getSupportedFormats();
+                const wanted=['code_128','code_39','code_93','ean_13','ean_8','upc_a','upc_e','itf','qr_code'];
+                const supported=wanted.filter(x=>formats.includes(x));
+                if(!supported.length)throw new Error('कैमरा स्कैन के लिए समर्थित Barcode Format नहीं मिला');
+                barcodeDetectorInstance=new BarcodeDetector({formats:supported});
+                barcodeCameraTargetId=targetInputId;barcodeCameraActive=true;
+                const modal=document.getElementById('barcodeCameraModal'),video=document.getElementById('barcodeCameraVideo');
+                modal.style.display='flex';
+                barcodeCameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+                video.srcObject=barcodeCameraStream;await video.play();
+                const scan=async()=>{
+                    if(!barcodeCameraActive)return;
+                    try{
+                        if(video.readyState>=2){
+                            const codes=await barcodeDetectorInstance.detect(video);
+                            if(codes.length){
+                                const value=String(codes[0].rawValue||'').trim(),input=document.getElementById(barcodeCameraTargetId);
+                                if(value&&input){input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));const target=barcodeCameraTargetId;stopBarcodeCameraScan();if(target==='dispatchSearchId')searchDispatchBooking();if(target==='returnBarcodeInput')loadReturnBookingForCounting();showActionMessage('Barcode स्कैन सफल: '+value,'success');return;}
+                            }
+                        }
+                    }catch(error){const status=document.getElementById('barcodeCameraStatus');if(status)status.textContent='स्कैन जारी है…';}
+                    if(barcodeCameraActive)barcodeCameraFrame=requestAnimationFrame(scan);
+                };
+                barcodeCameraFrame=requestAnimationFrame(scan);
+            }catch(error){stopBarcodeCameraScan();showActionMessage('कैमरा शुरू नहीं हुआ: '+error.message,'error');}
+        }
+        function stopBarcodeCameraScan(){
+            barcodeCameraActive=false;if(barcodeCameraFrame)cancelAnimationFrame(barcodeCameraFrame);
+            if(barcodeCameraStream){barcodeCameraStream.getTracks().forEach(track=>track.stop());barcodeCameraStream=null;}
+            const video=document.getElementById('barcodeCameraVideo');if(video)video.srcObject=null;
+            const modal=document.getElementById('barcodeCameraModal');if(modal)modal.style.display='none';
+        }
+        async function runOcrScan(event) {
+            const file=event.target.files?.[0];if(!file)return;
+            const preview=document.getElementById('stockOcrTextPreview');
+            try{
+                showActionMessage('OCR लाइब्रेरी लोड हो रही है…','success');
+                if(!window.Tesseract){
+                    await new Promise((resolve,reject)=>{
+                        const script=document.createElement('script');
+                        script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                        script.onload=resolve;script.onerror=()=>reject(new Error('OCR लाइब्रेरी डाउनलोड नहीं हुई; इंटरनेट कनेक्शन जाँचें'));
+                        document.head.appendChild(script);
+                    });
+                }
+                if(!window.Tesseract?.recognize)throw new Error('OCR इंजन उपलब्ध नहीं है');
+                const result=await window.Tesseract.recognize(file,'eng+hin',{logger:m=>{
+                    const status=document.getElementById('stockOcrTextPreview');
+                    if(status&&m.status==='recognizing text')status.placeholder='OCR प्रगति: '+Math.round((m.progress||0)*100)+'%';
+                }});
+                const text=String(result?.data?.text||'').trim();
+                if(!text)throw new Error('इस फोटो में पढ़ने योग्य टेक्स्ट नहीं मिला');
+                if(preview)preview.value=text;
+                const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(x=>x.length>1);
+                const name=lines.find(x=>/[A-Za-z\u0900-\u097F]/.test(x));
+                const quantity=text.match(/(?:qty|quantity|मात्रा|संख्या)\s*[:：-]?\s*(\d{1,6})/i);
+                if(name){const input=document.getElementById('stockItemName');if(input&&!input.value)input.value=name.slice(0,100);}
+                if(quantity){const input=document.getElementById('stockItemQty');if(input&&!input.value)input.value=quantity[1];}
+                showActionMessage('OCR टेक्स्ट पढ़ लिया गया है। नाम और मात्रा स्वयं जाँचकर सही करें।','success');
+            }catch(error){showActionMessage('OCR नहीं हो सका: '+error.message,'error');}
+            finally{event.target.value='';}
         }
 
         function loadRealStockList() {
@@ -2671,6 +2731,13 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 #customer-list .customer-table-tools span { display:inline-block; padding:6px 10px; border-radius:8px; background:#fff; border:1px solid #cbd5e1; }
 </style>
 
+<div id="barcodeCameraModal" role="dialog" aria-modal="true" aria-label="Barcode camera scanner" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.88);align-items:center;justify-content:center;padding:16px">
+  <div style="width:min(94vw,520px);background:#0f172a;color:#fff;border:1px solid #64748b;border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.45)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h3 style="margin:0">Barcode Camera Scanner</h3><button type="button" class="action-btn" onclick="stopBarcodeCameraScan()">बंद करें</button></div>
+    <video id="barcodeCameraVideo" autoplay playsinline muted style="display:block;width:100%;max-height:58vh;object-fit:contain;background:#000;border-radius:12px;margin-top:12px"></video>
+    <p id="barcodeCameraStatus" style="margin:10px 0 0;color:#cbd5e1">Barcode को कैमरे के सामने रखें।</p>
+  </div>
+</div>
 </body></html>');w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print()},250)};
 
  function init(){const s=settings();if($('hostingUrlInput')&&!$('hostingUrlInput').value)$('hostingUrlInput').value=s.hostingUrl||location.href;if($('backendApiUrlInput'))$('backendApiUrlInput').value=s.backendApiUrl||'';if($('aiAccessTokenInput'))$('aiAccessTokenInput').value=s.aiAccessToken||'';if($('otpChannelSetting'))$('otpChannelSetting').value=s.otpChannel||'off';if($('requireItemSelectionSetting'))$('requireItemSelectionSetting').checked=s.requireItemSelection!==false;if($('enableOfflineSetting'))$('enableOfflineSetting').checked=s.enableOffline!==false;['hostingUrlInput','backendApiUrlInput','aiAccessTokenInput','otpChannelSetting','requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>$(id)?.addEventListener('change',saveAdvancedSettings));if(typeof window.loadSettingsToUI==='function')window.loadSettingsToUI()}
