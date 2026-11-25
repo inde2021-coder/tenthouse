@@ -1709,7 +1709,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const settings=safeGetStorage('softwareSettings',{});
                 const api=getBackendApiUrl(settings);
                 if(!api)throw new Error('Backend API URL सेट नहीं है। Settings में सही HTTPS Backend URL भरें।');
-                const response=await fetch(api.replace(/\\/+$/,'')+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
+                const response=await fetch(api.replace(/\/+$/,'')+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
                 if(!response.ok){
                     const details=await response.json().catch(()=>({}));
                     if(response.status===429)throw new Error('बहुत अधिक प्रयास। 15 मिनट बाद पुनः प्रयास करें।');
