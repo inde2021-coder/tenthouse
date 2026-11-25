@@ -1413,8 +1413,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         function getBookingPaidAmount(b) {
             if (!b) return 0;
             const recorded = Math.max(0, Number(b.totalPaid) || 0, Number(b.paidAmt) || 0);
-            const advanceEligible = (String(b.payMode || 'Cash').toLowerCase() === 'cash' || b.advancePaymentVerified === true)
-                ? Math.max(0, Number(b.advanceAmount) || 0) : 0;
+            const advanceEligible = b.source === 'customer-portal'
+                ? (b.advancePaymentVerified === true ? Math.max(0, Number(b.advanceAmount) || 0) : 0)
+                : ((String(b.payMode || 'Cash').toLowerCase() === 'cash' || b.advancePaymentVerified === true) ? Math.max(0, Number(b.advanceAmount) || 0) : 0);
             const installments = Array.isArray(b.partPayments) ? b.partPayments.reduce((sum, p) => sum + Math.max(0, Number(p.amount) || 0), 0) : 0;
             return Math.max(recorded, advanceEligible + installments);
         }
