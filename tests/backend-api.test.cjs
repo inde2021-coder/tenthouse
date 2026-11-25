@@ -297,3 +297,24 @@ test('CORS preflight permits the admin CRUD methods used by the frontend', async
     assert.match(response.headers.get('access-control-allow-methods') || '', new RegExp('\\b' + method + '\\b'));
   }
 });
+
+
+test('admin booking edits reject impossible calendar dates', async () => {
+  const created = await request('/api/customer/bookings', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'Admin Date Test', mob: '9876543213', address: 'Test Address',
+      eventType: 'Wedding', guestCount: 50, date: '2026-12-01', returnDate: '2026-12-02',
+      advanceAmount: 0, payMode: 'Cash', items: []
+    })
+  });
+  assert.equal(created.status, 201);
+  const booking = await created.json();
+  const edited = await request('/api/customer/bookings/' + booking.booking.id, {
+    method: 'PUT',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ date: '2026-02-30' })
+  });
+  assert.equal(edited.status, 400);
+  assert.match((await edited.json()).error, /वास्तविक कैलेंडर तारीख/);
+});
