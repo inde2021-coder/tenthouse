@@ -122,3 +122,12 @@ AI असिस्टेंट के लिए केवल HTML या APK प
 - WhatsApp message send के लिए `WHATSAPP_ACCESS_TOKEN` और `WHATSAPP_PHONE_NUMBER_ID`; webhook के लिए इनके अलावा `WHATSAPP_WEBHOOK_VERIFY_TOKEN` और `WHATSAPP_APP_SECRET` भी जरूरी हैं। WhatsApp business messaging policy/template/opt-in नियम लागू रहते हैं।
 - `channel=both` में अब endpoint प्रत्येक चैनल की सफलता/विफलता लौटाता है और कम-से-कम एक चैनल सफल होने पर ही OTP verify-store करता है।
 - OTP records और WhatsApp inbox अभी process memory में हैं; server restart या multiple Vercel instances पर state साझा नहीं होती। Production में Redis/DB जोड़ना जरूरी है, वरना OTP verification intermittent हो सकता है।
+
+
+## 9. Business Card, Quotation और Tax Invoice
+
+- Business Card: दुकान का नाम, मालिक, संपर्क, पता, ईमेल, GSTIN और UPI विवरण संपादित, preview और print किए जा सकते हैं।
+- Quotation: सामान, मात्रा, दर, discount, अन्य शुल्क और validity date के साथ सेव/प्रिंट।
+- Tax Invoice: editable GST दर तथा CGST+SGST या IGST विभाजन; सेव करने से पहले Business Card में सही 15-अक्षर GSTIN आवश्यक है।
+- Print dialog में “Save as PDF” चुनकर PDF बनाई जा सकती है।
+- वर्तमान Tax Invoice पूरे दस्तावेज़ पर एक GST दर लगाता है; HSN/SAC और प्रति-item अलग GST दर अभी business-specific configuration के लिए बाकी हैं।
