@@ -746,7 +746,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         <h2 id="rkAdminGateTitle">सुरक्षित व्यवस्थापक प्रवेश</h2>
         <p>Secret Admin Login — केवल अधिकृत स्टाफ के लिए।</p>
         <p class="rk-admin-howto">Desktop: Ctrl + Shift + K · Mobile: Shop Logo को 1–2 सेकंड दबाएँ या 5 बार टैप करें</p>
-        <form onsubmit="handleDirectAdminLogin(event)" autocomplete="off">
+        <form onsubmit="return window.handleDirectAdminLogin(event)" autocomplete="off">
           <label for="rkAdminAccessToken">Access Token</label>
           <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
           <button type="submit" class="glass-btn-green"><i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें</button>
@@ -1897,33 +1897,43 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(field)field.value='';
             document.getElementById('customerFirstPortal').style.display='flex';
         }
-        async function handleDirectAdminLogin(event) {
-            event.preventDefault();
+        window.handleDirectAdminLogin = async function(event) {
+            if(event){event.preventDefault();event.stopPropagation();}
             const field=document.getElementById('rkAdminAccessToken');
-            if(window.__rkRenderPreviewMode){
-                const previewToken='PREVIEW-DEMO-ONLY-ACCESS';
-                window.__rkVerifiedAdminToken=previewToken;
-                if(field)field.value='';
-                await loginWithGoogle(previewToken);
-                return;
-            }
-            const token=String(field?.value||'').trim();
-            if(token.length<32){showActionMessage('अमान्य एक्सेस टोकन।','error');return;}
-            const settings=safeGetStorage('softwareSettings',{});
-            const api=getBackendApiUrl(settings);
-            const submit=event.submitter;
-            if(submit){submit.disabled=true;submit.dataset.originalText=submit.innerHTML;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
+            const form=field?.closest('form');
+            const submit=(event?.submitter)||form?.querySelector('button[type="submit"]');
+            const original=submit?.innerHTML;
+            if(submit){submit.disabled=true;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
             try{
-                const response=await fetch(api+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
-                if(!response.ok)throw new Error(response.status===429?'बहुत अधिक प्रयास। कुछ समय बाद पुनः प्रयास करें।':'एक्सेस सत्यापित नहीं हुआ।');
+                const token=String(field?.value||'').trim();
+                if(window.__rkRenderPreviewMode){
+                    if(token!=='PREVIEW-DEMO-ONLY-ACCESS') throw new Error('Preview Token सही डालें: PREVIEW-DEMO-ONLY-ACCESS');
+                    window.__rkVerifiedAdminToken=token;
+                    if(field)field.value='';
+                    await loginWithGoogle(token);
+                    const admin=document.getElementById('adminPanel');
+                    if(admin && admin.style.display!=='block') throw new Error('Preview Admin खुल नहीं पाया। पेज को Refresh करके दोबारा प्रयास करें।');
+                    return false;
+                }
+                if(token.length<32) throw new Error('अमान्य एक्सेस टोकन।');
+                const settings=safeGetStorage('softwareSettings',{});
+                const api=getBackendApiUrl(settings);
+                if(!api) throw new Error('Backend API URL सेट नहीं है।');
+                const response=await fetch(api.replace(/\/+$/,'')+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
+                if(!response.ok) throw new Error(response.status===429?'बहुत अधिक प्रयास। कुछ समय बाद पुनः प्रयास करें।':'एक्सेस सत्यापित नहीं हुआ।');
                 const result=await response.json();
-                if(result.ok!==true)throw new Error('एक्सेस सत्यापित नहीं हुआ।');
+                if(result.ok!==true) throw new Error('एक्सेस सत्यापित नहीं हुआ।');
                 window.__rkVerifiedAdminToken=token;
                 if(field)field.value='';
                 await loginWithGoogle(token);
-            }catch(error){window.__rkVerifiedAdminToken='';showActionMessage(error.message||'व्यवस्थापक लॉगिन विफल।','error');}
-            finally{if(submit){submit.disabled=false;submit.innerHTML=submit.dataset.originalText||'सत्यापित करें और आगे बढ़ें';}}
-        }
+            }catch(error){
+                window.__rkVerifiedAdminToken='';
+                showActionMessage(error?.message||'व्यवस्थापक लॉगिन विफल।','error');
+            }finally{
+                if(submit){submit.disabled=false;submit.innerHTML=original||'<i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें';}
+            }
+            return false;
+        };
         function returnToCustomerPortal() {
             closeAppMenu();
             document.getElementById('adminPanel').style.display='none';
@@ -4193,6 +4203,56 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       @media(max-width:760px){.customer-scroll-wrap{padding:13px!important;gap:14px!important}.rk-customer-brand{min-height:90px;padding:15px!important;gap:12px;border-radius:18px}.rk-customer-brand-mark{width:48px;height:48px;flex-basis:48px;border-radius:14px;font-size:19px}.rk-customer-eyebrow{font-size:8px;letter-spacing:.14em}.rk-customer-brand h1{font-size:clamp(19px,5vw,25px)!important}.rk-customer-subtitle{font-size:10px;margin-top:4px}.rk-customer-brand-seal{padding:7px 9px;font-size:9px}.rk-customer-form{grid-template-columns:minmax(0,1fr)!important;gap:13px!important}.rk-customer-section{padding:16px!important;border-radius:17px!important}.rk-customer-form .form-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}.rk-customer-submit{min-height:52px!important;font-size:14px!important}}
       @media(max-width:390px){.rk-customer-brand-seal{display:none}.rk-customer-brand{gap:10px}.rk-customer-brand-mark{width:43px;height:43px;flex-basis:43px}.rk-customer-section-title{font-size:14px!important}}
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
+
+/* Final customer/admin form contrast lock: override legacy light-theme and browser autofill rules. */
+#customerFirstPortal .rk-customer-form input:not([type="checkbox"]):not([type="radio"]),
+#customerFirstPortal .rk-customer-form select,
+#customerFirstPortal .rk-customer-form textarea,
+#customerFirstPortal .rk-customer-form input[type="file"],
+#welcomeOverlay .rk-admin-gate-card input,
+#adminPanel input:not([type="checkbox"]):not([type="radio"]),
+#adminPanel select,
+#adminPanel textarea {
+  background:linear-gradient(145deg,#0b1523 0%,#14243a 100%) !important;
+  background-color:#0d1929 !important;
+  color:#edf5ff !important;
+  -webkit-text-fill-color:#edf5ff !important;
+  border:1px solid rgba(126,174,220,.32) !important;
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),inset -1px -1px 3px rgba(140,184,226,.06),0 4px 12px rgba(0,0,0,.12) !important;
+  caret-color:#83d9f0 !important;
+}
+#customerFirstPortal .rk-customer-form input::placeholder,
+#customerFirstPortal .rk-customer-form textarea::placeholder,
+#welcomeOverlay input::placeholder,
+#adminPanel input::placeholder,
+#adminPanel textarea::placeholder { color:#8fa8c4 !important; opacity:1 !important; }
+#customerFirstPortal .rk-customer-form input:focus,
+#customerFirstPortal .rk-customer-form select:focus,
+#customerFirstPortal .rk-customer-form textarea:focus,
+#welcomeOverlay input:focus,
+#adminPanel input:focus,
+#adminPanel select:focus,
+#adminPanel textarea:focus {
+  border-color:#62c5df !important;
+  box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.14) !important;
+  outline:none !important;
+}
+#customerFirstPortal .rk-customer-form select option,
+#adminPanel select option { background:#101d2e !important; color:#edf5ff !important; }
+#customerFirstPortal input:-webkit-autofill,
+#customerFirstPortal input:-webkit-autofill:hover,
+#customerFirstPortal input:-webkit-autofill:focus,
+#welcomeOverlay input:-webkit-autofill,
+#adminPanel input:-webkit-autofill {
+  -webkit-text-fill-color:#edf5ff !important;
+  -webkit-box-shadow:0 0 0 1000px #0d1929 inset !important;
+  transition:background-color 99999s ease-out 0s !important;
+}
+@media(max-width:760px){
+ #customerFirstPortal .rk-customer-form input:not([type="checkbox"]):not([type="radio"]),
+ #customerFirstPortal .rk-customer-form select,
+ #customerFirstPortal .rk-customer-form textarea { min-height:46px !important; }
+}
 </style>
 </body>
 </html>
