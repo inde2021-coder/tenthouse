@@ -663,8 +663,10 @@ test('premium design layer loads after legacy styles so the new theme wins the c
 
 test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
-  assert.ok(html.includes('setTimeout(show,3200)'));
-  assert.ok(html.includes('setTimeout(show,3200)'));
+  assert.ok(html.includes('holdTimer=setTimeout(show,1200)'));
+  assert.ok(html.includes('clickCount>=5'));
+  assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
+  assert.ok(html.includes("e.ctrlKey&&e.shiftKey"));
   assert.ok(html.includes('/api/admin/session'));
   assert.ok(html.includes("'x-admin-token':token"));
   assert.ok(html.includes('window.__rkVerifiedAdminToken'));
@@ -923,11 +925,13 @@ test('Render preview is visibly labeled and isolated from production Firebase', 
   const root = path.join(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const backend = fs.readFileSync(path.join(root, 'backend', 'src', 'server.js'), 'utf8');
-  assert.ok(html.includes("window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com'))"));
+  assert.ok(html.includes("window.__rkLocalHtmlPreviewMode = location.protocol === 'file:'"));
+  assert.ok(html.includes("window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com') || window.__rkLocalHtmlPreviewMode)"));
+  assert.ok(html.includes("if (window.__rkLocalHtmlPreviewMode) return '';"));
   assert.ok(html.includes("if (window.__rkRenderPreviewMode) { dbRef = null; return false; }"));
   assert.ok(html.includes("if (window.__rkRenderPreviewMode) return Promise.resolve(false);"));
   assert.ok(html.includes("TEST PREVIEW · DEMO DATA ONLY · PRODUCTION FIREBASE DISABLED"));
-  assert.ok(html.includes("previewSettings.backendApiUrl = location.origin"));
+  assert.ok(html.includes("previewSettings.backendApiUrl = window.__rkLocalHtmlPreviewMode ? '' : location.origin"));
   assert.ok(html.includes("previewSettings.aiAccessToken = 'PREVIEW-DEMO-ONLY-ACCESS'"));
   assert.ok(backend.includes("const isPreviewMode = process.env.PREVIEW_MODE === 'true' && !isProd;"));
   assert.ok(backend.includes("memoryStore.set('tent_erp_data/stock'"));
@@ -962,7 +966,9 @@ test('customer booking lookup has mobile, name and booking-number search plus pr
   assert.ok(backend.includes('maskedMobile'));
 });
 test('secret admin login is explained and mobile logo long-press opens the gate',()=>{
-  assert.ok(html.includes('Ctrl + Alt + Shift + K'));
-  assert.ok(html.includes("document.querySelector('.rk-customer-brand-mark')"));
-  assert.ok(html.includes('title="Secret Admin Login: इस लोगो को 3 सेकंड दबाएँ"'));
+  assert.ok(html.includes('Ctrl + Shift + K'));
+  assert.ok(html.includes("target.closest('.rk-customer-brand, .rk-customer-brand-mark')"));
+  assert.ok(html.includes('holdTimer=setTimeout(show,1200)'));
+  assert.ok(html.includes('clickCount>=5'));
+  assert.ok(html.includes('title="Secret Admin Login: लोगो को 1.2 सेकंड दबाएँ या पाँच बार टैप करें"'));
 });

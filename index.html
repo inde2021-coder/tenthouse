@@ -739,7 +739,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
     <div id="actionToast"></div>
 
-    <!-- Secret admin gate: Ctrl+Alt+Shift+K or a 3-second hold on the shop utensil logo. -->
+    <!-- Secret admin gate: Ctrl+Alt+Shift+K / Ctrl+Shift+K, 1.2-second logo hold, or five taps. -->
     <div id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="rkAdminGateTitle" style="display:none;position:fixed;inset:0;background:rgba(2,7,15,.88);backdrop-filter:blur(22px);justify-content:center;align-items:center;z-index:2147483000;padding:18px">
       <div class="welcome-card rk-admin-gate-card" style="width:min(92vw,420px);text-align:center">
         <div class="rk-admin-gate-mark"><i class="fa-solid fa-shield-halved"></i></div>
@@ -790,7 +790,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 </svg><div class="rk-hero-float f1"><i class="fa-solid fa-bowl-food"></i> थाली • कटोरी • गिलास</div><div class="rk-hero-float f2"><i class="fa-solid fa-kitchen-set"></i> भगोने • सर्विंग सेट</div></div>
 <div class="rk-hero-bottomline"><span>RADHE KRISHN BARTAN TENT HOUSE</span><span>स्वच्छ बर्तन · सही मात्रा · आसान बुकिंग</span></div></section>
             <header class="rk-customer-brand">
-                <div class="rk-customer-brand-mark" role="button" tabindex="0" aria-label="Secret Admin Login — इस लोगो को 3 सेकंड दबाकर रखें" title="Secret Admin Login: इस लोगो को 3 सेकंड दबाएँ"><i class="fa-solid fa-utensils"></i></div>
+                <div class="rk-customer-brand-mark" role="button" tabindex="0" aria-label="Secret Admin Login — इस लोगो को 1.2 सेकंड दबाकर रखें या पाँच बार टैप करें" title="Secret Admin Login: लोगो को 1.2 सेकंड दबाएँ या पाँच बार टैप करें"><i class="fa-solid fa-utensils"></i></div>
                 <div class="rk-customer-brand-copy">
                     <div class="rk-customer-eyebrow">RADHE KRISHN · BARTAN RENTAL SERVICE</div>
                     <h1 id="portalShopTitle"><span id="displayShopName">राधा कृष्ण बर्तन टेंट हाउस</span></h1>
@@ -3845,6 +3845,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       const gate=document.getElementById('welcomeOverlay');
       if(gate){gate.style.display='flex';gate.style.visibility='visible';gate.style.opacity='1';}
     }
+    setTimeout(()=>{fired=false;},500);
   };
   const isBrand=(target)=>target instanceof Element ? target.closest('.rk-customer-brand, .rk-customer-brand-mark') : null;
   const cancelHold=()=>{if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}};
