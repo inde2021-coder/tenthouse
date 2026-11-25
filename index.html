@@ -968,7 +968,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                         <div class="glass-card-blue">
                             <h3>Quotation / Tax Invoice — कोटेशन और टैक्स इनवॉइस</h3>
                             <div class="form-grid">
-                                <div><label>दस्तावेज़ प्रकार</label><select id="docType" onchange="renderBusinessDocumentPreview()"><option value="quotation">Quotation / कोटेशन</option><option value="tax-invoice">Tax Invoice / टैक्स इनवॉइस</option></select></div>
+                                <div><label>दस्तावेज़ प्रकार</label><select id="docType" onchange="changeBusinessDocumentType()"><option value="quotation">Quotation / कोटेशन</option><option value="tax-invoice">Tax Invoice / टैक्स इनवॉइस</option></select></div>
                                 <div><label>Document Number</label><input id="docNumber" type="text" placeholder="खाली छोड़ें तो Auto Number"></div>
                                 <div><label>तारीख / Date</label><input id="docDate" type="date"></div>
                                 <div><label>Quotation Valid Until</label><input id="docValidUntil" type="date"></div>
@@ -2826,6 +2826,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             renderBusinessDocumentItems();renderBusinessDocumentPreview();
         }
         function removeBusinessDocumentItem(index){currentDocumentItems.splice(index,1);renderBusinessDocumentItems();renderBusinessDocumentPreview();}
+        function changeBusinessDocumentType(){editingBusinessDocumentId=null;const number=document.getElementById('docNumber');if(number)number.value='';renderBusinessDocumentPreview();}
         function renderBusinessDocumentPreview(){
             const preview=document.getElementById('businessDocumentPreview');if(!preview)return;
             renderBusinessDocumentItems();
