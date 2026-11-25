@@ -555,3 +555,29 @@ test('WhatsApp send endpoint has an explicit per-minute rate limit', () => {
   assert.match(backend, /const whatsappSendLimiter = rateLimit\(\{ windowMs: 60_000, limit: 20/);
   assert.match(backend, /app\.post\('\/api\/whatsapp\/send', whatsappSendLimiter, authAdmin/);
 });
+
+
+test('overlapping active bookings reserve stock while dispatched and returned bookings do not reserve twice', () => {
+  const start = backend.indexOf('function getReservedAdminStockByItem(');
+  const end = backend.indexOf('const customerBookingSchema', start);
+  assert.ok(start >= 0 && end > start);
+  const code = backend.slice(start, end);
+  const context = { Map, Set, String, Number, Math };
+  vm.runInNewContext(code + `
+    result = getReservedAdminStockByItem([
+      {id:1,status:'Confirmed',date:'2026-12-01',returnDate:'2026-12-03',items:[{name:'Chair',qty:20,source:'admin'}]},
+      {id:2,status:'Pending Approval',date:'2026-12-03',returnDate:'2026-12-05',items:[{name:'Chair',qty:10,source:'admin'}]},
+      {id:3,status:'Dispatched',date:'2026-12-02',returnDate:'2026-12-04',items:[{name:'Chair',qty:50,source:'admin'}]},
+      {id:4,status:'Returned',date:'2026-12-01',returnDate:'2026-12-02',items:[{name:'Chair',qty:40,source:'admin'}]},
+      {id:5,status:'Confirmed',date:'2026-12-01',returnDate:'2026-12-03',items:[{name:'Tent',qty:7,source:'third-party'}]}
+    ],'2026-12-03','2026-12-04');
+  `, context);
+  assert.equal(context.result.get('chair'),30);
+  assert.equal(context.result.has('tent'),false);
+});
+
+test('customer booking stock validation includes overlapping reservations from admin and portal records', () => {
+  assert.match(backend, /storeList\('erpData\/customerBookings'\)/);
+  assert.match(backend, /storeList\('tent_erp_data\/bookings'\)/);
+  assert.match(backend, /qty\+alreadyReserved>physicalAvailable/);
+});
