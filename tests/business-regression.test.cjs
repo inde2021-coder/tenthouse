@@ -847,3 +847,20 @@ test('premium customer and ERP visual system is scoped and mobile responsive', (
   assert.ok(html.includes('prefers-reduced-motion:reduce'));
   assert.ok(html.includes('@media(max-width:700px)'), 'customer layout must include a mobile breakpoint');
 });
+
+
+test('customer hero is responsive, admin-editable, and safely persisted with existing settings', () => {
+  assert.ok(html.includes('id="settingCustomerHeroFile"'));
+  assert.ok(html.includes("handleImageUpload(event, 'customerHeroImage')"));
+  assert.ok(html.includes('function applyCustomerHeroSettings()'));
+  assert.ok(html.includes("hero.style.setProperty('--rk-hero-bg'"));
+  assert.ok(html.includes('function removeCustomerHeroImage()'));
+  assert.ok(html.includes("delete settings.customerHeroImage"));
+  assert.ok(html.includes("canvas.toDataURL('image/jpeg', 0.78)"));
+  assert.ok(html.includes("settings[fieldName] = dataUrl"));
+  assert.ok(html.includes("applyCustomerHeroSettings();"));
+  assert.ok(html.includes('.rk-customer-hero.has-custom-image::after'));
+  assert.ok(html.includes('@media(max-width:720px)'));
+  assert.ok(html.includes("document.getElementById('portalCustName').scrollIntoView"));
+  assert.ok(html.includes('onsubmit="saveCustomerBooking(event)"'));
+});
