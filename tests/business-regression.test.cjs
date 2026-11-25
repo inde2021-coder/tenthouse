@@ -20,9 +20,12 @@ function runRentFunction(functionName, booking) {
     : html.indexOf('        function searchBillingCustomer()', start);
   assert.notEqual(start, -1);
   assert.notEqual(next, -1);
+  const helperStart = html.indexOf('function getDispatchEntryRentalSlices(b)');
+  const helperEnd = html.indexOf('        function calculateBookingTotalRent(b)', helperStart);
+  const sharedHelpers = helperStart >= 0 && helperEnd >= 0 ? html.slice(helperStart, helperEnd) : '';
   const code = html.slice(start, next);
-  const context = { booking, calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, result: null };
-  vm.runInNewContext(`${code}\nresult = ${functionName}(booking);`, context);
+  const context = { booking, calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, Date, result: null };
+  vm.runInNewContext(`${sharedHelpers}\n${code}\nresult = ${functionName}(booking);`, context);
   return context.result;
 }
 
