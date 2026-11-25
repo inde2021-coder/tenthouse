@@ -576,8 +576,9 @@ test('overlapping active bookings reserve stock while dispatched and returned bo
   assert.equal(context.result.has('tent'),false);
 });
 
-test('customer booking stock validation includes overlapping reservations from admin and portal records', () => {
+test('customer booking stock validation includes admin and portal reservations without colliding independent IDs', () => {
   assert.match(backend, /storeList\('erpData\/customerBookings'\)/);
   assert.match(backend, /storeList\('tent_erp_data\/bookings'\)/);
+  assert.match(backend, /const allBookings = \[\.\.\.adminBookings, \.\.\.portalBookings\]/);
   assert.match(backend, /qty\+alreadyReserved>physicalAvailable/);
 });
