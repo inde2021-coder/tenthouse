@@ -131,7 +131,7 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(code.includes('if(!row){showActionMessage(\'Return stock record नहीं मिला: \'+item.name'));
   assert.ok(html.includes("if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला"));
   assert.ok(code.includes("safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])"));
-  assert.ok(html.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('missingItemsDatabase',missing)"));
+  assert.ok(html.includes("safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])"));
   assert.ok(html.includes('m.penalty=0;'));
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
