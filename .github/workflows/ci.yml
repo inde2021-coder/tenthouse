@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - "audit/**"
+      - render-preview-test
   pull_request:
     branches:
       - main
