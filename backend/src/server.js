@@ -274,9 +274,33 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
   if(!parsed.success)return res.status(400).json({error:'बुकिंग विवरण सही भरें।',details:parsed.error.flatten()});
   if(parsed.data.date < new Date().toISOString().slice(0,10))return res.status(400).json({error:'बुकिंग तारीख आज या भविष्य की होनी चाहिए।'});
   try{
+    let customerItems=parsed.data.items;
+    if(customerItems.length){
+      if(!adminDb)return res.status(503).json({error:'सामान और सही किराया सत्यापित करने के लिए Firebase stock catalog उपलब्ध नहीं है।'});
+      const stockValue=await storeGet('tent_erp_data/stock');
+      const stockRows=Array.isArray(stockValue)?stockValue:Object.values(stockValue||{});
+      const requestedByName=new Map();
+      for(const item of customerItems){
+        if(item.source==='third-party')return res.status(400).json({error:'Customer portal से केवल Admin stock चुना जा सकता है।'});
+        const key=String(item.name||'').trim().toLowerCase();
+        requestedByName.set(key,(requestedByName.get(key)||0)+item.qty);
+      }
+      for(const [key,qty] of requestedByName){
+        const stockItem=stockRows.find(row=>String(row.name||row.item||'').trim().toLowerCase()===key);
+        if(!stockItem)return res.status(409).json({error:'चुना गया सामान अब stock catalog में उपलब्ध नहीं है: '+key});
+        if(qty>Math.max(0,Number(stockItem.qty)||0))return res.status(409).json({error:'चुने गए सामान का उपलब्ध stock कम है: '+key});
+      }
+      customerItems=customerItems.map(item=>{
+        const stockItem=stockRows.find(row=>String(row.name||row.item||'').trim().toLowerCase()===String(item.name||'').trim().toLowerCase());
+        const setRent=Number(stockItem.setRent)||0,singleRent=Number(stockItem.singleRent)||0;
+        const rentPrice=setRent>0?setRent:singleRent;
+        if(!Number.isFinite(rentPrice)||rentPrice<0)throw new Error('Stock catalog में किराया दर सही नहीं है: '+item.name);
+        return {...item,rentPrice,missingCharge:0,source:'admin',partyName:''};
+      });
+    }
     let id=Date.now();
     while(await storeGet('erpData/customerBookings/'+String(id)))id++;
-    const booking={id,...parsed.data,status:'Pending Approval',partPayments:[],advancePaymentVerified:false,
+    const booking={id,...parsed.data,items:customerItems,status:'Pending Approval',partPayments:[],advancePaymentVerified:false,
       advancePaymentStatus:parsed.data.advanceAmount>0?(parsed.data.payMode==='UPI'?'pending-verification':'pending-admin-confirmation'):'not-applicable',
       createdAt:new Date().toISOString(),source:'customer-portal'};
     let utrKey=null;
