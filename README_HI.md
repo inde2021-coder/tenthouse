@@ -1,12 +1,12 @@
 # राधा कृष्णा टेंट हाउस ERP — Advanced project package
 
-यह पैकेज पुराने HTML ERP का विस्तारित प्रोजेक्ट ढाँचा है: `index.html`, PWA shell, Express backend API और Android WebView APK source। यह production-ready/fully verified ERP या compiled APK नहीं है; hosting credentials, Firebase rules, provider accounts, database, business testing और Android build अभी आवश्यक हैं।
+यह पैकेज पुराने HTML ERP का विस्तारित प्रोजेक्ट ढाँचा है: `index.html`, PWA shell, Express backend API; वर्तमान Git tree में Android WebView APK source मौजूद नहीं है। यह production-ready/fully verified ERP या compiled APK नहीं है; hosting credentials, Firebase rules, provider accounts, database, business testing और Android build अभी आवश्यक हैं।
 
 ## Folder structure
 - `index.html` — मुख्य HTML फाइल; hosting QR, digital clock/date, date bounds, payment split/UPI QR और UTR entry UI जोड़े गए हैं।
 - `public/` — hosting में डालने योग्य web files (`index.html`, `sw.js`, `manifest.webmanifest`).
 - `backend/` — Node.js/Express API: health, OTP send/verify, WhatsApp Cloud API, AI proxy, UTR entry and admin verification endpoints.
-- `android-shell/` — Android Studio Gradle project source; APK बनाने के लिए।
+- Android APK source: वर्तमान Repository में `android-shell/` folder उपलब्ध नहीं है; इसलिए इस checkout से APK build नहीं हो सकता।
 
 ## 1. वेबसाइट host करना
 1. `public/` की सभी फाइलें HTTPS static hosting (जैसे आपके चुने hosting provider) पर अपलोड करें। सिर्फ `index.html` नहीं; `sw.js` और `manifest.webmanifest` भी चाहिए।
@@ -20,12 +20,15 @@
 4. `PUBLIC_ORIGIN` में अपनी exact HTTPS frontend origin दें। Production में `NODE_ENV=production`, strong random `ADMIN_API_TOKEN`, unique `OTP_HMAC_SECRET`, HTTPS और provider credentials जरूरी हैं।
 5. WhatsApp Cloud API के लिए Meta Business/WhatsApp app, verified phone-number ID, access token और messaging policies/templates की सेटअप जरूरत पड़ सकती है। Meta App Dashboard में Webhooks के `messages` field को subscribe करें और callback URL `https://आपका-backend-domain/webhooks/whatsapp` रखें। `.env` में `WHATSAPP_WEBHOOK_VERIFY_TOKEN` और Meta App Secret (`WHATSAPP_APP_SECRET`) सही भरें। सर्वर पर वैध HTTPS होना चाहिए।
 6. OTP के लिए `OTP_PROVIDER=twilio` या `msg91` और सही credentials/approved templates भरें; WhatsApp OTP के लिए WhatsApp templates/provider rules का पालन करें। `demo` OTP केवल local development के लिए है, production में demo OTP नहीं लौटेगा।
-7. वर्तमान sample API में OTP store और payment ledger memory में हैं, इसलिए restart पर खो जाते हैं और multi-instance hosting के लिए उपयुक्त नहीं। Production से पहले PostgreSQL/Firestore/Redis जैसे durable database, cleanup jobs, monitoring, backups और proper user/session authorization जोड़ना जरूरी है।
+7. Backend अब Firebase Admin SDK के जरिए OTP, UTR/payment ledger, WhatsApp inbox और customer booking requests को Realtime Database में persist कर सकता है। इसके लिए `FIREBASE_SERVICE_ACCOUNT_JSON` और `FIREBASE_DATABASE_URL` दोनों server environment में सेट करना अनिवार्य है। Production में database configuration न होने पर ये data APIs 503 लौटाती हैं; वे चुपचाप memory में data नहीं खोतीं। Backups, restore drill, retention/cleanup और per-user authorization फिर भी जरूरी हैं।
 
 ## 3. API endpoints
 - `GET /health`
 - `POST /api/otp/send` body: `{ "phone": "+919876543210", "channel": "sms|whatsapp|both" }`
 - `POST /api/otp/verify` body: `{ "phone": "+919876543210", "otp": "123456" }`
+- `POST /api/customer/bookings` — ग्राहक बिना Admin Login के Booking Request भेज सकता है; backend database में `Pending Approval` बनती है।
+- `GET /api/customer/bookings` — `X-Admin-Token` से Admin नई ग्राहक बुकिंग देखता है।
+- `PATCH /api/customer/bookings/:id/status` — Admin `Confirmed`, `Rejected` या `Cancelled` status सेट करता है।
 - `POST /api/whatsapp/send` — `X-Admin-Token` आवश्यक; body `{ "to": "+919876543210", "message": "..." }`
 - `GET /webhooks/whatsapp` और `POST /webhooks/whatsapp` — Meta Cloud API webhook verification और incoming messages receive करता है; `WHATSAPP_WEBHOOK_VERIFY_TOKEN` तथा `WHATSAPP_APP_SECRET` सेट करें।
 - `GET /api/whatsapp/inbox` — `X-Admin-Token` के साथ आने वाले WhatsApp संदेश/बुकिंग अनुरोध देखें।
@@ -34,12 +37,11 @@
 - `POST /api/payments/record-utr` — UTR को pending verification के रूप में रिकॉर्ड करता है। UTR अपने-आप payment confirmation नहीं है।
 - `GET /api/payments/pending` and `POST /api/payments/:id/verify` — admin token आवश्यक।
 
-## 4. Android APK build
-1. Android Studio और JDK/SDK इंस्टॉल करें।
-2. `android-shell/app/build.gradle` में `HOSTED_APP_URL` को अपनी deployed HTTPS `index.html` URL से बदलें।
-3. Android Studio में `android-shell/` खोलें, Gradle sync करें, फिर **Build → Build APK(s)** चुनें। APK आम तौर पर `android-shell/app/build/outputs/apk/debug/app-debug.apk` में बनेगा।
-4. रिलीज़ के लिए signed release keystore बनाकर सुरक्षित रखें और Release APK/AAB build करें। इस source package में APK binary अभी compile नहीं की गई है।
-5. यह shell hosted URL लोड करता है, इसलिए web content refresh/reopen पर update हो सकता है। APK की Kotlin/permissions/native code बदलने पर नया signed APK install/update करना पड़ेगा। URL placeholder रहने पर local asset fallback खुलेगा, पर offline data sync की पूर्ण व्यवस्था इससे अपने-आप नहीं बनती।
+## 4. Android APK build — वर्तमान Repository स्थिति
+
+वर्तमान Git tree में `android-shell/` directory, Gradle files, Android manifest या `MainActivity` source नहीं मिले। इसलिए इस branch से APK build करने का दावा नहीं किया जा सकता। यदि आपके पास पहले से बना Android Studio source/ZIP है, उसे Repository में वापस जोड़ना होगा; उसके बाद package ID, permissions, WebView URL, signing और device tests किए जा सकते हैं।
+
+`version.json` में अभी APK URL placeholder है। इसे वास्तविक signed APK URL से बदले बिना in-app APK update काम नहीं करेगा।
 
 ## 5. APK अपडेट सिस्टम (नया)
 - `public/version.json` को वेबसाइट की root directory पर deploy करें ताकि `https://आपका-domain/version.json` खुले। इसमें `versionCode`, `versionName`, `apkUrl`, `releaseNotes` हैं।
@@ -50,11 +52,16 @@
 - प्रारंभिक `version.json` में versionCode `1` है, जो initial APK version 1.0.0 के साथ मेल खाता है। Release करने से पहले placeholder URL बदलें।
 
 ## 6. महत्वपूर्ण सुरक्षा/गुणवत्ता सीमाएँ
-- HTML/localStorage को अकेले multi-device database न मानें। Admin/customer roles, Firebase Authentication, strict database rules और server-side authorization चाहिए।
-- मौजूदा HTML के पुराने modules का पूरा runtime/business-logic audit अभी पूरा नहीं है। Inventory dispatch decrement/return reconciliation, customer OTP flow integration, full vendor accounting, camera/barcode scanner integration, true cloud sync/merge, invoice tax/GST fields, thermal printer-specific layouts, payment gateway webhooks/settlement verification और automated sharing अभी production-tested नहीं हैं।
-- UPI QR केवल भुगतान अनुरोध बनाता है; यह payment gateway नहीं और पैसा आने की पुष्टि नहीं करता। UTR को provider/bank से verify करना जरूरी है।
-- `ADMIN_API_TOKEN` प्रारंभिक scaffold auth है; end-user app में इसे hardcode न करें। Production में Firebase ID token/JWT verification, per-user roles and audit logs लगाएँ।
-- `manifest.webmanifest` में icons placeholder खाली हैं; branded icons जोड़ना बाकी है।
+
+- Customer Booking Requests अब public backend endpoint से durable database में जाती हैं; Admin Login के बाद backend से नई bookings merge होती हैं। Backend URL default `https://tenthouse.vercel.app` है; यदि hosting बदलती है तो Settings में सही URL रखें।
+- Admin का Google Login अभी Firebase client auth है। Shared Firebase business data का listener login के बाद ही जुड़ता है; guest users को सीधे पूरे ERP database का read/write access नहीं दिया गया है।
+- Firebase Realtime Database security rules इस Repository में शामिल नहीं हैं। उन्हें अलग से configure और test करना होगा; Admin SDK backend rules bypass करता है और केवल server secret से चलता है।
+- OCR अब Tesseract.js (English + Hindi) से text extract करता है; पहचान/मात्रा का अनुमान user को सेव करने से पहले सत्यापित करना है। पहली बार OCR चलाने पर CDN और language data डाउनलोड होंगे।
+- Camera Barcode Scanner browser के native `BarcodeDetector` API पर निर्भर है। HTTPS, camera permission और समर्थित Android Chrome/browser जरूरी हैं; हर browser/device पर support की गारंटी नहीं।
+- Dispatch/Return/Stock और invoice में कुछ प्रमुख logic सुधारा गया है, लेकिन सभी vendor accounting, tax/GST, refunds, thermal printer, physical print, Firebase merge conflicts और device flows अभी end-to-end प्रमाणित नहीं हैं।
+- UPI QR केवल भुगतान अनुरोध बनाता है; यह पैसा आने की पुष्टि नहीं करता। UTR backend में pending verification रहता है; bank/provider settlement confirmation अभी अलग manual/provider प्रक्रिया है।
+- `ADMIN_API_TOKEN` अभी shared-token scaffold है और browser localStorage में रखा जाता है। Public production launch से पहले Firebase ID token/JWT verification, per-user roles, audit logs और least-privilege access लागू करें।
+- PWA manifest में SVG brand icon मौजूद है; native Android launcher PNGs और APK source इस Repository में मौजूद नहीं हैं।
 
 ## 7. Deploy से पहले checklist
 - [ ] `.env` secrets set; `.env` कभी public repository में upload न करें।
@@ -71,7 +78,7 @@
 ## 8. WhatsApp से आने वाली बुकिंग — महत्वपूर्ण सीमा
 - Incoming WhatsApp संदेश अब webhook endpoint पर प्राप्त होकर API inbox में `pending-review` अनुरोध के रूप में रखे जाते हैं। Admin API token से `/api/whatsapp/inbox` देख सकते हैं और status बदल सकते हैं।
 - यह scaffold संदेश के टेक्स्ट से अभी अपने-आप तारीख/सामान/मात्रा निकालकर final booking नहीं बनाता, न स्टॉक रिज़र्व करता है और न ग्राहक को automatic confirmation भेजता है। पहले वास्तविक database, booking parser/AI validation, date/stock/rate checks, duplicate protection और customer confirmation workflow जोड़ना होगा।
-- Inbox अभी memory में है; server restart होने पर requests खो सकती हैं। Production से पहले durable database लगाएँ। Webhook request की Meta signature verify की जाती है; app secret server `.env` में ही रखें।
+- Inbox अब Firebase Realtime Database में persist होता है, बशर्ते Firebase Admin credentials configured हों। Production में credentials न होने पर webhook 503 लौटाता है ताकि Meta retry कर सके। Webhook request की Meta signature verify की जाती है; app secret server `.env` में ही रखें।
 
 
 ## AI Assistant / आवाज़ सेटअप (ज़रूरी)
