@@ -916,3 +916,21 @@ test('all three deployed app shells remain byte-identical after AI chat updates'
   assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8'), html);
   assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'public', 'index.html'), 'utf8'), html);
 });
+
+
+test('Render preview is visibly labeled and isolated from production Firebase', () => {
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const backend = fs.readFileSync(path.join(root, 'backend', 'src', 'server.js'), 'utf8');
+  assert.ok(html.includes("window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com'))"));
+  assert.ok(html.includes("if (window.__rkRenderPreviewMode) { dbRef = null; return false; }"));
+  assert.ok(html.includes("if (window.__rkRenderPreviewMode) return Promise.resolve(false);"));
+  assert.ok(html.includes("TEST PREVIEW · DEMO DATA ONLY · PRODUCTION FIREBASE DISABLED"));
+  assert.ok(html.includes("previewSettings.backendApiUrl = location.origin"));
+  assert.ok(html.includes("previewSettings.aiAccessToken = 'PREVIEW-DEMO-ONLY-ACCESS'"));
+  assert.ok(backend.includes("const isPreviewMode = process.env.PREVIEW_MODE === 'true' && !isProd;"));
+  assert.ok(backend.includes("memoryStore.set('tent_erp_data/stock'"));
+  assert.ok(backend.includes("if (isPreviewMode && req.header('x-admin-token') === 'PREVIEW-DEMO-ONLY-ACCESS') return next();"));
+  assert.ok(backend.includes("if(!adminDb && !isPreviewMode)return res.status(503)"));
+});
