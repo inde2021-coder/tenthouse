@@ -124,38 +124,39 @@ test('WhatsApp send calls backend endpoint and does not claim success before res
 
 test('customer can submit a booking with no selected items', () => {
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
-  assert.match(backend, /items:[\\s\\S]*?\\.max\\(100\\)\\.default\\(\\[\\]\\)/);
+  assert.ok(backend.includes("items: z.array("));
+  assert.ok(backend.includes("}).max(100).default([])"));
   const code = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
-  assert.doesNotMatch(code, /कम-से-कम एक सामान चुनें/);
-  assert.match(code, /items:customerCart\\.map/);
+  assert.ok(!code.includes('कम-से-कम एक सामान चुनें'));
+  assert.ok(code.includes('items:customerCart.map'));
 });
 
 test('customer online advance requires UTR and QR uses configured UPI ID plus exact amount', () => {
   const code = sourceBetween('function updateDynamicPaymentQR()', 'function addItemToPendingBookingDispatch()');
-  assert.match(code, /settings\\.upiId/);
-  assert.match(code, /amount\\.toFixed\\(2\\)/);
-  assert.match(code, /portalQrHint/);
-  assert.doesNotMatch(code, /8120727987@upi/);
+  assert.ok(code.includes('settings.upiId'));
+  assert.ok(code.includes('amount.toFixed(2)'));
+  assert.ok(code.includes('portalQrHint'));
+  assert.ok(!code.includes('8120727987@upi'));
   const booking = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
-  assert.match(booking, /utrNumber\\.length<6/);
+  assert.ok(booking.includes('utrNumber.length<6'));
 });
 
 test('admin booking list displays UTR and payment verification controls', () => {
-  assert.match(html, /UTR नंबर/);
-  assert.match(html, /verifyCustomerAdvance/);
-  assert.match(html, /advancePaymentVerified/);
-  assert.match(html, /\\/advance/);
+  assert.ok(html.includes('UTR नंबर'));
+  assert.ok(html.includes('verifyCustomerAdvance'));
+  assert.ok(html.includes('advancePaymentVerified'));
+  assert.ok(html.includes('/advance'));
 });
 
 test('missing charge appears separately in invoice and total', () => {
-  assert.match(html, /मिसिंग सामान चार्ज/);
-  assert.match(html, /missingChargeTotal/);
-  assert.match(html, /getEffectiveMissingCharge/);
+  assert.ok(html.includes('मिसिंग सामान चार्ज'));
+  assert.ok(html.includes('missingChargeTotal'));
+  assert.ok(html.includes('getEffectiveMissingCharge(item)'));
 });
 
 test('admin edits for customer portal bookings are sent to backend', () => {
-  assert.match(html, /method:'PUT'/);
-  assert.match(html, /api\\/customer\\/bookings/);
+  assert.ok(html.includes("method:'PUT'"));
+  assert.ok(html.includes('/api/customer/bookings/'));
 });
 
 test('root and public app copies are kept in sync', () => {
