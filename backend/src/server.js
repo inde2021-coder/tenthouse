@@ -383,7 +383,7 @@ app.get('/api/customer/bookings/:id/status', requireDurableStore, async (req,res
     const safeBooking={
       id:booking.id,name:booking.name,mob:booking.mob,date:booking.date,returnDate:booking.returnDate,eventType:booking.eventType,
       guestCount:booking.guestCount,status:booking.status,items:booking.items||[],dispatchEntries:booking.dispatchEntries||[],
-      returnEntries:booking.returnEntries||[],actualReturnDate:booking.actualReturnDate||null,advanceAmount:booking.advanceAmount||0,
+      returnEntries:booking.returnEntries||[],actualReturnDate:booking.actualReturnDate||null,fullyReturnedAt:booking.fullyReturnedAt||null,lastDispatchDate:booking.lastDispatchDate||null,lastReturnDate:booking.lastReturnDate||null,advanceAmount:booking.advanceAmount||0,
       advancePaymentStatus:booking.advancePaymentStatus||'not-applicable',advancePaymentVerified:booking.advancePaymentVerified===true,
       payMode:booking.payMode||'',otherCharges:booking.otherCharges||0,discountAmount:booking.discountAmount||0,
       partPayments:booking.partPayments||[],updatedAt:booking.updatedAt||booking.createdAt
