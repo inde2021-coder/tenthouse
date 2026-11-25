@@ -422,6 +422,12 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
   });
 });
 
+test('Firebase Realtime Database sync stays safely disabled until databaseURL is configured', () => {
+  assert.match(html, /if \(!firebaseConfig\.databaseURL\) \{ console\.warn/);
+  assert.match(html, /if \(!firebaseConfig\.databaseURL \|\| !navigator\.onLine/);
+  assert.match(html, /databaseURL will be added after the Realtime Database is enabled/);
+});
+
 test('root and public app copies are kept in sync', () => {
   const root = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
   const pub = fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
