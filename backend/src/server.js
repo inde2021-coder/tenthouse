@@ -495,6 +495,8 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
   const dispatched = items.map(() => 0);
   const returnedInEntries = items.map(() => 0);
   const firstDispatchDates = items.map(() => null);
+  const dispatchTimeline = items.map(() => []);
+  const returnTimeline = items.map(() => []);
   for (const entry of dispatchEntries) {
     const index = Number(entry?.itemIndex);
     if (!Number.isInteger(index) || index < 0 || index >= items.length) return 'Dispatch entry में सामान का संदर्भ गलत है।';
@@ -506,6 +508,7 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
     const qty = Number(entry.qty);
     if (!Number.isInteger(qty) || qty <= 0) return 'Dispatch मात्रा सही पूर्ण संख्या होनी चाहिए।';
     dispatched[index] += qty;
+    dispatchTimeline[index].push({ date: String(entry.date || ''), qty });
     if (!firstDispatchDates[index] || entry.date < firstDispatchDates[index]) firstDispatchDates[index] = entry.date;
     if (dispatched[index] > Math.max(0, Number(item.qty) || 0)) return 'कुल Dispatch मात्रा Booking में तय मात्रा से अधिक नहीं हो सकती।';
     if (booking.date && entry.date < booking.date) return 'Dispatch तारीख Booking तारीख से पहले नहीं हो सकती।';
@@ -520,7 +523,24 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
       if (!Number.isInteger(qty) || qty < 0) return 'Return मात्रा सही पूर्ण संख्या होनी चाहिए।';
       if (firstDispatchDates[index] && date < firstDispatchDates[index]) return 'Return तारीख उस सामान के पहले Dispatch से पहले नहीं हो सकती।';
       returnedInEntries[index] += qty;
+      returnTimeline[index].push({ date, qty });
       if (returnedInEntries[index] > dispatched[index]) return 'कुल Return मात्रा वास्तविक Dispatch मात्रा से अधिक नहीं हो सकती।';
+    }
+  }
+  // A return can only reconcile against stock already dispatched on or before that return date.
+  // Checking only the booking-wide total would incorrectly allow future dispatches to justify an earlier return.
+  for (let index = 0; index < items.length; index++) {
+    const events = [
+      ...dispatchTimeline[index].map(event => ({ ...event, kind: 'dispatch' })),
+      ...returnTimeline[index].map(event => ({ ...event, kind: 'return' }))
+    ].sort((a, b) => a.date.localeCompare(b.date) || (a.kind === 'dispatch' ? -1 : 1));
+    let cumulativeDispatched = 0, cumulativeReturned = 0;
+    for (const event of events) {
+      if (event.kind === 'dispatch') cumulativeDispatched += event.qty;
+      else {
+        cumulativeReturned += event.qty;
+        if (cumulativeReturned > cumulativeDispatched) return 'किसी तारीख तक दर्ज Return मात्रा, उस तारीख तक Dispatch हुई मात्रा से अधिक नहीं हो सकती।';
+      }
     }
   }
   for (let index = 0; index < items.length; index++) {
