@@ -1221,8 +1221,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const payload={
                 status:booking.status,
                 items:(booking.items||[]).map(i=>({name:String(i.name||''),qty:Number(i.qty)||0,rentPrice:Math.max(0,Number(i.rentPrice)||0),missingCharge:Math.max(0,Number(i.missingCharge)||0),vendorRentRate:Math.max(0,Number(i.vendorRentRate)||0),source:i.source==='third-party'?'third-party':'admin',partyName:String(i.partyName||''),returnedQty:Math.max(0,Number(i.returnedQty)||0),missingQty:Math.max(0,Number(i.missingQty)||0),lastReturnDate:i.lastReturnDate||undefined})),
-                dispatchEntries:(booking.dispatchEntries||[]).map(e=>({itemIndex:Number(e.itemIndex)||0,itemName:String(e.itemName||''),qty:Number(e.qty)||0,date:e.date,unitRent:Math.max(0,Number(e.unitRent)||0),vendorRentRate:Math.max(0,Number(e.vendorRentRate)||0),source:e.source==='third-party'?'third-party':'admin',partyName:String(e.partyName||''),createdAt:e.createdAt})),
-                returnEntries:(booking.returnEntries||[]).map(e=>({date:e.date,mode:e.mode,items:(e.items||[]).map(i=>({itemIndex:Number(i.itemIndex)||0,qty:Math.max(0,Number(i.qty)||0)})),createdAt:e.createdAt})),
+                dispatchEntries:(booking.dispatchEntries||[]).map(e=>({itemIndex:Number(e.itemIndex)||0,itemName:String(e.itemName||''),qty:Number(e.qty)||0,date:e.date||booking.date,unitRent:Math.max(0,Number(e.unitRent)||0),vendorRentRate:Math.max(0,Number(e.vendorRentRate)||0),source:e.source==='third-party'?'third-party':'admin',partyName:String(e.partyName||''),createdAt:e.createdAt})),
+                returnEntries:(booking.returnEntries||[]).map(e=>({date:e.date||booking.actualReturnDate||booking.returnDate,mode:e.mode,items:(e.items||[]).map(i=>({itemIndex:Number(i.itemIndex)||0,qty:Math.max(0,Number(i.qty)||0)})),createdAt:e.createdAt})),
                 actualReturnDate:booking.actualReturnDate||null,lastDispatchDate:booking.lastDispatchDate,lastReturnDate:booking.lastReturnDate,
                 fullyReturnedAt:booking.fullyReturnedAt||null,returnProcessedAt:booking.returnProcessedAt||null,
                 otherCharges:Math.max(0,Number(booking.otherCharges)||0),discountAmount:Math.max(0,Number(booking.discountAmount)||0),
@@ -2274,6 +2274,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 b.lastInstallmentPayment = { amount: amt, date: new Date().toISOString(), source: 'installments-page' };
                 b.dueAmount = Math.max(0, Math.round((total - b.totalPaid) * 100) / 100);
                 safeSetStorage('softwareBookings', bookings);
+                if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
                 amountInput.value = '';
                 loadCustomerList(); loadInstallmentsTable(); loadPaymentLedgerTable(); loadMasterLedgerData();
                 if (typeof loadAllFirebaseData === 'function') loadAllFirebaseData();
