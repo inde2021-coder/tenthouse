@@ -14,6 +14,18 @@ function sourceBetween(startMarker, endMarker) {
   return html.slice(start, end);
 }
 
+function storageBatchSource() {
+  return sourceBetween('function safeSetStorageBatch(entries)', 'function showActionMessage(');
+}
+
+function mockStorageForBatch(store) {
+  return {
+    getItem: key => Object.prototype.hasOwnProperty.call(store, key) ? JSON.stringify(store[key]) : null,
+    setItem: (key, value) => { store[key] = JSON.parse(value); },
+    removeItem: key => { delete store[key]; }
+  };
+}
+
 function runRentFunction(functionName, booking) {
   const start = html.indexOf(`function ${functionName}(`);
   const next = functionName === 'calculateBookingTotalRent'
@@ -87,10 +99,11 @@ function runReturn(mode) {
     document,
     safeGetStorage: key => store[key],
     safeSetStorage: (key, value) => { store[key] = value; return true; },
+    localStorage: mockStorageForBatch(store), syncToCloud: () => {}, console,
     showActionMessage: () => {}, loadAllFirebaseData: () => {}, renderMissingItems: () => {}
   };
   const code = sourceBetween('function completeManualReturnProcess()', '        window.onload = function()');
-  vm.runInNewContext(`${code}\ncompleteManualReturnProcess();`, context);
+  vm.runInNewContext(`${storageBatchSource()}\n${code}\ncompleteManualReturnProcess();`, context);
   return { booking: store.softwareBookings[0], missing: store.missingItemsDatabase, stock: store.realStockDatabase[0] };
 }
 
@@ -117,7 +130,7 @@ test('return and missing recovery fail when the source stock row is absent', () 
   const code = sourceBetween('function completeManualReturnProcess()', 'window.onload = function()');
   assert.ok(code.includes('if(!row){showActionMessage(\'Return stock record नहीं मिला: \'+item.name'));
   assert.ok(html.includes("if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला"));
-  assert.ok(code.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('realStockDatabase',stock)"));
+  assert.ok(code.includes("safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])"));
   assert.ok(html.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('missingItemsDatabase',missing)"));
   assert.ok(html.includes('m.penalty=0;'));
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
@@ -139,13 +152,14 @@ test('dispatch decrements admin stock by the actual dispatched quantity', () => 
     prompt: () => answers.shift(),
     safeGetStorage: key => store[key],
     safeSetStorage: (key, value) => { store[key] = value; return true; },
+    localStorage: mockStorageForBatch(store), syncToCloud: () => {}, console,
     showActionMessage: () => {},
     loadAllFirebaseData: () => {},
     sendWhatsAppMessage: () => {},
     syncCustomerBookingWorkflow: () => {}
   };
   const code = sourceBetween('function completeDispatch(id)', 'function printDispatchSlip');
-  vm.runInNewContext(code + '\ncompleteDispatch(42);', context);
+  vm.runInNewContext(storageBatchSource() + '\n' + code + '\ncompleteDispatch(42);', context);
   assert.equal(store.realStockDatabase[0].qty, 2);
   assert.equal(store.softwareBookings[0].dispatchEntries[0].qty, 3);
   assert.equal(store.softwareBookings[0].status, 'Dispatched');
