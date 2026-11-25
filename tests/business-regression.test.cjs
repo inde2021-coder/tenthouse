@@ -125,7 +125,7 @@ test('WhatsApp send calls backend endpoint and does not claim success before res
 test('customer can submit a booking with no selected items', () => {
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   assert.ok(backend.includes("items: z.array("));
-  assert.ok(backend.includes("}).max(100).default([])"));
+  assert.ok(backend.includes(")).max(100).default([])"));
   const code = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
   assert.ok(!code.includes('कम-से-कम एक सामान चुनें'));
   assert.ok(code.includes('items:customerCart.map'));
