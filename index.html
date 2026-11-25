@@ -1894,7 +1894,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         function renderCustomerCart() {
             let tbody = document.getElementById('portalCartTableBody');
             if(!tbody) return;
-            tbody.innerHTML = customerCart.length === 0 ? `<tr><td colspan="3" style="text-align: center;">कोई सामान नहीं</td></tr>` : customerCart.map((i, idx) => `<tr><td>${i.name}</td><td>${i.qty}</td><td style="text-align: right;"><button type="button" onclick="customerCart.splice(${idx},1);renderCustomerCart();" class="action-btn" style="color:#e53e3e;"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+            tbody.innerHTML = customerCart.length === 0 ? `<tr><td colspan="3" style="text-align: center;">कोई सामान नहीं</td></tr>` : customerCart.map((i, idx) => `<tr><td>${escapeHtml(i.name)}</td><td>${Number(i.qty)||0}</td><td style="text-align: right;"><button type="button" onclick="customerCart.splice(${idx},1);renderCustomerCart();" class="action-btn" style="color:#e53e3e;"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
         }
 
         // Dynamic QR code generation based on configured UPI ID
