@@ -703,7 +703,7 @@ test('premium customer booking page uses a responsive two-column desktop layout 
 
 test('dispatch, return and missing recovery await customer backend workflow sync and roll back local changes on failure', () => {
   assert.match(html, /async function completeDispatch\(id\)/);
-  assert.match(html, /const remoteSaved=await syncCustomerBookingWorkflow\(b\)/);
+  assert.match(html, /const remoteSaved=await syncCustomerBookingWorkflow\(b,false\)/);
   assert.match(html, /async function completeManualReturnProcess\(\)/);
   assert.match(html, /async function recoverMissingItem\(recordId,rowIndex\)/);
   assert.match(html, /previousState\.bookings/);
@@ -772,4 +772,25 @@ test('backend rejects dispatch and return workflow quantities that cannot reconc
   assert.match(context.result.incompleteFinal,/Final Return/);
   assert.equal(context.result.recoveredMissing,null);
   assert.equal(context.result.historicalReturnThenNewDispatch,null);
+});
+
+test('customer workflow failures are queued and retried after reconnect or admin login', () => {
+  assert.ok(html.includes('function savePendingCustomerWorkflow(booking,remove=false)'));
+  assert.ok(html.includes("localStorage.setItem('rkPendingCustomerWorkflowSync',JSON.stringify(queue))"));
+  assert.ok(html.includes('async function flushPendingCustomerWorkflowSync()'));
+  assert.ok(html.includes("window.addEventListener('online', () => { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); })"));
+  assert.ok(html.includes('await syncCustomerBookingsFromBackend();await flushPendingCustomerWorkflowSync();'));
+  const dispatch=sourceBetween('async function completeDispatch(id)','function printDispatchSlip(id)');
+  const ret=sourceBetween('async function completeManualReturnProcess()','let currentDocumentItems');
+  const recover=sourceBetween('async function recoverMissingItem(recordId,rowIndex)','let currentDocumentItems');
+  assert.ok(dispatch.includes('syncCustomerBookingWorkflow(b,false)'));
+  assert.ok(ret.includes('syncCustomerBookingWorkflow(b,false)'));
+  assert.ok(recover.includes('syncCustomerBookingWorkflow(b,false)'));
+});
+test('customer payment and installment changes await backend sync and retain retry state', () => {
+  assert.ok(html.includes("if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true)"));
+  assert.ok(html.includes('async function savePaymentEntry()'));
+  assert.ok(html.includes('async function verifyLedgerPayment(recordId,verified)'));
+  assert.ok(html.includes('async function saveInstallment(id)'));
+  assert.ok(html.includes('async function applyInvoiceAdjustments(quiet=false)'));
 });
