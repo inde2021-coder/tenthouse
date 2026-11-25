@@ -47,7 +47,7 @@ Admin token को वेबसाइट में Settings → Backend / AI / O
 - `WHATSAPP_APP_SECRET` — Meta App Dashboard → App settings → Basic में App Secret
 
 पहले से मौजूद variables:
-- `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — इसका मान `8120727987` है; इसे न बदलें।
+- `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — Vercel/Render Environment Variables में नया random secret रखें; यही मान Meta Webhook configuration में डालें। इसे GitHub, README या frontend में कभी न लिखें।
 - `WHATSAPP_PHONE_NUMBER_ID` — पहले से Preview में मौजूद है।
 
 Meta App ID और WhatsApp Business Account ID जानकारी के लिए उपयोगी हैं, लेकिन वर्तमान webhook signature check और message-send code में इन दो secrets की जगह नहीं लेते।
@@ -69,7 +69,7 @@ Environment Variables बदलने के बाद उसी Preview branch 
 
 - `/api/health` — API चल रही हो तो HTTP 200
 - `/api/ready` — Firebase Admin जुड़ने पर HTTP 200 और `persistentDatabaseReady: true`
-- `/api/webhook?hub.mode=subscribe&hub.verify_token=8120727987&hub.challenge=TEST123` — response body `TEST123`
+- `/api/webhook?hub.mode=subscribe&hub.verify_token=<configured-secret>&hub.challenge=TEST123` — response body `TEST123` (URL में वास्तविक secret कभी commit न करें)
 - `/webhooks/whatsapp` — यही legacy route भी उपलब्ध है
 
 Firebase credentials के बिना `/api/ready` का HTTP 503 देना जानबूझकर fail-safe व्यवहार है। इससे production-जैसे वातावरण में booking, OTP और payment data अस्थायी memory में save होने का जोखिम नहीं रहता।
@@ -79,3 +79,8 @@ Firebase credentials के बिना `/api/ready` का HTTP 503 देन�
 - Service Account JSON, private key, Meta App Secret और Access Token किसी को चैट में न भेजें।
 - Secrets केवल Vercel Environment Variables में रखें।
 - Preview ठीक होने और पूरे परीक्षण पास होने से पहले Production में secrets copy न करें और Meta Callback URL न बदलें।
+
+
+## Webhook secret rotation — आवश्यक सुरक्षा कदम
+
+इस repository की पुरानी Git history में पहले इस्तेमाल किया गया webhook verification token मौजूद हो सकता है। केवल इस documentation को बदलने से Git history साफ नहीं होती। Production में नया random `WHATSAPP_WEBHOOK_VERIFY_TOKEN` Hosting Environment Variables में सेट करें, Meta App Dashboard के Webhooks configuration में वही नया मान डालें, फिर backend redeploy करके webhook verify करें। पुराने मान को दोबारा उपयोग न करें।
