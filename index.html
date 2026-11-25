@@ -1296,10 +1296,22 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 return true;
             }catch(error){showActionMessage('लोकल स्थिति सेव हुई, Backend अपडेट विफल: '+error.message,'error');return false;}
         }
-        async function syncCustomerBookingWorkflow(booking){
+        function savePendingCustomerWorkflow(booking,remove=false){
+            if(!booking||booking.id==null)return;
+            try{
+                const queue=safeGetStorage('rkPendingCustomerWorkflowSync',{});
+                const id=String(booking.id);
+                if(remove)delete queue[id];else queue[id]=booking;
+                localStorage.setItem('rkPendingCustomerWorkflowSync',JSON.stringify(queue));
+            }catch(error){console.error('Pending customer workflow queue failed:',error);}
+        }
+        async function syncCustomerBookingWorkflow(booking,queueOnFailure=true){
             if(!booking||booking.source!=='customer-portal')return true;
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-            if(!api||!token){showActionMessage('ग्राहक को Dispatch/Return अपडेट दिखाने के लिए Backend URL और Admin API Token सेट करें','error');return false;}
+            if(!api||!token){
+                if(queueOnFailure)savePendingCustomerWorkflow(booking);
+                showActionMessage('Customer Portal अपडेट के लिए Backend URL और Admin API Token आवश्यक हैं।','error');return false;
+            }
             const payload={
                 status:booking.status,
                 items:(booking.items||[]).map(i=>({name:String(i.name||''),qty:Number(i.qty)||0,rentPrice:Math.max(0,Number(i.rentPrice)||0),missingCharge:Math.max(0,Number(i.missingCharge)||0),vendorRentRate:Math.max(0,Number(i.vendorRentRate)||0),source:i.source==='third-party'?'third-party':'admin',partyName:String(i.partyName||''),returnedQty:Math.max(0,Number(i.returnedQty)||0),missingQty:Math.max(0,Number(i.missingQty)||0),lastReturnDate:i.lastReturnDate||undefined})),
@@ -1314,11 +1326,24 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             try{
                 const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(booking.id))+'/workflow',{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify(payload)});
                 const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Booking workflow sync failed');
+                savePendingCustomerWorkflow(booking,true);
                 return true;
-            }catch(error){showActionMessage('बुकिंग अपडेट लोकल सेव हुआ, लेकिन Customer Portal Backend sync विफल: '+error.message,'error');return false;}
+            }catch(error){
+                if(queueOnFailure)savePendingCustomerWorkflow(booking);
+                showActionMessage('बुकिंग अपडेट लोकल सेव हुआ, लेकिन Customer Portal Backend sync विफल: '+error.message,'error');return false;
+            }
+        }
+        async function flushPendingCustomerWorkflowSync(){
+            if(!navigator.onLine)return;
+            const queue=safeGetStorage('rkPendingCustomerWorkflowSync',{});
+            for(const booking of Object.values(queue||{})){
+                if(!booking)continue;
+                const synced=await syncCustomerBookingWorkflow(booking,true);
+                if(!synced)break;
+            }
         }
 
-        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});const result=await firebase.auth().signInWithPopup(provider);document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');}}
+        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});const result=await firebase.auth().signInWithPopup(provider);document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await syncCustomerBookingsFromBackend();await flushPendingCustomerWorkflowSync();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');}}
         // Keep local writes immediate, then mirror each dataset to Firebase for other devices.
         function syncToCloud(key, value) {
             if (applyingCloudSnapshot) return Promise.resolve(false);
@@ -1341,8 +1366,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 catch (e) { console.warn('Pending sync remains queued', cloudKey, e); break; }
             }
         }
-        window.addEventListener('online', flushPendingCloudSync);
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) flushPendingCloudSync(); });
+        window.addEventListener('online', () => { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); } });
 
         function safeGetStorage(key, defaultValue) {
             try {
@@ -1932,7 +1957,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
             if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty]])){showActionMessage('Dispatch सेव नहीं हुआ; कोई आंशिक अपडेट लागू नहीं रखा गया।','error');return;}
             if(b.source==='customer-portal'){
-                const remoteSaved=await syncCustomerBookingWorkflow(b);
+                const remoteSaved=await syncCustomerBookingWorkflow(b,false);
                 if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock]]);loadAllFirebaseData();return;}
             }
             loadAllFirebaseData();showActionMessage('Dispatch सेव हुआ; बुकिंग Return पूरा होने तक सूची में रहेगी','success');
@@ -2494,7 +2519,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 b.lastInstallmentPayment = { amount: amt, date: new Date().toISOString(), source: 'installments-page' };
                 b.dueAmount = Math.max(0, Math.round((total - b.totalPaid) * 100) / 100);
                 safeSetStorage('softwareBookings', bookings);
-                if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+                if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
                 amountInput.value = '';
                 loadCustomerList(); loadInstallmentsTable(); loadPaymentLedgerTable(); loadMasterLedgerData();
                 if (typeof loadAllFirebaseData === 'function') loadAllFirebaseData();
@@ -2544,7 +2569,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const base=calculateBookingBaseRent(b);if(discount>base+other){showActionMessage('डिस्काउंट मूल किराये से अधिक नहीं हो सकता','error');return}
             b.discountAmount=discount;b.otherCharges=other;
             safeSetStorage('softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x));
-            if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+            if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             searchBillingCustomer();if(!quiet)showActionMessage('डिस्काउंट/अन्य चार्ज बिल में लागू हुए','success');
         }
         // Bill adjustment fields recalculate and refresh the invoice automatically on change/blur.
@@ -2625,7 +2650,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             ledger.push(rec);if(!safeSetStorage(key,ledger))return;
             b.totalPaid=verifiedPaid;b.dueAmount=rec.due;
             const rows=safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x);if(!safeSetStorage('softwareBookings',rows))return;
-            if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+            if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             if(typeof searchBillingCustomer==='function'){const q=document.getElementById('billSearchInput');if(q)q.value=String(b.id);searchBillingCustomer();}
             const ca=document.getElementById('paymentCashAmount');if(ca)ca.value='';
             const on=document.getElementById('paymentOnlineAmount');if(on)on.value='';
@@ -2648,9 +2673,13 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                     if(verified)b.totalPaid=Math.max(getBookingPaidAmount(b),Math.round(((Number(p.previousPaid)||0)+(Number(p.cash)||0)+(Number(p.online)||0))*100)/100);
                     b.dueAmount=Math.max(0,Number(p.total||0)-getBookingPaidAmount(b));
                     if(!safeSetStorage('softwareBookings',rows))return;
-                    if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
                 }
-                if(!safeSetStorage('rkPaymentLedger',ledger))return;loadPaymentLedgerTable();loadMasterLedgerData();
+                if(!safeSetStorage('rkPaymentLedger',ledger))return;
+                if(b&&b.source==='customer-portal'){
+                    const remoteSaved=await syncCustomerBookingWorkflow(b,true);
+                    if(!remoteSaved){showActionMessage('पेमेंट सत्यापन दर्ज है; Customer Portal बकाया अपडेट सिंक कतार में रखा गया है।','error');return;}
+                }
+                loadPaymentLedgerTable();loadMasterLedgerData();
                 showActionMessage(verified?'Online भुगतान सत्यापित और जमा राशि में शामिल हुआ':'Online भुगतान अस्वीकार हुआ; जमा राशि में शामिल नहीं है','success');
                 const alertBooking=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(p.bookingId));if(alertBooking?.mob)sendWhatsAppMessage(alertBooking.id,verified?'payment-verified':'payment-rejected');
             }catch(error){showActionMessage('Online भुगतान सत्यापन विफल: '+error.message,'error');}
