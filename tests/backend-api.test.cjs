@@ -80,7 +80,7 @@ after(async () => {
 test('public customer booking persists and status lookup requires the matching mobile', async () => {
   const payload = {
     name: 'Test Customer',
-    mob: '9876543210',
+    mob: '+919876543210',
     address: 'Test Address',
     eventType: 'Wedding',
     guestCount: 100,
