@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 
@@ -17,6 +19,9 @@ const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.t
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(new Error('Origin not allowed')); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization','X-Admin-Token'] }));
 app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { req.rawBody = Buffer.from(buf); } }));
 app.use('/api/', rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false }));
+// Vercel project root is /backend, so serve the committed frontend from backend/public.
+const backendDir = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.resolve(backendDir, '../public'), { index: 'index.html', maxAge: 0 }));
 const memoryStore = new Map();
 let adminDb = null;
 try {
