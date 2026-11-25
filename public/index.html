@@ -3047,7 +3047,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
   function money(v){return '₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
   window.checkCustomerBookingStatus=async function(){
     const id=(document.getElementById('customerStatusQuery')?.value||'').trim();
-    const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\D/g,'');
+    const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\D/g,'').slice(-10);
     const box=document.getElementById('customerStatusResultBox');if(!box)return;
     box.style.display='block';
     if(!/^\d{10,16}$/.test(id)||!/^\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
