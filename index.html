@@ -1078,7 +1078,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             purchaseDatabase: 'purchase',
             incomeExpenseDatabase: 'income',
             softwareSettings: 'settings',
-            missingItemsDatabase: 'missingItems'
+            missingItemsDatabase: 'missingItems',
+            quotationDatabase: 'quotations',
+            taxInvoiceDatabase: 'taxInvoices'
         };
         const CLOUD_TO_LOCAL_KEY = Object.fromEntries(Object.entries(CLOUD_KEY_MAP).map(([local, cloud]) => [cloud, local]));
 
@@ -1086,9 +1088,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
         function phoneCallLink(value){const raw=String(value??'').trim();const digits=raw.replace(/[^0-9+]/g,'');if(!digits||digits.replace(/\D/g,'').length<7)return escapeHtml(raw||'-');return `<a class="phone-call-link" href="tel:${escapeHtml(digits)}" aria-label="${escapeHtml(raw)} पर कॉल करें"><i class="fa-solid fa-phone"></i> ${escapeHtml(raw)}</a>`;}
         function renderMissingItems(){const rows=safeGetStorage('missingItemsDatabase',[]),a=document.getElementById('showAdminMissing'),t=document.getElementById('showThirdPartyMissing'),body=document.getElementById('missingTableBody');if(!body)return;const list=rows.filter(x=>x.source==='third-party'?!t||t.checked:!a||a.checked);body.innerHTML=list.length?list.map(x=>`<tr><td>#${escapeHtml(x.bookingId)}</td><td>${escapeHtml(x.source==='third-party'?x.partyName:x.customer)}</td><td>${escapeHtml(x.item)}</td><td>${x.source==='third-party'?'थर्ड-पार्टी':'एडमिन'}</td><td>${Number(x.qty)||0}</td><td>${x.resolved?'वापस मिल गया':'बाकी'}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center">कोई मिसिंग आइटम नहीं</td></tr>';}
-        function exportFullBackup(){const keys=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger'],data={app:'Radha Krishna Tent House ERP',version:2,exportedAt:new Date().toISOString(),data:{}};keys.forEach(k=>data.data[k]=safeGetStorage(k,[]));const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='tent-house-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);showActionMessage('बैकअप डाउनलोड शुरू हुआ','success');}
-        function restoreFullBackup(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(file.size>25*1024*1024){showActionMessage('बैकअप फ़ाइल 25 MB से बड़ी है','error');event.target.value='';return}const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result),allowed=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger'];if(!p||!p.data||typeof p.data!=='object'||Array.isArray(p.data))throw Error('अमान्य बैकअप फ़ाइल');if(p.app&& !String(p.app).toLowerCase().includes('tent house'))throw Error('यह किसी दूसरे ऐप का बैकअप लगता है');const entries=Object.entries(p.data).filter(([k])=>allowed.includes(k));if(!entries.length)throw Error('इस बैकअप में पहचानने योग्य डेटा नहीं है');for(const [k,v] of entries){if(k==='softwareSettings'){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Settings डेटा गलत है')}else if(!Array.isArray(v))throw Error(k+' डेटा सूची के रूप में नहीं है')}if(!confirm('मौजूदा डेटा बैकअप से बदलेगा। Master Ledger को नहीं बदला जाएगा। पहले अलग बैकअप रखना उचित है। जारी रखें?'))return;entries.forEach(([k,v])=>safeSetStorage(k,v));loadAllFirebaseData();renderMissingItems();showActionMessage('बैकअप रिस्टोर हुआ; Master Ledger अलग सुरक्षित रखा गया','success');}catch(e){showActionMessage('रिस्टोर विफल: '+e.message,'error')}finally{event.target.value=''}};reader.readAsText(file);}
-        function resetAllSoftwareData(){if(!confirm('सभी लोकल सॉफ्टवेयर डेटा मिट जाएगा। पहले बैकअप लें। जारी रखें?'))return;['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger'].forEach(k=>localStorage.removeItem(k));loadAllFirebaseData();showActionMessage('लोकल डेटा रीसेट हुआ','success');}
+        function exportFullBackup(){const keys=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'],data={app:'Radha Krishna Tent House ERP',version:2,exportedAt:new Date().toISOString(),data:{}};keys.forEach(k=>data.data[k]=safeGetStorage(k,[]));const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='tent-house-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(url);showActionMessage('बैकअप डाउनलोड शुरू हुआ','success');}
+        function restoreFullBackup(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(file.size>25*1024*1024){showActionMessage('बैकअप फ़ाइल 25 MB से बड़ी है','error');event.target.value='';return}const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result),allowed=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'];if(!p||!p.data||typeof p.data!=='object'||Array.isArray(p.data))throw Error('अमान्य बैकअप फ़ाइल');if(p.app&& !String(p.app).toLowerCase().includes('tent house'))throw Error('यह किसी दूसरे ऐप का बैकअप लगता है');const entries=Object.entries(p.data).filter(([k])=>allowed.includes(k));if(!entries.length)throw Error('इस बैकअप में पहचानने योग्य डेटा नहीं है');for(const [k,v] of entries){if(k==='softwareSettings'){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Settings डेटा गलत है')}else if(!Array.isArray(v))throw Error(k+' डेटा सूची के रूप में नहीं है')}if(!confirm('मौजूदा डेटा बैकअप से बदलेगा। Master Ledger को नहीं बदला जाएगा। पहले अलग बैकअप रखना उचित है। जारी रखें?'))return;entries.forEach(([k,v])=>safeSetStorage(k,v));loadAllFirebaseData();renderMissingItems();showActionMessage('बैकअप रिस्टोर हुआ; Master Ledger अलग सुरक्षित रखा गया','success');}catch(e){showActionMessage('रिस्टोर विफल: '+e.message,'error')}finally{event.target.value=''}};reader.readAsText(file);}
+        function resetAllSoftwareData(){if(!confirm('सभी लोकल सॉफ्टवेयर डेटा मिट जाएगा। पहले बैकअप लें। जारी रखें?'))return;['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'].forEach(k=>localStorage.removeItem(k));loadAllFirebaseData();showActionMessage('लोकल डेटा रीसेट हुआ','success');}
         function toggleAppMenu(forceOpen){
             const shell=document.querySelector('.admin-container'); if(!shell)return;
             const isOpen=!shell.classList.contains('sidebar-collapsed');
@@ -1595,6 +1597,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             loadSettingsToUI();
             renderMissingItems();
             renderStockShortages();
+            renderBusinessCard();
+            renderDocumentRecentList();
             // Table search is initialized by the later addTableSearch() script.
             // Do not call the removed installStickyTableSearch() function here; it aborts page initialization.
             
@@ -2772,6 +2776,84 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();
             showActionMessage(fullyReturned?'Return पूरा हुआ; Missing सामान अलग सूची में दर्ज है, कोई Missing चार्ज बिल में नहीं जुड़ेगा':'Partial Return सेव हुआ; बाकी सामान अभी Missing नहीं माना गया, बाद में Return करें','success');
         }
+
+        let currentDocumentItems = [];
+        let editingBusinessDocumentId = null;
+        function renderBusinessCard(){
+            const s=safeGetStorage('softwareSettings',{});
+            const fields={cardBusinessName:s.businessName||'राधा कृष्णा टेंट हाउस',cardOwnerName:s.businessCardOwner||'',cardPhone:s.contactNo||'',cardEmail:s.businessCardEmail||'',cardAddress:s.businessCardAddress||'',cardGstin:s.businessGstin||'',cardUpi:s.upiId||'',cardTagline:s.businessCardTagline||'आपके हर आयोजन का भरोसेमंद साथी'};
+            Object.entries(fields).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&document.activeElement!==el)el.value=value;});
+            const preview=document.getElementById('businessCardPreview');if(!preview)return;
+            preview.innerHTML=`<div style="max-width:560px;aspect-ratio:1.75;margin:auto;padding:24px;border-radius:20px;background:linear-gradient(135deg,#0b1730,#173d67 58%,#0e7490);color:#fff;box-shadow:0 16px 38px #0f172a44;display:flex;flex-direction:column;justify-content:space-between"><div style="display:flex;justify-content:space-between;gap:14px"><div><div style="font-size:12px;letter-spacing:2px;color:#a5f3fc">RADHE KRISHN</div><h2 style="margin:8px 0;color:#fff">${escapeHtml(fields.cardBusinessName)}</h2><div style="color:#dbeafe">${escapeHtml(fields.cardTagline)}</div></div><div style="font-size:34px">♛</div></div><div><b>${escapeHtml(fields.cardOwnerName||'Owner')}</b><div>${escapeHtml(fields.cardPhone)}</div><div>${escapeHtml(fields.cardEmail)}</div><div>${escapeHtml(fields.cardAddress)}</div><div style="margin-top:8px;font-size:12px;color:#a5f3fc">UPI: ${escapeHtml(fields.cardUpi)} ${fields.cardGstin?' · GSTIN: '+escapeHtml(fields.cardGstin):''}</div></div></div>`;
+        }
+        function saveBusinessCard(){
+            const s=safeGetStorage('softwareSettings',{});
+            s.businessName=(document.getElementById('cardBusinessName')?.value||'').trim();
+            s.businessCardOwner=(document.getElementById('cardOwnerName')?.value||'').trim();
+            s.contactNo=(document.getElementById('cardPhone')?.value||'').trim();
+            s.businessCardEmail=(document.getElementById('cardEmail')?.value||'').trim();
+            s.businessCardAddress=(document.getElementById('cardAddress')?.value||'').trim();
+            s.businessGstin=(document.getElementById('cardGstin')?.value||'').trim().toUpperCase();
+            s.upiId=(document.getElementById('cardUpi')?.value||'').trim();
+            s.businessCardTagline=(document.getElementById('cardTagline')?.value||'').trim();
+            if(!s.businessName||!s.contactNo){showActionMessage('दुकान का नाम और संपर्क नंबर आवश्यक है','error');return;}
+            if(!safeSetStorage('softwareSettings',s))return;
+            loadSettingsToUI();renderBusinessCard();showActionMessage('Business Card सेव हो गया','success');
+        }
+        function printBusinessCard(){const preview=document.getElementById('businessCardPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले Business Card तैयार करें','error');return;}area.innerHTML=preview.innerHTML;area.style.display='block';window.print();area.style.display='none';}
+        function businessDocumentTotals(){
+            const subtotal=currentDocumentItems.reduce((sum,item)=>sum+(Number(item.qty)||0)*(Number(item.rate)||0),0);
+            const discount=Math.max(0,Number(document.getElementById('docDiscount')?.value)||0);
+            const other=Math.max(0,Number(document.getElementById('docOtherCharges')?.value)||0);
+            const taxable=Math.max(0,subtotal-discount+other);
+            const type=document.getElementById('docType')?.value||'quotation';
+            const rate=type==='tax-invoice'?Math.min(28,Math.max(0,Number(document.getElementById('docGstRate')?.value)||0)):0;
+            const gst=Math.round(taxable*rate)/100;
+            const taxType=document.getElementById('docTaxType')?.value||'intra';
+            return {subtotal,discount,other,taxable,rate,gst:Math.round(gst*100)/100,cgst:taxType==='intra'?Math.round(gst*50)/100:0,sgst:taxType==='intra'?Math.round(gst*50)/100:0,igst:taxType==='inter'?Math.round(gst*100)/100:0,total:Math.round((taxable+gst)*100)/100,taxType};
+        }
+        function renderBusinessDocumentItems(){
+            const body=document.getElementById('docItemsBody');if(!body)return;
+            body.innerHTML=currentDocumentItems.length?currentDocumentItems.map((item,index)=>`<tr><td>${escapeHtml(item.name)}</td><td>${Number(item.qty)||0}</td><td>₹${(Number(item.rate)||0).toFixed(2)}</td><td>₹${((Number(item.qty)||0)*(Number(item.rate)||0)).toFixed(2)}</td><td><button type="button" class="action-btn danger-action" onclick="removeBusinessDocumentItem(${index})">हटाएँ</button></td></tr>`).join(''):'<tr><td colspan="5">अभी कोई सामान नहीं</td></tr>';
+        }
+        function addBusinessDocumentItem(){
+            const name=(document.getElementById('docItemName')?.value||'').trim(),qty=Number(document.getElementById('docItemQty')?.value),rate=Number(document.getElementById('docItemRate')?.value);
+            if(!name||!Number.isInteger(qty)||qty<1||!Number.isFinite(rate)||rate<0){showActionMessage('सामान, सही मात्रा और दर भरें','error');return;}
+            currentDocumentItems.push({name,qty,rate:Math.round(rate*100)/100});
+            document.getElementById('docItemName').value='';document.getElementById('docItemQty').value='1';document.getElementById('docItemRate').value='0';
+            renderBusinessDocumentItems();renderBusinessDocumentPreview();
+        }
+        function removeBusinessDocumentItem(index){currentDocumentItems.splice(index,1);renderBusinessDocumentItems();renderBusinessDocumentPreview();}
+        function renderBusinessDocumentPreview(){
+            const preview=document.getElementById('businessDocumentPreview');if(!preview)return;
+            renderBusinessDocumentItems();
+            const s=safeGetStorage('softwareSettings',{}),type=document.getElementById('docType')?.value||'quotation',tax=businessDocumentTotals();
+            const number=(document.getElementById('docNumber')?.value||'').trim()||(type==='quotation'?'QTN-':'INV-')+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(Date.now()).slice(-5);
+            const title=type==='quotation'?'QUOTATION / कोटेशन':'TAX INVOICE / टैक्स इनवॉइस';
+            const rows=currentDocumentItems.map(item=>`<tr><td>${escapeHtml(item.name)}</td><td>${Number(item.qty)||0}</td><td>₹${(Number(item.rate)||0).toFixed(2)}</td><td>₹${((Number(item.qty)||0)*(Number(item.rate)||0)).toFixed(2)}</td></tr>`).join('');
+            const taxRows=type==='tax-invoice'?(tax.taxType==='intra'?`<tr><td colspan="3">CGST (${(tax.rate/2).toFixed(2)}%)</td><td>₹${tax.cgst.toFixed(2)}</td></tr><tr><td colspan="3">SGST (${(tax.rate/2).toFixed(2)}%)</td><td>₹${tax.sgst.toFixed(2)}</td></tr>`:`<tr><td colspan="3">IGST (${tax.rate.toFixed(2)}%)</td><td>₹${tax.igst.toFixed(2)}</td></tr>`):'';
+            preview.innerHTML=`<article class="rk-slip" style="background:#fff;color:#111;padding:20px;border-radius:12px"><header style="text-align:center;border-bottom:2px solid #1e3a8a;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>${escapeHtml(s.businessCardAddress||'')} · ${escapeHtml(s.contactNo||'')}</p><h3>${title}</h3></header><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><p><b>Document:</b> ${escapeHtml(number)}<br><b>Date:</b> ${escapeHtml(document.getElementById('docDate')?.value||'-')}</p><p><b>Customer:</b> ${escapeHtml(document.getElementById('docCustomerName')?.value||'-')}<br><b>Mobile:</b> ${escapeHtml(document.getElementById('docCustomerPhone')?.value||'-')}<br><b>Address:</b> ${escapeHtml(document.getElementById('docCustomerAddress')?.value||'-')}</p></div>${type==='tax-invoice'?`<p><b>Seller GSTIN:</b> ${escapeHtml(s.businessGstin||'Not provided')} · <b>Customer GSTIN:</b> ${escapeHtml(document.getElementById('docCustomerGstin')?.value||'Not provided')}</p>`:''}<table style="width:100%;border-collapse:collapse" border="1"><thead><tr><th>Item / सामान</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>${rows||'<tr><td colspan="4">कोई सामान नहीं</td></tr>'}</tbody><tfoot><tr><td colspan="3">Subtotal / उप-योग</td><td>₹${tax.subtotal.toFixed(2)}</td></tr><tr><td colspan="3">Discount / छूट</td><td>₹${tax.discount.toFixed(2)}</td></tr><tr><td colspan="3">Other Charges / अन्य</td><td>₹${tax.other.toFixed(2)}</td></tr>${taxRows}<tr><th colspan="3">Grand Total / कुल राशि</th><th>₹${tax.total.toFixed(2)}</th></tr></tfoot></table>${type==='quotation'?`<p>Valid Until / मान्य तिथि: ${escapeHtml(document.getElementById('docValidUntil')?.value||'-')}</p>`:''}<p style="white-space:pre-wrap">${escapeHtml(s.termsConditions||'धन्यवाद! Thank you for your business.')}</p></article>`;
+        }
+        function saveBusinessDocument(){
+            const type=document.getElementById('docType')?.value||'quotation',name=(document.getElementById('docCustomerName')?.value||'').trim(),date=document.getElementById('docDate')?.value||'';
+            if(!name||!date||!currentDocumentItems.length){showActionMessage('ग्राहक का नाम, तारीख और कम-से-कम एक सामान आवश्यक है','error');return;}
+            const totals=businessDocumentTotals(),key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',rows=safeGetStorage(key,[]),settings=safeGetStorage('softwareSettings',{});
+            const number=(document.getElementById('docNumber')?.value||'').trim()||(type==='quotation'?'QTN-':'INV-')+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+String(Date.now()).slice(-5);
+            const record={id:editingBusinessDocumentId||'DOC-'+Date.now(),documentNumber:number,type,date,validUntil:document.getElementById('docValidUntil')?.value||'',customerName:name,customerPhone:(document.getElementById('docCustomerPhone')?.value||'').trim(),customerAddress:(document.getElementById('docCustomerAddress')?.value||'').trim(),customerGstin:(document.getElementById('docCustomerGstin')?.value||'').trim().toUpperCase(),items:currentDocumentItems.map(item=>({...item})),discount:totals.discount,otherCharges:totals.other,gstRate:totals.rate,taxType:totals.taxType,subtotal:totals.subtotal,total:totals.total,createdAt:new Date().toISOString(),businessName:settings.businessName||''};
+            const index=rows.findIndex(item=>String(item.id)===String(record.id));if(index>=0)rows[index]=record;else rows.push(record);
+            if(!safeSetStorage(key,rows))return;editingBusinessDocumentId=record.id;document.getElementById('docNumber').value=number;renderDocumentRecentList();renderBusinessDocumentPreview();showActionMessage(type==='quotation'?'Quotation सेव हो गया':'Tax Invoice सेव हो गया','success');
+        }
+        function loadBusinessDocument(type,id){
+            const key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',record=safeGetStorage(key,[]).find(item=>String(item.id)===String(id));if(!record)return;
+            editingBusinessDocumentId=record.id;document.getElementById('docType').value=type;document.getElementById('docNumber').value=record.documentNumber||'';document.getElementById('docDate').value=record.date||'';document.getElementById('docValidUntil').value=record.validUntil||'';document.getElementById('docCustomerName').value=record.customerName||'';document.getElementById('docCustomerPhone').value=record.customerPhone||'';document.getElementById('docCustomerAddress').value=record.customerAddress||'';document.getElementById('docCustomerGstin').value=record.customerGstin||'';document.getElementById('docGstRate').value=record.gstRate||0;document.getElementById('docTaxType').value=record.taxType||'intra';document.getElementById('docDiscount').value=record.discount||0;document.getElementById('docOtherCharges').value=record.otherCharges||0;currentDocumentItems=Array.isArray(record.items)?record.items.map(item=>({...item})):[];renderBusinessDocumentPreview();showActionMessage('दस्तावेज़ लोड हुआ','success');
+        }
+        function renderDocumentRecentList(){
+            const el=document.getElementById('businessDocumentRecentList');if(!el)return;
+            const rows=[...safeGetStorage('quotationDatabase',[]).map(item=>({...item,_type:'quotation'})),...safeGetStorage('taxInvoiceDatabase',[]).map(item=>({...item,_type:'tax-invoice'}))].sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+            el.innerHTML=rows.length?rows.slice(0,20).map(item=>`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #cbd5e1"><span><b>${escapeHtml(item.documentNumber||item.id)}</b> · ${escapeHtml(item.customerName||'')} · ₹${(Number(item.total)||0).toFixed(2)} · ${item._type==='quotation'?'Quotation':'Tax Invoice'}</span><button type="button" class="action-btn" onclick="loadBusinessDocument('${item._type}','${escapeJs(item.id)}')">खोलें</button></div>`).join(''):'अभी कोई दस्तावेज़ सेव नहीं है।';
+        }
+        function clearBusinessDocument(){editingBusinessDocumentId=null;currentDocumentItems=[];['docNumber','docCustomerName','docCustomerPhone','docCustomerAddress','docCustomerGstin','docValidUntil'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('docType').value='quotation';document.getElementById('docDate').value=new Date().toISOString().slice(0,10);document.getElementById('docGstRate').value='0';document.getElementById('docDiscount').value='0';document.getElementById('docOtherCharges').value='0';renderBusinessDocumentPreview();}
+        function printBusinessDocument(){const preview=document.getElementById('businessDocumentPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले दस्तावेज़ तैयार करें','error');return;}area.innerHTML=preview.innerHTML;area.style.display='block';window.print();area.style.display='none';}
 
         window.onload = function() {
             // Local-first admin data; public customers load the safe stock catalog from the backend.
