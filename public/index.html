@@ -1059,7 +1059,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
     </div>
 
     <script>
-        const DEFAULT_BACKEND_API_URL = /^https?:$/.test(window.location.protocol) ? window.location.origin : 'https://tenthouse.vercel.app';
+        const isHostedWebOrigin = /^https?:$/.test(window.location.protocol) && !['localhost','127.0.0.1'].includes(window.location.hostname) && !window.location.hostname.endsWith('appassets.androidplatform.net');
+        const DEFAULT_BACKEND_API_URL = isHostedWebOrigin ? window.location.origin : 'https://tenthouse.vercel.app';
         function getBackendApiUrl(settings = {}) {
             const configured = String(settings.backendApiUrl || '').trim().replace(/\/$/, '');
             return !configured || configured === 'https://tenthouse.vercel.app' ? DEFAULT_BACKEND_API_URL : configured;
