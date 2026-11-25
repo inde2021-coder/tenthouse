@@ -150,6 +150,13 @@ test('dispatch decrements admin stock by the actual dispatched quantity', () => 
   assert.equal(store.softwareBookings[0].status, 'Dispatched');
 });
 
+test('return slip prints missing quantities only and never a missing charge', () => {
+  const code = sourceBetween('function printReturnSlip()', 'function printInvoice');
+  assert.ok(code.includes('मिसिंग मात्रा'));
+  assert.ok(code.includes('मिसिंग सामान की अलग सूची (केवल गिनती)'));
+  assert.ok(!code.includes('मिसिंग चार्ज'));
+});
+
 test('dispatch slip uses actual dispatch entries, not full booking quantities', () => {
   const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
   assert.match(code, /b\.dispatchEntries/);
