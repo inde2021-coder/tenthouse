@@ -1241,6 +1241,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             measurementId: "G-8FC58T5YNF"
         };
 
+        // Render preview must never connect to the production Firebase project.
+        window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com'));
         let firebaseApp, dbRef = null;
         let currentCalendarDate = new Date();
         let cloudListenerAttached = false;
@@ -1306,6 +1308,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
         function initFirebaseConnection() {
+            if (window.__rkRenderPreviewMode) { dbRef = null; return false; }
             try {
                 if (!window.firebase || !firebase.database || !firebase.auth) throw new Error('Firebase SDK लोड नहीं हुआ');
                 if (!firebase.apps.length) firebaseApp = firebase.initializeApp(firebaseConfig);
@@ -1505,9 +1508,38 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
         }
 
-        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});const result=await firebase.auth().signInWithPopup(provider);document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');}}
+        async function loginWithGoogle(adminToken){
+            try {
+                if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');
+                if(window.__rkRenderPreviewMode){
+                    document.getElementById('welcomeOverlay').style.display='none';
+                    document.getElementById('customerFirstPortal').style.display='none';
+                    document.getElementById('adminPanel').style.display='block';
+                    loadAllFirebaseData();
+                    await syncCustomerBookingsFromBackend();
+                    showActionMessage('Preview Admin खुल गया। Production Firebase बंद है; यह केवल अस्थायी परीक्षण डेटा है।','success');
+                    return;
+                }
+                if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');
+                if(!firebase.apps.length)initFirebaseConnection();
+                const provider=new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({prompt:'select_account'});
+                await firebase.auth().signInWithPopup(provider);
+                document.getElementById('welcomeOverlay').style.display='none';
+                document.getElementById('customerFirstPortal').style.display='none';
+                document.getElementById('adminPanel').style.display='block';
+                loadAllFirebaseData();
+                await flushPendingCustomerWorkflowSync();
+                await syncCustomerBookingsFromBackend();
+                showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');
+            }catch(error){
+                const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};
+                showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');
+            }
+        }
         // Keep local writes immediate, then mirror each dataset to Firebase for other devices.
         function syncToCloud(key, value) {
+            if (window.__rkRenderPreviewMode) return Promise.resolve(false);
             if (applyingCloudSnapshot) return Promise.resolve(false);
             const cloudKey = CLOUD_KEY_MAP[key];
             if (!cloudKey) return Promise.resolve(false);
@@ -1520,6 +1552,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }).catch((error) => { console.error('Firebase write failed:', key, error); showActionMessage('लोकल सेव सुरक्षित है; इंटरनेट/ Firebase अनुमति मिलने पर दोबारा सिंक होगा।','error'); return false; });
         }
         async function flushPendingCloudSync() {
+            if (window.__rkRenderPreviewMode) return;
             if (!firebaseConfig.databaseURL || !navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return;
             if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
             const q = safeGetStorage('rkPendingCloudSync', {});
