@@ -645,3 +645,27 @@ test('premium design layer loads after legacy styles so the new theme wins the c
   assert.equal(end, html.lastIndexOf('</style>'), 'premium layer must be the final stylesheet in the document');
   assert.ok(start > html.lastIndexOf('</script>', start), 'premium layer must load after legacy scripts and styles');
 });
+
+test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
+  assert.ok(html.includes('Alt+Shift+K'));
+  assert.ok(html.includes('setTimeout(show,2200)'));
+  assert.ok(html.includes('/api/admin/session'));
+  assert.ok(html.includes("'x-admin-token':token"));
+  assert.ok(html.includes('window.__rkVerifiedAdminToken'));
+  assert.ok(!html.includes("pass === '8120727987'"));
+  assert.ok(!html.includes("pass === 'admin'"));
+  assert.ok(!html.includes('onclick="loginWithGoogle()"'));
+  assert.ok(html.includes('async function loginWithGoogle(adminToken)'));
+});
+test('backend admin session validation is rate-limited and never returns the configured secret', () => {
+  assert.match(backend, /const adminLoginLimiter = rateLimit\(\{ windowMs: 15 \* 60_000, limit: 5/);
+  assert.match(backend, /app\.get\('\/api\/admin\/session', adminLoginLimiter, authAdmin/);
+  assert.match(backend, /json\(\{ ok: true, scope: 'admin' \}\)/);
+});
+test('enterprise table and developer footer styling is applied in the final premium layer', () => {
+  assert.ok(html.includes('.table-responsive thead{position:sticky'));
+  assert.ok(html.includes('.table-responsive tbody tr:nth-child(even) td'));
+  assert.ok(html.includes('.table-responsive td.table-actions'));
+  assert.ok(html.includes('.rk-developer-footer{position:relative'));
+  assert.ok(html.includes('.rk-admin-gate-card'));
+});
