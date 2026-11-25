@@ -2964,6 +2964,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         // Tent House AI chat UI. Backend contract and business-data boundaries are preserved.
         let rkAiChatBusy=false;
+        let rkAiConversation=[];
         function aiStatus(message,isError=false){
             const host=document.getElementById('aiAssistantResponse');if(!host)return;
             const bubble=host.querySelector('.rk-ai-message.pending .rk-ai-bubble p');
@@ -2983,7 +2984,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         function clearAiChat(){
             if(rkAiChatBusy){showActionMessage('पहले चल रहा AI जवाब पूरा होने दें।','error');return;}
-            const host=document.getElementById('aiAssistantResponse');if(!host)return;
+            rkAiConversation=[];const host=document.getElementById('aiAssistantResponse');if(!host)return;
             host.innerHTML='';addAiChatMessage('assistant','नई चैट शुरू हुई। बताइए, टेंट हाउस के किस काम में मदद चाहिए?');
             const input=document.getElementById('aiCommandInput');if(input)input.value='';
         }
@@ -2996,14 +2997,20 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             addAiChatMessage('user',question);if(input)input.value='';
             const pending=addAiChatMessage('assistant','जवाब तैयार कर रही हूँ…');
             const settings=safeGetStorage('softwareSettings',{});const api=getBackendApiUrl(settings);const token=(settings.aiAccessToken||'').trim();
-            let answer='';
+            let answer='',usedBackend=false;
             try{
                 if(api&&token&&navigator.onLine){
                     const aiBusinessSnapshot={bookings:safeGetStorage('softwareBookings',[]),stock:safeGetStorage('realStockDatabase',[]),expenses:safeGetStorage('incomeExpenseDatabase',[]),vendorStock:safeGetStorage('thirdPartyDatabase',[]),vendorPayments:safeGetStorage('thirdPartyPayments',[]),lastCloudSync:safeGetStorage('rkLastCloudSyncAt',null)};
-                    let snapshotText=JSON.stringify(aiBusinessSnapshot);if(snapshotText.length>14000)snapshotText=snapshotText.slice(0,14000)+'… [डेटा सीमा के कारण बाकी हिस्सा छोड़ा गया]';
+                    let snapshotText=JSON.stringify(aiBusinessSnapshot);
+                    if(snapshotText.length>8500)snapshotText=snapshotText.slice(0,8500)+'… [डेटा सीमा के कारण बाकी हिस्सा छोड़ा गया]';
                     const aiUserMessage='उपयोगकर्ता का प्रश्न: '+question+'\n\nऐप का उपलब्ध व्यावसायिक डेटा (यह लोकल snapshot है; Firebase से नवीनतम sync की पुष्टि केवल lastCloudSync से करें):\n'+snapshotText+'\n\nकेवल दिए गए डेटा के आधार पर उत्तर दें। डेटा मौजूद न हो तो स्पष्ट बताएं; अनुमान लगाकर रकम/रिकॉर्ड न बनाएं।';
-                    const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[{role:'system',content:'आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।'},{role:'user',content:aiUserMessage}]})});
-                    const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||('AI HTTP '+r.status));if(!data.reply)throw Error('AI उत्तर खाली है');answer=String(data.reply);
+                    const systemMessage='आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।';
+                    const messages=[{role:'system',content:systemMessage},...rkAiConversation.slice(-20),{role:'user',content:aiUserMessage}];
+                    const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages})});
+                    const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||('AI HTTP '+r.status));if(!data.reply)throw Error('AI उत्तर खाली है');
+                    answer=String(data.reply);usedBackend=true;
+                    rkAiConversation.push({role:'user',content:aiUserMessage},{role:'assistant',content:answer});
+                    if(rkAiConversation.length>20)rkAiConversation=rkAiConversation.slice(-20);
                 }else{
                     const q=question.toLowerCase(),bookings=safeGetStorage('softwareBookings',[]),stock=safeGetStorage('realStockDatabase',[]),expenses=safeGetStorage('incomeExpenseDatabase',[]);
                     answer='ऑनलाइन AI चालू करने के लिए Settings में Backend API URL और सुरक्षित Admin API Token भरें। अभी मैं स्थानीय डेटा से सीमित उत्तर दे सकती हूँ।';
@@ -3015,7 +3022,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }catch(e){console.warn('Tent House AI chat failed',e);answer='AI सर्वर से उत्तर नहीं मिला: '+e.message+'। Backend URL, Admin Token और AI provider सेटिंग जाँचें।';}
             finally{rkAiChatBusy=false;if(send)send.disabled=false;if(mic)mic.disabled=false;}
             if(pending){pending.classList.remove('pending');const p=pending.querySelector('.rk-ai-bubble p');if(p)p.textContent=answer;const t=pending.querySelector('time');if(t)t.textContent=new Date().toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});const host=document.getElementById('aiAssistantResponse');if(host)host.scrollTop=host.scrollHeight;}
-            if('speechSynthesis'in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(answer);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(_){}}
+            let voicePlayed=false;
+            if(usedBackend&&api&&token&&navigator.onLine&&answer.length<=4000){
+                try{const tr=await fetch(api+'/api/ai/tts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({text:answer})});const td=await tr.json().catch(()=>({}));if(tr.ok&&td.audioBase64){const audio=new Audio('data:'+(td.mimeType||'audio/wav')+';base64,'+td.audioBase64);await audio.play();voicePlayed=true;}}catch(e){console.warn('Tent House AI voice unavailable; using device speech',e);}
+            }
+            if(!voicePlayed&&'speechSynthesis'in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(answer);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(_){}}
         }
         function startVoiceRecognition(){
             if(rkAiChatBusy)return;
