@@ -6,6 +6,7 @@
     "api:install": "npm --prefix backend install",
     "api:dev": "npm --prefix backend run dev",
     "api:start": "npm --prefix backend start",
-    "api:check": "npm --prefix backend run check"
+    "api:check": "npm --prefix backend run check",
+    "test": "node --test tests/*.test.cjs"
   }
 }
