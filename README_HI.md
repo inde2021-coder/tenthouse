@@ -130,4 +130,4 @@ AI असिस्टेंट के लिए केवल HTML या APK प
 - Quotation: सामान, मात्रा, दर, discount, अन्य शुल्क और validity date के साथ सेव/प्रिंट।
 - Tax Invoice: editable GST दर तथा CGST+SGST या IGST विभाजन; सेव करने से पहले Business Card में सही 15-अक्षर GSTIN आवश्यक है।
 - Print dialog में “Save as PDF” चुनकर PDF बनाई जा सकती है।
-- वर्तमान Tax Invoice पूरे दस्तावेज़ पर एक GST दर लगाता है; HSN/SAC और प्रति-item अलग GST दर अभी business-specific configuration के लिए बाकी हैं।
+- Tax Invoice में HSN/SAC और प्रति-item GST दर दी जा सकती है; खाली GST दर के लिए Default GST% लागू होता है। सही GST दर, HSN/SAC और place-of-supply की कानूनी पुष्टि व्यवसाय/लेखाकार से करें।
