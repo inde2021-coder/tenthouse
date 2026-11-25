@@ -2358,12 +2358,11 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             bookings.forEach(b=>{
                 const amount=Math.max(0,Number(b.advanceAmount)||0);if(!amount)return;
                 const mode=String(b.payMode||'Cash').toLowerCase(),verified=b.advancePaymentVerified===true;
-                if(!ledger.some(p=>String(p.bookingId)===String(b.id))||b.source==='customer-portal'){
-                    if(verified){if(mode==='cash')cashSum+=amount;else onlineSum+=amount;}else if(mode!=='cash')pendingOnlineSum+=amount;
-                    const status=verified?'सत्यापित':(b.advancePaymentStatus==='rejected'?'अस्वीकृत':'सत्यापन बाकी');
-                    const action=!verified&&b.source==='customer-portal'?`<button type="button" class="action-btn" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},true)">सत्यापित</button><button type="button" class="action-btn danger-action" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},false)">अस्वीकार</button>`:'';
-                    rows.push(`<tr class="${mode==='cash'?'rk-payment-cash-row':'rk-payment-online-row'}"><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${phoneCallLink(b.mob||'')}</td><td>${money(amount)}</td><td><span class="rk-payment-mode ${mode==='cash'?'rk-payment-mode-cash':'rk-payment-mode-online'}">${escapeHtml(b.payMode||'Cash')} Advance</span></td><td>${escapeHtml(b.utrNumber||'-')}</td><td>${status}</td><td>${action}</td></tr>`);
-                }
+                const advanceVerified=b.source==='customer-portal'?b.advancePaymentVerified===true:(mode==='cash'||b.advancePaymentVerified===true);
+                if(advanceVerified){if(mode==='cash')cashSum+=amount;else onlineSum+=amount;}else if(mode!=='cash')pendingOnlineSum+=amount;
+                const status=advanceVerified?'सत्यापित':(b.advancePaymentStatus==='rejected'?'अस्वीकृत':'सत्यापन बाकी');
+                const action=!advanceVerified&&b.source==='customer-portal'?`<button type="button" class="action-btn" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},true)">सत्यापित</button><button type="button" class="action-btn danger-action" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},false)">अस्वीकार</button>`:'';
+                rows.push(`<tr class="${mode==='cash'?'rk-payment-cash-row':'rk-payment-online-row'}"><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${phoneCallLink(b.mob||'')}</td><td>${money(amount)}</td><td><span class="rk-payment-mode ${mode==='cash'?'rk-payment-mode-cash':'rk-payment-mode-online'}">${escapeHtml(b.payMode||'Cash')} Advance</span></td><td>${escapeHtml(b.utrNumber||'-')}</td><td>${status}</td><td>${action}</td></tr>`);
             });
             if(document.getElementById('totalCashSum'))document.getElementById('totalCashSum').textContent=money(cashSum);
             if(document.getElementById('totalOnlineSum'))document.getElementById('totalOnlineSum').textContent=money(onlineSum);
