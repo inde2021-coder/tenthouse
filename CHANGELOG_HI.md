@@ -92,3 +92,5 @@
 - PWA icon को bartan utensils brand के अनुरूप बदला; favicon.ico alias, dark manifest और service-worker cache v4 जोड़ा।
 
 - Regression suite में premium field stylesheet की सही cascade position और utensil icon branding के checks अपडेट किए; CI में dependency advisory report step जोड़ा।
+
+- npm audit में मिली 8 moderate + 1 high advisories के लिए Firebase Admin 14.5.1 और Zod 4.6.7 पर upgrade; Node engine >=22 किया।
