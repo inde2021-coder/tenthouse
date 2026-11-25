@@ -204,3 +204,24 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
   });
   assert.equal(duplicate.status, 409);
 });
+
+test('customer booking rejects impossible calendar dates instead of accepting regex-shaped dates', async () => {
+  const payload = {
+    name: 'Invalid Date Test',
+    mob: '+919876543211',
+    address: 'Test Address',
+    eventType: 'Wedding',
+    guestCount: 50,
+    date: '2026-02-30',
+    returnDate: '2026-03-02',
+    advanceAmount: 0,
+    payMode: 'Cash',
+    items: []
+  };
+  const response = await request('/api/customer/bookings', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /बुकिंग विवरण सही भरें/);
+});
