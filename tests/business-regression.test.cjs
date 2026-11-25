@@ -653,18 +653,22 @@ test('premium dark glass enterprise UI system is present and all served frontend
 });
 
 
-test('premium design layer loads after legacy styles so the new theme wins the cascade', () => {
+test('premium design loads after legacy styles and final admin controls override it safely', () => {
   const start = html.indexOf('<style id="rk-premium-enterprise-visual-system">');
   const end = html.indexOf('</style>', start);
+  const adminStart = html.indexOf('<style id="rk-admin-dark-controls-final">');
+  const adminEnd = html.indexOf('</style>', adminStart);
   assert.ok(start > html.lastIndexOf('</style>', start - 1), 'premium layer is not duplicated');
-  assert.equal(end, html.lastIndexOf('</style>'), 'premium layer must be the final stylesheet in the document');
+  assert.ok(adminStart > end, 'final admin controls must load after the premium design layer');
+  assert.equal(adminEnd, html.lastIndexOf('</style>'), 'admin control override must be the final stylesheet');
   assert.ok(start > html.lastIndexOf('</script>', start), 'premium layer must load after legacy scripts and styles');
 });
 
-test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
+test('admin login is hidden behind supported desktop and mobile secret-entry gestures and server token verification', () => {
+  assert.ok(html.includes('e.ctrlKey&&e.shiftKey'));
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
-  assert.ok(html.includes('setTimeout(show,3200)'));
-  assert.ok(html.includes('setTimeout(show,3200)'));
+  assert.ok(html.includes('setTimeout(show,1200)'));
+  assert.ok(html.includes('clickCount>=3'));
   assert.ok(html.includes('/api/admin/session'));
   assert.ok(html.includes("'x-admin-token':token"));
   assert.ok(html.includes('window.__rkVerifiedAdminToken'));
