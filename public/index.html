@@ -2462,7 +2462,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         function loadStockDropdowns() {
             const localStock=safeGetStorage('realStockDatabase',[]);
-            const portalStock=Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:localStock;
+            const portalStock=window.__rkLocalHtmlPreviewMode?localStock:(Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:localStock);
             [['portalStockSelect',portalStock],['adminAddStockSelect',localStock]].forEach(([id,stock])=>{
                 const sel=document.getElementById(id);if(!sel)return;
                 const selected=sel.value;
@@ -2472,6 +2472,22 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             });
         }
         async function refreshPublicCustomerStock(){
+            if(window.__rkLocalHtmlPreviewMode){
+                let localStock=safeGetStorage('realStockDatabase',[]);
+                if(!Array.isArray(localStock)||!localStock.length){
+                    localStock=[
+                        {name:'स्टील थाली',qty:1000,setRent:10,singleRent:2,missingCharge:150,barcode:'DEMO-THALI'},
+                        {name:'स्टील कटोरी',qty:1000,setRent:5,singleRent:1,missingCharge:50,barcode:'DEMO-KATORI'},
+                        {name:'स्टील गिलास',qty:800,setRent:5,singleRent:1,missingCharge:40,barcode:'DEMO-GLASS'},
+                        {name:'सर्विंग चम्मच',qty:300,setRent:4,singleRent:1,missingCharge:25,barcode:'DEMO-SPOON'},
+                        {name:'बड़ी भगोनी',qty:40,setRent:80,singleRent:20,missingCharge:1500,barcode:'DEMO-POT'}
+                    ];
+                    if(!safeSetStorage('realStockDatabase',localStock))return;
+                }
+                publicCustomerStockCatalog=localStock;
+                loadStockDropdowns();
+                return;
+            }
             try{
                 const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
                 const response=await fetch(api+'/api/customer/stock',{headers:{Accept:'application/json'},cache:'no-store'});
@@ -2490,7 +2506,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const sel=document.getElementById('portalStockSelect');if(!sel||!sel.value)return;
             const qtyRaw=document.getElementById('portalItemQty')?.value,qty=Number(qtyRaw);
             if(!qtyRaw||!Number.isInteger(qty)||qty<1){showActionMessage('सामान की मात्रा 1 या उससे अधिक पूर्ण संख्या में भरें','error');return;}
-            const stock=(Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:safeGetStorage('realStockDatabase',[])).find(x=>String(x.name)===String(sel.value));
+            const stockList=window.__rkLocalHtmlPreviewMode?safeGetStorage('realStockDatabase',[]):(Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:safeGetStorage('realStockDatabase',[]));
+            const stock=stockList.find(x=>String(x.name)===String(sel.value));
             if(!stock){showActionMessage('चुना गया सामान स्टॉक में नहीं मिला; सूची रीफ्रेश करें','error');return;}
             const rate=Number(stock.setRent)>0?Number(stock.setRent):Math.max(0,Number(stock.singleRent)||0);
             customerCart.push({name:sel.value,qty,rentPrice:rate,missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
@@ -3893,16 +3910,23 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
     const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\D/g,'').slice(-10);
     const box=document.getElementById('customerStatusResultBox');if(!box)return;
     box.style.display='block';
-    if(!/^\d{10,16}$/.test(id)||!/^\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
+    const validId=window.__rkLocalHtmlPreviewMode?/^(?:DEMO-)?\d{10,16}$/.test(id):/^\d{10,16}$/.test(id);
+    if(!validId||!/^\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
     box.innerHTML='<p>बुकिंग सर्वर से सुरक्षित जानकारी लाई जा रही है…</p>';
     try{
-      let settings={};try{settings=JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){}
-      const api=String(settings.backendApiUrl||(typeof DEFAULT_BACKEND_API_URL!=='undefined'?DEFAULT_BACKEND_API_URL:'')).replace(/\/$/,'');
-      if(!api)throw new Error('बुकिंग सर्वर URL सेट नहीं है');
-      const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(id)+'/status?mobile='+encodeURIComponent(mobile),{headers:{Accept:'application/json'},cache:'no-store'});
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(data.error||'बुकिंग नहीं मिली');
-      const b=data.booking;if(!b)throw new Error('बुकिंग विवरण उपलब्ध नहीं है');
+      let b;
+      if(window.__rkLocalHtmlPreviewMode){
+        b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===id&&String(x.mob||'').replace(/\D/g,'').slice(-10)===mobile);
+        if(!b)throw new Error('इस Booking ID और मोबाइल से कोई local demo booking नहीं मिली।');
+      }else{
+        let settings={};try{settings=JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){}
+        const api=String(settings.backendApiUrl||(typeof DEFAULT_BACKEND_API_URL!=='undefined'?DEFAULT_BACKEND_API_URL:'')).replace(/\/$/,'');
+        if(!api)throw new Error('बुकिंग सर्वर URL सेट नहीं है');
+        const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(id)+'/status?mobile='+encodeURIComponent(mobile),{headers:{Accept:'application/json'},cache:'no-store'});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok)throw new Error(data.error||'बुकिंग नहीं मिली');
+        b=data.booking;if(!b)throw new Error('बुकिंग विवरण उपलब्ध नहीं है');
+      }
       const items=Array.isArray(b.items)?b.items:[],entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
       const days=(start,end)=>{const a=new Date(String(start||'').slice(0,10)+'T12:00:00'),z=new Date(String(end||'').slice(0,10)+'T12:00:00');if(Number.isNaN(a.getTime())||Number.isNaN(z.getTime())||z<a)return 1;return Math.max(1,Math.round((z-a)/86400000));};
       const endDate=b.actualReturnDate||b.returnDate||new Date().toLocaleDateString('en-CA');

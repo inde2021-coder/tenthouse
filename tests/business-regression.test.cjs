@@ -972,3 +972,12 @@ test('secret admin login is explained and mobile logo long-press opens the gate'
   assert.ok(html.includes('clickCount>=5'));
   assert.ok(html.includes('title="Secret Admin Login: लोगो को 1.2 सेकंड दबाएँ या पाँच बार टैप करें"'));
 });
+
+test('standalone local HTML preview seeds utensil stock and keeps booking status lookup local',()=>{
+  assert.ok(html.includes("if(window.__rkLocalHtmlPreviewMode){\n                let localStock=safeGetStorage('realStockDatabase',[]);"));
+  assert.ok(html.includes("name:'स्टील थाली',qty:1000"));
+  assert.ok(html.includes("const stockList=window.__rkLocalHtmlPreviewMode?safeGetStorage('realStockDatabase',[])"));
+  assert.ok(html.includes("b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===id"));
+  assert.ok(html.includes("const validId=window.__rkLocalHtmlPreviewMode?"));
+  assert.ok(html.includes("if(window.__rkLocalHtmlPreviewMode){\n                const id='DEMO-'+Date.now();"));
+});
