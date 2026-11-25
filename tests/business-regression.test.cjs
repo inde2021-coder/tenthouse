@@ -721,3 +721,12 @@ test('dispatch and return reject impossible calendar dates before changing stock
   const ret = sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems');
   assert.ok(ret.includes('!isValidCalendarDate(returnDate)'));
 });
+
+test('calendar date validation rejects impossible dates and accepts leap days', () => {
+  const start=html.indexOf('function isValidCalendarDate(value)');
+  const end=html.indexOf('function calculateRentalDays',start);
+  assert.ok(start>=0&&end>start);
+  const context={Date,String,Number,result:null};
+  vm.runInNewContext(html.slice(start,end)+`\nresult=['2026-02-28','2026-02-30','2024-02-29','2025-02-29','2026-13-01'].map(isValidCalendarDate);`,context);
+  assert.deepEqual(Array.from(context.result),[true,false,true,false,false]);
+});
