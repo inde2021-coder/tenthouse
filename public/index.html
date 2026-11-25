@@ -1715,7 +1715,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 requirements.push({row,qty:x.qty});
             }
             requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty));
-            b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
+            b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
             if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('realStockDatabase',stock)||!safeSetStorage('thirdPartyDatabase',thirdParty)){showActionMessage('Dispatch सेव नहीं हुआ; स्टॉक जाँचें','error');return;}
             loadAllFirebaseData();showActionMessage('Dispatch सेव हुआ; बुकिंग Return पूरा होने तक सूची में रहेगी','success');
@@ -1855,7 +1855,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             let b = bookings.find(x => x.id.toString() === searchId);
             if(b) {
                 if(!b.items) b.items = [];
-                b.items.push({ name: itemName, qty: qty, rentPrice: Number(charge) || 600, missingCharge: Math.max(0,Number(safeGetStorage('thirdPartyDatabase',[]).find(x=>x.item===itemName&&x.partyName===document.getElementById('tpDispatchPartySelect').value)?.missingCharge)||0), source: 'third-party', partyName: document.getElementById('tpDispatchPartySelect').value });
+                b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
                 safeSetStorage('softwareBookings', bookings);
                 loadDispatchTable();
                 showActionMessage("थर्ड-पार्टी सामान डिस्पैच में जोड़ा गया", "success");
@@ -2368,15 +2368,28 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         function loadThirdPartyLedger() {
-            let tpList = safeGetStorage('thirdPartyDatabase', []), payments=safeGetStorage('thirdPartyPayments',[]);
-            let container = document.getElementById('partyWiseTablesContainer'); if(!container)return;
-            const parties=[...new Set([...tpList.map(x=>x.partyName),...payments.map(x=>x.partyName)].filter(Boolean))];
-            const paymentSelect=document.getElementById('tpPaymentParty');if(paymentSelect){const prev=paymentSelect.value;paymentSelect.innerHTML='<option value="">वेंडर चुनें</option>'+parties.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');if(parties.includes(prev))paymentSelect.value=prev;}
+            const tpList=safeGetStorage('thirdPartyDatabase',[]),payments=safeGetStorage('thirdPartyPayments',[]),bookings=safeGetStorage('softwareBookings',[]);
+            const today=new Date().toLocaleDateString('en-CA');
+            const parties=[...new Set([...tpList.map(x=>x.partyName),...payments.map(x=>x.partyName),...bookings.flatMap(b=>(b.dispatchEntries||[]).filter(e=>e.source==='third-party').map(e=>e.partyName))].filter(Boolean))];
+            const paymentSelect=document.getElementById('tpPaymentParty');
+            if(paymentSelect){const prev=paymentSelect.value;paymentSelect.innerHTML='<option value="">वेंडर चुनें</option>'+parties.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');if(parties.includes(prev))paymentSelect.value=prev;}
+            const money=n=>'₹'+(Number(n)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+            container=document.getElementById('partyWiseTablesContainer');if(!container)return;
             container.innerHTML=parties.length===0?'<p>कोई वेंडर डेटा नहीं</p>':parties.map(party=>{
-                const items=tpList.filter(x=>x.partyName===party),purchaseTotal=items.reduce((sum,x)=>sum+(Number(x.purchasedQty??x.qty)||0)*(Number(x.costPrice)||0),0),paid=payments.filter(x=>x.partyName===party).reduce((sum,x)=>sum+(Number(x.amount)||0),0),due=Math.max(0,purchaseTotal-paid);
-                return `<section class="glass-card-blue" style="margin:10px 0"><h4>वेंडर: ${escapeHtml(party)}</h4><p>सप्लाई लागत (दर्ज मात्रा): ₹${purchaseTotal.toFixed(2)} | भुगतान: ₹${paid.toFixed(2)} | बाकी: ₹${due.toFixed(2)}</p><div class="table-responsive"><table><thead><tr><th>सामान</th><th>मौजूदा स्टॉक</th><th>दर्ज कुल मात्रा</th><th>प्रति पीस लागत</th><th>कस्टमर किराया</th><th>एक्शन</th></tr></thead><tbody>${items.map(i=>`<tr><td>${escapeHtml(i.item||i.name||'')}</td><td>${Number(i.qty)||0}</td><td>${Number(i.purchasedQty??i.qty)||0}</td><td>₹${(Number(i.costPrice)||0).toFixed(2)}</td><td>₹${(Number(i.chargePrice)||0).toFixed(2)}</td><td><button type="button" onclick="editThirdPartyEntry(${JSON.stringify(String(i.partyName)).replace(/"/g, '&quot;')},${JSON.stringify(String(i.item||i.name||'')).replace(/"/g, '&quot;')})">संपादित</button> <button type="button" onclick="deleteThirdPartyEntry(${JSON.stringify(String(i.partyName)).replace(/"/g, '&quot;')},${JSON.stringify(String(i.item||i.name||'')).replace(/"/g, '&quot;')})">हटाएँ</button></td></tr>`).join('')||'<tr><td colspan="6">कोई सामान नहीं</td></tr>'}</tbody></table></div></section>`;
+                const items=tpList.filter(x=>x.partyName===party);
+                const vendorEntries=bookings.flatMap(booking=>(Array.isArray(booking.dispatchEntries)?booking.dispatchEntries:[]).filter(e=>e.source==='third-party'&&String(e.partyName||'')===String(party)).map(e=>({booking,e})));
+                const vendorCost=vendorEntries.reduce((sum,{booking,e})=>{const item=booking.items?.[Number(e.itemIndex)]||{};const rate=Number(e.vendorRentRate??item.vendorRentRate??tpList.find(x=>x.partyName===party&&(x.item||x.name)===e.itemName)?.costPrice)||0;const days=calculateRentalDays(e.date||booking.date,booking.actualReturnDate||booking.returnDate||today);return sum+Math.max(0,Number(e.qty)||0)*Math.max(0,rate)*days;},0);
+                const customerRent=vendorEntries.reduce((sum,{booking,e})=>{const days=calculateRentalDays(e.date||booking.date,booking.actualReturnDate||booking.returnDate||today);return sum+Math.max(0,Number(e.qty)||0)*Math.max(0,Number(e.unitRent)||0)*days;},0);
+                const paid=payments.filter(x=>x.partyName===party).reduce((sum,x)=>sum+Math.max(0,Number(x.amount)||0),0);
+                const due=Math.max(0,vendorCost-paid),margin=customerRent-vendorCost;
+                return `<section class="glass-card-blue" style="margin:10px 0"><h4>वेंडर: ${escapeHtml(party)}</h4>
+                  <p>वेंडर किराया लागत (वास्तविक Dispatch × दिन): <b>${money(vendorCost)}</b></p>
+                  <p>ग्राहक से इस वेंडर सामान का किराया: ${money(customerRent)} | अंतर / मार्जिन: ${money(margin)}</p>
+                  <p>वेंडर को भुगतान: ${money(paid)} | बाकी देय: <b>${money(due)}</b></p>
+                  <div class="table-responsive"><table><thead><tr><th>सामान</th><th>उपलब्ध मात्रा</th><th>दर्ज मात्रा</th><th>वेंडर लागत / दिन</th><th>ग्राहक किराया / दिन</th><th>एक्शन</th></tr></thead><tbody>${items.map(i=>`<tr><td>${escapeHtml(i.item||i.name||'')}</td><td>${Number(i.qty)||0}</td><td>${Number(i.purchasedQty??i.qty)||0}</td><td>${money(i.costPrice)}</td><td>${money(i.chargePrice)}</td><td><button type="button" onclick="editThirdPartyEntry(${JSON.stringify(String(i.partyName)).replace(/"/g,'&quot;')},${JSON.stringify(String(i.item||i.name||'')).replace(/"/g,'&quot;')})">संपादित</button> <button type="button" onclick="deleteThirdPartyEntry(${JSON.stringify(String(i.partyName)).replace(/"/g,'&quot;')},${JSON.stringify(String(i.item||i.name||'')).replace(/"/g,'&quot;')})">हटाएँ</button></td></tr>`).join('')||'<tr><td colspan="6">कोई सामान नहीं</td></tr>'}</tbody></table></div></section>`;
             }).join('');
-            const tbody=document.getElementById('thirdPartyPaymentBody');if(tbody)tbody.innerHTML=payments.length?payments.slice().reverse().map(x=>`<tr><td>${escapeHtml(String(x.date||'').slice(0,10))}</td><td>${escapeHtml(x.partyName||'')}</td><td>${escapeHtml(x.note||'वेंडर भुगतान')}</td><td>₹${(Number(x.amount)||0).toFixed(2)}</td><td>${escapeHtml(x.method||'Cash')}</td><td><button type="button" onclick="deleteThirdPartyPayment(${JSON.stringify(String(x.id)).replace(/"/g, '&quot;')})">हटाएँ</button></td></tr>`).join(''):'<tr><td colspan="6">अभी कोई भुगतान नहीं</td></tr>';
+            const tbody=document.getElementById('thirdPartyPaymentBody');
+            if(tbody)tbody.innerHTML=payments.length?payments.slice().reverse().map(x=>`<tr><td>${escapeHtml(String(x.date||'').slice(0,10))}</td><td>${escapeHtml(x.partyName||'')}</td><td>${escapeHtml(x.note||'वेंडर भुगतान')}</td><td>${money(x.amount)}</td><td>${escapeHtml(x.method||'Cash')}</td><td><button type="button" onclick="deleteThirdPartyPayment(${JSON.stringify(String(x.id)).replace(/"/g,'&quot;')})">हटाएँ</button></td></tr>`).join(''):'<tr><td colspan="6">अभी कोई भुगतान नहीं</td></tr>';
         }
         // Removed an orphaned speech-recognition fragment that caused a JavaScript syntax error.
         // The login UI must remain executable even if voice input is unavailable.
