@@ -715,6 +715,6 @@ test('dispatch and return reject impossible calendar dates before changing stock
   assert.match(html, /function isValidCalendarDate\(value\)/);
   const dispatch = sourceBetween('async function completeDispatch(id)', 'function printDispatchSlip(id)');
   assert.ok(dispatch.includes('!isValidCalendarDate(dispatchDate)'));
-  const ret = sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems'));
+  const ret = sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems');
   assert.ok(ret.includes('!isValidCalendarDate(returnDate)'));
 });
