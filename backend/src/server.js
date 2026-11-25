@@ -247,6 +247,15 @@ app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async
 });
 
 const bookingLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false });
+function isValidIsoDate(value) {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  if (month < 1 || month > 12 || day < 1) return false;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= daysInMonth[month - 1];
+}
+
 const customerBookingSchema = z.object({
   name: z.string().trim().min(2).max(120),
   mob: phoneSchema,
@@ -268,6 +277,7 @@ const customerBookingSchema = z.object({
     partyName: z.string().max(120).optional().default('')
   })).max(100).default([])
 }).refine(data => data.returnDate >= data.date, { message: 'Return date must not be before booking date.', path: ['returnDate'] })
+  .refine(data => isValidIsoDate(data.date) && isValidIsoDate(data.returnDate), { message: 'बुकिंग और वापसी की तारीख वास्तविक कैलेंडर तारीख होनी चाहिए।', path: ['date'] })
   .refine(data => data.payMode !== 'UPI' || data.advanceAmount === 0 || String(data.utrNumber || '').trim().length >= 6, { message: 'UTR is required for online advance payment.', path: ['utrNumber'] });
 app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (req,res) => {
   const parsed=customerBookingSchema.safeParse(req.body);
