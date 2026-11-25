@@ -159,6 +159,50 @@ test('admin edits for customer portal bookings are sent to backend', () => {
   assert.ok(html.includes('/api/customer/bookings/'));
 });
 
+
+test('customer cash or UPI advance is not counted until admin verifies it', () => {
+  const code = sourceBetween('function getBookingPaidAmount(b)', 'function getEffectiveMissingCharge(item)');
+  const context = { booking: { source:'customer-portal', payMode:'Cash', advanceAmount:500, advancePaymentVerified:false }, Math, Number, Array, result:null };
+  vm.runInNewContext(code + '\\nresult = getBookingPaidAmount(booking);', context);
+  assert.equal(context.result, 0);
+  context.booking.advancePaymentVerified = true;
+  vm.runInNewContext(code + '\\nresult = getBookingPaidAmount(booking);', context);
+  assert.equal(context.result, 500);
+});
+
+test('vendor payable rent uses vendor cost rate and actual dispatch rental days', () => {
+  assert.ok(html.includes('vendorRentRate'));
+  assert.ok(html.includes('const vendorCost=vendorEntries.reduce'));
+  assert.ok(html.includes('const customerRent=vendorEntries.reduce'));
+  assert.ok(html.includes('वास्तविक Dispatch × दिन'));
+});
+
+test('customer status lookup is private and checks booking ID plus registered mobile', () => {
+  const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
+  assert.ok(backend.includes("app.get('/api/customer/bookings/:id/status'"));
+  assert.ok(backend.includes("String(booking.mob||'').replace(/\\\\D/g,'')!==mobile"));
+  assert.ok(html.includes('id="customerStatusMobile"'));
+  assert.ok(html.includes('/status?mobile='));
+});
+
+test('customer item selection uses configured stock rent, not a hardcoded rate', () => {
+  assert.ok(html.includes('Number(stock.setRent)>0?Number(stock.setRent)'));
+  assert.ok(html.includes('missingCharge:Math.max(0,Number(stock.missingCharge)||0)'));
+  assert.ok(!html.includes('rentPrice: 500 });'));
+});
+
+test('dispatch slip identifies admin versus vendor stock and print is professional', () => {
+  assert.ok(html.includes('स्रोत / वेंडर'));
+  assert.ok(html.includes('@page { size: A4; margin: 10mm; }'));
+  assert.ok(html.includes('display:table-header-group'));
+});
+
+test('admin status transitions wait for backend and cancelled bookings are not re-imported', () => {
+  assert.ok(html.includes("if(remote.status==='Cancelled')"));
+  assert.ok(html.includes("!await updateRemoteCustomerBookingStatus(id,'Confirmed')"));
+  assert.ok(html.includes("!await updateRemoteCustomerBookingStatus(id,'Rejected')"));
+});
+
 test('root and public app copies are kept in sync', () => {
   const root = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
   const pub = fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
