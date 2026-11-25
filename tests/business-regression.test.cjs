@@ -109,7 +109,7 @@ async function runReturn(mode) {
   };
   const answers = ['2026-11-03', mode];
   const context = {
-    activeReturnBookingId: 42, Math, Number, String, Array, Date, isValidCalendarDate: value => { const m=String(value||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/); if(!m)return false; const y=Number(m[1]),mo=Number(m[2]),d=Number(m[3]),dt=new Date(y,mo-1,d); return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d; },
+    activeReturnBookingId: 42, Math, Number, String, Array, Date, isValidCalendarDate: value => { const parts=String(value||'').split('-').map(Number); if(parts.length!==3||String(value||'').length!==10)return false; const [y,mo,d]=parts,dt=new Date(y,mo-1,d); return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d; },
     prompt: () => answers.shift(),
     document,
     safeGetStorage: key => store[key],
@@ -165,6 +165,7 @@ test('dispatch decrements admin stock by the actual dispatched quantity', async 
   const answers = ['2026-11-02', '', '3'];
   const context = {
     Math, Number, String, Array, Date, JSON,
+    isValidCalendarDate: value => { const parts=String(value||'').split('-').map(Number); if(parts.length!==3||String(value||'').length!==10)return false; const [y,mo,d]=parts,dt=new Date(y,mo-1,d); return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d; },
     prompt: () => answers.shift(),
     safeGetStorage: key => store[key],
     safeSetStorage: (key, value) => { store[key] = value; return true; },
