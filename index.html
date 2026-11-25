@@ -521,7 +521,8 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 <div class="glass-card-green" style="border: 2px solid var(--emerald-neon);">
                     <div style="font-size: 14px; font-weight: 800; color: var(--emerald-neon); margin-bottom: 8px;"><i class="fa-solid fa-magnifying-glass"></i> बुकिंग स्टेटस और ड्यू पेमेंट</div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="customerStatusQuery" placeholder="बुकिंग आईडी या मोबाइल नंबर..." style="flex: 1; margin-bottom: 0;">
+                        <input type="text" id="customerStatusQuery" inputmode="numeric" placeholder="बुकिंग ID" style="flex:1;min-width:130px;margin-bottom:0;">
+                        <input type="tel" id="customerStatusMobile" inputmode="numeric" maxlength="10" placeholder="रजिस्टर्ड मोबाइल नंबर" style="flex:1;min-width:150px;margin-bottom:0;">
                         <button type="button" onclick="checkCustomerBookingStatus()" class="glass-btn-green" style="width: auto; padding: 10px 18px; margin-top:0;"><i class="fa-solid fa-eye"></i> देखें</button>
                     </div>
                     <div id="customerStatusResultBox" style="display: none; margin-top: 12px; background: rgba(255,255,255,0.9); padding: 14px; border-radius: 14px;"></div>
@@ -2877,27 +2878,42 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 (function(){
   function esc(v){if(typeof window.escapeHtml==='function')return window.escapeHtml(v==null?'':String(v));return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function money(v){return '₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
-  window.checkCustomerBookingStatus=function(){
-    const q=(document.getElementById('customerStatusQuery')?.value||'').trim();
+  window.checkCustomerBookingStatus=async function(){
+    const id=(document.getElementById('customerStatusQuery')?.value||'').trim();
+    const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\\D/g,'');
     const box=document.getElementById('customerStatusResultBox');if(!box)return;
     box.style.display='block';
-    if(!q){box.innerHTML='<p>कृपया बुकिंग ID या मोबाइल नंबर दर्ज करें।</p>';return;}
-    const rows=typeof window.safeGetStorage==='function'?window.safeGetStorage('softwareBookings',[]):JSON.parse(localStorage.getItem('softwareBookings')||'[]');
-    const b=(Array.isArray(rows)?rows:[]).find(x=>String(x.id||'').toLowerCase()===q.toLowerCase()||String(x.mob||'').replace(/\D/g,'')===q.replace(/\D/g,''));
-    if(!b){box.innerHTML='<p style="margin:0;font-weight:700">इस बुकिंग ID या मोबाइल नंबर से कोई रिकॉर्ड नहीं मिला।</p>';return;}
-    const items=Array.isArray(b.items)?b.items:[];
-    const total=Number(b.totalAmount??b.total??b.grandTotal??items.reduce((a,i)=>a+(Number(i.qty)||0)*(Number(i.rate??i.price??i.rent)||0),0))||0;
-    const paid=Number(b.paidAmount??b.totalPaid??b.advance??b.paid??0)||0;
-    const due=Math.max(0,Number(b.dueAmount??b.balance??(total-paid))||0);
-    const status=String(b.status|| (due<=0?'Paid':paid>0?'Partial Payment':'Pending'));
-    const detail=(label,value)=>`<div class="rk-detail"><small>${label}</small><strong>${value||'-'}</strong></div>`;
-    box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:#fff">बुकिंग विवरण</h3><span class="rk-status-pill">${esc(status)}</span></div>
-    <div class="rk-customer-grid">${detail('बुकिंग ID','#'+esc(b.id))}${detail('ग्राहक का नाम',esc(b.name))}${detail('मोबाइल नंबर',`<a href="tel:${esc(String(b.mob||'').replace(/[^+\d]/g,''))}" style="color:#7dd3fc;text-decoration:underline">${esc(b.mob||'-')} · कॉल करें</a>`)}${detail('पता',esc(b.address||'-'))}${detail('कार्यक्रम की तारीख',esc(b.date||b.eventDate||'-'))}${detail('वापसी की तारीख',esc(b.returnDate||'-'))}${detail('कुल राशि',money(total))}${detail('जमा राशि',money(paid))}${detail('बकाया राशि',money(due))}</div>
-    <h4 style="margin:12px 0 4px;color:#bae6fd">बुकिंग का सामान</h4>
-    <div style="overflow-x:auto"><table><thead><tr><th>सामान</th><th>मात्रा</th><th>दर</th><th>राशि</th></tr></thead><tbody>${items.length?items.map(i=>{const qty=Number(i.qty)||0,rate=Number(i.rate??i.price??i.rent)||0;return `<tr><td>${esc(i.name||i.item||'-')}</td><td>${qty}</td><td>${money(rate)}</td><td>${money(qty*rate)}</td></tr>`}).join(''):'<tr><td colspan="4">सामान का विवरण उपलब्ध नहीं है।</td></tr>'}</tbody></table></div>
-    <p style="margin:12px 0 0;font-size:12px;color:#cbd5e1">यह जानकारी सॉफ्टवेयर में उपलब्ध बुकिंग रिकॉर्ड के अनुसार है। भुगतान विवरण में अंतर हो तो Admin से रिकॉर्ड जाँच करवाएँ।</p>`;
+    if(!/^\\d{10,16}$/.test(id)||!/^\\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
+    box.innerHTML='<p>बुकिंग सर्वर से सुरक्षित जानकारी लाई जा रही है…</p>';
+    try{
+      let settings={};try{settings=JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){}
+      const api=String(settings.backendApiUrl||(typeof DEFAULT_BACKEND_API_URL!=='undefined'?DEFAULT_BACKEND_API_URL:'')).replace(/\\/$/,'');
+      if(!api)throw new Error('बुकिंग सर्वर URL सेट नहीं है');
+      const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(id)+'/status?mobile='+encodeURIComponent(mobile),{headers:{Accept:'application/json'},cache:'no-store'});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.error||'बुकिंग नहीं मिली');
+      const b=data.booking;if(!b)throw new Error('बुकिंग विवरण उपलब्ध नहीं है');
+      const items=Array.isArray(b.items)?b.items:[],entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
+      const days=(start,end)=>{const a=new Date(String(start||'').slice(0,10)+'T12:00:00'),z=new Date(String(end||'').slice(0,10)+'T12:00:00');if(Number.isNaN(a.getTime())||Number.isNaN(z.getTime())||z<a)return 1;return Math.max(1,Math.round((z-a)/86400000));};
+      const endDate=b.actualReturnDate||b.returnDate||new Date().toLocaleDateString('en-CA');
+      const rental=entries.length?entries.reduce((sum,e)=>sum+Math.max(0,Number(e.qty)||0)*Math.max(0,Number(e.unitRent)||0)*days(e.date||b.date,endDate),0):items.reduce((sum,i)=>sum+Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500))*days(b.date,endDate),0);
+      const missing=items.reduce((sum,i)=>sum+Math.max(0,Number(i.missingQty)||0)*Math.max(0,Number(i.missingCharge??i.missingUnitPrice)||0),0);
+      const total=Math.max(0,rental+missing+Math.max(0,Number(b.otherCharges)||0)-Math.max(0,Number(b.discountAmount)||0));
+      const advance=b.advancePaymentVerified===true?Math.max(0,Number(b.advanceAmount)||0):0;
+      const installments=Array.isArray(b.partPayments)?b.partPayments.reduce((sum,p)=>sum+Math.max(0,Number(p.amount)||0),0):0;
+      const paid=Math.max(Number(b.totalPaid)||0,Number(b.paidAmt)||0,advance+installments);
+      const due=Math.max(0,total-paid),status=String(b.status||'Pending');
+      const detail=(label,value)=>'<div class="rk-detail"><small>'+label+'</small><strong>'+value+'</strong></div>';
+      const dispatchRows=entries.map(e=>'<tr><td>'+esc(e.itemName||items[Number(e.itemIndex)]?.name||'सामान')+'</td><td>'+Math.max(0,Number(e.qty)||0)+'</td><td>'+esc(e.date||'-')+'</td></tr>').join('');
+      box.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:#fff">बुकिंग विवरण</h3><span class="rk-status-pill">'+esc(status)+'</span></div>'+
+      '<div class="rk-customer-grid">'+detail('बुकिंग ID','#'+esc(b.id))+detail('ग्राहक',esc(b.name))+detail('मोबाइल',esc(b.mob))+detail('कार्यक्रम',esc(b.eventType||'-'))+detail('डिस्पैच तारीख',esc(b.date||'-'))+detail('वापसी तारीख',esc(b.returnDate||'-'))+detail('Advance सत्यापन',esc(b.advancePaymentVerified?'सत्यापित':(b.advancePaymentStatus||'नहीं दिया')))+detail('कुल देय',money(total))+detail('सत्यापित जमा',money(paid))+detail('बाकी',money(due))+'</div>'+
+      '<h4 style="margin:12px 0 4px;color:#bae6fd">बुकिंग के आइटम</h4><div style="overflow-x:auto"><table><thead><tr><th>सामान</th><th>मांगी मात्रा</th><th>वापस</th><th>Missing</th></tr></thead><tbody>'+
+      (items.length?items.map(i=>'<tr><td>'+esc(i.name)+'</td><td>'+Math.max(0,Number(i.qty)||0)+'</td><td>'+Math.max(0,Number(i.returnedQty)||0)+'</td><td>'+Math.max(0,Number(i.missingQty)||0)+'</td></tr>').join(''):'<tr><td colspan="4">अभी कोई सामान नहीं चुना गया। Admin Dispatch में सामान जोड़ेगा।</td></tr>')+
+      '</tbody></table></div><h4 style="margin:12px 0 4px;color:#bae6fd">वास्तविक Dispatch History</h4><div style="overflow-x:auto"><table><thead><tr><th>सामान</th><th>भेजी मात्रा</th><th>तारीख</th></tr></thead><tbody>'+(dispatchRows||'<tr><td colspan="3">अभी Dispatch नहीं हुआ</td></tr>')+'</tbody></table></div>'+
+      '<p style="margin:12px 0 0;font-size:12px;color:#cbd5e1">ऑनलाइन Advance UTR की पुष्टि Admin द्वारा होने के बाद ही वह जमा राशि में गिना जाएगा।</p>';
+    }catch(error){box.innerHTML='<p style="margin:0;font-weight:700">'+esc(error.message)+'</p>';}
   };
-  document.getElementById('customerStatusQuery')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.checkCustomerBookingStatus();}});
+  ['customerStatusQuery','customerStatusMobile'].forEach(id=>document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.checkCustomerBookingStatus();}}));
 })();
 </script>
 
