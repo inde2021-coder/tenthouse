@@ -3,7 +3,6 @@ services:
     name: tenthouse-feature-preview
     runtime: node
     plan: free
-    region: singapore
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
