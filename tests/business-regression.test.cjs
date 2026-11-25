@@ -22,7 +22,7 @@ function runRentFunction(functionName, booking) {
   assert.notEqual(next, -1);
   const code = html.slice(start, next);
   const context = { calculateRentalDays: () => 2, Math, Number, Array, result: null };
-  vm.runInNewContext(`${code}\\nresult = ${functionName}(booking);`, context);
+  vm.runInNewContext(`${code}\nresult = ${functionName}(booking);`, context);
   return context.result;
 }
 
@@ -86,7 +86,7 @@ function runReturn(mode) {
     showActionMessage: () => {}, loadAllFirebaseData: () => {}, renderMissingItems: () => {}
   };
   const code = sourceBetween('function completeManualReturnProcess()', '        window.onload = function()');
-  vm.runInNewContext(`${code}\\ncompleteManualReturnProcess();`, context);
+  vm.runInNewContext(`${code}\ncompleteManualReturnProcess();`, context);
   return { booking: store.softwareBookings[0], missing: store.missingItemsDatabase, stock: store.realStockDatabase[0] };
 }
 
