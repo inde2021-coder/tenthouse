@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import crypto from 'node:crypto';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getDatabase } from 'firebase-admin/database';
 
 const app = express();
 const port = Number(process.env.PORT || 8080);
@@ -15,10 +17,52 @@ const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.t
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(new Error('Origin not allowed')); }, methods: ['GET','POST','OPTIONS'], allowedHeaders: ['Content-Type','Authorization','X-Admin-Token'] }));
 app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { req.rawBody = Buffer.from(buf); } }));
 app.use('/api/', rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false }));
-const otpStore = new Map(); // Replace with Redis/DB in multi-instance production deployments.
-const paymentLedger = []; // Replace with durable database before production.
-const whatsappBookingInbox = []; // Pending WhatsApp booking requests; use a durable DB in production.
-const processedWhatsAppMessageIds = new Set();
+const memoryStore = new Map();
+let adminDb = null;
+try {
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const databaseURL = process.env.FIREBASE_DATABASE_URL;
+  if (serviceAccountJson && databaseURL) {
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const adminApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert(serviceAccount), databaseURL });
+    adminDb = getDatabase(adminApp);
+  }
+} catch (error) {
+  console.error('Firebase Admin initialization failed:', error.message);
+}
+const phoneKey = value => crypto.createHash('sha256').update(String(value)).digest('hex');
+async function storeGet(path) {
+  if (adminDb) { const snapshot = await adminDb.ref(path).get(); return snapshot.exists() ? snapshot.val() : null; }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  return memoryStore.has(path) ? memoryStore.get(path) : null;
+}
+async function storeSet(path, value) {
+  if (adminDb) { await adminDb.ref(path).set(value); return value; }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  memoryStore.set(path, value); return value;
+}
+async function storeDelete(path) {
+  if (adminDb) { await adminDb.ref(path).remove(); return; }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  memoryStore.delete(path);
+}
+async function storeList(path) {
+  const value = await storeGet(path);
+  return value && typeof value === 'object' ? Object.values(value) : [];
+}
+async function storeCreateIfAbsent(path, value) {
+  if (adminDb) {
+    const result = await adminDb.ref(path).transaction(current => current === null ? value : undefined);
+    return result.committed;
+  }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  if (memoryStore.has(path)) return false;
+  memoryStore.set(path, value); return true;
+}
+const requireDurableStore = (_req, res, next) => {
+  if (!adminDb && isProd) return res.status(503).json({ error: 'Production database is not configured. Set FIREBASE_SERVICE_ACCOUNT_JSON and FIREBASE_DATABASE_URL before using data APIs.' });
+  next();
+};
 const otpLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, message: { error: 'बहुत अधिक OTP अनुरोध; कुछ देर बाद प्रयास करें।' } });
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
@@ -51,7 +95,8 @@ app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
     whatsappWebhookReady: !!(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN && process.env.WHATSAPP_APP_SECRET),
     aiProvider,
     aiReady: !!(process.env.AI_API_KEY && (aiProvider === 'gemini' || process.env.AI_BASE_URL || aiProvider === 'openai' || aiProvider === 'claude')),
-    publicOriginConfigured: allowedOrigins.length > 0
+    publicOriginConfigured: allowedOrigins.length > 0,
+    persistentDatabaseReady: !!adminDb
   }});
 });
 
@@ -88,7 +133,7 @@ async function sendOtpProvider(phone, otp, channel) {
   if (provider === 'demo' && !isProd) return { demo: true };
   throw new Error('OTP provider is not configured. Configure an approved SMS/WhatsApp provider in backend .env.');
 }
-app.post('/api/otp/send', otpLimiter, async (req, res) => {
+app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   const parsed = z.object({ phone: phoneSchema, channel: z.enum(['sms','whatsapp','both']).default('sms') }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid international phone number and channel are required.' });
   const { phone, channel } = parsed.data; const otp = String(crypto.randomInt(0, 1_000_000)).padStart(6,'0');
@@ -100,23 +145,27 @@ app.post('/api/otp/send', otpLimiter, async (req, res) => {
     const outcomes = await Promise.allSettled(channels.map(ch => sendOtpProvider(phone, otp, ch)));
     const sent = outcomes.map((o, i) => ({ channel: channels[i], ok: o.status === 'fulfilled', error: o.status === 'rejected' ? o.reason?.message : undefined }));
     if (!sent.some(x => x.ok)) throw new Error(sent.map(x => `${x.channel}: ${x.error || 'failed'}`).join('; '));
-    otpStore.set(phone, { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 });
+    await storeSet('erpPrivate/otp/' + phoneKey(phone), { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 });
     const out = { ok: true, sent, message: sent.every(x => x.ok) ? 'OTP भेज दिया गया।' : 'OTP कम-से-कम एक चुने हुए चैनल से भेजा गया; आंशिक विफलता देखें।' };
     if (process.env.OTP_PROVIDER === 'demo' && !isProd) out.demoOtp = otp; // Never enabled in production.
     res.json(out);
   } catch (e) { res.status(503).json({ error: e.message }); }
 });
-app.post('/api/otp/verify', (req, res) => {
+app.post('/api/otp/verify', requireDurableStore, async (req, res) => {
   const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\d{6}$/) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
-  const { phone, otp } = parsed.data, rec = otpStore.get(phone);
-  if (!rec || rec.expires < Date.now() || rec.tries >= 5) { otpStore.delete(phone); return res.status(400).json({ verified: false, error: 'OTP समाप्त हो गया या उपलब्ध नहीं है।' }); }
+  const { phone, otp } = parsed.data;
+  const path = 'erpPrivate/otp/' + phoneKey(phone);
+  let rec;
+  try { rec = await storeGet(path); } catch (error) { return res.status(503).json({ verified: false, error: error.message }); }
+  if (!rec || rec.expires < Date.now() || rec.tries >= 5) { await storeDelete(path); return res.status(400).json({ verified: false, error: 'OTP समाप्त हो गया या उपलब्ध नहीं है।' }); }
   rec.tries++;
+  await storeSet(path, rec);
   const hmacSecret = process.env.OTP_HMAC_SECRET || '';
   if (hmacSecret.length < 32 || /replace_with|unsafe-dev/i.test(hmacSecret)) return res.status(503).json({ verified: false, error: 'OTP_HMAC_SECRET सही तरह configured नहीं है।' });
   const got = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
   if (!crypto.timingSafeEqual(Buffer.from(got), Buffer.from(rec.digest))) return res.status(400).json({ verified: false, error: 'OTP गलत है।' });
-  otpStore.delete(phone); res.json({ verified: true });
+  await storeDelete(path); res.json({ verified: true });
 });
 // Meta WhatsApp Cloud API webhook: configure this HTTPS URL in Meta App Dashboard.
 app.get('/webhooks/whatsapp', (req, res) => {
@@ -127,7 +176,7 @@ app.get('/webhooks/whatsapp', (req, res) => {
   if (mode === 'subscribe' && expected && token === expected && typeof challenge === 'string') return res.status(200).type('text/plain').send(challenge);
   return res.sendStatus(403);
 });
-app.post('/webhooks/whatsapp', (req, res) => {
+app.post('/webhooks/whatsapp', requireDurableStore, async (req, res) => {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
   const signature = req.get('x-hub-signature-256') || '';
   if (!appSecret || !req.rawBody || !signature.startsWith('sha256=')) return res.sendStatus(401);
@@ -146,9 +195,10 @@ app.post('/webhooks/whatsapp', (req, res) => {
         console.log('WhatsApp status update:', JSON.stringify({ id: status.id, status: status.status, timestamp: status.timestamp }));
       }
       for (const msg of value.messages || []) {
-        if (!msg.id || processedWhatsAppMessageIds.has(msg.id)) continue;
-        processedWhatsAppMessageIds.add(msg.id);
-        if (processedWhatsAppMessageIds.size > 10000) processedWhatsAppMessageIds.clear();
+        if (!msg.id) continue;
+        const messageKey = phoneKey(msg.id);
+        const firstDelivery = await storeCreateIfAbsent('erpPrivate/whatsappProcessed/' + messageKey, { receivedAt: new Date().toISOString() });
+        if (!firstDelivery) continue;
         const contact = contacts.find(c => c.wa_id === msg.from) || contacts[0] || {};
         const textBody = msg.type === 'text' ? (msg.text?.body || '') : '';
         const record = {
@@ -159,7 +209,7 @@ app.post('/webhooks/whatsapp', (req, res) => {
           status: 'pending-review',
           note: textBody ? 'ग्राहक का संदेश प्राप्त हुआ; स्टॉक/तारीख जाँचकर बुकिंग की पुष्टि करें।' : 'गैर-टेक्स्ट संदेश मिला; मैन्युअल समीक्षा आवश्यक।'
         };
-        whatsappBookingInbox.push(record);
+        await storeSet('erpData/whatsappInbox/' + record.id, record);
       }
     }
     return res.sendStatus(200);
@@ -168,16 +218,25 @@ app.post('/webhooks/whatsapp', (req, res) => {
     return res.sendStatus(500);
   }
 });
-app.get('/api/whatsapp/inbox', authAdmin, (_req, res) => res.json({ requests: whatsappBookingInbox.slice(-200).reverse() }));
-app.post('/api/whatsapp/inbox/:id/status', authAdmin, (req, res) => {
-  const item = whatsappBookingInbox.find(x => x.id === req.params.id);
-  if (!item) return res.status(404).json({ error: 'WhatsApp booking request not found.' });
+app.get('/api/whatsapp/inbox', authAdmin, requireDurableStore, async (_req, res) => {
+  try {
+    const requests = (await storeList('erpData/whatsappInbox')).sort((a,b) => String(b.receivedAt||'').localeCompare(String(a.receivedAt||''))).slice(0,200);
+    res.json({ requests });
+  } catch (error) { res.status(503).json({ error: error.message }); }
+});
+app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async (req, res) => {
   const parsed = z.object({ status: z.enum(['pending-review','approved','rejected']), note: z.string().max(500).optional() }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid status is required.' });
-  item.status = parsed.data.status;
-  if (parsed.data.note !== undefined) item.note = parsed.data.note;
-  item.updatedAt = new Date().toISOString();
-  res.json({ ok: true, request: item });
+  try {
+    const path = 'erpData/whatsappInbox/' + req.params.id;
+    const item = await storeGet(path);
+    if (!item) return res.status(404).json({ error: 'WhatsApp booking request not found.' });
+    item.status = parsed.data.status;
+    if (parsed.data.note !== undefined) item.note = parsed.data.note;
+    item.updatedAt = new Date().toISOString();
+    await storeSet(path, item);
+    res.json({ ok: true, request: item });
+  } catch (error) { res.status(503).json({ error: error.message }); }
 });
 
 app.post('/api/whatsapp/send', authAdmin, async (req,res) => {
@@ -240,13 +299,31 @@ app.post('/api/ai/tts', authAdmin, async (req, res) => {
   } catch (e) { return res.status(502).json({ error: 'Gemini TTS service is unreachable.' }); }
 });
 
-app.post('/api/payments/record-utr', (req,res) => {
+app.post('/api/payments/record-utr', authAdmin, requireDurableStore, async (req,res) => {
   const parsed = z.object({ bookingId:z.string().min(1).max(100), amount:moneySchema, utr:z.string().min(6).max(80), method:z.enum(['upi','online','cash']).default('upi'), phone:phoneSchema.optional() }).safeParse(req.body);
   if(!parsed.success) return res.status(400).json({ error:'Booking ID, amount and UTR are required.' });
-  const record = { id:crypto.randomUUID(), ...parsed.data, status:'pending-verification', createdAt:new Date().toISOString() }; paymentLedger.push(record);
-  res.status(201).json({ ok:true, payment:record, message:'Payment entry saved for manual/provider verification. UTR is not proof of settlement by itself.' });
+  try {
+    const id=crypto.randomUUID(), utrKey=phoneKey(parsed.data.utr.trim().toLowerCase());
+    const unique=await storeCreateIfAbsent('erpPrivate/utrIndex/'+utrKey,{id,createdAt:new Date().toISOString()});
+    if(!unique)return res.status(409).json({error:'This UTR has already been submitted.'});
+    const record={id,...parsed.data,status:'pending-verification',createdAt:new Date().toISOString()};
+    await storeSet('erpData/payments/'+id,record);
+    res.status(201).json({ok:true,payment:record,message:'Payment entry saved for manual/provider verification. UTR is not proof of settlement by itself.'});
+  } catch(error) { res.status(503).json({error:error.message}); }
 });
-app.get('/api/payments/pending', authAdmin, (_req,res) => res.json({ payments:paymentLedger.filter(p=>p.status==='pending-verification') }));
-app.post('/api/payments/:id/verify', authAdmin, (req,res) => { const p=paymentLedger.find(x=>x.id===req.params.id); if(!p)return res.status(404).json({error:'Payment not found'}); const parsed=z.object({ verified:z.boolean(), note:z.string().max(300).optional() }).safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'verified boolean required'});p.status=parsed.data.verified?'verified':'rejected';p.note=parsed.data.note||'';p.verifiedAt=new Date().toISOString();res.json({ok:true,payment:p}); });
+app.get('/api/payments/pending', authAdmin, requireDurableStore, async (_req,res) => {
+  try { res.json({payments:(await storeList('erpData/payments')).filter(p=>p.status==='pending-verification')}); }
+  catch(error) { res.status(503).json({error:error.message}); }
+});
+app.post('/api/payments/:id/verify', authAdmin, requireDurableStore, async (req,res) => {
+  const parsed=z.object({verified:z.boolean(),note:z.string().max(300).optional()}).safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'verified boolean required'});
+  try {
+    const path='erpData/payments/'+req.params.id,p=await storeGet(path);
+    if(!p)return res.status(404).json({error:'Payment not found'});
+    p.status=parsed.data.verified?'verified':'rejected';p.note=parsed.data.note||'';p.verifiedAt=new Date().toISOString();
+    await storeSet(path,p);res.json({ok:true,payment:p});
+  } catch(error) { res.status(503).json({error:error.message}); }
+});
 app.use((err,_req,res,_next) => { console.error(err.message); res.status(500).json({ error: isProd ? 'Internal server error' : err.message }); });
 app.listen(port, () => console.log(`ERP API listening on :${port}`));
