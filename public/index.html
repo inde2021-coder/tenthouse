@@ -745,7 +745,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         <div class="rk-admin-gate-mark"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 id="rkAdminGateTitle">सुरक्षित व्यवस्थापक प्रवेश</h2>
         <p>Secret Admin Login — केवल अधिकृत स्टाफ के लिए।</p>
-        <p class="rk-admin-howto">Desktop: Ctrl + Alt + Shift + K · Mobile: ऊपर Shop Logo को 3 सेकंड दबाएँ</p>
+        <p class="rk-admin-howto">Desktop: Ctrl + Shift + K · Mobile: Shop Logo को 1–2 सेकंड दबाएँ या 5 बार टैप करें</p>
         <form onsubmit="handleDirectAdminLogin(event)" autocomplete="off">
           <label for="rkAdminAccessToken">Access Token</label>
           <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
@@ -3810,36 +3810,38 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
 <script id="rk-secret-admin-entry">
 (()=> {
-  let holdTimer=null, clickCount=0, clickWindow=null;
+  let holdTimer=null, clickCount=0, clickWindow=null, fired=false;
   const show=()=>{
+    if(fired)return;
+    fired=true;
     if(typeof window.revealAdminGate==='function') window.revealAdminGate();
     else {
       const gate=document.getElementById('welcomeOverlay');
       if(gate){gate.style.display='flex';gate.style.visibility='visible';gate.style.opacity='1';}
     }
   };
-  const isLogo=(target)=>target instanceof Element ? target.closest('.rk-customer-brand-mark') : null;
+  const isBrand=(target)=>target instanceof Element ? target.closest('.rk-customer-brand, .rk-customer-brand-mark') : null;
+  const cancelHold=()=>{if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}};
   document.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
-    if(e.ctrlKey&&e.altKey&&e.shiftKey&&(key==='k'||e.code==='KeyK')){
-      e.preventDefault(); e.stopPropagation(); show();
+    if((e.ctrlKey&&e.altKey&&e.shiftKey&&(key==='k'||e.code==='KeyK')) ||
+       (e.ctrlKey&&e.shiftKey&&(key==='k'||e.code==='KeyK'))){
+      e.preventDefault();e.stopPropagation();show();
     }
   },true);
   document.addEventListener('pointerdown',e=>{
-    if(!isLogo(e.target)|| (e.pointerType==='mouse'&&e.button!==0)) return;
-    clearTimeout(holdTimer);
+    if(!isBrand(e.target)||(e.pointerType==='mouse'&&e.button!==0))return;
+    cancelHold();fired=false;
     holdTimer=setTimeout(show,1200);
   },true);
-  ['pointerup','pointercancel','pointerleave','mouseup','touchend','touchcancel'].forEach(type=>{
-    document.addEventListener(type,()=>{clearTimeout(holdTimer);holdTimer=null;},true);
-  });
+  ['pointerup','pointercancel','mouseup','touchend','touchcancel'].forEach(type=>document.addEventListener(type,cancelHold,true));
   document.addEventListener('click',e=>{
-    if(!isLogo(e.target)) return;
-    clickCount++;
-    clearTimeout(clickWindow);
+    if(!isBrand(e.target))return;
+    clickCount++;clearTimeout(clickWindow);
     if(clickCount>=5){clickCount=0;show();return;}
-    clickWindow=setTimeout(()=>{clickCount=0;},2200);
+    clickWindow=setTimeout(()=>{clickCount=0;},2400);
   },true);
+  window.addEventListener('blur',cancelHold);
 })();
 </script>
 </body></html>');w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print()},250)};
@@ -4141,3 +4143,5 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       @media(max-width:390px){.rk-customer-brand-seal{display:none}.rk-customer-brand{gap:10px}.rk-customer-brand-mark{width:43px;height:43px;flex-basis:43px}.rk-customer-section-title{font-size:14px!important}}
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
 </style>
+</body>
+</html>
