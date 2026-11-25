@@ -557,6 +557,48 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(max-width:700px){#customerFirstPortal .customer-scroll-wrap{padding:12px;gap:14px}#customerFirstPortal .rk-customer-brand{padding:20px 16px;gap:13px;min-height:unset;border-radius:20px}#customerFirstPortal .rk-customer-brand-mark{width:50px;height:50px;flex-basis:50px;border-radius:15px;font-size:21px}#customerFirstPortal .rk-customer-brand h1{font-size:clamp(20px,6vw,27px)}#customerFirstPortal .rk-customer-brand-seal{display:none}#customerFirstPortal .rk-customer-form{gap:12px}#customerFirstPortal .rk-customer-section{padding:16px!important;border-radius:16px!important}#customerFirstPortal .form-grid{grid-template-columns:1fr!important;gap:12px}#customerFirstPortal .form-grid>div[style*="grid-column:1/-1"]{grid-column:1!important}#customerFirstPortal .rk-customer-submit{width:100%;min-height:54px}#customerFirstPortal .rk-dev-contact{gap:7px}}
 @media(prefers-reduced-motion:reduce){#adminPanel button,#adminPanel .menu-item,#customerFirstPortal button{transition:none!important}}
 </style>
+<style id="rk-customer-premium-hero-v2">
+#customerFirstPortal{background:radial-gradient(ellipse at 12% 5%,#fff7e6,transparent 38%),linear-gradient(145deg,#f7f8fc,#e9edf7 54%,#f5eee6)!important}
+#customerFirstPortal .customer-scroll-wrap{padding:clamp(12px,2.5vw,28px);gap:18px;scrollbar-width:thin}
+#customerFirstPortal .rk-customer-hero{isolation:isolate;position:relative;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;min-height:clamp(350px,42vw,490px);max-width:1180px;width:100%;margin:0 auto 4px;padding:clamp(24px,4.4vw,54px);overflow:hidden;border:1px solid rgba(255,255,255,.25);border-radius:30px;background:radial-gradient(circle at 78% 40%,rgba(220,161,105,.25),transparent 35%),linear-gradient(115deg,#111a35,#1c2850 52%,#422d4c);box-shadow:0 24px 60px rgba(25,32,63,.22),inset 0 1px 0 rgba(255,255,255,.2);color:#fff}
+#customerFirstPortal .rk-hero-copy{position:relative;z-index:3;max-width:560px}
+#customerFirstPortal .rk-hero-kicker{display:inline-flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid rgba(255,255,255,.19);border-radius:30px;background:rgba(255,255,255,.08);color:#f6d8a5;font-size:10px;font-weight:800;letter-spacing:1.2px}
+#customerFirstPortal .rk-hero-eyebrow{margin:23px 0 7px;color:#f3c987;font-size:16px;font-weight:800}
+#customerFirstPortal .rk-hero-copy h2{margin:0;color:#fff;font-size:clamp(32px,4.6vw,54px);line-height:1.14;font-weight:900;letter-spacing:-1.5px}
+#customerFirstPortal .rk-hero-copy h2 em{color:#f3c987;font-style:normal}
+#customerFirstPortal .rk-hero-description{max-width:440px;margin:17px 0 22px;color:rgba(255,255,255,.77);font-size:14px;line-height:1.85;font-weight:500}
+#customerFirstPortal .rk-hero-cta{display:inline-flex;align-items:center;gap:13px;min-height:48px;padding:0 22px;border:0;border-radius:14px;background:linear-gradient(135deg,#f8d99f,#dca85e);color:#241b24;font-size:14px;font-weight:900;box-shadow:0 10px 25px rgba(224,172,98,.27),inset 0 1px 0 rgba(255,255,255,.7);cursor:pointer;transition:transform .2s}
+#customerFirstPortal .rk-hero-cta:hover{transform:translateY(-3px)}
+#customerFirstPortal .rk-hero-trust{display:flex;flex-wrap:wrap;gap:18px;margin-top:24px;color:rgba(255,255,255,.72);font-size:11px;font-weight:700}
+#customerFirstPortal .rk-hero-trust i{margin-right:6px;color:#f2c987}
+#customerFirstPortal .rk-hero-art{position:relative;min-height:300px;display:grid;place-items:center}
+#customerFirstPortal .rk-hero-orbit{position:absolute;width:min(31vw,330px);aspect-ratio:1;border:1px solid rgba(245,207,147,.2);border-radius:50%;transform:rotate(-25deg) scaleY(.72)}
+#customerFirstPortal .rk-hero-stage{position:relative;width:min(100%,390px);height:260px;filter:drop-shadow(0 25px 25px rgba(0,0,0,.28))}
+#customerFirstPortal .rk-stage-roof{position:absolute;left:5%;right:5%;top:18px;height:45px;background:linear-gradient(180deg,#f9e4b7,#c88e54);clip-path:polygon(0 100%,10% 25%,25% 0,75% 0,90% 25%,100% 100%)}
+#customerFirstPortal .rk-stage-curtain{position:absolute;top:50px;width:25%;height:145px;background:linear-gradient(90deg,#a63d62,#e17d82 50%,#8d345a);border:2px solid rgba(255,220,177,.5);box-shadow:inset 0 0 20px rgba(60,12,42,.35)}
+#customerFirstPortal .rk-stage-curtain.left{left:8%;clip-path:polygon(0 0,100% 8%,84% 100%,0 88%)}
+#customerFirstPortal .rk-stage-curtain.right{right:8%;clip-path:polygon(0 8%,100% 0,100% 88%,16% 100%)}
+#customerFirstPortal .rk-stage-arch{position:absolute;left:24%;right:24%;top:54px;height:145px;border:9px solid #eac58e;border-bottom:0;border-radius:100px 100px 0 0;background:linear-gradient(145deg,#ffe7c1,#c58c63 55%,#7e4660);box-shadow:0 0 30px rgba(245,192,116,.28)}
+#customerFirstPortal .rk-stage-inner{position:absolute;inset:18px 18px 0;border:2px solid rgba(255,241,213,.72);border-bottom:0;border-radius:90px 90px 0 0;background:radial-gradient(ellipse at 50% 40%,#ffeec2,rgba(241,178,131,.38) 48%,rgba(71,39,73,.55))}
+#customerFirstPortal .rk-stage-lights{position:absolute;left:50%;top:25px;width:9px;height:9px;border-radius:50%;background:#fff5ca;box-shadow:-43px 18px 0 #ffe6a7,43px 18px 0 #ffe6a7,0 58px 12px 1px rgba(255,235,178,.9),-65px 58px 0 -2px #fff0c4,65px 58px 0 -2px #fff0c4}
+#customerFirstPortal .rk-stage-floor{position:absolute;left:4%;right:4%;bottom:12px;height:42px;border-radius:50%;background:linear-gradient(180deg,#e9c48f,#95644e);transform:rotateX(55deg)}
+#customerFirstPortal .rk-stage-star{position:absolute;color:#ffe8b8;text-shadow:0 0 12px rgba(255,217,153,.8);font-size:30px}
+#customerFirstPortal .rk-stage-star.s1{left:12%;top:36px}#customerFirstPortal .rk-stage-star.s2{right:12%;top:55px;font-size:38px}
+#customerFirstPortal .rk-hero-float{position:absolute;display:flex;align-items:center;gap:9px;padding:10px 13px;border:1px solid rgba(255,255,255,.23);border-radius:13px;background:rgba(255,255,255,.12);backdrop-filter:blur(14px);box-shadow:0 12px 28px rgba(0,0,0,.15);color:#fff;font-size:10px;font-weight:800;white-space:nowrap}
+#customerFirstPortal .rk-hero-float i{color:#f5d194;font-size:15px}#customerFirstPortal .rk-hero-float.f1{right:-1%;top:48px}#customerFirstPortal .rk-hero-float.f2{left:-2%;bottom:35px}
+#customerFirstPortal .rk-hero-bottomline{position:absolute;left:clamp(24px,4.4vw,54px);right:clamp(24px,4.4vw,54px);bottom:16px;display:flex;justify-content:space-between;gap:12px;color:rgba(255,255,255,.43);font-size:8px;font-weight:800;letter-spacing:1.4px}
+#customerFirstPortal #portalShopTitle{color:#17213e!important;font-size:clamp(21px,3vw,30px)!important}
+#customerFirstPortal .customer-scroll-wrap>.glass-card-blue{max-width:1180px!important;margin:0 auto!important;border-radius:20px!important}
+#customerFirstPortal .customer-scroll-wrap>div[style*="max-width: 800px"]{max-width:1180px!important}
+#customerFirstPortal .customer-scroll-wrap form{gap:16px!important}
+#customerFirstPortal .customer-scroll-wrap form>.glass-card-blue,#customerFirstPortal .customer-scroll-wrap form>.glass-card-green,#customerFirstPortal .customer-scroll-wrap form>.glass-card-purple{border-radius:20px!important;border:1px solid rgba(255,255,255,.92)!important;box-shadow:0 12px 30px rgba(40,55,90,.08),inset 0 1px 0 #fff!important}
+#customerFirstPortal .customer-scroll-wrap form label{color:#263653!important;font-weight:800!important}
+#customerFirstPortal .customer-scroll-wrap form input,#customerFirstPortal .customer-scroll-wrap form select,#customerFirstPortal .customer-scroll-wrap form textarea{border:1px solid #d8dfeb!important;background:#f7f9fd!important;box-shadow:inset 2px 3px 7px rgba(31,49,84,.06)!important;border-radius:12px!important}
+#customerFirstPortal .customer-scroll-wrap form button[type=submit]{border-radius:14px!important;min-height:52px!important;font-weight:900!important;box-shadow:0 10px 24px rgba(24,88,150,.2)!important}
+@media(max-width:720px){#customerFirstPortal .rk-customer-hero{grid-template-columns:1fr;min-height:0;padding:25px 22px 48px;border-radius:23px}#customerFirstPortal .rk-hero-copy h2{font-size:clamp(34px,9vw,47px)}#customerFirstPortal .rk-hero-description{max-width:100%;margin:13px 0 18px}#customerFirstPortal .rk-hero-trust{margin-top:17px;gap:12px}#customerFirstPortal .rk-hero-art{min-height:245px;margin-top:8px}#customerFirstPortal .rk-hero-stage{height:230px;transform:scale(.9)}#customerFirstPortal .rk-hero-orbit{width:250px}#customerFirstPortal .rk-hero-float.f1{right:0;top:16px}#customerFirstPortal .rk-hero-float.f2{left:0;bottom:13px}#customerFirstPortal .rk-hero-bottomline{left:22px;right:22px;bottom:12px;font-size:7px;letter-spacing:.8px}}
+@media(max-width:390px){#customerFirstPortal .rk-hero-art{min-height:215px}#customerFirstPortal .rk-hero-stage{transform:scale(.78)}#customerFirstPortal .rk-hero-float{padding:8px 9px;font-size:9px}#customerFirstPortal .rk-hero-bottomline span:last-child{display:none}}
+@media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
+</style>
 </head>
 <body>
 
@@ -600,6 +642,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
     <!-- Customer Portal -->
     <div id="customerFirstPortal" class="no-print" style="display: flex;">
         <div class="customer-scroll-wrap">
+<section class="rk-customer-hero" aria-label="Radhe Krishn Tent House">
+<div class="rk-hero-copy"><div class="rk-hero-kicker"><i class="fa-solid fa-sparkles"></i> YOUR CELEBRATION, OUR ARRANGEMENT</div><p class="rk-hero-eyebrow">हर खुशी के मौके पर</p><h2>यादगार समारोह की<br><em>शानदार शुरुआत</em></h2><p class="rk-hero-description">शादी, जन्मदिन और हर खास अवसर के लिए टेंट, फर्नीचर और इवेंट सामान की आसान बुकिंग करें।</p><button type="button" class="rk-hero-cta" onclick="document.getElementById('portalCustName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName').focus();">बुकिंग शुरू करें <i class="fa-solid fa-arrow-down"></i></button><div class="rk-hero-trust"><span><i class="fa-solid fa-shield-heart"></i> भरोसेमंद सेवा</span><span><i class="fa-solid fa-calendar-check"></i> आसान बुकिंग</span></div></div>
+<div class="rk-hero-art" aria-hidden="true"><div class="rk-hero-orbit"></div><div class="rk-hero-stage"><div class="rk-stage-roof"></div><div class="rk-stage-curtain left"></div><div class="rk-stage-curtain right"></div><div class="rk-stage-arch"><div class="rk-stage-inner"></div><div class="rk-stage-lights"></div></div><div class="rk-stage-floor"></div><span class="rk-stage-star s1">✦</span><span class="rk-stage-star s2">✧</span></div><div class="rk-hero-float f1"><i class="fa-solid fa-champagne-glasses"></i> Special Events</div><div class="rk-hero-float f2"><i class="fa-solid fa-couch"></i> Complete Setup</div></div>
+<div class="rk-hero-bottomline"><span>RADHE KRISHN TENT HOUSE</span><span>CELEBRATE BEAUTIFULLY · BOOK EASILY</span></div></section>
             <header class="rk-customer-brand">
                 <div class="rk-customer-brand-mark" aria-hidden="true"><i class="fa-solid fa-crown"></i></div>
                 <div class="rk-customer-brand-copy">
