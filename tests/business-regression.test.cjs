@@ -496,3 +496,19 @@ test('daily expense form does not clear or claim success when local persistence 
   assert.ok(code.includes("if(!safeSetStorage('incomeExpenseDatabase', list))return"));
   assert.ok(code.includes('event.target.reset()'));
 });
+
+
+test('print CSS selects exactly one active print target', () => {
+  assert.ok(html.includes('#printableSlipArea { display:none !important; }'));
+  assert.ok(html.includes('#printableSlipArea.print-area-active {'));
+  assert.ok(html.includes('#barcodePrintModal, #barcodePrintModal * { visibility:hidden !important; }'));
+  assert.ok(html.includes('#barcodePrintModal.barcode-print-active, #barcodePrintModal.barcode-print-active * { visibility:visible !important; }'));
+});
+
+test('invoice, dispatch, return and business document mark their print area active', () => {
+  assert.ok(html.includes("area.dataset.printRestore='invoice'"));
+  assert.ok(html.includes("area.dataset.printRestore='dispatch'"));
+  assert.ok(html.includes("area.dataset.printRestore='return'"));
+  assert.ok(html.includes("area.dataset.printRestore='document'"));
+  assert.ok(html.includes("area.classList.add('print-area-active')"));
+});
