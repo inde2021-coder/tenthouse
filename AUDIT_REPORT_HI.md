@@ -117,3 +117,11 @@ Main पर मिले root causes:
 ## Firebase credential rotation
 
 पहले की बातचीत में Firebase service-account private key साझा हुई थी। Production से पहले उस पुरानी key को Google Cloud IAM में revoke/rotate करें और नई key केवल Hosting Environment Variables (`FIREBASE_SERVICE_ACCOUNT_JSON`) में रखें। इसे GitHub, frontend या ZIP में कभी commit न करें।
+
+
+## Repository identity correction — critical
+- This repository `inde2021-coder/tenthouse-` is linked in Vercel as `tenthouse-audit-preview`, not the production project.
+- Vercel Git deployment context shows production project `tenthouse2026` linked to `inde2021-coder/tenthouse` (without the trailing hyphen).
+- The connected GitHub installation currently exposes six repositories and does not expose `inde2021-coder/tenthouse`; direct GitHub API lookup for that repository returns 404 from this connection.
+- Therefore this branch and PR #3 are audit-preview-only working material. **Do not merge PR #3 as a production change.** Port the reviewed fixes only after the production repository is made accessible and its branches are audited.
+- Production Vercel metadata currently points to `main` commit `91754c406d151c0ed3fb61e2cb31c8a0317873a6`; the latest observed production build succeeded. Build warnings include an open-ended Node engine range (`>=20`) and an unrecognized npm `cache-dir` setting.
