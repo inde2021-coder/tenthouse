@@ -24,6 +24,19 @@
    `https://radhe-krishna-online-booking-default-rtdb.firebaseio.com`
 4. Save करें। Secret को GitHub या ChatGPT में paste न करें।
 
+## 2A. Backend Admin Token और OTP सुरक्षा
+
+Preview में ये variables भी बनाना जरूरी है:
+
+- `ADMIN_API_TOKEN` — कम-से-कम 32 अक्षरों का random secret। इसे Vercel में encrypted रखें।
+- `OTP_HMAC_SECRET` — `ADMIN_API_TOKEN` से अलग कम-से-कम 32 अक्षरों का random secret।
+
+Admin token को वेबसाइट में Settings → Backend / AI / OTP → “AI Access Token (ADMIN_API_TOKEN)” में भी दर्ज करें और Backend सेटिंग सेव करें। यह token उस मोबाइल के local storage में रहेगा; साझा मोबाइल पर सेव न करें।
+
+`PUBLIC_ORIGIN` branch preview के लिए सेट किया गया है:
+`https://tenthouse-audit-preview-git-audit-deep-audit-fixes-6872d4-inde3.vercel.app`
+इसी स्थिर Preview लिंक से वेबसाइट खोलें, ताकि CORS origin मेल खाए।
+
 वैकल्पिक तरीका: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, और `FIREBASE_PRIVATE_KEY` तीनों variables अलग-अलग दे सकते हैं। एक साथ JSON और split credentials देना आवश्यक नहीं है।
 
 ## 3. WhatsApp Cloud API के लिए बाकी secrets
@@ -38,6 +51,17 @@
 - `WHATSAPP_PHONE_NUMBER_ID` — पहले से Preview में मौजूद है।
 
 Meta App ID और WhatsApp Business Account ID जानकारी के लिए उपयोगी हैं, लेकिन वर्तमान webhook signature check और message-send code में इन दो secrets की जगह नहीं लेते।
+
+## 3A. AI सहायक
+
+यदि Preview में Shraddha AI चलाना है, तो Preview target में ये variables भी जोड़ें:
+
+- `AI_PROVIDER=gemini`
+- `AI_API_KEY` — अपनी Gemini API key
+- `AI_MODEL=gemini-2.5-flash`
+- `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta`
+
+AI key केवल Vercel में रखें। Frontend/GitHub में न डालें।
 
 ## 4. Save के बाद जाँच
 
