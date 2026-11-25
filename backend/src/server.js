@@ -199,15 +199,19 @@ app.post('/api/otp/verify', otpVerifyLimiter, requireDurableStore, async (req, r
   await storeDelete(path); res.json({ verified: true });
 });
 // Meta WhatsApp Cloud API webhook: configure this HTTPS URL in Meta App Dashboard.
-app.get('/webhooks/whatsapp', (req, res) => {
+const verifyWhatsAppWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
   const expected = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
   if (mode === 'subscribe' && expected && token === expected && typeof challenge === 'string') return res.status(200).type('text/plain').send(challenge);
   return res.sendStatus(403);
-});
-app.post('/webhooks/whatsapp', requireDurableStore, async (req, res) => {
+};
+// Keep both paths available: the already-verified production Meta callback
+// and the newer explicit webhook path used by the audit preview.
+app.get('/api/webhook', verifyWhatsAppWebhook);
+app.get('/webhooks/whatsapp', verifyWhatsAppWebhook);
+const receiveWhatsAppWebhook = async (req, res) => {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
   const signature = req.get('x-hub-signature-256') || '';
   if (!appSecret || !req.rawBody || !signature.startsWith('sha256=')) return res.sendStatus(401);
@@ -247,7 +251,9 @@ app.post('/webhooks/whatsapp', requireDurableStore, async (req, res) => {
     console.error('WhatsApp webhook processing error:', err.message);
     return res.sendStatus(500);
   }
-});
+};
+app.post('/api/webhook', requireDurableStore, receiveWhatsAppWebhook);
+app.post('/webhooks/whatsapp', requireDurableStore, receiveWhatsAppWebhook);
 app.get('/api/whatsapp/inbox', authAdmin, requireDurableStore, async (_req, res) => {
   try {
     const requests = (await storeList('erpData/whatsappInbox')).sort((a,b) => String(b.receivedAt||'').localeCompare(String(a.receivedAt||''))).slice(0,200);
