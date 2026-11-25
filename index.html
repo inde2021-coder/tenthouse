@@ -2537,6 +2537,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         try { if (typeof resetSettingsSection === "function") window.resetSettingsSection = resetSettingsSection; } catch (_) {}
         try { if (typeof restoreFullBackup === "function") window.restoreFullBackup = restoreFullBackup; } catch (_) {}
         try { if (typeof returnToCustomerPortal === "function") window.returnToCustomerPortal = returnToCustomerPortal; } catch (_) {}
+        try { if (typeof startBarcodeCameraScan === "function") window.startBarcodeCameraScan = startBarcodeCameraScan; } catch (_) {}
+        try { if (typeof stopBarcodeCameraScan === "function") window.stopBarcodeCameraScan = stopBarcodeCameraScan; } catch (_) {}
+        try { if (typeof syncCustomerBookingsFromBackend === "function") window.syncCustomerBookingsFromBackend = syncCustomerBookingsFromBackend; } catch (_) {}
         try { if (typeof runOcrScan === "function") window.runOcrScan = runOcrScan; } catch (_) {}
         try { if (typeof safeGetStorage === "function") window.safeGetStorage = safeGetStorage; } catch (_) {}
         try { if (typeof safeSetStorage === "function") window.safeSetStorage = safeSetStorage; } catch (_) {}
