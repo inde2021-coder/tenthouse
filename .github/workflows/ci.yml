@@ -6,6 +6,7 @@ on:
       - main
       - "audit/**"
       - render-preview-test
+      - render-preview-isolated
   pull_request:
     branches:
       - main
