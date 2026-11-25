@@ -1188,6 +1188,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         let customerCart = [];
+        let publicCustomerStockCatalog = null;
 
         async function syncCustomerBookingsFromBackend(){
             const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,''),token=String(settings.aiAccessToken||'').trim();
