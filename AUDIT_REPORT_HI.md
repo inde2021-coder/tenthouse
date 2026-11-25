@@ -96,3 +96,12 @@ Main पर मिले root causes:
 - `audit/tenthouse-ai-chat-2026-11` / PR #2 हर AI request पर local `softwareBookings`, stock, expenses, vendor stock और vendor payments का पूरा snapshot Gemini/backend को भेजता है; केवल 8,500 characters पर text truncation है।
 - Booking records में customer name, mobile, address और payment details हो सकते हैं। System prompt में “निजी डेटा अनावश्यक रूप से न दोहराएं” लिखना data minimization का विकल्प नहीं है—PII पहले ही provider को भेजा जा चुका होता है।
 - PR #2 को अभी merge नहीं करना है। AI Chat को port करने से पहले snapshot को aggregate/minimize करना, customer identifiers हटाना और जरूरत पड़ने पर user-confirmed per-query context भेजना आवश्यक है।
+
+
+## Successful CI verification after fixes
+- GitHub Actions run `45689900171` completed successfully on code head `ed3724a42e46687879d1820a46a255a393df0516`.
+- Backend syntax check: PASS.
+- Business + backend API test suite: **91/91 PASS**, 0 failures.
+- Root/backend package JSON and PWA manifest JSON validation: PASS.
+- The subsequent commit only adds this audit note; no application code changed after the passing run.
+- Vercel preview remains blocked by the account's daily deployment API quota, so live browser/Firebase/Google OAuth/provider/device checks are still not claimed as passed.
