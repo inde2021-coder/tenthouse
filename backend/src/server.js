@@ -48,7 +48,15 @@ async function storeDelete(path) {
 }
 async function storeList(path) {
   const value = await storeGet(path);
-  return value && typeof value === 'object' ? Object.values(value) : [];
+  if (value && typeof value === 'object') return Object.values(value);
+  // The in-memory development adapter stores full paths as flat keys, unlike RTDB.
+  if (!adminDb && !isProd) {
+    const prefix = String(path).replace(/\/+$/, '') + '/';
+    return [...memoryStore.entries()]
+      .filter(([key]) => key.startsWith(prefix))
+      .map(([, record]) => record);
+  }
+  return [];
 }
 async function storeCreateIfAbsent(path, value) {
   if (adminDb) {
@@ -375,11 +383,11 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
 
 app.get('/api/customer/bookings/:id/status', requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
-  const mobile=String(req.query.mobile||'').replace(/\D/g,'');
+  const mobile=String(req.query.mobile||'').replace(/\D/g,'').slice(-10);
   if(!/^\d{10}$/.test(mobile))return res.status(400).json({error:'बुकिंग मोबाइल नंबर दर्ज करें।'});
   try{
     const booking=await storeGet('erpData/customerBookings/'+req.params.id);
-    if(!booking||String(booking.mob||'').replace(/\D/g,'')!==mobile)return res.status(404).json({error:'बुकिंग ID और मोबाइल नंबर का मिलान नहीं हुआ।'});
+    if(!booking||String(booking.mob||'').replace(/\D/g,'').slice(-10)!==mobile)return res.status(404).json({error:'बुकिंग ID और मोबाइल नंबर का मिलान नहीं हुआ।'});
     const safeBooking={
       id:booking.id,name:booking.name,mob:booking.mob,date:booking.date,returnDate:booking.returnDate,eventType:booking.eventType,
       guestCount:booking.guestCount,status:booking.status,items:booking.items||[],dispatchEntries:booking.dispatchEntries||[],
