@@ -1241,6 +1241,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             measurementId: "G-8FC58T5YNF"
         };
 
+        // Render preview must never connect to the production Firebase project.
+        window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com'));
         let firebaseApp, dbRef = null;
         let currentCalendarDate = new Date();
         let cloudListenerAttached = false;
