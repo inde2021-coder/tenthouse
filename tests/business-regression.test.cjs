@@ -915,3 +915,13 @@ test('admin text fields override legacy light-theme and browser autofill styles'
 test('the primary HTML document is explicitly closed after the final style overrides', () => {
   assert.match(html, /<style id="rk-admin-dark-controls-final">[\s\S]*?<\/style>\s*<\/body>\s*<\/html>\s*$/);
 });
+
+
+test('Google login failure clears the verified admin token and reports failure to the caller', () => {
+  const login = html.slice(html.indexOf('async function loginWithGoogle(adminToken)'), html.indexOf('// Keep local writes immediate', html.indexOf('async function loginWithGoogle(adminToken)')));
+  assert.ok(login.includes("window.__rkVerifiedAdminToken=''"));
+  assert.ok(login.includes('return true'));
+  assert.ok(login.includes('return false'));
+  const admin = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
+  assert.ok(admin.includes('const googleLoginOk=await loginWithGoogle(token)'));
+});
