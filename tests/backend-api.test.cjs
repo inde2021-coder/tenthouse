@@ -45,7 +45,8 @@ before(async () => {
       ADMIN_API_TOKEN: adminToken,
       OTP_HMAC_SECRET: otpSecret,
       OTP_PROVIDER: 'demo',
-      WHATSAPP_WEBHOOK_VERIFY_TOKEN: 'test-webhook-verify-token'
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: 'test-webhook-verify-token',
+      PUBLIC_ORIGIN: 'https://erp.example.test'
     },
     stdio: 'ignore'
   });
@@ -278,4 +279,21 @@ test('customer booking rejects impossible calendar dates instead of accepting re
   });
   assert.equal(response.status, 400);
   assert.match((await response.json()).error, /बुकिंग विवरण सही भरें/);
+});
+
+
+test('CORS preflight permits the admin CRUD methods used by the frontend', async () => {
+  for (const method of ['PUT', 'PATCH', 'DELETE']) {
+    const response = await fetch(baseUrl + '/api/customer/bookings/123', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://erp.example.test',
+        'Access-Control-Request-Method': method,
+        'Access-Control-Request-Headers': 'content-type,x-admin-token'
+      }
+    });
+    assert.equal(response.status, 204);
+    assert.equal(response.headers.get('access-control-allow-origin'), 'https://erp.example.test');
+    assert.match(response.headers.get('access-control-allow-methods') || '', new RegExp('\\\\b' + method + '\\\\b'));
+  }
 });
