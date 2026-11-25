@@ -90,3 +90,9 @@ Main पर मिले root causes:
 - उस run में 91 business tests में 89 पास और 2 पुराने UI expectations fail हुए: (a) premium stylesheet को अंतिम stylesheet मानने वाला assertion, जबकि नया Admin-only override जानबूझकर उसके बाद आता है; (b) पुराना 3.2-second long-press assertion, जबकि नया trigger 1.2-second है।
 - दोनों assertions को नए intended behavior के अनुसार अपडेट किया गया; इसके बाद Google login failure cleanup और customer lookup rate-limit tests भी जोड़े गए।
 - नवीनतम head `fee9b71b9966019d594866cb42ee332ced9d725d` के लिए fresh GitHub Actions result अभी उपलब्ध नहीं है। इसलिए अंतिम CI pass अभी घोषित नहीं है।
+
+
+## AI Chat branch privacy finding
+- `audit/tenthouse-ai-chat-2026-11` / PR #2 हर AI request पर local `softwareBookings`, stock, expenses, vendor stock और vendor payments का पूरा snapshot Gemini/backend को भेजता है; केवल 8,500 characters पर text truncation है।
+- Booking records में customer name, mobile, address और payment details हो सकते हैं। System prompt में “निजी डेटा अनावश्यक रूप से न दोहराएं” लिखना data minimization का विकल्प नहीं है—PII पहले ही provider को भेजा जा चुका होता है।
+- PR #2 को अभी merge नहीं करना है। AI Chat को port करने से पहले snapshot को aggregate/minimize करना, customer identifiers हटाना और जरूरत पड़ने पर user-confirmed per-query context भेजना आवश्यक है।
