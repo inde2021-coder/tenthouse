@@ -495,17 +495,20 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
 
     <div id="actionToast"></div>
 
-    <!-- Login / Welcome Overlay with Google Sign-In -->
-    <div id="welcomeOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); justify-content: center; align-items: center; z-index: 999999;">
-        <div class="welcome-card" style="max-width: 380px; text-align:center;">
-            <h1 style="font-size: 20px; font-weight: 800; color: var(--primary-blue); margin-bottom: 14px;"><i class="fa-solid fa-tent"></i> राधा कृष्णा टेंट हाउस</h1>
-            <button type="button" onclick="loginWithGoogle()" class="glass-btn-blue" style="margin-bottom:12px;"><i class="fa-brands fa-google"></i> Gmail से लॉगिन करें</button>
-            <form onsubmit="handleDirectAdminLogin(event)" style="display: flex; flex-direction: column; gap: 8px;">
-                <input type="password" id="realAdminPass" placeholder="या पासवर्ड दर्ज करें (8120727987)" required>
-                <button type="submit" class="glass-btn-green"><i class="fa-solid fa-unlock-keyhole"></i> एडमिन पैनल खोलें</button>
-            </form>
-            <button type="button" onclick="closeWelcomeOverlay()" class="action-btn" style="color: #e53e3e; margin-top: 10px; width:100%; justify-content:center;"><i class="fa-solid fa-arrow-left"></i> वापस जाएं</button>
-        </div>
+    <!-- Secret admin gate: revealed only by Alt+Shift+K or a deliberate long-press on the developer mark. -->
+    <div id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="rkAdminGateTitle" style="display:none;position:fixed;inset:0;background:rgba(2,7,15,.88);backdrop-filter:blur(22px);justify-content:center;align-items:center;z-index:2147483000;padding:18px">
+      <div class="welcome-card rk-admin-gate-card" style="width:min(92vw,420px);text-align:center">
+        <div class="rk-admin-gate-mark"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2 id="rkAdminGateTitle">सुरक्षित व्यवस्थापक प्रवेश</h2>
+        <p>प्राधिकृत एक्सेस टोकन आवश्यक है।</p>
+        <form onsubmit="handleDirectAdminLogin(event)" autocomplete="off">
+          <label for="rkAdminAccessToken">Access Token</label>
+          <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
+          <button type="submit" class="glass-btn-green"><i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें</button>
+        </form>
+        <button type="button" onclick="closeWelcomeOverlay()" class="action-btn rk-admin-cancel">बंद करें</button>
+        <p class="rk-admin-gate-note">सत्यापन के बाद Google खाते से दूसरा लॉगिन चरण आवश्यक होगा।</p>
+      </div>
     </div>
 
     <!-- Barcode Print Modal -->
@@ -1318,7 +1321,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             }catch(error){showActionMessage('बुकिंग अपडेट लोकल सेव हुआ, लेकिन Customer Portal Backend sync विफल: '+error.message,'error');return false;}
         }
 
-        function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});firebase.auth().signInWithPopup(provider).then(result=>{document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();syncCustomerBookingsFromBackend();showActionMessage('Google लॉगिन सफल: '+(result.user.email||''),'success');}).catch(error=>{const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('Google लॉगिन विफल: '+(hints[error.code]||error.code+': '+error.message),'error');});}catch(e){showActionMessage('Google लॉगिन शुरू नहीं हुआ: '+e.message,'error');}}
+        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});const result=await firebase.auth().signInWithPopup(provider);document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');}}
         // Keep local writes immediate, then mirror each dataset to Firebase for other devices.
         function syncToCloud(key, value) {
             if (applyingCloudSnapshot) return Promise.resolve(false);
@@ -1497,52 +1500,56 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         // Customer login opener: shop-name tap opens the existing Gmail/password login.
-        function openCustomerLogin(event) {
-            if (event) { event.preventDefault(); event.stopPropagation(); }
-            const login = document.getElementById('welcomeOverlay');
-            const portal = document.getElementById('customerFirstPortal');
-            if (!login) {
-                if (typeof showActionMessage === 'function') showActionMessage('लॉगिन पेज नहीं मिला। कृपया पेज रीफ्रेश करें।', 'error');
-                return false;
-            }
-            login.style.setProperty('display', 'flex', 'important');
-            login.style.setProperty('visibility', 'visible', 'important');
-            login.style.setProperty('opacity', '1', 'important');
-            login.style.setProperty('pointer-events', 'auto', 'important');
-            login.style.position = 'fixed';
-            login.style.inset = '0';
-            login.style.zIndex = '2147483000';
-            if (portal) portal.style.display = 'flex';
-            const firstField = login.querySelector('button, input:not([type="hidden"])');
-            if (firstField) setTimeout(() => { try { firstField.focus({preventScroll:true}); } catch (_) {} }, 100);
+        function revealAdminGate() {
+            const gate=document.getElementById('welcomeOverlay');
+            if(!gate)return false;
+            gate.style.display='flex';
+            gate.style.visibility='visible';
+            gate.style.opacity='1';
+            const field=document.getElementById('rkAdminAccessToken');
+            if(field)setTimeout(()=>{try{field.focus({preventScroll:true});}catch(_){}},80);
             return false;
         }
-        // Keep the old handler name working for any other existing references.
+        function openCustomerLogin(event) {
+            if(event){event.preventDefault();event.stopPropagation();}
+            showActionMessage('व्यवस्थापक प्रवेश लॉक है।','info');
+            return false;
+        }
         function handleShopNameTripleClick(event) { return openCustomerLogin(event); }
-
         function closeWelcomeOverlay() {
-            document.getElementById('welcomeOverlay').style.display = 'none';
-            document.getElementById('customerFirstPortal').style.display = 'flex';
+            const gate=document.getElementById('welcomeOverlay');
+            if(gate)gate.style.display='none';
+            const field=document.getElementById('rkAdminAccessToken');
+            if(field)field.value='';
+            document.getElementById('customerFirstPortal').style.display='flex';
         }
-
-        function handleDirectAdminLogin(event) {
+        async function handleDirectAdminLogin(event) {
             event.preventDefault();
-            let pass = document.getElementById('realAdminPass').value.trim();
-            if(pass === '8120727987' || pass === 'admin') {
-                document.getElementById('welcomeOverlay').style.display = 'none';
-                document.getElementById('customerFirstPortal').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                loadAllFirebaseData();
-                showActionMessage("Login Successful", "success");
-            } else {
-                showActionMessage("गलत पासवर्ड!", "error");
-            }
+            const field=document.getElementById('rkAdminAccessToken');
+            const token=String(field?.value||'').trim();
+            if(token.length<32){showActionMessage('अमान्य एक्सेस टोकन।','error');return;}
+            const settings=safeGetStorage('softwareSettings',{});
+            const api=getBackendApiUrl(settings);
+            const submit=event.submitter;
+            if(submit){submit.disabled=true;submit.dataset.originalText=submit.innerHTML;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
+            try{
+                const response=await fetch(api+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
+                if(!response.ok)throw new Error(response.status===429?'बहुत अधिक प्रयास। कुछ समय बाद पुनः प्रयास करें।':'एक्सेस सत्यापित नहीं हुआ।');
+                const result=await response.json();
+                if(result.ok!==true)throw new Error('एक्सेस सत्यापित नहीं हुआ।');
+                window.__rkVerifiedAdminToken=token;
+                if(field)field.value='';
+                await loginWithGoogle(token);
+            }catch(error){window.__rkVerifiedAdminToken='';showActionMessage(error.message||'व्यवस्थापक लॉगिन विफल।','error');}
+            finally{if(submit){submit.disabled=false;submit.innerHTML=submit.dataset.originalText||'सत्यापित करें और आगे बढ़ें';}}
         }
-
         function returnToCustomerPortal() {
             closeAppMenu();
-            document.getElementById('adminPanel').style.display = 'none';
-            document.getElementById('welcomeOverlay').style.display = 'flex';
+            document.getElementById('adminPanel').style.display='none';
+            document.getElementById('welcomeOverlay').style.display='none';
+            document.getElementById('customerFirstPortal').style.display='flex';
+            window.__rkVerifiedAdminToken='';
+            try{firebase.auth().signOut();}catch(_){}
         }
 
         function calculateRentalDays(dateStr1, dateStr2) {
@@ -3253,7 +3260,11 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
    if(!canvas||!url){alert('पहले QR बनाएं।');return}
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
+   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p>
+<script id="rk-secret-admin-entry">
+(()=>{let holdTimer=null;const show=()=>{if(typeof window.revealAdminGate==='function')window.revealAdminGate();};document.addEventListener('keydown',e=>{if(e.altKey&&e.shiftKey&&(e.key||'').toLowerCase()==='k'){e.preventDefault();show();}});const bind=()=>{const mark=document.querySelector('.rk-dev-title');if(!mark||mark.dataset.secretEntryBound)return;mark.dataset.secretEntryBound='1';mark.addEventListener('pointerdown',()=>{holdTimer=setTimeout(show,2200);});['pointerup','pointerleave','pointercancel'].forEach(name=>mark.addEventListener(name,()=>{clearTimeout(holdTimer);holdTimer=null;}));};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();})();
+</script>
+</body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
  document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#aiAccessTokenInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
@@ -3494,4 +3505,33 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
       @media(max-width:600px){.content-body{padding:13px;padding-bottom:92px}.header{height:56px;padding:0 12px}.sidebar{width:min(82vw,285px)}.form-grid{grid-template-columns:minmax(0,1fr);gap:12px}.welcome-card,.glass-card-blue,.glass-card-green,.glass-card-purple{padding:16px;border-radius:17px!important}.page-section h2{font-size:21px}button:not(:disabled),.glass-btn-blue,.glass-btn-cyan,.glass-btn-green,.glass-btn-whatsapp{min-height:40px;padding:9px 13px}.table-responsive{max-width:100%;overflow-x:auto}}
       @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
       @media print{html,body{background:#fff!important;color:#111!important}#printableSlipArea,#printableSlipArea *{color:#111!important;background:#fff!important;box-shadow:none!important;text-shadow:none!important}}
-    </style>
+    
+      /* Enterprise data tables: clear hierarchy, restrained contrast, high-density readability. */
+      .table-responsive{position:relative;isolation:isolate;overflow:auto!important;max-height:min(62vh,620px)!important;padding:10px!important;margin:14px 0 22px!important;border:1px solid rgba(126,164,211,.2)!important;border-radius:18px!important;background:linear-gradient(155deg,rgba(7,14,25,.94),rgba(13,23,38,.91))!important;box-shadow:inset 0 2px 12px rgba(0,0,0,.42),0 12px 28px rgba(0,0,0,.16)!important;scrollbar-width:thin;scrollbar-color:#456181 rgba(255,255,255,.035)}
+      .table-responsive::-webkit-scrollbar{width:9px;height:9px}.table-responsive::-webkit-scrollbar-track{background:rgba(255,255,255,.035);border-radius:20px}.table-responsive::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#55799e,#304b6c);border:2px solid #101b2b;border-radius:20px}
+      .table-responsive table{width:100%;min-width:max-content;border-collapse:separate!important;border-spacing:0!important;color:#e9f1fc!important;font-variant-numeric:tabular-nums}
+      .table-responsive thead{position:sticky;top:0;z-index:8}
+      .table-responsive th{position:sticky;top:0;z-index:8;padding:13px 15px!important;background:linear-gradient(180deg,#203650 0%,#17283e 100%)!important;color:#d9ecff!important;border:0!important;border-bottom:1px solid rgba(134,184,232,.32)!important;font-size:10.5px!important;font-weight:850!important;letter-spacing:.075em;text-transform:uppercase;white-space:nowrap;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+      .table-responsive th:first-child{border-radius:10px 0 0 0}.table-responsive th:last-child{border-radius:0 10px 0 0}
+      .table-responsive td{padding:13px 15px!important;background:rgba(18,31,49,.72)!important;color:#dce7f5!important;border:0!important;border-bottom:1px solid rgba(133,164,202,.105)!important;font-size:12.5px!important;font-weight:560!important;line-height:1.5;vertical-align:middle;white-space:nowrap}
+      .table-responsive tbody tr:nth-child(even) td{background:rgba(23,39,59,.78)!important}
+      .table-responsive tbody tr:hover td{background:linear-gradient(90deg,rgba(61,113,168,.2),rgba(37,73,111,.16))!important;color:#fff!important}
+      .table-responsive tbody tr:last-child td{border-bottom:0!important}.table-responsive tbody tr:last-child td:first-child{border-radius:0 0 0 10px}.table-responsive tbody tr:last-child td:last-child{border-radius:0 0 10px 0}
+      .table-responsive tbody tr td:first-child{border-left:2px solid transparent!important}.table-responsive tbody tr:hover td:first-child{border-left-color:#70c8e6!important}
+      .table-responsive td.table-actions{position:sticky;right:0;z-index:4;background:linear-gradient(90deg,rgba(17,31,49,.97),rgba(19,35,55,.99))!important;box-shadow:-9px 0 14px rgba(0,0,0,.18);white-space:nowrap}
+      .table-responsive td.table-actions button,.table-responsive td:last-child button{margin:2px 3px!important;min-height:32px!important;padding:7px 10px!important;border-radius:9px!important;font-size:11px!important}
+      .table-responsive .action-btn{background:linear-gradient(150deg,#334d6d,#1c3049)!important;border:1px solid rgba(166,202,237,.2)!important;color:#eaf4ff!important;box-shadow:0 3px 8px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.14)!important}
+      .table-responsive .danger,.table-responsive .danger-btn,.table-responsive button.delete-btn{background:linear-gradient(150deg,#bd5260,#792d3b)!important}
+      .table-responsive td[colspan]{padding:26px 16px!important;text-align:center!important;color:#91a7c1!important;font-weight:650!important}
+      .table-responsive .status-badge,.table-responsive .status-pill,.table-responsive .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid rgba(145,180,220,.2);background:rgba(88,125,166,.15);color:#d9eaff;font-size:10.5px;font-weight:850;letter-spacing:.015em}
+      .table-responsive a{color:#83d9f0!important;text-decoration:none;font-weight:750}.table-responsive a:hover{text-decoration:underline}
+      .table-responsive input,.table-responsive select{min-width:92px!important;min-height:34px!important;padding:7px 9px!important;margin:0!important;border-radius:9px!important;font-size:12px!important}
+      .table-responsive tr:focus-within td{background:rgba(49,91,139,.22)!important}
+      .rk-developer-footer{position:relative;overflow:hidden;max-width:900px!important;margin:22px auto 8px!important;padding:22px 24px!important;border-radius:22px!important;text-align:center!important;background:radial-gradient(ellipse at 50% 0%,rgba(76,135,192,.2),transparent 58%),linear-gradient(145deg,rgba(18,31,49,.97),rgba(8,15,26,.98))!important;border:1px solid rgba(132,174,218,.24)!important;box-shadow:0 20px 46px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08)!important;color:#e8f2ff!important}
+      .rk-dev-title{display:inline-flex;align-items:center;gap:8px;color:#9fe7f4!important;font-size:10px!important;font-weight:900!important;letter-spacing:.18em!important;text-transform:uppercase}.rk-dev-title:before{content:"";width:20px;height:1px;background:linear-gradient(90deg,transparent,#72d8ec)}.rk-dev-title:after{content:"";width:20px;height:1px;background:linear-gradient(90deg,#72d8ec,transparent)}
+      .rk-dev-name{margin:10px 0 3px!important;color:#f5f8ff!important;font-size:19px!important;font-weight:850!important;letter-spacing:-.025em}.rk-dev-rights{max-width:680px!important;margin:8px auto 14px!important;color:#9fb1c8!important;font-size:11px!important;line-height:1.75!important}
+      .rk-dev-contact{display:flex!important;justify-content:center!important;align-items:center!important;gap:9px!important;flex-wrap:wrap}.rk-dev-contact a{min-height:36px;padding:8px 13px;border-radius:11px;border:1px solid rgba(143,184,226,.22);background:rgba(93,139,187,.13);color:#e6f4ff!important;font-size:11px;font-weight:800;text-decoration:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.rk-dev-contact a:hover{background:rgba(87,161,205,.24);transform:translateY(-1px)}.rk-dev-number{color:#8ea6c3!important;font-size:11px;font-weight:750}
+      .rk-admin-gate-card{border:1px solid rgba(126,190,235,.28)!important;box-shadow:0 28px 90px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.12)!important}.rk-admin-gate-mark{width:54px;height:54px;margin:0 auto 14px;border-radius:17px;display:grid;place-items:center;color:#a4e8f4;font-size:22px;background:linear-gradient(145deg,rgba(75,143,193,.28),rgba(21,40,62,.72));border:1px solid rgba(136,198,232,.28);box-shadow:0 10px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.2)}.rk-admin-gate-card h2{font-size:20px!important;margin-bottom:7px}.rk-admin-gate-card p{font-size:12px!important}.rk-admin-gate-card form{margin-top:18px;text-align:left}.rk-admin-gate-card form button{width:100%;margin-top:8px}.rk-admin-cancel{width:100%;margin-top:10px}.rk-admin-gate-note{margin-top:12px!important;font-size:10px!important;color:#7890aa!important}
+      @media(max-width:700px){.table-responsive{max-height:58vh!important;padding:7px!important;border-radius:14px!important}.table-responsive th{padding:11px 12px!important;font-size:10px!important}.table-responsive td{padding:11px 12px!important;font-size:12px!important}.rk-developer-footer{padding:18px 14px!important;margin-top:16px!important}.rk-dev-name{font-size:17px!important}.rk-dev-contact{gap:7px!important}}
+      @media(prefers-reduced-motion:reduce){.table-responsive tbody tr,.rk-dev-contact a{transition:none!important}}
+</style>
