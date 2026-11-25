@@ -64,3 +64,17 @@ Main पर मिले root causes:
 - Production Main को बदला या merge नहीं किया गया।
 - कोई secret/API key इस branch में नहीं जोड़ी गई।
 - Vercel preview quota के कारण live deployment की पुष्टि उपलब्ध नहीं थी; Firebase/Google OAuth, real WhatsApp/OTP, payment settlement, barcode/print और real-device visual tests अभी अलग production gates हैं।
+
+
+## Customer lookup और preview सुरक्षा समीक्षा
+- Production Main में `GET /api/customer/bookings/:id/status` Booking ID और उसी रिकॉर्ड के Registered Mobile दोनों माँगता है; केवल मोबाइल नंबर से पूरी booking history नहीं लौटाता।
+- `render-preview-bartan` का `POST /api/customer/lookup` query + mobile के आधार पर अधिकतम 10 bookings लौटाता है, जिनमें items और payment-related fields शामिल हैं। यह अनावश्यक रूप से व्यापक customer-data exposure है; इसे Tent House में port/merge नहीं करना है।
+- `render-preview-isolated` का वैकल्पिक tracker exact Booking Number + Registered Mobile मिलाता है और केवल एक customer-portal booking लौटाता है; lookup logic अपेक्षाकृत सुरक्षित है। लेकिन उसी branch में BARTAN hero/branding और Preview-mode demo access भी हैं, इसलिए पूरी branch merge नहीं करनी है।
+- Preview branches में `PREVIEW_MODE` / demo token व्यवहार केवल isolated non-production preview तक सीमित रहना चाहिए; इसे Production Main में कभी enable नहीं करना है।
+
+## नई verification PR
+- Draft PR #3: `https://github.com/inde2021-coder/tenthouse-/pull/3`
+- Head: `0413011e5a1044e0d096e05e6f6c16bc1c8dcdcb`
+- PR अभी Draft है, merge नहीं हुआ; Production Main unchanged है।
+- Root/public/backend-public HTML copies का content hash समान verify किया गया।
+- GitHub status में Vercel preview quota failure दिखा; इस turn में GitHub Actions test-run result उपलब्ध नहीं हुआ। इसलिए regression tests को pass घोषित नहीं किया जा रहा।
