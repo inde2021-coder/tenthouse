@@ -163,6 +163,20 @@ test('WhatsApp send calls backend endpoint and does not claim success before res
 });
 
 
+test('public customer stock catalog is loaded from backend rather than relying on admin localStorage', () => {
+  assert.ok(html.includes("fetch(api+'/api/customer/stock'"));
+  assert.ok(html.includes('publicCustomerStockCatalog'));
+  assert.ok(html.includes("localStorage.setItem('publicCustomerStockCache'"));
+  const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
+  const start = backend.indexOf("app.get('/api/customer/stock'");
+  const end = backend.indexOf("app.get('/api/customer/bookings'", start);
+  const route = backend.slice(start, end);
+  assert.ok(route.includes("storeGet('tent_erp_data/stock')"));
+  assert.ok(route.includes('singleRent'));
+  assert.ok(route.includes('setRent'));
+  assert.ok(!route.includes('costPrice'));
+});
+
 test('customer can submit a booking with no selected items', () => {
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   assert.ok(backend.includes("items: z.array("));
