@@ -6,6 +6,16 @@ const vm = require('node:vm');
 const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
 const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
 
+test('Vercel backend serves the synced frontend and PWA assets from its project root', () => {
+  const path = require('node:path');
+  const publicDir = path.join(__dirname, '..', 'backend', 'public');
+  assert.ok(backend.includes("express.static(path.resolve(backendDir, '../public')"));
+  assert.equal(fs.readFileSync(path.join(publicDir, 'index.html'), 'utf8'), html);
+  for (const asset of ['icon.svg', 'manifest.webmanifest', 'sw.js']) {
+    assert.ok(fs.existsSync(path.join(publicDir, asset)), `missing backend public asset: ${asset}`);
+  }
+});
+
 function sourceBetween(startMarker, endMarker) {
   const start = html.indexOf(startMarker);
   const end = html.indexOf(endMarker, start + startMarker.length);
