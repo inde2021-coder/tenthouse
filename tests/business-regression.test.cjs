@@ -126,3 +126,23 @@ test('root and public app copies are kept in sync', () => {
   const pub = fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
   assert.equal(root, pub);
 });
+
+test('customer booking portal submits to the persistent public backend endpoint', () => {
+  const code = sourceBetween('async function saveCustomerBooking(event)', 'function loadBookingsListTable()');
+  assert.match(code, /\/api\/customer\/bookings/);
+  assert.match(code, /DEFAULT_BACKEND_API_URL/);
+  assert.match(html, /async function syncCustomerBookingsFromBackend/);
+  assert.match(html, /updateRemoteCustomerBookingStatus\(id,'Confirmed'\)/);
+});
+
+test('OCR uses a real OCR engine and does not fill fake stock values', () => {
+  assert.match(html, /Tesseract\.recognize\(file,'eng\+hin'/);
+  assert.doesNotMatch(html, /Scanned Tent Item/);
+  assert.match(html, /stockOcrTextPreview/);
+});
+
+test('camera barcode scanning is wired to both dispatch and return fields', () => {
+  assert.match(html, /startBarcodeCameraScan\('dispatchSearchId'\)/);
+  assert.match(html, /startBarcodeCameraScan\('returnBarcodeInput'\)/);
+  assert.match(html, /BarcodeDetector\.getSupportedFormats/);
+});
