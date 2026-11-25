@@ -1,4 +1,4 @@
-const test = require('node:test');
+const { before, after, test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
@@ -34,7 +34,7 @@ async function request(route, options = {}) {
   });
 }
 
-test.before(async () => {
+before(async () => {
   const port = await reservePort();
   baseUrl = 'http://127.0.0.1:' + port;
   child = spawn(process.execPath, [path.join(__dirname, '..', 'backend', 'src', 'server.js')], {
@@ -67,7 +67,7 @@ test.before(async () => {
   assert.equal(ready, true, 'Backend did not become ready within five seconds.');
 });
 
-test.after(async () => {
+after(async () => {
   if (!child || child.exitCode !== null) return;
   child.kill('SIGTERM');
   await Promise.race([
