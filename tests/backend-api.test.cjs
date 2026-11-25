@@ -77,6 +77,16 @@ after(async () => {
   if (child.exitCode === null) child.kill('SIGKILL');
 });
 
+test('public customer stock endpoint returns a safe catalog array', async () => {
+  const response = await request('/api/customer/stock');
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.ok(Array.isArray(data.items));
+  for (const item of data.items) {
+    assert.deepEqual(Object.keys(item).sort(), ['name', 'qty', 'setRent', 'singleRent'].sort());
+  }
+});
+
 test('public customer booking persists and status lookup requires the matching mobile', async () => {
   const payload = {
     name: 'Test Customer',
