@@ -424,8 +424,9 @@ test('customer front page exposes booking only and keeps admin workspace separat
   assert.ok(portal.includes('id="portalEventDate"'));
   assert.ok(portal.includes('id="portalStockSelect"'));
   assert.ok(portal.includes('id="portalAdvanceAmount"'));
-  assert.ok(!portal.includes('customerStatusQuery'));
-  assert.ok(!portal.includes('checkCustomerBookingStatus'));
+  assert.ok(portal.includes('customerStatusQuery'));
+  assert.ok(portal.includes('customerStatusMobile'));
+  assert.ok(portal.includes('checkCustomerBookingStatus'));
   assert.ok(!portal.includes('adminPanel'));
   assert.ok(portal.includes('class="rk-customer-brand"'));
   assert.ok(portal.includes('class="rk-customer-form"'));
