@@ -533,7 +533,7 @@ function validateBookingWorkflowConsistency(currentBooking, updates) {
     const events = [
       ...dispatchTimeline[index].map(event => ({ ...event, kind: 'dispatch' })),
       ...returnTimeline[index].map(event => ({ ...event, kind: 'return' }))
-    ].sort((a, b) => a.date.localeCompare(b.date) || (a.kind === 'dispatch' ? -1 : 1));
+    ].sort((a, b) => a.date.localeCompare(b.date) || (a.kind === b.kind ? 0 : a.kind === 'dispatch' ? -1 : 1));
     let cumulativeDispatched = 0, cumulativeReturned = 0;
     for (const event of events) {
       if (event.kind === 'dispatch') cumulativeDispatched += event.qty;
