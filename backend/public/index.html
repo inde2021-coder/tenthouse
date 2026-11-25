@@ -639,8 +639,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 #customerFirstPortal .rk-customer-form .form-grid>div:nth-child(4n+2)>label{color:#c4b5fd!important}
 #customerFirstPortal .rk-customer-form .form-grid>div:nth-child(4n+3)>label{color:#86efac!important}
 #customerFirstPortal .rk-customer-form .form-grid>div:nth-child(4n+4)>label{color:#fbbf84!important}
-#customerFirstPortal .rk-customer-form input,#customerFirstPortal .rk-customer-form select,#customerFirstPortal .rk-customer-form textarea,#customerFirstPortal .rk-customer-lookup-row input,#customerFirstPortal .rk-lookup-verification input{box-sizing:border-box;width:100%;min-height:46px;padding:11px 13px!important;border:1px solid #8ba2c0!important;border-radius:12px!important;background:linear-gradient(145deg,#0b1523,#14243a)!important;color:#edf5ff!important;-webkit-text-fill-color:#17243a!important;caret-color:#1d4ed8!important;box-shadow:inset 0 2px 5px rgba(23,47,81,.1),0 3px 10px rgba(0,0,0,.12)!important;font-size:14px!important;font-weight:600}
-#customerFirstPortal .rk-customer-form input::placeholder,#customerFirstPortal .rk-customer-form textarea::placeholder,#customerFirstPortal .rk-customer-lookup-row input::placeholder,#customerFirstPortal .rk-lookup-verification input::placeholder{color:#718096!important;-webkit-text-fill-color:#718096!important;opacity:1}
+#customerFirstPortal .rk-customer-form input,#customerFirstPortal .rk-customer-form select,#customerFirstPortal .rk-customer-form textarea,#customerFirstPortal .rk-customer-lookup-row input,#customerFirstPortal .rk-lookup-verification input{box-sizing:border-box;width:100%;min-height:46px;padding:11px 13px!important;border:1px solid #8ba2c0!important;border-radius:12px!important;background:linear-gradient(145deg,#0b1523,#14243a)!important;color:#edf5ff!important;-webkit-text-fill-color:#edf5ff!important;caret-color:#83d9f0!important;box-shadow:inset 0 2px 5px rgba(23,47,81,.1),0 3px 10px rgba(0,0,0,.12)!important;font-size:14px!important;font-weight:600}
+#customerFirstPortal .rk-customer-form input::placeholder,#customerFirstPortal .rk-customer-form textarea::placeholder,#customerFirstPortal .rk-customer-lookup-row input::placeholder,#customerFirstPortal .rk-lookup-verification input::placeholder{color:#8fa8c4!important;-webkit-text-fill-color:#8fa8c4!important;opacity:1}
 #customerFirstPortal .rk-customer-form textarea{min-height:60px;resize:vertical}
 #customerFirstPortal .rk-advance-fields{margin-top:12px;padding:14px;border:1px solid rgba(111,189,246,.27);border-radius:15px;background:rgba(42,91,139,.11)}
 #customerFirstPortal .rk-cash-advance-note{margin-top:10px;padding:10px 12px;border:1px solid rgba(90,210,157,.25);border-radius:11px;background:rgba(30,160,111,.1);color:#9df1c6;font-size:12px}
@@ -721,13 +721,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
     <div id="actionToast"></div>
 
-    <!-- Secret admin gate: Ctrl+Alt+Shift+K / Ctrl+Shift+K, 1.2-second logo hold, or five taps. -->
+    <!-- Secret admin gate: Ctrl+Alt+Shift+K / Ctrl+Shift+K, 1.2-second logo hold, or three taps. -->
     <div id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="rkAdminGateTitle" style="display:none;position:fixed;inset:0;background:rgba(2,7,15,.88);backdrop-filter:blur(22px);justify-content:center;align-items:center;z-index:2147483000;padding:18px">
       <div class="welcome-card rk-admin-gate-card" style="width:min(92vw,420px);text-align:center">
         <div class="rk-admin-gate-mark"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 id="rkAdminGateTitle">सुरक्षित व्यवस्थापक प्रवेश</h2>
         <p>Secret Admin Login — केवल अधिकृत स्टाफ के लिए।</p>
-        <p class="rk-admin-howto">Desktop: Ctrl + Shift + K · Mobile: Shop Logo को 1–2 सेकंड दबाएँ या 5 बार टैप करें</p>
+        <p class="rk-admin-howto">Desktop: Ctrl + Shift + K · Mobile: Shop Logo को 1–2 सेकंड दबाएँ या 3 बार टैप करें</p>
         <form onsubmit="return window.handleDirectAdminLogin(event)" autocomplete="off">
           <label for="rkAdminAccessToken">Access Token</label>
           <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
@@ -833,6 +833,19 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     </div>
                     <button type="submit" class="glass-btn-cyan rk-customer-submit"><i class="fa-solid fa-paper-plane"></i> बुकिंग सबमिट करें</button>
                 </form>
+                <section class="rk-customer-search-panel" aria-labelledby="rkCustomerLookupTitle">
+                  <div class="rk-customer-search-heading">
+                    <span class="rk-search-icon"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i></span>
+                    <div><h2 id="rkCustomerLookupTitle">अपनी बुकिंग की स्थिति देखें</h2><p>अपना Booking Number और उसी बुकिंग में दर्ज मोबाइल नंबर भरें।</p></div>
+                  </div>
+                  <div class="rk-customer-lookup-row">
+                    <div class="rk-lookup-main"><label for="customerBookingLookup">Booking Number / बुकिंग नंबर</label><input id="customerBookingLookup" type="text" inputmode="numeric" autocomplete="off" maxlength="16" placeholder="बुकिंग नंबर दर्ज करें"></div>
+                    <div class="rk-lookup-verification" id="customerLookupVerification"><label for="customerLookupMobile">Registered Mobile / बुकिंग में दर्ज मोबाइल</label><input id="customerLookupMobile" type="tel" inputmode="numeric" autocomplete="tel" maxlength="10" pattern="[0-9]{10}" placeholder="10 अंकों का मोबाइल नंबर"></div>
+                    <button type="button" class="rk-customer-search-button" onclick="searchCustomerBookings()"><i class="fa-solid fa-magnifying-glass"></i> बुकिंग देखें</button>
+                  </div>
+                  <p class="rk-lookup-help"><i class="fa-solid fa-shield-halved"></i> सुरक्षा के लिए केवल सही Booking Number और उसी बुकिंग का Registered Mobile स्वीकार होगा।</p>
+                  <div id="customerLookupResults" class="rk-customer-lookup-results" aria-live="polite"></div>
+                </section>
                 <footer class="rk-developer-footer" aria-label="सॉफ्टवेयर डेवलपर और कॉपीराइट">
                   <div class="rk-dev-title">SOFTWARE DESIGN &amp; DEVELOPMENT</div>
                   <div class="rk-dev-name">Radhe Krishn Tent House Manager</div>
@@ -2181,32 +2194,41 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         window.customerBookingSearchResults=[];
+        window.customerBookingSearchResults=[];
         function toggleCustomerLookupVerification(){
-            const q=String(document.getElementById('customerBookingLookup')?.value||''),digits=q.replace(/\D/g,''),direct=digits.length===10||(digits.length===12&&digits.startsWith('91'))||(digits.length===11&&digits.startsWith('0'));
-            const wrap=document.getElementById('customerLookupVerification');if(wrap)wrap.style.display=direct?'none':'block';
+            const wrap=document.getElementById('customerLookupVerification');
+            if(wrap)wrap.style.display='block';
         }
         async function searchCustomerBookings(){
-            const lookup=String(document.getElementById('customerBookingLookup')?.value||'').trim(),mobile=String(document.getElementById('customerLookupMobile')?.value||'').trim();
-            const out=document.getElementById('customerLookupResults');if(!lookup){showActionMessage('नाम, Registered Mobile या Booking Number दर्ज करें।','error');return;}
-            const digits=lookup.replace(/\D/g,''),direct=digits.length===10||(digits.length===12&&digits.startsWith('91'))||(digits.length===11&&digits.startsWith('0'));
-            if(!direct&&!/^\d{10}$/.test(mobile)){showActionMessage('इस नाम या Booking Number के साथ Registered Mobile Number भी भरें।','error');return;}
-            if(window.__rkLocalHtmlPreviewMode){
-                const rows=safeGetStorage('softwareBookings',[]),needle=lookup.toLowerCase(),mobileDigits=mobile.replace(/\D/g,'');
-                const matches=rows.filter(b=>{
-                    const savedMobile=String(b.mob||'').replace(/\D/g,'');
-                    if(direct)return savedMobile===digits.slice(-10);
-                    return String(b.id)===lookup && savedMobile===mobileDigits || String(b.name||'').trim().toLowerCase()===needle && savedMobile===mobileDigits;
-                });
-                window.customerBookingSearchResults=matches.map(b=>({...b,maskedMobile:b.maskedMobile||String(b.mob||'').replace(/\d(?=\d{4})/g,'•')}));
+            const lookup=String(document.getElementById('customerBookingLookup')?.value||'').trim().replace(/^#/,'');
+            const mobile=String(document.getElementById('customerLookupMobile')?.value||'').replace(/\D/g,'').slice(-10);
+            const out=document.getElementById('customerLookupResults');
+            const localPreview=window.__rkLocalHtmlPreviewMode===true;
+            if(!/^[0-9]{10,16}$/.test(lookup)&&!(localPreview&&/^DEMO-[0-9]{10,16}$/i.test(lookup))){
+                showActionMessage('सही Booking Number दर्ज करें।','error');return;
+            }
+            if(!/^[0-9]{10}$/.test(mobile)){
+                showActionMessage('बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।','error');return;
+            }
+            if(localPreview){
+                const rows=safeGetStorage('softwareBookings',[]);
+                const match=rows.find(b=>String(b.id).toUpperCase()===lookup.toUpperCase()&&String(b.mob||'').replace(/\D/g,'').slice(-10)===mobile);
+                window.customerBookingSearchResults=match?[{...match,maskedMobile:match.maskedMobile||String(match.mob||'').replace(/\d(?=\d{4})/g,'•')}]:[];
                 renderCustomerBookingSearchResults();return;
             }
-            const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));if(!api||!navigator.onLine){showActionMessage('Booking खोजने के लिए Internet connection आवश्यक है।','error');return;}
+            const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));
+            if(!api||!navigator.onLine){showActionMessage('Booking खोजने के लिए Internet connection आवश्यक है।','error');return;}
             if(out)out.innerHTML='<div class="rk-lookup-loading"><i class="fa-solid fa-spinner fa-spin"></i> आपकी Booking खोजी जा रही है…</div>';
             try{
-                const r=await fetch(api+'/api/customer/bookings/search',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},cache:'no-store',body:JSON.stringify({lookup,mobile:direct?'':mobile})});
-                const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||'Booking Search असफल हुआ।');
-                window.customerBookingSearchResults=Array.isArray(data.bookings)?data.bookings:[];renderCustomerBookingSearchResults();
-            }catch(error){if(out)out.innerHTML='<div class="rk-lookup-empty">'+escapeHtml(error.message)+'</div>';showActionMessage('Booking Search: '+error.message,'error');}
+                const r=await fetch(api+'/api/customer/bookings/search',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},cache:'no-store',body:JSON.stringify({lookup,mobile})});
+                const data=await r.json().catch(()=>({}));
+                if(!r.ok)throw Error(data.error||'Booking Search असफल हुआ।');
+                window.customerBookingSearchResults=Array.isArray(data.bookings)?data.bookings:[];
+                renderCustomerBookingSearchResults();
+            }catch(error){
+                if(out)out.innerHTML='<div class="rk-lookup-empty">'+escapeHtml(error.message)+'</div>';
+                showActionMessage('Booking Search: '+error.message,'error');
+            }
         }
         function renderCustomerBookingSearchResults(){
             const root=document.getElementById('customerLookupResults');if(!root)return;const bookings=window.customerBookingSearchResults||[];

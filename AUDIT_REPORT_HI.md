@@ -63,3 +63,10 @@ Branch तुलना:
 - इन व्यवहारों के लिए regression tests और bartan preview branch के लिए CI trigger जोड़ा गया।
 
 Production `main` और Vercel को इस branch audit/fix में नहीं बदला गया। Live Firebase/Google OAuth, SMS/WhatsApp provider, payment settlement और real-device visual tests को credentials/device access के बिना pass घोषित नहीं किया गया है।
+
+
+## Customer booking tracker security fix
+- Customer portal में tracker section का markup मौजूद नहीं था; केवल JavaScript functions थे। अब actual Booking Number + Registered Mobile fields और result area जोड़े गए हैं।
+- पहले mobile-only search पर एक ही फोन की कई bookings लौट सकती थीं। अब backend exact booking ID को सीधे lookup करता है और उसी record के registered mobile से match करता है; एक request में अधिकतम एक booking लौटती है।
+- Name-only और mobile-history search हटाए गए। यह customer privacy के लिए जानबूझकर stricter रखा गया है।
+- Customer form textbox text-fill color भी dark field background के साथ readable किया गया।

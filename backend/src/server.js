@@ -505,18 +505,19 @@ function publicCustomerBooking(booking) {
   };
 }
 app.post('/api/customer/bookings/search',customerLookupLimiter,requireDurableStore,async(req,res)=>{
-  const parsed=z.object({lookup:z.string().trim().min(4).max(160),mobile:z.string().trim().optional().default('')}).safeParse(req.body);
-  if(!parsed.success)return res.status(400).json({error:'नाम, मोबाइल या Booking Number दर्ज करें।'});
-  const lookup=parsed.data.lookup.trim().replace(/\s+/g,' '),digits=lookup.replace(/\D/g,''),directMobile=customerLookupMobile(lookup),verifiedMobile=customerLookupMobile(parsed.data.mobile);
-  if(!directMobile&&!verifiedMobile)return res.status(400).json({error:'नाम या Booking Number खोजने के लिए बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भी भरें।'});
+  const parsed=z.object({
+    lookup:z.string().trim().regex(/^\d{10,16}$/),
+    mobile:z.string().trim().min(10).max(16)
+  }).safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'Booking Number और उसी बुकिंग में दर्ज मोबाइल नंबर आवश्यक हैं।'});
+  const lookup=parsed.data.lookup.trim(),mobile=customerLookupMobile(parsed.data.mobile);
+  if(!mobile)return res.status(400).json({error:'सही 10 अंकों का Registered Mobile दर्ज करें।'});
   try{
-    const all=(await storeList('erpData/customerBookings')).filter(b=>b&&b.source==='customer-portal');
-    let matched=[];
-    if(directMobile)matched=all.filter(b=>customerLookupMobile(b.mob)===directMobile);
-    else if(/^\d{10,16}$/.test(digits))matched=all.filter(b=>String(b.id)===digits&&customerLookupMobile(b.mob)===verifiedMobile);
-    else {const needle=lookup.toLocaleLowerCase('en-IN');matched=all.filter(b=>customerLookupMobile(b.mob)===verifiedMobile&&String(b.name||'').trim().toLocaleLowerCase('en-IN').includes(needle));}
-    matched.sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
-    res.set('Cache-Control','no-store').set('Pragma','no-cache').json({ok:true,bookings:matched.slice(0,20).map(publicCustomerBooking)});
+    // Never reveal a customer's complete booking history from a phone number alone.
+    const booking=await storeGet('erpData/customerBookings/'+lookup);
+    if(!booking||booking.source!=='customer-portal'||customerLookupMobile(booking.mob)!==mobile)
+      return res.status(404).json({error:'इस Booking Number और Registered Mobile का मेल नहीं मिला।'});
+    res.set('Cache-Control','no-store').set('Pragma','no-cache').json({ok:true,bookings:[publicCustomerBooking(booking)]});
   }catch(error){res.status(503).json({error:error.message||'बुकिंग खोज अभी उपलब्ध नहीं है।'});}
 });
 

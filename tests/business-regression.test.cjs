@@ -955,15 +955,18 @@ test('customer advance defaults to cash and QR only appears for a positive onlin
   assert.ok(html.includes("advanceEnabled?Number(document.getElementById('portalAdvanceAmount')?.value||0):0"));
   assert.ok(html.includes('QR केवल Online / UPI चुनने पर खुलेगा।'));
 });
-test('customer booking lookup has mobile, name and booking-number search plus printable slips and bill',()=>{
+test('customer booking tracker is visible and requires exact booking number plus registered mobile',()=>{
+  assert.ok(html.includes('id="customerBookingLookup"'));
+  assert.ok(html.includes('id="customerLookupMobile"'));
+  assert.ok(html.includes('id="customerLookupResults"'));
+  assert.ok(html.includes('अपना Booking Number और उसी बुकिंग में दर्ज मोबाइल नंबर'));
   assert.ok(html.includes('/api/customer/bookings/search'));
-  assert.ok(html.includes('customerBookingLookup'));
-  assert.ok(html.includes('customerLookupMobile'));
   assert.ok(html.includes('printCustomerBookingDocument'));
   const backend=fs.readFileSync(require('node:path').join(__dirname,'..','backend','src','server.js'),'utf8');
   assert.ok(backend.includes("app.post('/api/customer/bookings/search'"));
-  assert.ok(backend.includes('customerLookupMobile(b.mob)===verifiedMobile'));
-  assert.ok(backend.includes('maskedMobile'));
+  assert.ok(backend.includes("storeGet('erpData/customerBookings/'+lookup)"));
+  assert.ok(backend.includes("customerLookupMobile(booking.mob)!==mobile"));
+  assert.ok(backend.includes("bookings:[publicCustomerBooking(booking)]"));
 });
 test('secret admin login is explained and mobile logo long-press opens the gate',()=>{
   assert.ok(html.includes('Ctrl + Shift + K'));
@@ -1001,4 +1004,15 @@ test('admin login reports actionable backend configuration and token failures',(
   assert.ok(html.includes('Access Token गलत है।'));
   assert.ok(html.includes('Admin login API route नहीं मिली।'));
   assert.ok(html.includes('Backend से संपर्क नहीं हो पाया।'));
+});
+
+test('customer booking tracker never returns all bookings for a mobile-only query',()=>{
+  const backend=fs.readFileSync(require('node:path').join(__dirname,'..','backend','src','server.js'),'utf8');
+  const start=backend.indexOf("app.post('/api/customer/bookings/search'");
+  const end=backend.indexOf("\n\napp.get('/api/customer/bookings'",start);
+  const route=backend.slice(start,end);
+  assert.ok(route.includes("regex(/^\\d{10,16}$/)"));
+  assert.ok(route.includes("customerLookupMobile(booking.mob)!==mobile"));
+  assert.ok(route.includes("bookings:[publicCustomerBooking(booking)]"));
+  assert.ok(!route.includes("storeList('erpData/customerBookings')"));
 });
