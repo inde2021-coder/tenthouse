@@ -1930,6 +1930,15 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
               message+=' सामान वापस करने तक यही Booking ID सुरक्षित रखें। अतिरिक्त सामान इसी बुकिंग पर लिया जा सकता है।';
             }
             if(type==='bill'){const total=calculateBookingTotalRent(b),paid=getBookingPaidAmount(b);message+=` कुल देय ₹${total.toFixed(2)}, जमा ₹${paid.toFixed(2)}, बाकी ₹${Math.max(0,total-paid).toFixed(2)}।`;}
+            if(['payment','payment-verified','payment-rejected'].includes(type)){
+              const ledger=safeGetStorage('rkPaymentLedger',[]),latest=ledger.filter(p=>String(p.bookingId)===String(b.id)).sort((a,c)=>String(c.createdAt||'').localeCompare(String(a.createdAt||'')))[0];
+              if(latest){
+                const cash=Math.max(0,Number(latest.cash)||0),online=Math.max(0,Number(latest.online)||0),total=calculateBookingTotalRent(b),paid=getBookingPaidAmount(b),due=Math.max(0,total-paid);
+                if(type==='payment')message+=` भुगतान अपडेट: नकद ₹${cash.toFixed(2)} प्राप्त हुआ। Online ₹${online.toFixed(2)} ${online>0?'UTR सत्यापन लंबित है।':'नहीं है।'} कुल जमा ₹${paid.toFixed(2)}, बाकी ₹${due.toFixed(2)}।`;
+                else if(type==='payment-verified')message+=` आपका Online भुगतान ₹${online.toFixed(2)} सत्यापित हो गया है। कुल जमा ₹${paid.toFixed(2)}, बाकी ₹${due.toFixed(2)}।`;
+                else message+=` आपका Online भुगतान ₹${online.toFixed(2)} सत्यापित नहीं हुआ है। कृपया दुकान से संपर्क करें। नकद जमा ₹${cash.toFixed(2)}।`;
+              }
+            }
             const api=String(settings.backendApiUrl||'').replace(/\/$/,'');
             const token=String(settings.aiAccessToken||'').trim();
             if(api&&token&&navigator.onLine){
@@ -2575,6 +2584,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=verifiedPaid;
             updatePaymentTotals();loadPaymentLedgerTable();
             showActionMessage(v.online>0?'Cash जमा हुआ; Online UTR सत्यापन लंबित है':'Cash भुगतान सेव हुआ','success');
+            if(b.mob)sendWhatsAppMessage(b.id,'payment');
         }
         async function verifyLedgerPayment(recordId,verified){
             const ledger=safeGetStorage('rkPaymentLedger',[]),p=ledger.find(x=>String(x.id)===String(recordId));if(!p||p.onlineStatus!=='pending-verification')return;
@@ -2594,6 +2604,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 }
                 if(!safeSetStorage('rkPaymentLedger',ledger))return;loadPaymentLedgerTable();loadMasterLedgerData();
                 showActionMessage(verified?'Online भुगतान सत्यापित और जमा राशि में शामिल हुआ':'Online भुगतान अस्वीकार हुआ; जमा राशि में शामिल नहीं है','success');
+                const alertBooking=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(p.bookingId));if(alertBooking?.mob)sendWhatsAppMessage(alertBooking.id,verified?'payment-verified':'payment-rejected');
             }catch(error){showActionMessage('Online भुगतान सत्यापन विफल: '+error.message,'error');}
         }
         function printReturnSlip(){
