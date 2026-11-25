@@ -453,3 +453,46 @@ test('camera barcode scanning is wired to both dispatch and return fields', () =
   assert.match(html, /startBarcodeCameraScan\('returnBarcodeInput'\)/);
   assert.match(html, /BarcodeDetector\.getSupportedFormats/);
 });
+
+
+test('closed barcode modal is excluded from unrelated invoice and slip print jobs', () => {
+  assert.ok(html.includes('#barcodePrintModal, #barcodePrintModal * { visibility:hidden !important; }'));
+  assert.ok(html.includes('#barcodePrintModal.barcode-print-active { position:absolute'));
+  assert.ok(html.includes("modal.classList.add('barcode-print-active')"));
+  assert.ok(html.includes("barcode.classList.remove('barcode-print-active')"));
+});
+
+test('barcode generation errors are shown instead of silently swallowed', () => {
+  const code = sourceBetween('function printSingleBarcode(name, code)', 'function closeBarcodeModal()');
+  assert.ok(code.includes("typeof JsBarcode!=='function'"));
+  assert.ok(code.includes("showActionMessage('Barcode जनरेट नहीं हुआ: '"));
+  assert.ok(code.includes("format:'CODE128'"));
+});
+
+test('existing stock rows receive unique persistent barcodes before table rendering', () => {
+  const code = sourceBetween('function loadRealStockList()', 'function printSingleBarcode');
+  assert.ok(code.includes('const usedBarcodes=new Set'));
+  assert.ok(code.includes("item.barcode=code"));
+  assert.ok(code.includes("safeSetStorage('realStockDatabase',stock)"));
+});
+
+test('CSV stock import rejects invalid quantities and rates instead of inventing defaults', () => {
+  const code = sourceBetween('function importStockFromCSV(event)', 'function savePurchaseEntry(event)');
+  assert.ok(code.includes('Number.isInteger(qty)'));
+  assert.ok(code.includes('skipped++'));
+  assert.ok(!code.includes('Number(cols[1]) || 10'));
+  assert.ok(!code.includes('Number(cols[2]) || 500'));
+});
+
+test('purchase entry rolls back its purchase row when stock persistence fails', () => {
+  const code = sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("if(!safeSetStorage('purchaseDatabase',pur))return"));
+  assert.ok(code.includes("if(!safeSetStorage('realStockDatabase',nextStock))"));
+  assert.ok(code.includes("safeSetStorage('purchaseDatabase',previousPurchases)"));
+});
+
+test('daily expense form does not clear or claim success when local persistence fails', () => {
+  const code = sourceBetween('function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
+  assert.ok(code.includes("if(!safeSetStorage('incomeExpenseDatabase', list))return"));
+  assert.ok(code.includes('event.target.reset()'));
+});
