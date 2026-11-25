@@ -1,0 +1,35 @@
+name: ERP checks
+
+on:
+  push:
+    branches:
+      - main
+      - "audit/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install backend dependencies
+        run: npm install --prefix backend --no-audit --no-fund
+      - name: Check backend JavaScript syntax
+        run: npm run api:check
+      - name: Run business regression tests
+        run: npm test
+      - name: Validate package and manifest JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('backend/package.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8'))"
