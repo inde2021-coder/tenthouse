@@ -1137,6 +1137,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 if (!window.firebase || !firebase.database || !firebase.auth) throw new Error('Firebase SDK लोड नहीं हुआ');
                 if (!firebase.apps.length) firebaseApp = firebase.initializeApp(firebaseConfig);
                 else firebaseApp = firebase.app();
+                if (!firebaseConfig.databaseURL) { console.warn('Firebase Realtime Database URL अभी सेट नहीं है; cloud sync बाद में चालू होगा।'); return; }
                 dbRef = firebase.database().ref('tent_erp_data');
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
@@ -1314,14 +1315,14 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if (!cloudKey) return Promise.resolve(false);
             // Keep the latest value locally and queue it for upload when internet/auth returns.
             try { const q = safeGetStorage('rkPendingCloudSync', {}); q[cloudKey] = value; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); } catch (_) {}
-            if (!navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return Promise.resolve(false);
+            if (!firebaseConfig.databaseURL || !navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return Promise.resolve(false);
             if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
             return dbRef.child(cloudKey).set(value).then(() => {
                 const q = safeGetStorage('rkPendingCloudSync', {}); delete q[cloudKey]; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); return true;
             }).catch((error) => { console.error('Firebase write failed:', key, error); showActionMessage('लोकल सेव सुरक्षित है; इंटरनेट/ Firebase अनुमति मिलने पर दोबारा सिंक होगा।','error'); return false; });
         }
         async function flushPendingCloudSync() {
-            if (!navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return;
+            if (!firebaseConfig.databaseURL || !navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return;
             if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
             const q = safeGetStorage('rkPendingCloudSync', {});
             for (const [cloudKey, value] of Object.entries(q)) {
