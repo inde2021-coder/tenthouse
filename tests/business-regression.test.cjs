@@ -169,11 +169,41 @@ test('customer advances are only counted after admin verification', () => {
   assert.ok(code.includes("b.advancePaymentVerified === true"));
 });
 
-test('vendor payable rent uses vendor cost rate and actual dispatch rental days', () => {
+test('vendor rent and missing replacement liability remain separate from customer charges', () => {
   assert.ok(html.includes('vendorRentRate'));
-  assert.ok(html.includes('const vendorCost=vendorEntries.reduce'));
-  assert.ok(html.includes('const customerRent=vendorEntries.reduce'));
+  assert.ok(html.includes('const vendorRentCost=vendorEntries.reduce'));
+  assert.ok(html.includes('const vendorMissingLiability=bookings.reduce'));
+  assert.ok(html.includes('const customerMissingRevenue=bookings.reduce'));
+  assert.ok(html.includes('Missing Vendor सामान की Replacement Liability'));
   assert.ok(html.includes('वास्तविक Dispatch × दिन'));
+});
+
+test('admin can add stock items to an itemless booking and append new items on repeat dispatch', () => {
+  const code = sourceBetween('function completeDispatch(id)', 'function printDispatchSlip(id)');
+  assert.ok(code.includes('ग्राहक ने सामान नहीं चुना'));
+  assert.ok(code.includes('अतिरिक्त सामान जोड़ने'));
+  assert.ok(code.includes('const catalog='));
+  assert.ok(code.includes('b.items=items'));
+  assert.ok(code.includes("source:'third-party'"));
+});
+
+test('booking edit validates ordinary Indian mobile numbers and ISO dates', () => {
+  const code = sourceBetween('async function editBooking(id)', 'async function verifyCustomerAdvance');
+  assert.match(code, /\\[1-9\\]\\d\{9,14\}/);
+  assert.match(code, /\\d\{4\}-\\d\{2\}-\\d\{2\}/);
+  assert.doesNotMatch(code, /\\\\d\{9,14\}/);
+});
+
+test('dispatch rent allocation stops returned quantities on each actual return date', () => {
+  const start = html.indexOf('function getDispatchEntryRentalSlices(b)');
+  const end = html.indexOf('        function calculateBookingTotalRent(b)', start);
+  assert.ok(start >= 0 && end > start);
+  const context = { Math, Number, Array, Date };
+  vm.runInNewContext(html.slice(start, end) + '\\nresult=getDispatchEntryRentalSlices(booking);', { ...context, booking: {
+    date:'2026-11-01',returnDate:'2026-11-10',
+    dispatchEntries:[{itemIndex:0,qty:3,date:'2026-11-01'},{itemIndex:0,qty:2,date:'2026-11-03'}],
+    returnEntries:[{date:'2026-11-05',items:[{itemIndex:0,qty:4}]}]
+  }});
 });
 
 test('customer status lookup is private and checks booking ID plus registered mobile', () => {
