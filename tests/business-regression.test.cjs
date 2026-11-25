@@ -794,3 +794,27 @@ test('customer payment and installment changes await backend sync and retain ret
   assert.ok(html.includes('async function saveInstallment(id)'));
   assert.ok(html.includes('async function applyInvoiceAdjustments(quiet=false)'));
 });
+
+test('customer booking stock reservation lock serializes concurrent requests and releases safely', async () => {
+  const start=backend.indexOf('async function acquireBookingReservationLock(');
+  const end=backend.indexOf("app.post('/api/customer/bookings'",start);
+  assert.ok(start>=0&&end>start);
+  let current=null,sequence=0;
+  const fakeDb={ref:path=>({transaction:async updater=>{assert.equal(path,'erpPrivate/bookingReservationLock');const next=updater(current);if(next===undefined)return {committed:false};current=next;return {committed:true};}})};
+  const context={Date,crypto:{randomUUID:()=>String(++sequence)}};
+  vm.runInNewContext(backend.slice(start,end)+`
+    (async()=>{
+      const releaseOne=await acquireBookingReservationLock(fakeDb);
+      const second=await acquireBookingReservationLock(fakeDb);
+      await releaseOne();
+      const third=await acquireBookingReservationLock(fakeDb);
+      result={first:typeof releaseOne,second,third:typeof third};
+      await third();
+    })();
+  `,context);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(context.result.first,'function');
+  assert.equal(context.result.second,null);
+  assert.equal(context.result.third,'function');
+  assert.equal(current,null);
+});
