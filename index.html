@@ -2929,7 +2929,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const previousState={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(missing)),adminStock:JSON.parse(JSON.stringify(stock)),vendorStock:JSON.parse(JSON.stringify(thirdParty))};
             const returnDate=prompt('वास्तविक Return की तारीख (YYYY-MM-DD)',new Date().toLocaleDateString('en-CA'));
             if(returnDate===null)return;
-            if(!isValidCalendarDate(returnDate)||(b.lastDispatchDate&&returnDate<b.lastDispatchDate)){showActionMessage('Return तारीख Dispatch तारीख से पहले नहीं हो सकती','error');return;}
+            const firstDispatchDate=(Array.isArray(b.dispatchEntries)?b.dispatchEntries:[]).map(entry=>String(entry.date||'')).filter(isValidCalendarDate).sort()[0]||b.lastDispatchDate||b.date||'';
+            if(!isValidCalendarDate(returnDate)||(firstDispatchDate&&returnDate<firstDispatchDate)){showActionMessage('Return तारीख पहले Dispatch की तारीख से पहले नहीं हो सकती','error');return;}
             const inputs=[...document.querySelectorAll('.return-qty-input')];
             if(!inputs.length){showActionMessage('Return मात्रा दर्ज करने के लिए कोई सामान नहीं मिला','error');return;}
             for(const input of inputs){
