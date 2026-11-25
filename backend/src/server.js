@@ -82,6 +82,9 @@ const requireDurableStore = (_req, res, next) => {
   next();
 };
 const otpLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, message: { error: 'बहुत अधिक OTP अनुरोध; कुछ देर बाद प्रयास करें।' } });
+const otpVerifyLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 10, message: { verified: false, error: 'बहुत अधिक OTP सत्यापन प्रयास; कुछ देर बाद नया OTP लें।' } });
+const aiLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'AI अनुरोध सीमा पूरी हुई; एक मिनट बाद प्रयास करें।' } });
+const whatsappSendLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'WhatsApp संदेश सीमा पूरी हुई; एक मिनट बाद प्रयास करें।' } });
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
 const authAdmin = (req, res, next) => {
@@ -179,7 +182,7 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
     res.json(out);
   } catch (e) { res.status(503).json({ error: e.message }); }
 });
-app.post('/api/otp/verify', requireDurableStore, async (req, res) => {
+app.post('/api/otp/verify', otpVerifyLimiter, requireDurableStore, async (req, res) => {
   const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\d{6}$/) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
   const { phone, otp } = parsed.data;
@@ -486,13 +489,13 @@ app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, a
   }catch(error){res.status(503).json({error:error.message});}
 });
 
-app.post('/api/whatsapp/send', authAdmin, async (req,res) => {
+app.post('/api/whatsapp/send', whatsappSendLimiter, authAdmin, async (req,res) => {
   const parsed = z.object({ to: phoneSchema, message: z.string().min(1).max(4000) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid to and message are required.' });
   try { res.json({ ok: true, provider: await sendWhatsAppText(parsed.data.to, parsed.data.message) }); }
   catch(e) { res.status(502).json({ error: e.message }); }
 });
-app.post('/api/ai/chat', authAdmin, async (req,res) => {
+app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
   const parsed = z.object({ messages: z.array(z.object({ role:z.enum(['system','user','assistant']), content:z.string().min(1).max(12000) })).min(1).max(30) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid chat messages.' });
   if (!process.env.AI_API_KEY) return res.status(503).json({ error: 'AI_API_KEY is not configured on the server.' });
@@ -523,7 +526,7 @@ app.post('/api/ai/chat', authAdmin, async (req,res) => {
   } catch { return res.status(502).json({ error: 'AI provider is unreachable.' }); }
 });
 // Gemini TTS: API key remains on the server; returns generated WAV audio.
-app.post('/api/ai/tts', authAdmin, async (req, res) => {
+app.post('/api/ai/tts', aiLimiter, authAdmin, async (req, res) => {
   const parsed = z.object({ text: z.string().trim().min(1).max(4000) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Speech text is required (max 4000 characters).' });
   if (!process.env.AI_API_KEY) return res.status(503).json({ error: 'AI_API_KEY is not configured on the server.' });
