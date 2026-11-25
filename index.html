@@ -2499,7 +2499,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             showActionMessage('Due Installment पेमेंट खुल गया। नया भुगतान दर्ज करके सेव करें। बाकी: ₹'+due.toFixed(2),'success');
         }
 
-        function saveInstallment(id) {
+        async function saveInstallment(id) {
             const amountInput = document.getElementById(`inst_amt_${String(id)}`);
             if (!amountInput) { showActionMessage('इस बुकिंग की जमा राशि वाला बॉक्स नहीं मिला। पेज रीफ्रेश करके दोबारा कोशिश करें।', 'error'); return; }
             let amt = Number(amountInput.value);
@@ -2559,7 +2559,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="8" style="text-align:center">अभी कोई भुगतान रिकॉर्ड नहीं</td></tr>';
         }
 
-        function applyInvoiceAdjustments(quiet=false){
+        async function applyInvoiceAdjustments(quiet=false){
             const q=(document.getElementById('billSearchInput')?.value||'').trim();
             const bookings=safeGetStorage('softwareBookings',[]);const b=bookings.find(x=>String(x.id)===q||String(x.mob||'')===q);
             if(!b){showActionMessage('पहले सही बुकिंग खोजें','error');return}
@@ -2846,7 +2846,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             row.qty=Math.max(0,Number(row.qty)||0)+qty;
             if(!safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){showActionMessage('Missing Recovery सेव नहीं हुई; आंशिक अपडेट वापस करने की कोशिश की गई।','error');return;}
             if(b.source==='customer-portal'){
-                const remoteSaved=await syncCustomerBookingWorkflow(b);
+                const remoteSaved=await syncCustomerBookingWorkflow(b,false);
                 if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['missingItemsDatabase',previousState.missing],[stockKey,previousState.stock]]);loadAllFirebaseData();return;}
             }
             loadAllFirebaseData();const q=document.getElementById('returnBarcodeInput');if(q)q.value=String(bId);
