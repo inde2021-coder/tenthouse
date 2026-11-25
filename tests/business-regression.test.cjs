@@ -206,7 +206,7 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
     .filter(source => source.trim());
   assert.ok(scripts.length > 0);
   scripts.forEach((source,index) => {
-    try { new vm.Script(source, { filename: 'inline-script-' + (index + 1) + '.js' }); }
+    try { new Function(source); }
     catch (error) { throw new Error('Inline script ' + (index + 1) + ': ' + error.message); }
   });
 });
