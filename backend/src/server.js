@@ -197,19 +197,17 @@ app.post('/webhooks/whatsapp', requireDurableStore, async (req, res) => {
       for (const msg of value.messages || []) {
         if (!msg.id) continue;
         const messageKey = phoneKey(msg.id);
-        const firstDelivery = await storeCreateIfAbsent('erpPrivate/whatsappProcessed/' + messageKey, { receivedAt: new Date().toISOString() });
-        if (!firstDelivery) continue;
         const contact = contacts.find(c => c.wa_id === msg.from) || contacts[0] || {};
         const textBody = msg.type === 'text' ? (msg.text?.body || '') : '';
         const record = {
-          id: crypto.randomUUID(), whatsappMessageId: msg.id,
+          id: 'wa-' + messageKey, whatsappMessageId: msg.id,
           from: msg.from || '', name: contact.profile?.name || 'WhatsApp ग्राहक',
           messageType: msg.type || 'unknown', message: textBody,
           receivedAt: new Date(Number(msg.timestamp || Math.floor(Date.now()/1000))*1000).toISOString(),
           status: 'pending-review',
           note: textBody ? 'ग्राहक का संदेश प्राप्त हुआ; स्टॉक/तारीख जाँचकर बुकिंग की पुष्टि करें।' : 'गैर-टेक्स्ट संदेश मिला; मैन्युअल समीक्षा आवश्यक।'
         };
-        await storeSet('erpData/whatsappInbox/' + record.id, record);
+        await storeCreateIfAbsent('erpData/whatsappInbox/' + record.id, record);
       }
     }
     return res.sendStatus(200);
@@ -307,7 +305,8 @@ app.post('/api/payments/record-utr', authAdmin, requireDurableStore, async (req,
     const unique=await storeCreateIfAbsent('erpPrivate/utrIndex/'+utrKey,{id,createdAt:new Date().toISOString()});
     if(!unique)return res.status(409).json({error:'This UTR has already been submitted.'});
     const record={id,...parsed.data,status:'pending-verification',createdAt:new Date().toISOString()};
-    await storeSet('erpData/payments/'+id,record);
+    try { await storeSet('erpData/payments/'+id,record); }
+    catch(error) { await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{}); throw error; }
     res.status(201).json({ok:true,payment:record,message:'Payment entry saved for manual/provider verification. UTR is not proof of settlement by itself.'});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
