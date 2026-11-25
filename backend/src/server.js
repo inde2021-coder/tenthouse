@@ -290,6 +290,25 @@ app.get('/api/customer/bookings', authAdmin, requireDurableStore, async (_req,re
     res.json({bookings});
   }catch(error){res.status(503).json({error:error.message});}
 });
+app.patch('/api/customer/bookings/:id/advance', authAdmin, requireDurableStore, async (req,res) => {
+  if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
+  const parsed=z.object({verified:z.boolean(),note:z.string().max(300).optional()}).safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'verified boolean required.'});
+  try{
+    const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
+    if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    if(!(Number(booking.advanceAmount)>0))return res.status(400).json({error:'No advance payment was submitted.'});
+    booking.advancePaymentVerified=parsed.data.verified;
+    booking.advancePaymentStatus=parsed.data.verified?'verified':'rejected';
+    booking.advancePaymentNote=parsed.data.note||'';
+    booking.updatedAt=new Date().toISOString();
+    await storeSet(path,booking);
+    const paymentPath='erpData/payments/advance-'+req.params.id,payment=await storeGet(paymentPath);
+    if(payment){payment.status=parsed.data.verified?'verified':'rejected';payment.note=booking.advancePaymentNote;payment.verifiedAt=booking.updatedAt;await storeSet(paymentPath,payment);}
+    res.json({ok:true,booking});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+
 app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const parsed=z.object({
