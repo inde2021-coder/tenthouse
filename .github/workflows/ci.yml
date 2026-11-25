@@ -7,6 +7,7 @@ on:
       - "audit/**"
       - render-preview-test
       - render-preview-isolated
+      - render-preview-bartan
   pull_request:
     branches:
       - main
