@@ -27,6 +27,7 @@
 - `POST /api/otp/send` body: `{ "phone": "+919876543210", "channel": "sms|whatsapp|both" }`
 - `POST /api/otp/verify` body: `{ "phone": "+919876543210", "otp": "123456" }`
 - `POST /api/customer/bookings` — ग्राहक बिना Admin Login के Booking Request भेज सकता है; backend database में `Pending Approval` बनती है।
+  - चुने गए सामान का किराया server-side Firebase stock catalog से लिया जाता है; client के भेजे rentPrice पर भरोसा नहीं होता। Catalog unavailable या stock कम होने पर item booking fail closed होती है।
 - `GET /api/customer/bookings` — `X-Admin-Token` से Admin नई ग्राहक बुकिंग देखता है।
 - `PATCH /api/customer/bookings/:id/status` — Admin `Confirmed`, `Rejected` या `Cancelled` status सेट करता है।
 - `POST /api/whatsapp/send` — `X-Admin-Token` आवश्यक; body `{ "to": "+919876543210", "message": "..." }`
