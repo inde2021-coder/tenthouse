@@ -801,7 +801,7 @@ test('customer booking stock reservation lock serializes concurrent requests and
   assert.ok(start>=0&&end>start);
   let current=null,sequence=0;
   const fakeDb={ref:path=>({transaction:async updater=>{assert.equal(path,'erpPrivate/bookingReservationLock');const next=updater(current);if(next===undefined)return {committed:false};current=next;return {committed:true};}})};
-  const context={Date,crypto:{randomUUID:()=>String(++sequence)}};
+  const context={Date,fakeDb,crypto:{randomUUID:()=>String(++sequence)}};
   vm.runInNewContext(backend.slice(start,end)+`
     (async()=>{
       const releaseOne=await acquireBookingReservationLock(fakeDb);
