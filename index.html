@@ -1783,16 +1783,20 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                 let sel = document.getElementById(id);
                 if(sel) {
                     sel.innerHTML = '<option value="" disabled selected>सामान चुनें</option>';
-                    stock.forEach(s => { sel.innerHTML += `<option value="${s.name}">${s.name} (स्टॉक: ${s.qty})</option>`; });
+                    stock.forEach(s => { const rate=Number(s.setRent)>0?Number(s.setRent):Number(s.singleRent)||0;sel.innerHTML += `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)} (स्टॉक: ${Number(s.qty)||0} · किराया ₹${rate})</option>`; });
                 }
             });
         }
 
         function addSelectedItemToCart() {
-            let sel = document.getElementById('portalStockSelect');
-            if(!sel || !sel.value) return;
-            customerCart.push({ name: sel.value, qty: Number(document.getElementById('portalItemQty').value) || 1, rentPrice: 500 });
-            renderCustomerCart();
+            const sel=document.getElementById('portalStockSelect');if(!sel||!sel.value)return;
+            const qtyRaw=document.getElementById('portalItemQty')?.value,qty=Number(qtyRaw);
+            if(!qtyRaw||!Number.isInteger(qty)||qty<1){showActionMessage('सामान की मात्रा 1 या उससे अधिक पूर्ण संख्या में भरें','error');return;}
+            const stock=safeGetStorage('realStockDatabase',[]).find(x=>String(x.name)===String(sel.value));
+            if(!stock){showActionMessage('चुना गया सामान स्टॉक में नहीं मिला; सूची रीफ्रेश करें','error');return;}
+            const rate=Number(stock.setRent)>0?Number(stock.setRent):Math.max(0,Number(stock.singleRent)||0);
+            customerCart.push({name:sel.value,qty,rentPrice:rate,missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
+            renderCustomerCart();document.getElementById('portalItemQty').value='';
         }
 
         function renderCustomerCart() {
@@ -2269,8 +2273,11 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         // Bill adjustment fields recalculate and refresh the invoice automatically on change/blur.
         ['billDiscountInput','billOtherChargesInput'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',()=>{if((document.getElementById('billSearchInput')?.value||'').trim())applyInvoiceAdjustments(true)});el.addEventListener('change',()=>applyInvoiceAdjustments(true));el.addEventListener('blur',()=>{if((document.getElementById('billSearchInput')?.value||'').trim())applyInvoiceAdjustments(true);});}});
         function calculateBookingBaseRent(b){
-            const days=calculateRentalDays(b.date,b.returnDate);
-            return (b.items||[]).reduce((sum,i)=>sum+(Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500)||0)*days),0);
+            const entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
+            const endDate=b.actualReturnDate||b.returnDate||new Date().toLocaleDateString('en-CA');
+            if(entries.length)return entries.reduce((sum,e)=>sum+Math.max(0,Number(e.qty)||0)*Math.max(0,Number(e.unitRent??b.items?.[Number(e.itemIndex)]?.rentPrice??500))*calculateRentalDays(e.date||b.date,endDate),0);
+            const days=calculateRentalDays(b.date,endDate);
+            return (b.items||[]).reduce((sum,i)=>sum+Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500))*days,0);
         }
         function searchBillingCustomer() {
             let q = document.getElementById('billSearchInput').value.trim();
