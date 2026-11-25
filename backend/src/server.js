@@ -333,6 +333,46 @@ app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req
   }catch(error){res.status(503).json({error:error.message});}
 });
 
+app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, async (req,res) => {
+  if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
+  const itemSchema=z.object({
+    name:z.string().trim().min(1).max(120),qty:z.number().int().positive().max(100000),
+    rentPrice:z.number().finite().min(0).max(1000000),missingCharge:z.number().finite().min(0).max(1000000).optional().default(0),
+    vendorRentRate:z.number().finite().min(0).max(1000000).optional().default(0),
+    source:z.enum(['admin','third-party']).optional().default('admin'),partyName:z.string().max(120).optional().default(''),
+    returnedQty:z.number().int().min(0).optional().default(0),missingQty:z.number().int().min(0).optional().default(0),
+    lastReturnDate:z.string().optional()
+  });
+  const dispatchSchema=z.object({
+    itemIndex:z.number().int().min(0),itemName:z.string().max(120),qty:z.number().int().positive().max(100000),
+    date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),unitRent:z.number().finite().min(0),
+    vendorRentRate:z.number().finite().min(0).optional().default(0),source:z.enum(['admin','third-party']).optional().default('admin'),
+    partyName:z.string().max(120).optional().default(''),createdAt:z.string().optional()
+  });
+  const returnSchema=z.object({
+    date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),mode:z.enum(['FINAL','PARTIAL']),
+    items:z.array(z.object({itemIndex:z.number().int().min(0),qty:z.number().int().min(0)})).max(100),
+    createdAt:z.string().optional()
+  });
+  const parsed=z.object({
+    status:z.enum(['Pending Approval','Confirmed','Dispatched','Partially Returned','Returned','Rejected','Cancelled']).optional(),
+    items:z.array(itemSchema).max(100).optional(),dispatchEntries:z.array(dispatchSchema).max(1000).optional(),
+    returnEntries:z.array(returnSchema).max(1000).optional(),actualReturnDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    lastDispatchDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),lastReturnDate:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    fullyReturnedAt:z.string().nullable().optional(),returnProcessedAt:z.string().nullable().optional(),
+    otherCharges:z.number().finite().min(0).optional(),discountAmount:z.number().finite().min(0).optional(),
+    partPayments:z.array(z.object({amount:z.number().finite().positive(),method:z.string().max(40).optional(),date:z.string().optional(),note:z.string().max(300).optional()})).max(500).optional(),
+    totalPaid:z.number().finite().min(0).optional(),paidAmt:z.number().finite().min(0).optional(),dueAmount:z.number().finite().min(0).optional()
+  }).strict().safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:'Invalid booking workflow update.',details:parsed.error.flatten()});
+  try{
+    const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
+    if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    Object.assign(booking,parsed.data,{updatedAt:new Date().toISOString()});
+    await storeSet(path,booking);res.json({ok:true,booking});
+  }catch(error){res.status(503).json({error:error.message});}
+});
+
 app.get('/api/customer/bookings/:id/status', requireDurableStore, async (req,res) => {
   if(!/^\d{10,16}$/.test(req.params.id))return res.status(400).json({error:'Invalid booking ID.'});
   const mobile=String(req.query.mobile||'').replace(/\D/g,'');
