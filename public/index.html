@@ -1640,10 +1640,10 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const address=prompt('पूरा पता',b.address||'');if(address===null)return;
             const date=prompt('Dispatch date (YYYY-MM-DD)',b.date||'');if(date===null)return;
             const ret=prompt('Return date (YYYY-MM-DD)',b.returnDate||'');if(ret===null)return;
-            if(!name.trim()||!/^\\+?[1-9]\\d{9,14}$/.test(mob.trim())||!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(ret)||ret<date){showActionMessage('नाम, मोबाइल और तारीखें सही भरें','error');return;}
+            if(!name.trim()||!/^\+?[1-9]\\d{9,14}$/.test(mob.trim())||!/^\d{4}-\\d{2}-\\d{2}$/.test(date)||!/^\d{4}-\\d{2}-\\d{2}$/.test(ret)||ret<date){showActionMessage('नाम, मोबाइल और तारीखें सही भरें','error');return;}
             const patch={name:name.trim(),mob:mob.trim(),address:address.trim(),date,returnDate:ret};
             if(b.source==='customer-portal'){
-                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\\/$/,''),token=String(settings.aiAccessToken||'').trim();
+                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,''),token=String(settings.aiAccessToken||'').trim();
                 if(!api||!token){showActionMessage('Customer Booking edit के लिए Backend URL और Admin API Token सेट करें','error');return;}
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id)),{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify(patch)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend update failed');Object.assign(b,data.booking||patch);}
                 catch(error){showActionMessage('बुकिंग Backend में अपडेट नहीं हुई: '+error.message,'error');return;}
@@ -1654,7 +1654,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b||!(Number(b.advanceAmount)>0))return;
             if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस UTR भुगतान को अस्वीकार करना है?'))return;
             if(b.source==='customer-portal'){
-                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\\/$/,''),token=String(settings.aiAccessToken||'').trim();
+                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,''),token=String(settings.aiAccessToken||'').trim();
                 if(!api||!token){showActionMessage('UTR सत्यापन के लिए Backend URL और Admin API Token जरूरी है','error');return;}
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/advance',{method:'PATCH',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({verified})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');Object.assign(b,data.booking||{});}
                 catch(error){showActionMessage('UTR सत्यापन विफल: '+error.message,'error');return;}
@@ -2888,14 +2888,14 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
   function money(v){return '₹'+(Number(v)||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
   window.checkCustomerBookingStatus=async function(){
     const id=(document.getElementById('customerStatusQuery')?.value||'').trim();
-    const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\\D/g,'');
+    const mobile=(document.getElementById('customerStatusMobile')?.value||'').replace(/\D/g,'');
     const box=document.getElementById('customerStatusResultBox');if(!box)return;
     box.style.display='block';
-    if(!/^\\d{10,16}$/.test(id)||!/^\\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
+    if(!/^\d{10,16}$/.test(id)||!/^\d{10}$/.test(mobile)){box.innerHTML='<p style="margin:0;font-weight:700">कृपया सही Booking ID और उसी बुकिंग में दर्ज 10 अंकों का मोबाइल नंबर भरें।</p>';return;}
     box.innerHTML='<p>बुकिंग सर्वर से सुरक्षित जानकारी लाई जा रही है…</p>';
     try{
       let settings={};try{settings=JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){}
-      const api=String(settings.backendApiUrl||(typeof DEFAULT_BACKEND_API_URL!=='undefined'?DEFAULT_BACKEND_API_URL:'')).replace(/\\/$/,'');
+      const api=String(settings.backendApiUrl||(typeof DEFAULT_BACKEND_API_URL!=='undefined'?DEFAULT_BACKEND_API_URL:'')).replace(/\/$/,'');
       if(!api)throw new Error('बुकिंग सर्वर URL सेट नहीं है');
       const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(id)+'/status?mobile='+encodeURIComponent(mobile),{headers:{Accept:'application/json'},cache:'no-store'});
       const data=await response.json().catch(()=>({}));
