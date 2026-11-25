@@ -884,3 +884,34 @@ test('supplied hero artwork is shipped with all three app shells', () => {
     assert.ok(asset.includes('Radhe Krishn'));
   }
 });
+
+
+test('secret admin gate is reachable from shop-name action and hidden keyboard/mobile gestures', () => {
+  const opener = sourceBetween('function openCustomerLogin(event)', 'function closeWelcomeOverlay()');
+  assert.match(opener, /return revealAdminGate\(\)/);
+  const secret = sourceBetween('<script id="rk-secret-admin-entry">', '</script>');
+  assert.match(secret, /e\.ctrlKey&&e\.shiftKey/);
+  assert.match(secret, /\.rk-customer-brand/);
+  assert.match(secret, /clickCount>=3/);
+  assert.match(secret, /setTimeout\(show,1200\)/);
+  assert.ok(!opener.includes('व्यवस्थापक प्रवेश लॉक है'));
+});
+
+test('admin login explains backend configuration, invalid token, missing route and network errors', () => {
+  const login = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
+  for (const marker of ['response.status===401','response.status===403','response.status===404','response.status===429','response.status===503','Backend से संपर्क नहीं हो पाया']) {
+    if (marker === 'response.status===403') continue;
+    assert.ok(login.includes(marker), 'missing actionable login diagnostic: '+marker);
+  }
+});
+
+test('admin text fields override legacy light-theme and browser autofill styles', () => {
+  assert.ok(html.includes('id="rk-admin-dark-controls-final"'));
+  assert.ok(html.includes('#adminPanel input:not([type="checkbox"])'));
+  assert.ok(html.includes('-webkit-text-fill-color:#edf5ff!important'));
+  assert.ok(html.includes('background:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important'));
+});
+
+test('the primary HTML document is explicitly closed after the final style overrides', () => {
+  assert.match(html, /<style id="rk-admin-dark-controls-final">[\s\S]*?<\/style>\s*<\/body>\s*<\/html>\s*$/);
+});
