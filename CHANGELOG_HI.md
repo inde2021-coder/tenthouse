@@ -80,3 +80,5 @@
 - Admin login API के 401, 503, 404 और network failures के लिए अलग actionable संदेश।
 - Customer, admin और dialog text fields से legacy white textbox styling हटाकर dark recessed controls लागू किए।
 - सभी deployable HTML shells synchronized; regression coverage और bartan preview branch CI trigger जोड़ा।
+
+- Frontend contrast stylesheet को सभी inline scripts के बाद document के अंत में रखा, ताकि script parsing प्रभावित न हो।
