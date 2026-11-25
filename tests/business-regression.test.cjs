@@ -720,6 +720,8 @@ test('dispatch and return reject impossible calendar dates before changing stock
   assert.ok(dispatch.includes('!isValidCalendarDate(dispatchDate)'));
   const ret = sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems');
   assert.ok(ret.includes('!isValidCalendarDate(returnDate)'));
+  assert.ok(ret.includes('const firstDispatchDate='), 'return date should compare with the first relevant dispatch, not the latest batch');
+  assert.ok(ret.includes('returnDate<firstDispatchDate'));
 });
 
 test('calendar date validation rejects impossible dates and accepts leap days', () => {
