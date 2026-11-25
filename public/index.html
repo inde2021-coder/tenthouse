@@ -892,11 +892,12 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
                             <h3 style="color:var(--emerald-neon); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-receipt"></i> ऑनलाइन और नकद भुगतान का हिसाब</h3>
                             <div style="display:flex; gap:15px; margin-bottom:12px;">
                                 <div class="rk-payment-total-card rk-cash-total"><span>कुल नकद (Cash)</span><h3 id="totalCashSum">₹0</h3></div>
-                                <div class="rk-payment-total-card rk-online-total"><span>कुल ऑनलाइन (UPI)</span><h3 id="totalOnlineSum">₹0</h3></div>
+                                <div class="rk-payment-total-card rk-online-total"><span>सत्यापित ऑनलाइन (UPI)</span><h3 id="totalOnlineSum">₹0</h3></div>
+                                <div class="rk-payment-total-card rk-online-total"><span>ऑनलाइन सत्यापन लंबित</span><h3 id="totalOnlinePendingSum">₹0</h3></div>
                             </div>
                             <div class="table-responsive">
                                 <table>
-                                    <thead><tr><th>बुकिंग आईडी</th><th>कस्टमर</th><th>मोबाइल</th><th>राशि</th><th>भुगतान मोड (Cash/UPI)</th><th>UTR नंबर</th><th>एक्शन</th></tr></thead>
+                                    <thead><tr><th>बुकिंग आईडी</th><th>कस्टमर</th><th>मोबाइल</th><th>राशि</th><th>भुगतान मोड</th><th>UTR नंबर</th><th>सत्यापन स्थिति</th><th>एक्शन</th></tr></thead>
                                     <tbody id="paymentLedgerTableBody"><tr><td colspan="7" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr></tbody>
                                 </table>
                             </div>
@@ -2261,14 +2262,34 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         function deleteBookingFromPaymentLedger(id){deleteBooking(id);}
 
         function loadPaymentLedgerTable() {
-            const bookings=safeGetStorage('softwareBookings',[]), ledger=safeGetStorage('rkPaymentLedger',[]), tbody=document.getElementById('paymentLedgerTableBody');
+            const bookings=safeGetStorage('softwareBookings',[]),ledger=safeGetStorage('rkPaymentLedger',[]),tbody=document.getElementById('paymentLedgerTableBody');
             const money=n=>'₹'+(Math.round((Number(n)||0)*100)/100).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
-            let cashSum=0,onlineSum=0,rows=[],ledgerBookingIds=new Set();
-            ledger.forEach(p=>{const b=bookings.find(x=>String(x.id)===String(p.bookingId));const cash=Math.max(0,Number(p.cash)||0),online=Math.max(0,Number(p.online)||0);cashSum+=cash;onlineSum+=online;ledgerBookingIds.add(String(p.bookingId));if(cash>0)rows.push(`<tr class="rk-payment-cash-row"><td>#${escapeHtml(p.bookingId)}</td><td>${escapeHtml(b?.name||p.customer||'-')}</td><td>${phoneCallLink(b?.mob||p.mobile||'')}</td><td>${money(cash)}</td><td><span class="rk-payment-mode rk-payment-mode-cash">Cash</span></td><td>-</td><td><button type="button" class="action-btn danger-action" data-delete-payment-booking="${escapeHtml(String(p.bookingId))}">बुकिंग हटाएँ</button></td></tr>`);if(online>0)rows.push(`<tr class="rk-payment-online-row"><td>#${escapeHtml(p.bookingId)}</td><td>${escapeHtml(b?.name||p.customer||'-')}</td><td>${phoneCallLink(b?.mob||p.mobile||'')}</td><td>${money(online)}</td><td><span class="rk-payment-mode rk-payment-mode-online">UPI / Online</span></td><td>${escapeHtml(p.utr||'-')}</td><td><button type="button" class="action-btn danger-action" data-delete-payment-booking="${escapeHtml(String(p.bookingId))}">बुकिंग हटाएँ</button></td></tr>`);});
-            bookings.forEach(b=>{if(ledgerBookingIds.has(String(b.id)))return;const amt=Math.max(0,Number(b.advanceAmount)||0);if(!amt)return;const mode=String(b.payMode||'Cash').toLowerCase();if(mode==='cash')cashSum+=amt;else onlineSum+=amt;rows.push(`<tr class="${mode==='cash'?'rk-payment-cash-row':'rk-payment-online-row'}"><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${phoneCallLink(b.mob||'')}</td><td>${money(amt)}</td><td><span class="rk-payment-mode ${mode==='cash'?'rk-payment-mode-cash':'rk-payment-mode-online'}">${escapeHtml(b.payMode||'Cash')}</span></td><td>${escapeHtml(b.utrNumber||'-')}</td><td><button type="button" class="action-btn danger-action" data-delete-payment-booking="${escapeHtml(String(b.id))}">बुकिंग हटाएँ</button></td></tr>`);});
+            let cashSum=0,onlineSum=0,pendingOnlineSum=0,rows=[];
+            ledger.forEach(p=>{
+                const booking=bookings.find(x=>String(x.id)===String(p.bookingId)),cash=Math.max(0,Number(p.cash)||0),online=Math.max(0,Number(p.online)||0);
+                cashSum+=cash;
+                if(p.onlineStatus==='verified')onlineSum+=online;else if(p.onlineStatus==='pending-verification')pendingOnlineSum+=online;
+                if(cash>0)rows.push(`<tr class="rk-payment-cash-row"><td>#${escapeHtml(p.bookingId)}</td><td>${escapeHtml(booking?.name||p.customer||'-')}</td><td>${phoneCallLink(booking?.mob||p.mobile||'')}</td><td>${money(cash)}</td><td><span class="rk-payment-mode rk-payment-mode-cash">Cash</span></td><td>-</td><td>प्राप्त</td><td><button type="button" class="action-btn danger-action" data-delete-payment-booking="${escapeHtml(String(p.bookingId))}">बुकिंग हटाएँ</button></td></tr>`);
+                if(online>0){
+                    const status=p.onlineStatus==='verified'?'सत्यापित':p.onlineStatus==='rejected'?'अस्वीकृत':'सत्यापन बाकी';
+                    const action=p.onlineStatus==='pending-verification'?`<button type="button" class="action-btn" onclick="verifyLedgerPayment(${JSON.stringify(String(p.id)).replace(/"/g,'&quot;')},true)">सत्यापित</button><button type="button" class="action-btn danger-action" onclick="verifyLedgerPayment(${JSON.stringify(String(p.id)).replace(/"/g,'&quot;')},false)">अस्वीकार</button>`:'';
+                    rows.push(`<tr class="rk-payment-online-row"><td>#${escapeHtml(p.bookingId)}</td><td>${escapeHtml(booking?.name||p.customer||'-')}</td><td>${phoneCallLink(booking?.mob||p.mobile||'')}</td><td>${money(online)}</td><td><span class="rk-payment-mode rk-payment-mode-online">UPI / Online</span></td><td>${escapeHtml(p.utr||'-')}</td><td>${status}</td><td>${action}<button type="button" class="action-btn danger-action" data-delete-payment-booking="${escapeHtml(String(p.bookingId))}">बुकिंग हटाएँ</button></td></tr>`);
+                }
+            });
+            bookings.forEach(b=>{
+                const amount=Math.max(0,Number(b.advanceAmount)||0);if(!amount)return;
+                const mode=String(b.payMode||'Cash').toLowerCase(),verified=b.advancePaymentVerified===true;
+                if(!ledger.some(p=>String(p.bookingId)===String(b.id))||b.source==='customer-portal'){
+                    if(verified){if(mode==='cash')cashSum+=amount;else onlineSum+=amount;}else if(mode!=='cash')pendingOnlineSum+=amount;
+                    const status=verified?'सत्यापित':(b.advancePaymentStatus==='rejected'?'अस्वीकृत':'सत्यापन बाकी');
+                    const action=!verified&&b.source==='customer-portal'?`<button type="button" class="action-btn" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},true)">सत्यापित</button><button type="button" class="action-btn danger-action" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},false)">अस्वीकार</button>`:'';
+                    rows.push(`<tr class="${mode==='cash'?'rk-payment-cash-row':'rk-payment-online-row'}"><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${phoneCallLink(b.mob||'')}</td><td>${money(amount)}</td><td><span class="rk-payment-mode ${mode==='cash'?'rk-payment-mode-cash':'rk-payment-mode-online'}">${escapeHtml(b.payMode||'Cash')} Advance</span></td><td>${escapeHtml(b.utrNumber||'-')}</td><td>${status}</td><td>${action}</td></tr>`);
+                }
+            });
             if(document.getElementById('totalCashSum'))document.getElementById('totalCashSum').textContent=money(cashSum);
             if(document.getElementById('totalOnlineSum'))document.getElementById('totalOnlineSum').textContent=money(onlineSum);
-            if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="7" style="text-align:center">अभी कोई भुगतान रिकॉर्ड नहीं</td></tr>';
+            if(document.getElementById('totalOnlinePendingSum'))document.getElementById('totalOnlinePendingSum').textContent=money(pendingOnlineSum);
+            if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="8" style="text-align:center">अभी कोई भुगतान रिकॉर्ड नहीं</td></tr>';
         }
 
         function applyInvoiceAdjustments(quiet=false){
@@ -2335,7 +2356,60 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         function moneyToPaise(value){const n=Number(value);return Number.isFinite(n)?Math.round((n+Number.EPSILON)*100):NaN;} function paiseToRupees(value){return value/100;} function updatePaymentTotals(){const read=id=>{const el=document.getElementById(id);return el&&String(el.value).trim()!==''?Number(el.value):0;};const totalP=moneyToPaise(read('paymentTotalAmount')),oldP=moneyToPaise(read('paymentAlreadyPaid')),cashP=moneyToPaise(read('paymentCashAmount')),onlineP=moneyToPaise(read('paymentOnlineAmount'));const valid=[totalP,oldP,cashP,onlineP].every(Number.isSafeInteger);const paidP=oldP+cashP+onlineP,dueP=Math.max(0,totalP-paidP);const fmt=p=>Number.isSafeInteger(p)?paiseToRupees(p).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';if(document.getElementById('paymentPaidSummary'))document.getElementById('paymentPaidSummary').textContent='₹'+fmt(paidP);if(document.getElementById('paymentDueSummary'))document.getElementById('paymentDueSummary').textContent='₹'+fmt(dueP);return {total:paiseToRupees(totalP),old:paiseToRupees(oldP),cash:paiseToRupees(cashP),online:paiseToRupees(onlineP),paid:paiseToRupees(paidP),due:paiseToRupees(dueP),totalP,oldP,cashP,onlineP,paidP,dueP,valid};}
         ['paymentTotalAmount','paymentAlreadyPaid','paymentCashAmount','paymentOnlineAmount'].forEach(id=>document.addEventListener('input',e=>{if(e.target&&e.target.id===id)updatePaymentTotals()}));
         function generatePaymentQr(){const b=currentPaymentBooking(),settings=safeGetStorage('softwareSettings',{}),v=updatePaymentTotals(),amount=v.online;if(!b){showActionMessage('पहले सही Booking ID डालें','error');return}if(amount<=0){showActionMessage('Online amount शून्य से अधिक होना चाहिए','error');return}if(!settings.upiId){showActionMessage('Settings में UPI ID भरें','error');return}if(!window.QRious){showActionMessage('QR लाइब्रेरी लोड नहीं हुई','error');return}const uri='upi://pay?pa='+encodeURIComponent(settings.upiId)+'&pn='+encodeURIComponent(settings.businessName||'Radha Krishna Tent House')+'&am='+amount.toFixed(2)+'&cu=INR&tn='+encodeURIComponent('Booking '+b.id);new QRious({element:document.getElementById('paymentQrCanvas'),value:uri,size:240,level:'H'});document.getElementById('paymentQrCaption').textContent='बुकिंग #'+b.id+' · ₹'+amount.toFixed(2);document.getElementById('paymentQrArea').style.display='block';}
-        async function savePaymentEntry(){const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});if(!b){showActionMessage('Booking ID सही नहीं है','error');return}if(!v.valid||v.totalP<=0||v.oldP<0||v.cashP<0||v.onlineP<0||v.paidP>v.totalP){showActionMessage('राशि सही भरें (दो दशमलव तक); कुल जमा बिल से अधिक नहीं हो सकता','error');return}if(v.old>getBookingPaidAmount(b)+0.0001){showActionMessage('पहले जमा राशि रिकॉर्ड से मेल नहीं खाती। बिल दोबारा खोजें।','error');return}if(v.cash+v.online>Math.max(0,v.total-v.old)+0.0001){showActionMessage('इस बार का पेमेंट बाकी राशि से अधिक नहीं हो सकता','error');return}if(v.online>0&&!utr){showActionMessage('Online भुगतान के लिए UTR भरें','error');return}const key='rkPaymentLedger',ledger=safeGetStorage(key,[]);if(v.online>0&&ledger.some(x=>String(x.utr||'').trim().toLowerCase()===utr.toLowerCase())){showActionMessage('यह UTR पहले दर्ज है। दोहरा भुगतान रिकॉर्ड रोक दिया गया।','error');return}const rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:v.paid,due:v.due,utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',createdAt:new Date().toISOString()};ledger.push(rec);safeSetStorage(key,ledger);b.totalPaid=v.paid;b.dueAmount=v.due;safeSetStorage('softwareBookings',safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x));if(typeof searchBillingCustomer==='function'){const q=document.getElementById('billSearchInput');if(q)q.value=String(b.id);searchBillingCustomer();}const ca=document.getElementById('paymentCashAmount');if(ca)ca.value='';const on=document.getElementById('paymentOnlineAmount');if(on)on.value='';if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=v.paid;updatePaymentTotals();if(v.online>0&&settings.backendApiUrl){try{const response=await fetch(settings.backendApiUrl.replace(/\/$/,'')+'/api/payments/record-utr',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':String(settings.aiAccessToken||'').trim()},body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});const data=await response.json();if(!response.ok)throw Error(data.error||'Backend error');showActionMessage('पेमेंट एंट्री सेव; ऑनलाइन पेमेंट सत्यापन लंबित','success')}catch(e){showActionMessage('लोकल पेमेंट सेव हुआ; backend sync नहीं हुआ: '+e.message,'error')}}else showActionMessage('पेमेंट लोकल सेव हुआ; Online verification के लिए backend URL सेट करें','success');}
+        async function savePaymentEntry(){
+            const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});
+            if(!b){showActionMessage('Booking ID सही नहीं है','error');return;}
+            if(!v.valid||v.totalP<=0||v.oldP<0||v.cashP<0||v.onlineP<0||v.paidP>v.totalP){showActionMessage('राशि सही भरें; कुल जमा बिल से अधिक नहीं हो सकता','error');return;}
+            const recorded=getBookingPaidAmount(b);
+            if(Math.abs(v.old-recorded)>0.01){showActionMessage('पहले जमा राशि रिकॉर्ड से मेल नहीं खाती। बिल दोबारा खोजें।','error');return;}
+            if(v.cash+v.online>Math.max(0,v.total-v.old)+0.0001){showActionMessage('इस बार का पेमेंट बाकी राशि से अधिक नहीं हो सकता','error');return;}
+            if(v.online>0&&!utr){showActionMessage('Online भुगतान के लिए UTR भरें','error');return;}
+            const key='rkPaymentLedger',ledger=safeGetStorage(key,[]);
+            if(v.online>0&&ledger.some(x=>String(x.utr||'').trim().toLowerCase()===utr.toLowerCase())){showActionMessage('यह UTR पहले दर्ज है। दोहरा भुगतान रिकॉर्ड रोक दिया गया।','error');return;}
+            if(v.online>0&&ledger.some(x=>String(x.bookingId)===String(b.id)&&x.onlineStatus==='pending-verification')){showActionMessage('इस बुकिंग का पिछला Online भुगतान अभी सत्यापन में है। पहले उसका सत्यापन करें।','error');return;}
+            let backendPaymentId=null;
+            if(v.online>0){
+                const api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,'');
+                const token=String(settings.aiAccessToken||'').trim();
+                if(!api||!token){showActionMessage('Online भुगतान सत्यापन के लिए Backend URL और Admin API Token सेट करें','error');return;}
+                try{
+                    const response=await fetch(api+'/api/payments/record-utr',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});
+                    const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend payment record failed');backendPaymentId=data.payment?.id||null;
+                    if(!backendPaymentId)throw new Error('Backend payment ID नहीं मिला');
+                }catch(error){showActionMessage('Online पेमेंट सुरक्षित रूप से दर्ज नहीं हुआ: '+error.message,'error');return;}
+            }
+            const verifiedPaid=Math.round((v.old+v.cash)*100)/100,rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:verifiedPaid,due:Math.max(0,v.total-verifiedPaid),utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',backendPaymentId,createdAt:new Date().toISOString()};
+            ledger.push(rec);if(!safeSetStorage(key,ledger))return;
+            b.totalPaid=verifiedPaid;b.dueAmount=rec.due;
+            const rows=safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x);if(!safeSetStorage('softwareBookings',rows))return;
+            if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+            if(typeof searchBillingCustomer==='function'){const q=document.getElementById('billSearchInput');if(q)q.value=String(b.id);searchBillingCustomer();}
+            const ca=document.getElementById('paymentCashAmount');if(ca)ca.value='';
+            const on=document.getElementById('paymentOnlineAmount');if(on)on.value='';
+            if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=verifiedPaid;
+            updatePaymentTotals();loadPaymentLedgerTable();
+            showActionMessage(v.online>0?'Cash जमा हुआ; Online UTR सत्यापन लंबित है':'Cash भुगतान सेव हुआ','success');
+        }
+        async function verifyLedgerPayment(recordId,verified){
+            const ledger=safeGetStorage('rkPaymentLedger',[]),p=ledger.find(x=>String(x.id)===String(recordId));if(!p||p.onlineStatus!=='pending-verification')return;
+            if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस Online भुगतान को अस्वीकार करना है?'))return;
+            const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,''),token=String(settings.aiAccessToken||'').trim();
+            if(!api||!token||!p.backendPaymentId){showActionMessage('Backend payment reference नहीं मिला; सत्यापन नहीं किया जा सकता','error');return;}
+            try{
+                const response=await fetch(api+'/api/payments/'+encodeURIComponent(String(p.backendPaymentId))+'/verify',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({verified,note:verified?'Admin ने UTR सत्यापित किया':'Admin ने UTR अस्वीकार किया'})});
+                const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');
+                p.onlineStatus=verified?'verified':'rejected';p.verifiedAt=new Date().toISOString();
+                const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(p.bookingId));
+                if(b){
+                    if(verified)b.totalPaid=Math.max(getBookingPaidAmount(b),Math.round(((Number(p.previousPaid)||0)+(Number(p.cash)||0)+(Number(p.online)||0))*100)/100);
+                    b.dueAmount=Math.max(0,Number(p.total||0)-getBookingPaidAmount(b));
+                    if(!safeSetStorage('softwareBookings',rows))return;
+                    if(b.source==='customer-portal')syncCustomerBookingWorkflow(b);
+                }
+                if(!safeSetStorage('rkPaymentLedger',ledger))return;loadPaymentLedgerTable();loadMasterLedgerData();
+                showActionMessage(verified?'Online भुगतान सत्यापित और जमा राशि में शामिल हुआ':'Online भुगतान अस्वीकार हुआ; जमा राशि में शामिल नहीं है','success');
+            }catch(error){showActionMessage('Online भुगतान सत्यापन विफल: '+error.message,'error');}
+        }
         function printReturnSlip(){
             const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim();
             const b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id)||x.mob===String(id));
