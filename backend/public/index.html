@@ -2569,7 +2569,7 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
             const base=calculateBookingBaseRent(b);if(discount>base+other){showActionMessage('डिस्काउंट मूल किराये से अधिक नहीं हो सकता','error');return}
             b.discountAmount=discount;b.otherCharges=other;
             safeSetStorage('softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x));
-            if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
+            if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('बिल बदलाव लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             searchBillingCustomer();if(!quiet)showActionMessage('डिस्काउंट/अन्य चार्ज बिल में लागू हुए','success');
         }
         // Bill adjustment fields recalculate and refresh the invoice automatically on change/blur.
