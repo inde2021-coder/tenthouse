@@ -118,6 +118,8 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(html.includes("if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला"));
   assert.ok(code.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('realStockDatabase',stock)"));
   assert.ok(html.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('missingItemsDatabase',missing)"));
+  assert.ok(html.includes('m.penalty=0;'));
+  assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
 
 test('dispatch decrements admin stock by the actual dispatched quantity', () => {
