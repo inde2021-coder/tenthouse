@@ -1348,6 +1348,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         const isHostedWebOrigin = /^https?:$/.test(window.location.protocol) && !['localhost','127.0.0.1'].includes(window.location.hostname) && !window.location.hostname.endsWith('appassets.androidplatform.net');
         const DEFAULT_BACKEND_API_URL = isHostedWebOrigin ? window.location.origin : 'https://tenthouse.vercel.app';
         function getBackendApiUrl(settings = {}) {
+            // A downloaded file must never silently call the live production API.
+            if (window.__rkLocalHtmlPreviewMode) return '';
             const configured = String(settings.backendApiUrl || '').trim().replace(/\/$/, '');
             return !configured || configured === 'https://tenthouse.vercel.app' ? DEFAULT_BACKEND_API_URL : configured;
         }
@@ -1363,10 +1365,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         };
 
         // Render preview must never connect to the production Firebase project.
-        window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com'));
+        window.__rkLocalHtmlPreviewMode = location.protocol === 'file:';
+        window.__rkRenderPreviewMode = Boolean(location.hostname.toLowerCase().endsWith('.onrender.com') || window.__rkLocalHtmlPreviewMode);
         if (window.__rkRenderPreviewMode) {
             const previewSettings = safeGetStorage('softwareSettings', {});
-            previewSettings.backendApiUrl = location.origin;
+            previewSettings.backendApiUrl = window.__rkLocalHtmlPreviewMode ? '' : location.origin;
             previewSettings.aiAccessToken = 'PREVIEW-DEMO-ONLY-ACCESS';
             safeSetStorage('softwareSettings', previewSettings);
         }
@@ -1579,6 +1582,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }catch(error){showActionMessage('ग्राहक बुकिंग सिंक नहीं हुआ: '+error.message,'error');}
         }
         async function updateRemoteCustomerBookingStatus(id,status){
+            if(window.__rkLocalHtmlPreviewMode)return true;
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
             if(!api||!token||!navigator.onLine)return false;
             try{
@@ -1598,6 +1602,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }catch(error){console.error('Pending customer workflow queue failed:',error);}
         }
         async function syncCustomerBookingWorkflow(booking,queueOnFailure=true){
+            if(window.__rkLocalHtmlPreviewMode)return true;
             if(!booking||booking.source!=='customer-portal')return true;
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
             if(!api||!token){
@@ -2137,6 +2142,16 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 items:customerCart.map(item=>({name:String(item.name||'').trim(),qty:Number(item.qty),rentPrice:Number(item.rentPrice??500),source:item.source==='third-party'?'third-party':'admin',partyName:String(item.partyName||'')}))
             };
             if(!payload.name||payload.name.length<2||!payload.mob||!payload.address){showActionMessage('ग्राहक का नाम, मोबाइल और पता सही भरें','error');return;}
+            if(window.__rkLocalHtmlPreviewMode){
+                const id='DEMO-'+Date.now();
+                const totalAmount=Math.round(payload.items.reduce((sum,item)=>sum+item.qty*item.rentPrice*calculateRentalDays(dispatchDate,returnDate),0)*100)/100;
+                const booking={...payload,id,source:'customer-portal',status:'Pending Approval',totalAmount,totalPaid:0,dueAmount:totalAmount,maskedMobile:phoneForOtp.replace(/\d(?=\d{4})/g,'•'),dispatchEntries:[],returnEntries:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+                const bookings=safeGetStorage('softwareBookings',[]);
+                if(!safeSetStorage('softwareBookings',[...bookings,booking]))return;
+                customerCart=[];renderCustomerCart();event.target.reset();toggleAdvanceFields();
+                alert('LOCAL DEMO बुकिंग सेव हुई। Admin Approval के लिए भेजी गई। ID: #'+id+' — यह डेटा केवल इसी ब्राउज़र में रहेगा।');
+                loadAllFirebaseData();return;
+            }
             if(!navigator.onLine){showActionMessage('बुकिंग सर्वर तक पहुँचाने के लिए इंटरनेट आवश्यक है। विवरण सुरक्षित रखें और ऑनलाइन होने पर फिर सबमिट करें।','error');return;}
             const api=getBackendApiUrl(otpSettings);
             try{
@@ -2164,6 +2179,16 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const out=document.getElementById('customerLookupResults');if(!lookup){showActionMessage('नाम, Registered Mobile या Booking Number दर्ज करें।','error');return;}
             const digits=lookup.replace(/\D/g,''),direct=digits.length===10||(digits.length===12&&digits.startsWith('91'))||(digits.length===11&&digits.startsWith('0'));
             if(!direct&&!/^\d{10}$/.test(mobile)){showActionMessage('इस नाम या Booking Number के साथ Registered Mobile Number भी भरें।','error');return;}
+            if(window.__rkLocalHtmlPreviewMode){
+                const rows=safeGetStorage('softwareBookings',[]),needle=lookup.toLowerCase(),mobileDigits=mobile.replace(/\D/g,'');
+                const matches=rows.filter(b=>{
+                    const savedMobile=String(b.mob||'').replace(/\D/g,'');
+                    if(direct)return savedMobile===digits.slice(-10);
+                    return String(b.id)===lookup && savedMobile===mobileDigits || String(b.name||'').trim().toLowerCase()===needle && savedMobile===mobileDigits;
+                });
+                window.customerBookingSearchResults=matches.map(b=>({...b,maskedMobile:b.maskedMobile||String(b.mob||'').replace(/\d(?=\d{4})/g,'•')}));
+                renderCustomerBookingSearchResults();return;
+            }
             const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));if(!api||!navigator.onLine){showActionMessage('Booking खोजने के लिए Internet connection आवश्यक है।','error');return;}
             if(out)out.innerHTML='<div class="rk-lookup-loading"><i class="fa-solid fa-spinner fa-spin"></i> आपकी Booking खोजी जा रही है…</div>';
             try{
@@ -2583,7 +2608,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 existing.qty=Math.max(0,Number(existing.qty)||0)+qty; existing.setRent=setRent; existing.singleRent=singleRent; existing.missingCharge=missingCharge; existing.missingUnitPrice=missingCharge;
             }else stock.push({name,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
             stock=mergeDuplicateStockRows(stock);
-            safeSetStorage('realStockDatabase',stock);event.target.reset();loadAllFirebaseData();showActionMessage(existing?'मौजूदा सामान का स्टॉक बढ़ाया और दरें अपडेट की गईं':'नया स्टॉक सेव हुआ','success');
+            if(!safeSetStorage('realStockDatabase',stock))return;
+            event.target.reset();loadAllFirebaseData();showActionMessage(existing?'मौजूदा सामान का स्टॉक बढ़ाया और दरें अपडेट की गईं':'नया स्टॉक सेव हुआ','success');
         }
         function mergeDuplicateStockRows(rows){
             const merged=[],byName=new Map();
