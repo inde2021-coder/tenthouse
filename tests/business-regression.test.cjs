@@ -112,6 +112,15 @@ test('final return records only the unreturned balance as missing quantity', () 
   assert.equal(result.stock.qty, 2);
 });
 
+test('return and missing recovery fail when the source stock row is absent', () => {
+  const code = sourceBetween('function completeManualReturnProcess()', 'window.onload = function()');
+  assert.ok(code.includes('if(!row){showActionMessage(\'Return stock record नहीं मिला: \'+item.name'));
+  const recovery = sourceBetween('function recoverMissingItem', 'function exportFullBackup');
+  assert.ok(recovery.includes('if(!row){showActionMessage(\'संबंधित स्टॉक रिकॉर्ड नहीं मिला'));
+  assert.ok(code.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('realStockDatabase',stock)"));
+  assert.ok(recovery.includes("if(!safeSetStorage('softwareBookings',bookings)||!safeSetStorage('missingItemsDatabase',missing)"));
+});
+
 test('dispatch slip uses actual dispatch entries, not full booking quantities', () => {
   const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
   assert.match(code, /b\.dispatchEntries/);
