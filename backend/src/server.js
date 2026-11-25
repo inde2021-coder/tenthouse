@@ -318,6 +318,21 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
     res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई। Advance payment UTR सत्यापन के लिए Pending है।'});
   }catch(error){res.status(503).json({error:error.message});}
 });
+app.get('/api/customer/stock', requireDurableStore, async (_req,res) => {
+  try {
+    const value=await storeGet('tent_erp_data/stock');
+    const rows=Array.isArray(value)?value:Object.values(value||{});
+    const items=rows.filter(row=>row&&typeof row==='object'&&String(row.name||row.item||'').trim()&&Math.max(0,Number(row.qty)||0)>0)
+      .map(row=>({
+        name:String(row.name||row.item).trim(),
+        qty:Math.max(0,Number(row.qty)||0),
+        singleRent:Math.max(0,Number(row.singleRent)||0),
+        setRent:Math.max(0,Number(row.setRent)||0)
+      }));
+    res.set('Cache-Control','no-store');
+    res.json({items});
+  } catch(error) { res.status(503).json({error:error.message}); }
+});
 app.get('/api/customer/bookings', authAdmin, requireDurableStore, async (_req,res) => {
   try{
     const bookings=(await storeList('erpData/customerBookings')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
