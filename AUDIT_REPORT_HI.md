@@ -112,3 +112,8 @@ Main पर मिले root causes:
 - Regression test अब सुनिश्चित करता है कि webhook token documentation lines में कोई 10+ digit secret न हो।
 - Production webhook token को Hosting और Meta दोनों में rotate करना अभी user-side production action है; Git history में पुराने commit को केवल file edit से मिटाया नहीं जा सकता।
 - Latest CI run `45690158490` on code head `9cbabf68a90f040d9cc41f5d2dfa7ba54d0226f5`: backend syntax PASS, **92/92 tests PASS**, package/manifest JSON validation PASS.
+
+
+## Firebase credential rotation
+
+पहले की बातचीत में Firebase service-account private key साझा हुई थी। Production से पहले उस पुरानी key को Google Cloud IAM में revoke/rotate करें और नई key केवल Hosting Environment Variables (`FIREBASE_SERVICE_ACCOUNT_JSON`) में रखें। इसे GitHub, frontend या ZIP में कभी commit न करें।
