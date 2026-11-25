@@ -1870,21 +1870,36 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         function loadStockDropdowns() {
-            let stock = safeGetStorage('realStockDatabase', []);
-            ['portalStockSelect', 'adminAddStockSelect'].forEach(id => {
-                let sel = document.getElementById(id);
-                if(sel) {
-                    sel.innerHTML = '<option value="" disabled selected>सामान चुनें</option>';
-                    stock.forEach(s => { const rate=Number(s.setRent)>0?Number(s.setRent):Number(s.singleRent)||0;sel.innerHTML += `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)} (स्टॉक: ${Number(s.qty)||0} · किराया ₹${rate})</option>`; });
-                }
+            const localStock=safeGetStorage('realStockDatabase',[]);
+            const portalStock=Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:localStock;
+            [['portalStockSelect',portalStock],['adminAddStockSelect',localStock]].forEach(([id,stock])=>{
+                const sel=document.getElementById(id);if(!sel)return;
+                const selected=sel.value;
+                sel.innerHTML='<option value="" disabled selected>सामान चुनें</option>';
+                stock.forEach(item=>{const rate=Number(item.setRent)>0?Number(item.setRent):Number(item.singleRent)||0;sel.innerHTML+=`<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)} (स्टॉक: ${Number(item.qty)||0} · किराया ₹${rate})</option>`;});
+                if([...sel.options].some(option=>option.value===selected))sel.value=selected;
             });
+        }
+        async function refreshPublicCustomerStock(){
+            try{
+                const settings=safeGetStorage('softwareSettings',{}),api=String(settings.backendApiUrl||DEFAULT_BACKEND_API_URL).replace(/\/$/,'');
+                const response=await fetch(api+'/api/customer/stock',{headers:{Accept:'application/json'},cache:'no-store'});
+                const data=await response.json().catch(()=>({}));
+                if(!response.ok)throw new Error(data.error||'Customer stock catalog load failed');
+                publicCustomerStockCatalog=Array.isArray(data.items)?data.items:[];
+                try{localStorage.setItem('publicCustomerStockCache',JSON.stringify(publicCustomerStockCatalog));}catch(_){}
+                loadStockDropdowns();
+            }catch(error){
+                try{const cached=JSON.parse(localStorage.getItem('publicCustomerStockCache')||'null');if(Array.isArray(cached)){publicCustomerStockCatalog=cached;loadStockDropdowns();return;}}catch(_){}
+                if(!safeGetStorage('realStockDatabase',[]).length)showActionMessage('ग्राहक सामान सूची सर्वर से नहीं मिली: '+error.message,'error');
+            }
         }
 
         function addSelectedItemToCart() {
             const sel=document.getElementById('portalStockSelect');if(!sel||!sel.value)return;
             const qtyRaw=document.getElementById('portalItemQty')?.value,qty=Number(qtyRaw);
             if(!qtyRaw||!Number.isInteger(qty)||qty<1){showActionMessage('सामान की मात्रा 1 या उससे अधिक पूर्ण संख्या में भरें','error');return;}
-            const stock=safeGetStorage('realStockDatabase',[]).find(x=>String(x.name)===String(sel.value));
+            const stock=(Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:safeGetStorage('realStockDatabase',[])).find(x=>String(x.name)===String(sel.value));
             if(!stock){showActionMessage('चुना गया सामान स्टॉक में नहीं मिला; सूची रीफ्रेश करें','error');return;}
             const rate=Number(stock.setRent)>0?Number(stock.setRent):Math.max(0,Number(stock.singleRent)||0);
             customerCart.push({name:sel.value,qty,rentPrice:rate,missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
@@ -2696,8 +2711,9 @@ button:not(:disabled):hover::before,.btn:hover::before,.action-btn:hover::before
         }
 
         window.onload = function() {
-            // Local-first mode: no automatic Firebase/database connection.
+            // Local-first admin data; public customers load the safe stock catalog from the backend.
             loadAllFirebaseData();
+            refreshPublicCustomerStock();
         };
     
         // Explicit global exports for inline onclick handlers throughout every table.
