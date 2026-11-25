@@ -173,6 +173,14 @@ test('customer advances are only counted after admin verification', () => {
   assert.ok(code.includes("b.advancePaymentVerified === true"));
 });
 
+test('payment ledger counts admin cash advances even when later payment entries exist', () => {
+  const start = html.indexOf('function loadPaymentLedgerTable()');
+  const end = html.indexOf('function ', start + 10);
+  const code = html.slice(start, end);
+  assert.ok(code.includes("b.source==='customer-portal'?b.advancePaymentVerified===true:(mode==='cash'||b.advancePaymentVerified===true)"));
+  assert.ok(!code.includes('if(!ledger.some(p=>String(p.bookingId)===String(b.id))'));
+});
+
 test('vendor rent and missing replacement liability remain separate from customer charges', () => {
   assert.ok(html.includes('vendorRentRate'));
   assert.ok(html.includes('const vendorRentCost=vendorEntries.reduce'));
