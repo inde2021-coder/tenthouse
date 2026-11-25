@@ -763,6 +763,10 @@ test('backend rejects dispatch and return workflow quantities that cannot reconc
       historicalReturnThenNewDispatch: validateBookingWorkflowConsistency(
         {date:'2027-01-01',returnDate:'2027-01-06',items:[{name:'Chair',qty:5,source:'admin'}]},
         {status:'Partially Returned',lastDispatchDate:'2027-01-04',items:[{name:'Chair',qty:5,source:'admin',returnedQty:1,missingQty:0}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:2,date:'2027-01-01',source:'admin'},{itemIndex:0,itemName:'Chair',qty:3,date:'2027-01-04',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'PARTIAL',items:[{itemIndex:0,qty:1}]}]}
+      ),
+      returnCannotUseFutureDispatch: validateBookingWorkflowConsistency(
+        {date:'2027-01-01',returnDate:'2027-01-06',items:[{name:'Chair',qty:5,source:'admin'}]},
+        {status:'Partially Returned',lastDispatchDate:'2027-01-04',items:[{name:'Chair',qty:5,source:'admin',returnedQty:4,missingQty:0}],dispatchEntries:[{itemIndex:0,itemName:'Chair',qty:2,date:'2027-01-01',source:'admin'},{itemIndex:0,itemName:'Chair',qty:3,date:'2027-01-04',source:'admin'}],returnEntries:[{date:'2027-01-02',mode:'PARTIAL',items:[{itemIndex:0,qty:4}]}]}
       )
     };
   `,context);
@@ -772,6 +776,7 @@ test('backend rejects dispatch and return workflow quantities that cannot reconc
   assert.match(context.result.incompleteFinal,/Final Return/);
   assert.equal(context.result.recoveredMissing,null);
   assert.equal(context.result.historicalReturnThenNewDispatch,null);
+  assert.match(context.result.returnCannotUseFutureDispatch,/उस तारीख तक Dispatch हुई मात्रा/);
 });
 
 test('customer workflow failures are queued and retried after reconnect or admin login', () => {
