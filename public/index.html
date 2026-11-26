@@ -1268,7 +1268,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
             printWithStampImages();
         }
-        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
+        window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
         function initFirebaseConnection() {
             try {
@@ -3198,7 +3198,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!safeSetStorage('softwareSettings',s))return;
             loadSettingsToUI();renderBusinessCard();showActionMessage('Business Card सेव हो गया','success');
         }
-        function printBusinessCard(){const preview=document.getElementById('businessCardPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले Business Card तैयार करें','error');return;}area.innerHTML=preview.innerHTML;area.style.display='block';window.print();area.style.display='none';}
+        async function printBusinessCard(){const preview=document.getElementById('businessCardPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले Business Card तैयार करें','error');return;}area.dataset.printRestore='card';area.innerHTML=preview.innerHTML;area.style.display='block';await printWithStampImages();}
         function businessDocumentTotals(){
             const lineBases=currentDocumentItems.map(item=>Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rate)||0));
             const subtotal=lineBases.reduce((sum,value)=>sum+value,0);
