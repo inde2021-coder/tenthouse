@@ -1225,3 +1225,53 @@ test('purchase deletion atomically removes the record and its full available sto
   assert.equal(store.purchaseDatabase.length,0);
   assert.equal(store.realStockDatabase[0].qty,3);
 });
+
+
+test('vendor dispatch decrements only the selected vendor stock and records vendor liability rates', async () => {
+  const store={
+    softwareBookings:[{id:88,status:'Confirmed',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:3,rentPrice:100,source:'third-party',partyName:'Vendor A',vendorRentRate:10,vendorMissingCost:25}],dispatchEntries:[]}],
+    realStockDatabase:[],
+    thirdPartyDatabase:[{partyName:'Vendor A',item:'Chair',qty:5,costPrice:10,chargePrice:100,missingCharge:30}]
+  };
+  const answers=['2026-11-02','','3'];
+  const context={
+    Math,Number,String,Array,Date,JSON,
+    isValidCalendarDate:value=>{const p=String(value||'').split('-').map(Number);if(p.length!==3)return false;const [y,m,d]=p,dt=new Date(y,m-1,d);return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;},
+    prompt:()=>answers.shift(),
+    safeGetStorage:key=>store[key],
+    safeSetStorage:(key,value)=>{store[key]=value;return true;},
+    localStorage:mockStorageForBatch(store),syncToCloud:()=>{},console,
+    showActionMessage:()=>{},loadAllFirebaseData:()=>{},sendWhatsAppMessage:()=>{},syncCustomerBookingWorkflow:()=>{}
+  };
+  const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
+  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=completeDispatch(88);',context);
+  await context.result;
+  assert.equal(store.thirdPartyDatabase[0].qty,2);
+  assert.equal(store.realStockDatabase.length,0);
+  assert.equal(store.softwareBookings[0].dispatchEntries[0].source,'third-party');
+  assert.equal(store.softwareBookings[0].dispatchEntries[0].partyName,'Vendor A');
+  assert.equal(store.softwareBookings[0].dispatchEntries[0].vendorRentRate,10);
+  assert.equal(store.softwareBookings[0].dispatchEntries[0].vendorMissingCost,25);
+});
+
+test('vendor partial return adds only received quantity back to the matching vendor stock', async () => {
+  const bookings=[{id:89,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',lastDispatchDate:'2026-11-01',
+    items:[{name:'Light',qty:5,returnedQty:0,source:'third-party',partyName:'Vendor B'}],
+    dispatchEntries:[{itemIndex:0,itemName:'Light',qty:5,date:'2026-11-01',source:'third-party',partyName:'Vendor B',vendorRentRate:12}]}];
+  const store={softwareBookings:bookings,missingItemsDatabase:[],realStockDatabase:[],thirdPartyDatabase:[{partyName:'Vendor B',item:'Light',qty:0}]};
+  const input={dataset:{returnIndex:'0'},value:'2'},section={style:{display:'block'}};
+  const document={querySelectorAll:()=>[input],getElementById:id=>id==='returnManualCountingSection'?section:null};
+  const answers=['2026-11-03','PARTIAL'];
+  const context={activeReturnBookingId:89,Math,Number,String,Array,Date,
+    isValidCalendarDate:value=>{const p=String(value||'').split('-').map(Number);if(p.length!==3)return false;const [y,m,d]=p,dt=new Date(y,m-1,d);return dt.getFullYear()===y&&dt.getMonth()===m-1&&dt.getDate()===d;},
+    prompt:()=>answers.shift(),document,safeGetStorage:key=>store[key],safeSetStorage:(key,value)=>{store[key]=value;return true;},
+    localStorage:mockStorageForBatch(store),syncToCloud:()=>{},console,showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  const code=sourceBetween('async function completeManualReturnProcess()','        window.onload = function()');
+  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=completeManualReturnProcess();',context);
+  await context.result;
+  assert.equal(store.thirdPartyDatabase[0].qty,2);
+  assert.equal(store.realStockDatabase.length,0);
+  assert.equal(store.softwareBookings[0].items[0].returnedQty,2);
+  assert.equal(store.softwareBookings[0].items[0].missingQty||0,0);
+  assert.equal(store.softwareBookings[0].status,'Partially Returned');
+});
