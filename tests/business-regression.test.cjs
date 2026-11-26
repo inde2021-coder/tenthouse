@@ -1752,3 +1752,64 @@ test('customer cart combines repeated item additions before choosing single or b
   assert.equal(cart[0].rateMode,'set');
   assert.equal(qtyInput.value,'');
 });
+
+
+test('missing recovery updates the matching booking, stock and rental timeline by the recovered quantity', async () => {
+  const store = {
+    softwareBookings: [{
+      id: 42, source: 'admin', status: 'Returned',
+      items: [{ name: 'Chair', qty: 5, returnedQty: 2, missingQty: 3, source: 'admin', partyName: '' }],
+      dispatchEntries: [{ itemIndex: 0, itemName: 'Chair', qty: 5, date: '2026-11-01', unitRent: 100 }],
+      returnEntries: [{ date: '2026-11-03', mode: 'FINAL', items: [{ itemIndex: 0, qty: 2 }] }]
+    }],
+    missingItemsDatabase: [{ id: '42-0', bookingId: 42, itemIndex: 0, item: 'Chair', source: 'admin', qty: 3, penalty: 0, resolved: false }],
+    realStockDatabase: [{ name: 'Chair', qty: 2 }],
+    thirdPartyDatabase: []
+  };
+  const input = { value: '1' };
+  const document = {
+    getElementById: id => id === 'recoverMissingQty_0' ? input : null
+  };
+  const context = {
+    activeReturnBookingId: 42, Math, Number, String, Array, Date, JSON,
+    document,
+    safeGetStorage: key => store[key],
+    safeSetStorage: (key, value) => { store[key] = value; return true; },
+    localStorage: mockStorageForBatch(store), console,
+    showActionMessage: () => {}, loadAllFirebaseData: () => {},
+    loadReturnBookingForCounting: () => {}
+  };
+  const code = sourceBetween('async function recoverMissingItem(', 'async function completeManualReturnProcess()');
+  vm.runInNewContext(storageBatchSource() + '\\n' + code + '\\nresult = recoverMissingItem("42-0", 0);', context);
+  await context.result;
+  const booking = store.softwareBookings[0];
+  assert.equal(store.realStockDatabase[0].qty, 3);
+  assert.equal(store.missingItemsDatabase[0].qty, 2);
+  assert.equal(store.missingItemsDatabase[0].resolved, false);
+  assert.equal(booking.items[0].returnedQty, 3);
+  assert.equal(booking.items[0].missingQty, 2);
+  assert.equal(booking.returnEntries.at(-1).mode, 'MISSING_RECOVERY');
+  assert.equal(booking.returnEntries.at(-1).items[0].qty, 1);
+});
+
+test('missing recovery rejects a quantity larger than the outstanding missing balance without changing stock', async () => {
+  const store = {
+    softwareBookings: [{ id: 43, source: 'admin', items: [{ name: 'Table', qty: 2, returnedQty: 0, missingQty: 2, source: 'admin' }] }],
+    missingItemsDatabase: [{ id: '43-0', bookingId: 43, itemIndex: 0, item: 'Table', source: 'admin', qty: 2 }],
+    realStockDatabase: [{ name: 'Table', qty: 0 }], thirdPartyDatabase: []
+  };
+  const context = {
+    activeReturnBookingId: 43, Math, Number, String, Array, Date, JSON,
+    document: { getElementById: () => ({ value: '3' }) },
+    safeGetStorage: key => store[key],
+    safeSetStorage: (key, value) => { store[key] = value; return true; },
+    localStorage: mockStorageForBatch(store), console,
+    showActionMessage: () => {}, loadAllFirebaseData: () => {}, loadReturnBookingForCounting: () => {}
+  };
+  const code = sourceBetween('async function recoverMissingItem(', 'async function completeManualReturnProcess()');
+  vm.runInNewContext(storageBatchSource() + '\\n' + code + '\\nresult = recoverMissingItem("43-0", 0);', context);
+  await context.result;
+  assert.equal(store.realStockDatabase[0].qty, 0);
+  assert.equal(store.missingItemsDatabase[0].qty, 2);
+  assert.equal(store.softwareBookings[0].items[0].returnedQty, 0);
+});
