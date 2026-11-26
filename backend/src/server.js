@@ -77,6 +77,35 @@ async function storeList(path) {
   }
   return [];
 }
+async function consumeOtpAttempt(path, expectedDigest) {
+  const now = Date.now();
+  const matches = record => {
+    if (!record || typeof record.digest !== 'string' || !/^[a-f0-9]{64}$/i.test(record.digest)) return false;
+    const actual = Buffer.from(record.digest, 'hex');
+    const expected = Buffer.from(expectedDigest, 'hex');
+    return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+  };
+  if (adminDb) {
+    let decision = 'missing';
+    const result = await adminDb.ref(path).transaction(current => {
+      if (!current) { decision = 'missing'; return; }
+      if (Number(current.expires) < now) { decision = 'expired'; return null; }
+      if (Number(current.tries || 0) >= 5) { decision = 'locked'; return null; }
+      if (matches(current)) { decision = 'verified'; return null; }
+      decision = 'invalid';
+      return { ...current, tries: Number(current.tries || 0) + 1 };
+    });
+    if (!result.committed) return { status: 'conflict' };
+    return { status: decision };
+  }
+  const current = memoryStore.get(path);
+  if (!current) return { status: 'missing' };
+  if (Number(current.expires) < now) { memoryStore.delete(path); return { status: 'expired' }; }
+  if (Number(current.tries || 0) >= 5) { memoryStore.delete(path); return { status: 'locked' }; }
+  if (matches(current)) { memoryStore.delete(path); return { status: 'verified' }; }
+  memoryStore.set(path, { ...current, tries: Number(current.tries || 0) + 1 });
+  return { status: 'invalid' };
+}
 async function storeCreateIfAbsent(path, value) {
   if (adminDb) {
     const result = await adminDb.ref(path).transaction(current => current === null ? value : undefined);
@@ -212,20 +241,22 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   } catch (e) { res.status(503).json({ error: e.message }); }
 });
 app.post('/api/otp/verify', otpVerifyLimiter, requireDurableStore, async (req, res) => {
-  const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\d{6}$/) }).safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
+  const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\\d{6}$/) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ verified: false, error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
   const { phone, otp } = parsed.data;
   const path = 'erpPrivate/otp/' + phoneKey(phone);
-  let rec;
-  try { rec = await storeGet(path); } catch (error) { return res.status(503).json({ verified: false, error: error.message }); }
-  if (!rec || rec.expires < Date.now() || rec.tries >= 5) { await storeDelete(path); return res.status(400).json({ verified: false, error: 'OTP समाप्त हो गया या उपलब्ध नहीं है।' }); }
-  rec.tries++;
-  await storeSet(path, rec);
   const hmacSecret = process.env.OTP_HMAC_SECRET || '';
   if (hmacSecret.length < 32 || /replace_with|unsafe-dev/i.test(hmacSecret)) return res.status(503).json({ verified: false, error: 'OTP_HMAC_SECRET सही तरह configured नहीं है।' });
-  const got = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
-  if (!crypto.timingSafeEqual(Buffer.from(got), Buffer.from(rec.digest))) return res.status(400).json({ verified: false, error: 'OTP गलत है।' });
-  await storeDelete(path); res.json({ verified: true });
+  const expectedDigest = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
+  try {
+    const result = await consumeOtpAttempt(path, expectedDigest);
+    if (result.status === 'verified') return res.json({ verified: true });
+    if (result.status === 'invalid') return res.status(400).json({ verified: false, error: 'OTP गलत है।' });
+    if (result.status === 'conflict') return res.status(409).json({ verified: false, error: 'OTP सत्यापन में टकराव हुआ; कृपया पुनः प्रयास करें।' });
+    return res.status(400).json({ verified: false, error: 'OTP समाप्त हो गया या उपलब्ध नहीं है।' });
+  } catch (error) {
+    return res.status(503).json({ verified: false, error: error.message });
+  }
 });
 // Meta WhatsApp Cloud API webhook: configure this HTTPS URL in Meta App Dashboard.
 const verifyWhatsAppWebhook = (req, res) => {
