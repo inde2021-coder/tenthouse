@@ -2084,10 +2084,11 @@ test('cash installments persist safely and update the booking due exactly once',
   const code = sourceBetween('async function saveInstallment(id)', 'function printReturnSlip()');
   const context = {
     Math, Number, String, Array, Date, JSON, console,
-    document: { getElementById: id => id === 'inst_amt_71' ? input : null, addEventListener: () => {} },
+    document: { getElementById: id => id === 'inst_amt_71' ? input : ({paymentLedgerTableBody:{innerHTML:''},totalCashSum:{textContent:''},totalOnlineSum:{textContent:''},totalOnlinePendingSum:{textContent:''},ledgerBookingTableBody:{innerHTML:''}}[id] || null), addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: entries => { for (const [key,value] of entries) store[key] = value; return true; },
     getBookingPaidAmount: b => Math.max(Number(b.totalPaid)||0,(b.partPayments||[]).reduce((n,p)=>n+(Number(p.amount)||0),0)),
+    escapeHtml: value => String(value), phoneCallLink: value => String(value),
     calculateBookingTotalRent: b => 1000,
     syncCustomerBookingWorkflow: async () => true,
     loadCustomerList: () => {}, loadInstallmentsTable: () => {}, loadPaymentLedgerTable: () => {}, loadMasterLedgerData: () => {}, loadAllFirebaseData: () => {},
