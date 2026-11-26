@@ -2532,7 +2532,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!safeSetStorage('incomeExpenseDatabase', list))return;
             event.target.reset();
             loadAllFirebaseData();
-            showActionMessage('खर्च दर्ज हुआ', 'success');
+            showActionMessage(type==='Income'?'आमदनी दर्ज हुई':'खर्च दर्ज हुआ', 'success');
         }
 
         function renderDashboardLineGraph() {
