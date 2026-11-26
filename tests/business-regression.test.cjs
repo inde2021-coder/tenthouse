@@ -1609,7 +1609,7 @@ test('customer booking tracker looks up status through the mobile-verified publi
   }
   const tracker=sourceBetween('async function lookupCustomerBookingStatus()', 'async function saveCustomerBooking(event)');
   assert.match(tracker,/async function lookupCustomerBookingStatus\(\)\s*\{\s*const id=/);
-  assert.match(tracker,/^\s*const mobile=/);
+  assert.match(tracker,/\n\s*const mobile=/);
   assert.match(tracker,/api\/customer\/bookings\//);
   assert.match(tracker,/status\?mobile=/);
   assert.match(tracker,/escapeHtml\(b\.id\)/);
