@@ -274,10 +274,10 @@ test('return and missing recovery fail when the source stock row is absent', () 
 
 test('missing recovery preserves prior recovery history and blocks duplicate submissions', () => {
   const recovery=html.slice(html.indexOf('async function recoverMissingItem(recordId,rowIndex)'),html.indexOf('async function completeManualReturnProcess()'));
-  assert.match(recovery,/window\\.__rkMissingRecoveryInProgress/);
-  assert.match(recovery,/finally \\{ window\\.__rkMissingRecoveryInProgress=false; \\}/);
-  assert.match(html,/recoveryEntries:Array\\.isArray\\(existing\\?\\.recoveryEntries\\)\\?existing\\.recoveryEntries:\\[\\]/);
-  assert.match(recovery,/m\\.recoveryEntries\\.push\\(\\{qty,date:recoveryDate,createdAt:recoveredAt\\}\\)/);
+  assert.ok(recovery.includes('window.__rkMissingRecoveryInProgress'));
+  assert.ok(recovery.includes('finally { window.__rkMissingRecoveryInProgress=false; }'));
+  assert.ok(html.includes('recoveryEntries:Array.isArray(existing?.recoveryEntries)?existing.recoveryEntries:[]'));
+  assert.ok(recovery.includes('m.recoveryEntries.push({qty,date:recoveryDate,createdAt:recoveredAt})'));
 });
 
 test('dispatch decrements admin stock by the actual dispatched quantity', async () => {
