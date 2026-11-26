@@ -3045,9 +3045,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 }catch(error){showActionMessage('Online पेमेंट सुरक्षित रूप से दर्ज नहीं हुआ: '+error.message,'error');return;}
             }
             const verifiedPaid=Math.round((v.old+v.cash)*100)/100,rec={id:Date.now(),bookingId:b.id,total:v.total,cash:v.cash,online:v.online,previousPaid:v.old,paid:verifiedPaid,due:Math.max(0,v.total-verifiedPaid),utr,onlineStatus:v.online>0?'pending-verification':'not-applicable',backendPaymentId,createdAt:new Date().toISOString()};
-            ledger.push(rec);if(!safeSetStorage(key,ledger))return;
+            ledger.push(rec);
             b.totalPaid=verifiedPaid;b.dueAmount=rec.due;
-            const rows=safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x);if(!safeSetStorage('softwareBookings',rows))return;
+            const rows=safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x);
+            if(!safeSetStorageBatch([[key,ledger],['softwareBookings',rows]]))return;
             if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             if(typeof searchBillingCustomer==='function'){const q=document.getElementById('billSearchInput');if(q)q.value=String(b.id);searchBillingCustomer();}
             const ca=document.getElementById('paymentCashAmount');if(ca)ca.value='';
@@ -3070,9 +3071,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 if(b){
                     if(verified)b.totalPaid=Math.max(getBookingPaidAmount(b),Math.round(((Number(p.previousPaid)||0)+(Number(p.cash)||0)+(Number(p.online)||0))*100)/100);
                     b.dueAmount=Math.max(0,Number(p.total||0)-getBookingPaidAmount(b));
-                    if(!safeSetStorage('softwareBookings',rows))return;
                 }
-                if(!safeSetStorage('rkPaymentLedger',ledger))return;
+                const paymentWrites=[['rkPaymentLedger',ledger]];
+                if(b)paymentWrites.push(['softwareBookings',rows]);
+                if(!safeSetStorageBatch(paymentWrites))return;
                 if(b&&b.source==='customer-portal'){
                     const remoteSaved=await syncCustomerBookingWorkflow(b,true);
                     if(!remoteSaved){showActionMessage('पेमेंट सत्यापन दर्ज है; Customer Portal बकाया अपडेट सिंक कतार में रखा गया है।','error');return;}
