@@ -533,11 +533,32 @@ test('CSV stock import rejects invalid quantities and rates instead of inventing
   assert.ok(!code.includes('Number(cols[2]) || 500'));
 });
 
-test('purchase entry rolls back its purchase row when stock persistence fails', () => {
-  const code = sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("if(!safeSetStorage('purchaseDatabase',pur))return"));
-  assert.ok(code.includes("if(!safeSetStorage('realStockDatabase',nextStock))"));
-  assert.ok(code.includes("safeSetStorage('purchaseDatabase',previousPurchases)"));
+test('purchase entry validates whole-number quantities and non-negative finite prices and rates', () => {
+  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  for(const [field,values] of Object.entries({
+    purItemQty:['1.5','0','-2','abc',''],
+    purItemPrice:['-1','abc',''],
+    purSingleRent:['-1','abc'],
+    purSetRent:['-1','abc'],
+    purMissingCharge:['-1','abc']
+  })) {
+    for(const value of values) {
+      let writes=0,reset=false;
+      const fields={purItemName:'Chair',purItemQty:'3',purItemPrice:'100',purSingleRent:'10',purSetRent:'20',purMissingCharge:'50',purDate:'2026-11-26',purSupplier:'Vendor'};
+      fields[field]=value;
+      const context={Number,Math,String,Array,Date,document:{getElementById:id=>({value:fields[id]})},safeGetStorage:()=>[],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},event:null};
+      const event={preventDefault(){},target:{reset(){reset=true;}}};context.event=event;
+      vm.runInNewContext(code+'\\nresult=savePurchaseEntry(event);',context);
+      assert.equal(writes,0,field+' must reject '+value);
+      assert.equal(reset,false);
+    }
+  }
+});
+
+test('purchase and stock updates use one rollback-capable storage batch', () => {
+  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]])"));
+  assert.ok(!code.includes("safeSetStorage('purchaseDatabase',previousPurchases)"));
 });
 
 test('daily expense form does not clear or claim success when local persistence fails', () => {
