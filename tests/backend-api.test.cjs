@@ -333,7 +333,8 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
     body: JSON.stringify(payload)
   });
   assert.equal(saved.status, 201);
-  assert.equal((await saved.json()).payment.status, 'pending-verification');
+  const savedData = await saved.json();
+  assert.equal(savedData.payment.status, 'pending-verification');
 
   const duplicate = await request('/api/payments/record-utr', {
     method: 'POST',
@@ -341,6 +342,64 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
     body: JSON.stringify(payload)
   });
   assert.equal(duplicate.status, 409);
+
+  const payment = savedData.payment;
+  const verified = await request('/api/payments/' + payment.id + '/verify', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ verified: true, note: 'Bank statement matched' })
+  });
+  assert.equal(verified.status, 200);
+  assert.equal((await verified.json()).payment.status, 'verified');
+
+  const replay = await request('/api/payments/' + payment.id + '/verify', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ verified: false, note: 'Attempted status change' })
+  });
+  assert.equal(replay.status, 409);
+  assert.match((await replay.json()).error, /already been reviewed/);
+
+  const pending = await request('/api/payments/pending', {
+    headers: { 'x-admin-token': adminToken }
+  });
+  assert.equal(pending.status, 200);
+  assert.equal((await pending.json()).payments.some(item => item.id === payment.id), false);
+});
+
+test('concurrent UPI review requests allow exactly one terminal decision', async () => {
+  const saved = await request('/api/payments/record-utr', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({
+      bookingId: 'concurrent-payment-review',
+      amount: 375,
+      utr: 'RACEUTR123456',
+      method: 'upi',
+      phone: '9876543214'
+    })
+  });
+  assert.equal(saved.status, 201);
+  const payment = (await saved.json()).payment;
+  const decisions = await Promise.all([
+    request('/api/payments/' + payment.id + '/verify', {
+      method: 'POST',
+      headers: { 'x-admin-token': adminToken },
+      body: JSON.stringify({ verified: true, note: 'Matched' })
+    }),
+    request('/api/payments/' + payment.id + '/verify', {
+      method: 'POST',
+      headers: { 'x-admin-token': adminToken },
+      body: JSON.stringify({ verified: false, note: 'Rejected' })
+    })
+  ]);
+  assert.deepEqual(decisions.map(response => response.status).sort(), [200, 409]);
+  const final = await request('/api/payments/' + payment.id + '/verify', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ verified: false })
+  });
+  assert.equal(final.status, 409);
 });
 
 test('customer booking rejects impossible calendar dates instead of accepting regex-shaped dates', async () => {
