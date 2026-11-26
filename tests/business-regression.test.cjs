@@ -2222,7 +2222,7 @@ test('calendar excludes cancelled bookings, ends early returns on the actual dat
     escapeHtml: value => String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;"),
     Date, String, Array
   };
-  vm.runInNewContext(code + '\\nloadCalendarGrid();', context);
+  vm.runInNewContext(code + '\nloadCalendarGrid();', context);
   assert.equal(title.textContent, 'नवंबर 2026');
   assert.ok(grid.innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;'));
   assert.ok(!grid.innerHTML.includes('<img src=x'));
