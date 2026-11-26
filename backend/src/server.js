@@ -528,7 +528,7 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
       customerItems=customerItems.map(item=>{
         const stockItem=stockRows.find(row=>String(row.name||row.item||'').trim().toLowerCase()===String(item.name||'').trim().toLowerCase());
         const setRent=Number(stockItem.setRent)||0,singleRent=Number(stockItem.singleRent)||0;
-        const rentPrice=setRent>0?setRent:singleRent;
+        const qty=Math.max(0,Number(item.qty)||0);const rentPrice=qty>=3&&setRent>0?setRent:(singleRent>0?singleRent:setRent);
         if(!Number.isFinite(rentPrice)||rentPrice<0)throw new Error('Stock catalog में किराया दर सही नहीं है: '+item.name);
         return {...item,rentPrice,missingCharge:0,source:'admin',partyName:''};
       });
