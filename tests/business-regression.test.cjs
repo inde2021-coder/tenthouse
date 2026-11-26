@@ -1306,6 +1306,22 @@ test('missing item recovery restores stock and reduces missing liability exactly
   assert.equal(store.missingItemsDatabase[0].resolved,false);
   assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
 });
+test('legacy missing recovery refuses ambiguous duplicate item identities', async () => {
+  const store={missingItemsDatabase:[{id:'old',bookingId:90,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:90,items:[{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'},{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
+  vm.runInNewContext(code+'\nresult=resolveMissingItem("old");',context);
+  await context.result;
+  assert.equal(writes,0);assert.equal(store.realStockDatabase[0].qty,0);
+});
+test('missing recovery rejects a stale item index that points to a different item', async () => {
+  const store={missingItemsDatabase:[{id:'stale',bookingId:91,itemIndex:0,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:91,items:[{name:'Table',qty:1,returnedQty:0,missingQty:0,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
+  vm.runInNewContext(code+'\nresult=resolveMissingItem("stale");',context);
+  await context.result;
+  assert.equal(writes,0);assert.equal(store.realStockDatabase[0].qty,0);
+});
 test('customer portal missing recovery rolls local stock and ledgers back when cloud sync fails', async () => {
   const store={missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'admin',qty:1,resolved:false}],softwareBookings:[{id:88,source:'customer-portal',items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:4}],thirdPartyDatabase:[]};
   let reloads=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],localStorage:mockStorageForBatch(store),safeSetStorage:(key,value)=>{localStorage.setItem(key,JSON.stringify(value));return true;},safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},syncCustomerBookingWorkflow:async()=>false,loadAllFirebaseData:()=>{reloads++},renderMissingItems:()=>{},showActionMessage:()=>{}};
