@@ -746,13 +746,24 @@ app.get('/api/customer/bookings/:id/status', customerLookupLimiter, requireDurab
   try{
     const booking=await storeGet('erpData/customerBookings/'+req.params.id);
     if(!booking||String(booking.mob||'').replace(/\D/g,'').slice(-10)!==mobile)return res.status(404).json({error:'बुकिंग ID और मोबाइल नंबर का मिलान नहीं हुआ।'});
+    const safeItems=Array.isArray(booking.items)?booking.items.map(item=>({
+      name:String(item?.name||'सामान').slice(0,120),
+      qty:Math.max(0,Math.floor(Number(item?.qty)||0))
+    })):[];
+    const safePayments=Array.isArray(booking.partPayments)?booking.partPayments.map(payment=>({
+      amount:Math.max(0,Number(payment?.amount)||0),
+      date:String(payment?.date||'').slice(0,32)
+    })):[];
     const safeBooking={
-      id:booking.id,name:booking.name,mob:booking.mob,date:booking.date,returnDate:booking.returnDate,eventType:booking.eventType,
-      guestCount:booking.guestCount,status:booking.status,items:booking.items||[],dispatchEntries:booking.dispatchEntries||[],
-      returnEntries:booking.returnEntries||[],actualReturnDate:booking.actualReturnDate||null,fullyReturnedAt:booking.fullyReturnedAt||null,lastDispatchDate:booking.lastDispatchDate||null,lastReturnDate:booking.lastReturnDate||null,advanceAmount:booking.advanceAmount||0,
+      id:booking.id,name:String(booking.name||'').slice(0,120),date:booking.date,returnDate:booking.returnDate,eventType:booking.eventType,
+      guestCount:booking.guestCount,status:booking.status,items:safeItems,
+      dispatchEntryCount:Array.isArray(booking.dispatchEntries)?booking.dispatchEntries.length:0,
+      returnEntryCount:Array.isArray(booking.returnEntries)?booking.returnEntries.length:0,
+      actualReturnDate:booking.actualReturnDate||null,fullyReturnedAt:booking.fullyReturnedAt||null,
+      lastDispatchDate:booking.lastDispatchDate||null,lastReturnDate:booking.lastReturnDate||null,
+      advanceAmount:Math.max(0,Number(booking.advanceAmount)||0),
       advancePaymentStatus:booking.advancePaymentStatus||'not-applicable',advancePaymentVerified:booking.advancePaymentVerified===true,
-      payMode:booking.payMode||'',otherCharges:booking.otherCharges||0,discountAmount:booking.discountAmount||0,
-      partPayments:booking.partPayments||[],updatedAt:booking.updatedAt||booking.createdAt
+      payMode:booking.payMode||'',partPayments:safePayments,updatedAt:booking.updatedAt||booking.createdAt
     };
     res.set('Cache-Control','no-store');
     res.json({ok:true,booking:safeBooking});
