@@ -791,17 +791,22 @@ test('OTP verification has a dedicated brute-force rate limit', () => {
   assert.match(backend, /app\.post\('\/api\/otp\/verify', otpVerifyLimiter, requireDurableStore/);
 });
 
-test('AI provider receives aggregate business counts, never raw customer or payment records', () => {
-  const start = html.indexOf('const aiBusinessSummary = {');
-  const end = html.indexOf('const snapshotText = JSON.stringify(aiBusinessSummary);', start);
+test('AI provider receives aggregate counts and only allow-listed action IDs/statuses, never raw customer or payment details', () => {
+  const start = html.indexOf('const aiBusinessSummary={');
+  const end = html.indexOf('const aiUserMessage=', start);
   assert.ok(start >= 0 && end > start, 'privacy-safe summary must be built before sending the AI request');
   const summary = html.slice(start, end);
-  for (const store of ["softwareBookings", "realStockDatabase", "incomeExpenseDatabase", "thirdPartyDatabase", "thirdPartyPayments"]) {
-    assert.ok(summary.includes("countRecords(safeGetStorage('" + store + "', []))"), 'aggregate count missing for ' + store);
+  assert.ok(summary.includes('bookingRecordCount:countRecords(allBookings)'));
+  for (const store of ["realStockDatabase", "incomeExpenseDatabase", "thirdPartyDatabase", "thirdPartyPayments"]) {
+    assert.ok(summary.includes("countRecords(safeGetStorage('" + store + "',[]))"), 'aggregate count missing for ' + store);
   }
-  assert.ok(!summary.includes('bookings: safeGetStorage'));
-  assert.ok(!summary.includes('JSON.stringify(aiBusinessSnapshot)'));
-  assert.ok(summary.includes('vendorPaymentRecordCount'));
+  assert.match(summary,/pendingBookings:allBookings\.filter\(b=>b&&b\.status==='Pending Approval'/);
+  assert.match(summary,/pendingPayments:paymentRows\.filter\(p=>p&&p\.onlineStatus==='pending-verification'&&p\.backendPaymentId/);
+  assert.match(summary,/id:String\(b\.id\),status:b\.status/);
+  assert.match(summary,/bookingId:String\(p\.bookingId\),amount:Math\.max/);
+  assert.doesNotMatch(summary,/\.map\(b=>\(\{[^}]*name:|\.map\(p=>\(\{[^}]*utr:|mob:/);
+  assert.ok(!summary.includes('JSON.stringify(allBookings)'));
+  assert.ok(!summary.includes('JSON.stringify(paymentRows)'));
 });
 
 test('AI chat and TTS endpoints have server-side cost-abuse rate limits', () => {
@@ -2183,4 +2188,19 @@ test('bill discount and other-charge changes stop when booking persistence fails
   assert.equal(original.otherCharges, 0);
   assert.ok(messages.some(message => message.includes('बिल बदलाव सेव नहीं हुआ')));
   assert.ok(!messages.some(message => message.includes('बिल में लागू हुए')));
+});
+
+
+test('Shraddha AI renders a server proposal and requires an explicit Admin confirmation click', () => {
+  const code = sourceBetween('async function submitAiActionProposal(api,token,action)', 'function startVoiceRecognition()');
+  assert.match(code,/\/api\/ai\/actions\/propose/);
+  assert.match(code,/addEventListener\('click'/);
+  assert.match(code,/\/api\/ai\/actions\//);
+  assert.match(code,/\/confirm/);
+  assert.match(code,/confirmationText:data\.confirmationText/);
+  assert.match(code,/pendingBookings:/);
+  assert.match(code,/pendingPayments:/);
+  assert.match(code,/केवल ऊपर दिए pending IDs का उपयोग करें/);
+  assert.match(code,/Dispatch, Return, Stock/);
+  assert.match(code,/card\.append\(detail,button\)/);
 });

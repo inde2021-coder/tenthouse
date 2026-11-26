@@ -3292,36 +3292,67 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         // Shraddha assistant: keyboard + speech input, real backend AI when configured, useful local answers offline.
         function aiStatus(message, isError=false){ const el=document.getElementById('aiAssistantResponse'); if(el) el.textContent=message; if(isError) showActionMessage(message,'error'); }
+        async function submitAiActionProposal(api,token,action){
+            const response=await fetch(api+'/api/ai/actions/propose',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify(action)});
+            const data=await response.json().catch(()=>({}));
+            if(!response.ok||!data.ok||!data.proposal)throw new Error(data.error||'AI action proposal नहीं बन सका');
+            const host=document.getElementById('aiAssistantResponse');if(!host)throw new Error('AI response panel उपलब्ध नहीं है');
+            const card=document.createElement('div');card.className='ai-action-confirmation';
+            card.style.cssText='margin-top:12px;padding:12px;border:1px solid #d6a84f;border-radius:12px;background:rgba(214,168,79,.08)';
+            const detail=document.createElement('p');detail.style.cssText='margin:0 0 10px;font-weight:600';
+            detail.textContent=(data.proposal.entityType==='payment'?'Payment ':'Booking #')+data.proposal.entityId+' · '+data.proposal.beforeStatus+' → '+data.proposal.proposedStatus+' · 10 मिनट में समाप्त';
+            const button=document.createElement('button');button.type='button';button.className='action-btn';button.textContent='Admin पुष्टि करें';
+            button.addEventListener('click',async()=>{
+                if(button.disabled)return;button.disabled=true;button.textContent='पुष्टि हो रही है…';
+                try{
+                    const confirmed=await fetch(api+'/api/ai/actions/'+encodeURIComponent(data.proposal.id)+'/confirm',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({confirmationText:data.confirmationText})});
+                    const result=await confirmed.json().catch(()=>({}));
+                    if(!confirmed.ok||!result.ok)throw new Error(result.error||'कार्रवाई लागू नहीं हुई');
+                    detail.textContent='सफल: '+result.entityType+' '+result.entityId+' की स्थिति '+result.status+' हुई। Audit Log में दर्ज है।';
+                    button.textContent='पूरा हुआ ✓';
+                }catch(error){detail.textContent='कार्रवाई पूरी नहीं हुई: '+error.message;button.disabled=false;button.textContent='पुनः प्रयास करें';}
+            });
+            card.append(detail,button);host.appendChild(card);
+        }
         async function executeAiCommand(){
-            const input=document.getElementById('aiCommandInput'); const question=(input?.value||'').trim(); if(!question){aiStatus('कृपया प्रश्न लिखें या माइक्रोफ़ोन से बोलें।',true);return;}
-            const settings=safeGetStorage('softwareSettings',{}); aiStatus('श्रद्धा सोच रही है…');
-            const api=getBackendApiUrl(settings); const token=(settings.aiAccessToken||'').trim();
-            if(api && token && navigator.onLine){
-              try {
-                // AI receives only the app's current local snapshot. Firebase cloud sync updates this snapshot when signed in/online.
-                // Never send Firebase config/API keys or Gemini secrets to the model.
-                const countRecords = value => Array.isArray(value) ? value.length : (value && typeof value === 'object' ? Object.keys(value).length : 0);
-                // Privacy boundary: only aggregate counts go to the AI provider, never raw customer/payment records.
-                const aiBusinessSummary = {
-                  bookingRecordCount: countRecords(safeGetStorage('softwareBookings', [])),
-                  stockRecordCount: countRecords(safeGetStorage('realStockDatabase', [])),
-                  expenseRecordCount: countRecords(safeGetStorage('incomeExpenseDatabase', [])),
-                  vendorStockRecordCount: countRecords(safeGetStorage('thirdPartyDatabase', [])),
-                  vendorPaymentRecordCount: countRecords(safeGetStorage('thirdPartyPayments', [])),
-                  lastCloudSync: safeGetStorage('rkLastCloudSyncAt', null)
+            const input=document.getElementById('aiCommandInput');const question=(input?.value||'').trim();if(!question){aiStatus('कृपया प्रश्न लिखें या माइक्रोफ़ोन से बोलें।',true);return;}
+            const settings=safeGetStorage('softwareSettings',{});aiStatus('श्रद्धा सोच रही है…');
+            const api=getBackendApiUrl(settings),token=(settings.aiAccessToken||'').trim();
+            if(api&&token&&navigator.onLine){
+              try{
+                const countRecords=value=>Array.isArray(value)?value.length:(value&&typeof value==='object'?Object.keys(value).length:0);
+                const allBookings=safeGetStorage('softwareBookings',[]),paymentRows=safeGetStorage('rkPaymentLedger',[]);
+                const aiBusinessSummary={
+                  bookingRecordCount:countRecords(allBookings),stockRecordCount:countRecords(safeGetStorage('realStockDatabase',[])),
+                  expenseRecordCount:countRecords(safeGetStorage('incomeExpenseDatabase',[])),vendorStockRecordCount:countRecords(safeGetStorage('thirdPartyDatabase',[])),
+                  vendorPaymentRecordCount:countRecords(safeGetStorage('thirdPartyPayments',[])),lastCloudSync:safeGetStorage('rkLastCloudSyncAt',null),
+                  pendingBookings:allBookings.filter(b=>b&&b.status==='Pending Approval').slice(0,50).map(b=>({id:String(b.id),status:b.status})),
+                  pendingPayments:paymentRows.filter(p=>p&&p.onlineStatus==='pending-verification'&&p.backendPaymentId).slice(0,50).map(p=>({id:String(p.backendPaymentId),bookingId:String(p.bookingId),amount:Math.max(0,Number(p.online)||0),status:p.onlineStatus}))
                 };
-                const snapshotText = JSON.stringify(aiBusinessSummary);
-                const aiUserMessage = 'उपयोगकर्ता का प्रश्न: ' + question + '\n\nगोपनीयता-सुरक्षित व्यावसायिक सारांश (केवल रिकॉर्ड की गिनती; ग्राहक/भुगतान विवरण शामिल नहीं):\n' + snapshotText + '\n\nइन सीमित आँकड़ों से आगे की जानकारी उपलब्ध न हो तो स्पष्ट बताएं; रकम, ग्राहक या रिकॉर्ड का अनुमान न लगाएं।';
-                const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[{role:'system',content:'आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।'}, {role:'user',content:aiUserMessage}]})}); const data=await r.json(); if(!r.ok) throw Error(data.error||('AI HTTP '+r.status)); if(data.reply){aiStatus(data.reply); let geminiVoicePlayed=false; try { const tr=await fetch(api+'/api/ai/tts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({text:data.reply})}); const td=await tr.json(); if(tr.ok && td.audioBase64){ const audio=new Audio('data:'+(td.mimeType||'audio/wav')+';base64,'+td.audioBase64); await audio.play(); geminiVoicePlayed=true; } else { console.warn('Gemini TTS unavailable:',td.error||tr.status); } } catch(te){ console.warn('Gemini TTS unavailable',te); } if(!geminiVoicePlayed && 'speechSynthesis' in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(data.reply);u.lang='hi-IN';window.speechSynthesis.speak(u);} return;} throw Error('AI उत्तर खाली है'); }
-              catch(e){ console.warn('AI backend unavailable',e); aiStatus('AI सर्वर से उत्तर नहीं मिला: '+e.message+'। नीचे उपलब्ध लोकल जानकारी दे रही हूँ।',true); }
+                const aiUserMessage='उपयोगकर्ता का प्रश्न: '+question+'\n\nगोपनीयता-सुरक्षित सारांश (केवल aggregate counts और कार्रवाई के लिए सीमित ID/status/amount; ग्राहक नाम, मोबाइल, UTR या credentials नहीं):\n'+JSON.stringify(aiBusinessSummary)+'\n\nकेवल तभी action marker दें जब उपयोगकर्ता ने स्पष्ट रूप से Pending Booking Confirm/Reject या pending payment Verify/Reject करने को कहा हो। केवल ऊपर दिए pending IDs का उपयोग करें। Marker का format: [[RK_ACTION]]{"type":"customer_booking_status","bookingId":"ID","status":"Confirmed","reason":"कारण"}[[/RK_ACTION]] या [[RK_ACTION]]{"type":"payment_verification","paymentId":"ID","verified":true,"reason":"कारण"}[[/RK_ACTION]]। Dispatch, Return, Stock, Cash payment या अन्य unsupported बदलावों के लिए action marker न दें; स्पष्ट कहें कि अभी समर्थित नहीं है। Action marker केवल प्रस्ताव बनाता है, कोई बदलाव नहीं करता।';
+                const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[
+                  {role:'system',content:'आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कभी यह दावा न करें कि आपने डेटा बदला है। उपयोगकर्ता के स्पष्ट अनुरोध पर केवल allow-listed pending Booking status या pending Payment verification का JSON action marker प्रस्तावित कर सकती हैं। केवल उपलब्ध candidate IDs चुनें; अनुमानित ID या रकम न बनाएं। ग्राहक का नाम, मोबाइल, UTR या secrets न माँगें और न दोहराएँ। Dispatch/Return/Stock और अन्य actions समर्थित नहीं हैं।'},
+                  {role:'user',content:aiUserMessage}
+                ]})});
+                const data=await r.json();if(!r.ok)throw Error(data.error||('AI HTTP '+r.status));
+                if(data.reply){
+                  const rawReply=String(data.reply),marker=rawReply.match(/\[\[RK_ACTION\]\]([\s\S]*?)\[\[\/RK_ACTION\]\]/);
+                  const userReply=rawReply.replace(/\[\[RK_ACTION\]\][\s\S]*?\[\[\/RK_ACTION\]\]/,'').trim()||'श्रद्धा ने एक सुरक्षित कार्रवाई का प्रस्ताव तैयार किया है।';
+                  aiStatus(userReply);
+                  if(marker){try{const action=JSON.parse(marker[1]);await submitAiActionProposal(api,token,action);}catch(actionError){aiStatus(userReply+'\n\nकार्रवाई प्रस्ताव नहीं बना: '+actionError.message,true);}}
+                  let geminiVoicePlayed=false;try{const tr=await fetch(api+'/api/ai/tts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({text:userReply})});const td=await tr.json();if(tr.ok&&td.audioBase64){const audio=new Audio('data:'+(td.mimeType||'audio/wav')+';base64,'+td.audioBase64);await audio.play();geminiVoicePlayed=true;}else console.warn('Gemini TTS unavailable:',td.error||tr.status);}catch(te){console.warn('Gemini TTS unavailable',te);}
+                  if(!geminiVoicePlayed&&'speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(userReply);u.lang='hi-IN';window.speechSynthesis.speak(u);}return;
+                }
+                throw Error('AI उत्तर खाली है');
+              }catch(e){console.warn('AI backend unavailable',e);aiStatus('AI सर्वर से उत्तर नहीं मिला: '+e.message+'। नीचे उपलब्ध लोकल जानकारी दे रही हूँ।',true);}
             }
-            const q=question.toLowerCase(); const bookings=safeGetStorage('softwareBookings',[]), stock=safeGetStorage('realStockDatabase',[]), expenses=safeGetStorage('incomeExpenseDatabase',[]);
+            const q=question.toLowerCase(),bookings=safeGetStorage('softwareBookings',[]),stock=safeGetStorage('realStockDatabase',[]),expenses=safeGetStorage('incomeExpenseDatabase',[]);
             let answer='ऑनलाइन AI चालू करने के लिए Settings में Backend API URL और सुरक्षित Admin API Token भरें। अभी मैं स्थानीय डेटा से सीमित उत्तर दे सकती हूँ।';
-            if(/बुकिंग|booking|ग्राहक|customer/.test(q)) answer='स्थानीय रिकॉर्ड में कुल '+bookings.length+' बुकिंग हैं। क्लाउड सिंक के लिए इंटरनेट और Firebase login आवश्यक है।';
-            else if(/स्टॉक|stock|सामान|inventory/.test(q)) answer='स्थानीय स्टॉक रिकॉर्ड में '+(Array.isArray(stock)?stock.length:Object.keys(stock||{}).length)+' रिकॉर्ड हैं।';
-            else if(/खर्च|आय|income|expense|लेखा/.test(q)) answer='आय/खर्च के स्थानीय रिकॉर्ड: '+(Array.isArray(expenses)?expenses.length:Object.keys(expenses||{}).length)+'।';
-            else if(/नमस्ते|हेलो|hello|hi/.test(q)) answer='नमस्ते! मैं श्रद्धा हूँ। आप बुकिंग, स्टॉक या आय-खर्च के बारे में पूछ सकते हैं।';
-            aiStatus(answer); if('speechSynthesis' in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(answer);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(_){}}
+            if(/बुकिंग|booking|ग्राहक|customer/.test(q))answer='स्थानीय रिकॉर्ड में कुल '+bookings.length+' बुकिंग हैं। क्लाउड सिंक के लिए इंटरनेट और Firebase login आवश्यक है।';
+            else if(/स्टॉक|stock|सामान|inventory/.test(q))answer='स्थानीय स्टॉक रिकॉर्ड में '+(Array.isArray(stock)?stock.length:Object.keys(stock||{}).length)+' रिकॉर्ड हैं।';
+            else if(/खर्च|आय|income|expense|लेखा/.test(q))answer='आय/खर्च के स्थानीय रिकॉर्ड: '+(Array.isArray(expenses)?expenses.length:Object.keys(expenses||{}).length)+'।';
+            else if(/नमस्ते|हेलो|hello|hi\b/.test(q))answer='नमस्ते! मैं श्रद्धा हूँ। आप बुकिंग, स्टॉक या आय-खर्च के बारे में पूछ सकते हैं।';
+            aiStatus(answer);if('speechSynthesis'in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(answer);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(_){}}
         }
         function startVoiceRecognition(){
             const Native=window.SpeechRecognition||window.webkitSpeechRecognition;
