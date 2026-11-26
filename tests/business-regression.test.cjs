@@ -1228,6 +1228,16 @@ test('purchase deletion atomically removes the record and its full available sto
 });
 
 
+test('daily income and expense form records the selected ledger type', () => {
+  assert.match(html, /id="expenseType" required/);
+  assert.match(html, /option value="Income">आमदनी/);
+  assert.match(html, /option value="Expense">खर्च/);
+  const code = sourceBetween('function saveDailyExpense(event) {', 'function renderDashboardLineGraph()');
+  assert.match(code, /const type = document\.getElementById\('expenseType'\)\?\.value \|\| 'Expense'/);
+  assert.match(code, /\['Income','Expense'\]\.includes\(type\)/);
+  assert.match(code, /type, amount/);
+});
+
 test('vendor ledger shows advance credit when vendor payments exceed recorded liability', () => {
   const start = html.indexOf('function loadThirdPartyLedger()');
   const end = html.indexOf('// Removed an orphaned speech-recognition fragment', start);
