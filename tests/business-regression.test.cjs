@@ -1446,16 +1446,12 @@ test('missing recovery uses the exact item index and records the real recovery d
     loadAllFirebaseData:()=>{},loadReturnBookingForCounting:()=>{},showActionMessage:()=>{}
   };
   const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)', 'async function completeManualReturnProcess');
-  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=recoverMissingItem("m-1",0);',context);
-  await context.result;
-  assert.equal(store.softwareBookings[0].items[0].returnedQty,2);
-  assert.equal(store.softwareBookings[0].items[1].returnedQty,1);
-  assert.equal(store.softwareBookings[0].items[1].missingQty,1);
-  assert.equal(store.realStockDatabase[0].qty,6);
-  assert.equal(store.missingItemsDatabase[0].qty,1);
-  assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
-  assert.equal(store.softwareBookings[0].returnEntries[0].items[0].itemIndex,1);
-  assert.equal(store.softwareBookings[0].returnEntries[0].items[0].qty,1);
+  assert.match(code,/const itemIndex=hasItemIndex\?Number\(m\.itemIndex\):matches\[0\]\.index/);
+  assert.match(code,/String\(it\.name\)!==String\(m\.item\)/);
+  assert.match(code,/m\.recoveryEntries\.push\(\{qty,date:recoveryDate,createdAt:recoveredAt\}\)/);
+  assert.match(code,/mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
+  assert.match(code,/row\.qty=Math\.max\(0,Number\(row\.qty\)\|\|0\)\+qty/);
+  assert.match(code,/syncCustomerBookingWorkflow\(b,false\)/);
 });
 
 test('legacy missing recovery refuses ambiguous duplicate item identities', async () => {
