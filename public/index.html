@@ -3244,6 +3244,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         function renderMissingRecoveryRows(b){const body=document.getElementById('missingRecoveryBody');if(!body)return;const rows=safeGetStorage('missingItemsDatabase',[]).filter(m=>String(m.bookingId)===String(b.id)&&!m.resolved&&(Number(m.qty)||0)>0);body.innerHTML=rows.length?rows.map((m,i)=>`<tr><td>${escapeHtml(m.item)}<small style="display:block">${m.source==='third-party'?'वेंडर: '+escapeHtml(m.partyName||'-'):'एडमिन स्टॉक'}</small></td><td>${Number(m.qty)||0}</td><td><input type="number" min="1" max="${Number(m.qty)||0}" step="1" id="recoverMissingQty_${i}" value="${Number(m.qty)||0}" style="width:85px"></td><td><button type="button" class="action-btn" onclick="recoverMissingItem('${String(m.id)}',${i})">वापसी दर्ज करें</button></td></tr>`).join(''):'<tr><td colspan="4">इस बुकिंग में वापस मिलने वाला खुला मिसिंग सामान नहीं है</td></tr>';}
         async function recoverMissingItem(recordId,rowIndex){
             const bId=activeReturnBookingId;if(bId==null)return;
+            if(window.__rkMissingRecoveryInProgress)return;
+            window.__rkMissingRecoveryInProgress=true;
+            try {
             const missing=safeGetStorage('missingItemsDatabase',[]),m=missing.find(x=>String(x.id)===String(recordId)&&String(x.bookingId)===String(bId));
             if(!m){showActionMessage('मिसिंग रिकॉर्ड नहीं मिला','error');return;}
             const input=document.getElementById('recoverMissingQty_'+rowIndex),qty=Number(input?.value),remaining=Math.max(0,Number(m.qty)||0);
@@ -3272,6 +3275,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
             loadAllFirebaseData();const q=document.getElementById('returnBarcodeInput');if(q)q.value=String(bId);
             loadReturnBookingForCounting();showActionMessage('मिसिंग सामान की वापसी दर्ज हुई और स्टॉक अपडेट हुआ','success');
+            } finally { window.__rkMissingRecoveryInProgress=false; }
         }
         async function completeManualReturnProcess(){
             if(activeReturnBookingId==null){showActionMessage('पहले बुकिंग लोड करें','error');return;}
@@ -3317,7 +3321,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 item.missingQty=Math.max(0,sent-item.returnedQty);
                 if(item.missingQty>0){
                   const existing=missing.find(m=>String(m.bookingId)===String(b.id)&&String(m.item)===String(item.name)&&String(m.source)===(item.source==='third-party'?'third-party':'admin')&&String(m.partyName||'')===String(item.partyName||''));
-                  const record={id:existing?.id||(`${b.id}-${idx}`),bookingId:b.id,itemIndex:idx,customer:b.name,item:item.name,source:item.source==='third-party'?'third-party':'admin',partyName:item.partyName||'',qty:item.missingQty,penalty:0,chargeApproved:false,resolved:false};
+                  const record={id:existing?.id||(`${b.id}-${idx}`),bookingId:b.id,itemIndex:idx,customer:b.name,item:item.name,source:item.source==='third-party'?'third-party':'admin',partyName:item.partyName||'',qty:item.missingQty,penalty:0,chargeApproved:false,resolved:false,recoveryEntries:Array.isArray(existing?.recoveryEntries)?existing.recoveryEntries:[],createdAt:existing?.createdAt||new Date().toISOString()};
                   if(existing)Object.assign(existing,record);else missing.push(record);
                 }
               }
