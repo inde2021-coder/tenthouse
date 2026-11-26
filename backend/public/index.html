@@ -2325,7 +2325,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const setRent=Number(document.getElementById('stockItemSetRent').value);
             const singleRent=Number(document.getElementById('stockItemSingleRent').value);
             const missingCharge=Number(document.getElementById('stockItemMissing').value);
-            if(!name||![qty,setRent,singleRent,missingCharge].every(Number.isFinite)||qty<1||setRent<0||singleRent<0||missingCharge<0){showActionMessage('सामान, मात्रा और सभी दरें सही भरें','error');return;}
+            if(!name||!Number.isSafeInteger(qty)||qty<1||![setRent,singleRent,missingCharge].every(Number.isFinite)||setRent<0||singleRent<0||missingCharge<0){showActionMessage('सामान, पूर्ण संख्या में मात्रा और सभी दरें सही भरें','error');return;}
             let stock=safeGetStorage('realStockDatabase',[]);
             const existing=stock.find(x=>String(x.name||'').trim().toLowerCase()===name.toLowerCase());
             if(existing){
@@ -2333,7 +2333,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 existing.qty=Math.max(0,Number(existing.qty)||0)+qty; existing.setRent=setRent; existing.singleRent=singleRent; existing.missingCharge=missingCharge; existing.missingUnitPrice=missingCharge;
             }else stock.push({name,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
             stock=mergeDuplicateStockRows(stock);
-            safeSetStorage('realStockDatabase',stock);event.target.reset();loadAllFirebaseData();showActionMessage(existing?'मौजूदा सामान का स्टॉक बढ़ाया और दरें अपडेट की गईं':'नया स्टॉक सेव हुआ','success');
+            if(!safeSetStorage('realStockDatabase',stock))return;event.target.reset();loadAllFirebaseData();showActionMessage(existing?'मौजूदा सामान का स्टॉक बढ़ाया और दरें अपडेट की गईं':'नया स्टॉक सेव हुआ','success');
         }
         function mergeDuplicateStockRows(rows){
             const merged=[],byName=new Map();
@@ -2927,8 +2927,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         function saveThirdPartyEntry(event) {
             event.preventDefault();
             let tpList = safeGetStorage('thirdPartyDatabase', []);
-            const partyName=document.getElementById('tpPartyName').value.trim(), itemName=document.getElementById('tpItemName').value.trim(), qty=Number(document.getElementById('tpItemQty').value)||1;
-            const costPrice=Number(document.getElementById('tpItemCost').value)||0,chargePrice=Number(document.getElementById('tpItemCharge').value)||0,vendorMissingCost=Number(document.getElementById('tpVendorMissingCost')?.value)||0,missingCharge=Number(document.getElementById('tpMissingCharge')?.value)||0;
+            const partyName=document.getElementById('tpPartyName').value.trim(),itemName=document.getElementById('tpItemName').value.trim(),qty=Number(document.getElementById('tpItemQty').value);
+            const optionalAmount=id=>{const value=document.getElementById(id)?.value;return String(value??'').trim()===''?0:Number(value);};
+            const costPrice=optionalAmount('tpItemCost'),chargePrice=optionalAmount('tpItemCharge'),vendorMissingCost=optionalAmount('tpVendorMissingCost'),missingCharge=optionalAmount('tpMissingCharge');
+            if(!partyName||!itemName||!Number.isSafeInteger(qty)||qty<1||![costPrice,chargePrice,vendorMissingCost,missingCharge].every(Number.isFinite)||[costPrice,chargePrice,vendorMissingCost,missingCharge].some(value=>value<0)){showActionMessage('वेंडर, सामान, पूर्ण संख्या में मात्रा और शून्य या उससे अधिक सही दरें भरें','error');return;}
             const existing=tpList.find(x=>String(x.partyName||'').toLowerCase()===partyName.toLowerCase()&&String(x.item||'').toLowerCase()===itemName.toLowerCase());
             if(existing){existing.qty=(Number(existing.qty)||0)+qty;existing.purchasedQty=(Number(existing.purchasedQty ?? existing.qty-qty)||0)+qty;existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.vendorMissingCost=vendorMissingCost;existing.missingCharge=missingCharge;existing.source='third-party';}
             else tpList.push({partyName,item:itemName,qty,purchasedQty:qty,costPrice,chargePrice,vendorMissingCost,missingCharge,source:'third-party',updatedAt:new Date().toISOString()});
