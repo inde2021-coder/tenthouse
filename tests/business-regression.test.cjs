@@ -101,6 +101,14 @@ function runRentFunction(functionName, booking) {
   return context.result;
 }
 
+test('manual vendor dispatch preserves replacement cost from either supported vendor field', () => {
+  const start=html.indexOf('function addThirdPartyItemToDispatch()');
+  const end=html.indexOf('function ',start+20);
+  const code=html.slice(start,end);
+  assert.ok(code.includes('vendorRow.missingCost??vendorRow.vendorMissingCost'));
+  assert.ok(code.includes('vendorMissingCost:Math.max(0,Number(vendorRow.missingCost??vendorRow.vendorMissingCost)||0)'));
+});
+
 test('customer cart recalculates bulk tier when the same item is added in separate steps', () => {
   const start=html.indexOf('function addSelectedItemToCart()');
   const end=html.indexOf('function renderCustomerCart()',start);
