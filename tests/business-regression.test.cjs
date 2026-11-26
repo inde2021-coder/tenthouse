@@ -1710,13 +1710,19 @@ test('Royal admin dashboard KPIs are read-only, data-backed and quick actions re
 });
 
 
-test('five-image ZIP reference is the only active design and alternate theme switching is locked', () => {
-  assert.match(html,/const applyRoyalReference/);
-  assert.match(html,/document\.documentElement\.classList\.remove\('rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean'\)/);
-  assert.match(html,/window\.applyRkDesign=function\(\)\{applyRoyalReference\(\)\}/);
+test('exactly five ZIP reference themes are selectable and persist across reloads', () => {
+  for (const name of ['ref1','ref2','ref3','ref4','ref5']) {
+    assert.ok(html.includes('data-rk-theme="'+name+'"'), 'Missing ZIP reference theme: '+name);
+  }
+  assert.equal((html.match(/data-rk-theme="ref[1-5]"/g)||[]).length,5);
+  assert.match(html,/const themes=\['ref1','ref2','ref3','ref4','ref5'\]/);
+  assert.match(html,/localStorage\.setItem\('rkDesignPreset',selected\)/);
+  assert.match(html,/localStorage\.getItem\('rkDesignPreset'\)/);
+  assert.match(html,/window\.applyRkDesign=\(name\)=>apply\(name,true\)/);
   const css=fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8');
-  assert.match(css,/\.rk-design-manager\{display:none!important\}/);
-  assert.match(css,/ZIP MASTER REFERENCE LOCK/);
+  assert.doesNotMatch(css,/\.rk-design-manager\{display:none!important\}/);
+  assert.match(css,/html\.rk-ref1/);
+  assert.match(css,/html\.rk-ref5/);
   assert.match(css,/#customerFirstPortal \.rk-customer-form/);
   assert.match(css,/#customerFirstPortal \.rk-booking-tracker/);
 });

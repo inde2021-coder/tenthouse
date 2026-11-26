@@ -605,7 +605,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(max-width:720px){#customerFirstPortal .rk-customer-hero.has-custom-image::after{top:auto;left:0;right:0;bottom:0;width:100%;height:44%;border-radius:0 0 23px 23px;background-image:linear-gradient(180deg,#111a35 0%,rgba(17,26,53,.18) 55%),var(--rk-hero-bg)}#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-copy{max-width:100%;padding-bottom:125px}}
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
-    <link rel="stylesheet" href="./rk-reference-theme.css?v=5">
+    <link rel="stylesheet" href="./rk-reference-theme.css?v=6">
 <style id="rk-settings-premium-refresh-2026-11">
 /* Settings-only visual refresh: premium dark glass, compact hierarchy, and mobile-safe controls. */
 #setting{width:min(100%,1180px);margin:0 auto;padding:clamp(8px,2vw,22px);color:#eaf1ff}
@@ -1206,13 +1206,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                             <h3 style="color:var(--primary-blue); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-gear"></i> सेटिंग्स, पेमेंट गेटवे, UPI और इमेज स्टैम्प्स</h3>
 <div class="rk-design-manager" aria-label="डिजाइन मैनेजर">
  <div><strong>डिजाइन मैनेजर</strong><small>ERP का रंग-रूप बदलें। बुकिंग, स्टॉक और हिसाब के डेटा पर कोई असर नहीं होगा।</small></div>
- <div class="rk-design-options">
-  <button type="button" class="rk-design-choice" data-rk-theme="royal" onclick="applyRkDesign('royal')"><span class="rk-design-swatch royal"></span>Royal Dark</button>
-  <button type="button" class="rk-design-choice" data-rk-theme="light" onclick="applyRkDesign('light')"><span class="rk-design-swatch light"></span>Light Royal</button>
-  <button type="button" class="rk-design-choice" data-rk-theme="neon" onclick="applyRkDesign('neon')"><span class="rk-design-swatch neon"></span>Neon</button>
-  <button type="button" class="rk-design-choice" data-rk-theme="emerald" onclick="applyRkDesign('emerald')"><span class="rk-design-swatch emerald"></span>Green Nature</button>
-  <button type="button" class="rk-design-choice" data-rk-theme="purple" onclick="applyRkDesign('purple')"><span class="rk-design-swatch purple"></span>Purple Royal</button>
-  <button type="button" class="rk-design-choice" data-rk-theme="ocean" onclick="applyRkDesign('ocean')"><span class="rk-design-swatch ocean"></span>Ocean Blue</button>
+ <div class="rk-design-options" role="group" aria-label="ZIP reference themes">
+  <button type="button" class="rk-design-choice" data-rk-theme="ref1" onclick="applyRkDesign('ref1')"><span class="rk-design-swatch royal"></span>Reference Image 1</button>
+  <button type="button" class="rk-design-choice" data-rk-theme="ref2" onclick="applyRkDesign('ref2')"><span class="rk-design-swatch ocean"></span>Reference Image 2</button>
+  <button type="button" class="rk-design-choice" data-rk-theme="ref3" onclick="applyRkDesign('ref3')"><span class="rk-design-swatch neon"></span>Reference Image 3</button>
+  <button type="button" class="rk-design-choice" data-rk-theme="ref4" onclick="applyRkDesign('ref4')"><span class="rk-design-swatch purple"></span>Reference Image 4</button>
+  <button type="button" class="rk-design-choice" data-rk-theme="ref5" onclick="applyRkDesign('ref5')"><span class="rk-design-swatch emerald"></span>Reference Image 5</button>
  </div><small id="rkDesignStatus" role="status">चुनी गई थीम इसी डिवाइस पर सेव होगी।</small>
 </div>
                             <div class="form-grid">
@@ -4185,16 +4184,25 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 </style>
 
 <script>
-/* The supplied five-image ZIP is the single approved customer design. */
+/* Exactly five visual presets, each mapped to one of the five supplied ZIP screenshots. */
 (function(){
- const applyRoyalReference=()=>{
-  document.documentElement.classList.remove('rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean');
-  document.documentElement.classList.remove('rk-theme-royal');
-  try{localStorage.setItem('rkDesignPreset','royal')}catch(e){}
+ const themes=['ref1','ref2','ref3','ref4','ref5'];
+ const apply=(name,save=true)=>{
+  const selected=themes.includes(name)?name:'ref1';
+  document.documentElement.classList.remove(...themes.map(t=>'rk-'+t));
+  document.documentElement.classList.add('rk-'+selected);
+  if(save){try{localStorage.setItem('rkDesignPreset',selected)}catch(e){}}
+  document.querySelectorAll('.rk-design-choice').forEach(btn=>{
+   const active=btn.dataset.rkTheme===selected;
+   btn.classList.toggle('active',active);
+   btn.setAttribute('aria-pressed',String(active));
+  });
+  const status=document.getElementById('rkDesignStatus');
+  if(status)status.textContent='संदर्भ इमेज '+selected.slice(3)+' की थीम लागू है।';
  };
- window.applyRkDesign=function(){applyRoyalReference()};
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyRoyalReference,{once:true});
- else applyRoyalReference();
+ window.applyRkDesign=(name)=>apply(name,true);
+ const restore=()=>{let saved='ref1';try{saved=localStorage.getItem('rkDesignPreset')||'ref1'}catch(e){}apply(saved,false)};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});else restore();
 })();
 </script>
 <style id="rk-admin-dark-controls-final">
