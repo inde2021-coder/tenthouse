@@ -215,12 +215,12 @@ function auditBookingSummary(booking) {
     missingQty: Array.isArray(booking.items) ? booking.items.reduce((n, row) => n + Math.max(0, Number(row.missingQty) || 0), 0) : 0
   };
 }
-async function appendAuditEvent({ action, entityType, entityId, phase = 'completed', before = null, after = null, source = 'admin-api', note = '' }) {
+async function appendAuditEvent({ action, entityType, entityId, phase = 'completed', before = null, after = null, source = 'admin-api', note = '', actor = null }) {
   const id = crypto.randomUUID();
   const event = {
     id, action: String(action).slice(0, 80), entityType: String(entityType).slice(0, 60),
     entityId: String(entityId).slice(0, 100), phase, source,
-    actorType: 'admin-api-token', actorId: null,
+    actorType: actor?.type || 'system', actorId: actor?.id || null,
     before: before && typeof before === 'object' ? before : null,
     after: after && typeof after === 'object' ? after : null,
     note: String(note || '').slice(0, 300), createdAt: new Date().toISOString()
@@ -247,6 +247,9 @@ const authAdmin = (req, res, next) => {
   // Require an exact length before constant-time comparison; never accept padded/truncated tokens.
   if (got.length !== expected.length) return res.status(401).json({ error: 'Unauthorized' });
   if (!crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))) return res.status(401).json({ error: 'Unauthorized' });
+  // A shared admin credential cannot identify a human; record a non-reversible
+  // fingerprint so audit entries can distinguish credential rotations.
+  req.actor = { type: 'admin-api-token', id: crypto.createHash('sha256').update(expected).digest('hex').slice(0, 16) };
   next();
 };
 const healthCheck = (_req, res) => res.json({ ok: true, service: 'rk-tent-house-erp-api', time: new Date().toISOString() });
@@ -462,7 +465,7 @@ app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async
     const before={status:item.status};
     item.updatedAt = new Date().toISOString();
     await storeSet(path, item);
-    await appendAuditEvent({action:'whatsapp_booking_request_reviewed',entityType:'whatsapp_booking_request',entityId:req.params.id,before,after:{status:item.status},note:'WhatsApp booking request status changed'});
+    await appendAuditEvent({ actor: req.actor,action:'whatsapp_booking_request_reviewed',entityType:'whatsapp_booking_request',entityId:req.params.id,before,after:{status:item.status},note:'WhatsApp booking request status changed'});
     res.json({ ok: true, request: item });
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
@@ -596,7 +599,7 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
       try{await storeSet('erpData/payments/advance-'+id,{id:'advance-'+id,bookingId:String(id),amount:parsed.data.advanceAmount,utr:parsed.data.utrNumber.trim(),method:'upi',phone:parsed.data.mob,status:'pending-verification',createdAt:booking.createdAt});}
       catch(error){await storeDelete('erpData/customerBookings/'+String(id)).catch(()=>{});await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{});throw error;}
     }
-    await appendAuditEvent({action:'customer_booking_created',entityType:'customer_booking',entityId:String(id),before:null,after:auditBookingSummary(booking),source:'customer-portal',note:'New customer portal booking'});
+    await appendAuditEvent({ actor: req.actor,action:'customer_booking_created',entityType:'customer_booking',entityId:String(id),before:null,after:auditBookingSummary(booking),source:'customer-portal',note:'New customer portal booking'});
     res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई। Advance payment UTR सत्यापन के लिए Pending है।'});
   }catch(error){res.status(503).json({error:error.message});}
   finally{if(releaseReservationLock){try{await releaseReservationLock();}catch(lockError){console.error('Customer booking reservation lock release failed:',lockError.message);}}}
@@ -638,7 +641,7 @@ app.patch('/api/customer/bookings/:id/advance', authAdmin, requireDurableStore, 
     await storeSet(path,booking);
     const paymentPath='erpData/payments/advance-'+req.params.id,payment=await storeGet(paymentPath);
     if(payment){payment.status=parsed.data.verified?'verified':'rejected';payment.note=booking.advancePaymentNote;payment.verifiedAt=booking.updatedAt;await storeSet(paymentPath,payment);}
-    await appendAuditEvent({action:'customer_advance_verification',entityType:'customer_booking',entityId:req.params.id,before:auditBefore,after:auditBookingSummary(booking),note:parsed.data.verified?'Advance verified':'Advance rejected'});
+    await appendAuditEvent({ actor: req.actor,action:'customer_advance_verification',entityType:'customer_booking',entityId:req.params.id,before:auditBefore,after:auditBookingSummary(booking),note:parsed.data.verified?'Advance verified':'Advance rejected'});
     res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
 });
@@ -664,7 +667,7 @@ app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req
     const next={...booking,...parsed.data,updatedAt:new Date().toISOString()};
     if(next.returnDate<next.date)return res.status(400).json({error:'Return date must not be before dispatch date.'});
     await storeSet(path,next);
-    await appendAuditEvent({action:'customer_booking_edited',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(next)});
+    await appendAuditEvent({ actor: req.actor,action:'customer_booking_edited',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(next)});
     res.json({ok:true,booking:next});
   }catch(error){res.status(503).json({error:error.message});}
 });
@@ -789,7 +792,7 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
     const before=auditBookingSummary(booking);
     Object.assign(booking,parsed.data,{updatedAt:new Date().toISOString()});
     await storeSet(path,booking);
-    await appendAuditEvent({action:'customer_booking_workflow_updated',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(booking),note:'Workflow, dispatch, return or payment fields updated'});
+    await appendAuditEvent({ actor: req.actor,action:'customer_booking_workflow_updated',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(booking),note:'Workflow, dispatch, return or payment fields updated'});
     res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
 });
@@ -836,7 +839,7 @@ app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, a
     booking.status=parsed.data.status;booking.updatedAt=new Date().toISOString();
     if(booking.status==='Confirmed')booking.confirmedAt=booking.updatedAt;
     await storeSet(path,booking);
-    await appendAuditEvent({action:'customer_booking_status_changed',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(booking)});
+    await appendAuditEvent({ actor: req.actor,action:'customer_booking_status_changed',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(booking)});
     res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
 });
@@ -844,7 +847,7 @@ app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, a
 app.post('/api/whatsapp/send', whatsappSendLimiter, authAdmin, async (req,res) => {
   const parsed = z.object({ to: phoneSchema, message: z.string().min(1).max(4000) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid to and message are required.' });
-  try { const provider = await sendWhatsAppText(parsed.data.to, parsed.data.message); await appendAuditEvent({action:'whatsapp_message_sent',entityType:'whatsapp_message',entityId:String(provider?.messageId || provider?.id || crypto.randomUUID()),before:null,after:{provider:provider?.provider||null,status:'accepted'},note:'Provider accepted outbound message; delivery receipt is separate'}); res.json({ ok: true, provider }); }
+  try { const provider = await sendWhatsAppText(parsed.data.to, parsed.data.message); await appendAuditEvent({ actor: req.actor,action:'whatsapp_message_sent',entityType:'whatsapp_message',entityId:String(provider?.messageId || provider?.id || crypto.randomUUID()),before:null,after:{provider:provider?.provider||null,status:'accepted'},note:'Provider accepted outbound message; delivery receipt is separate'}); res.json({ ok: true, provider }); }
   catch(e) { res.status(502).json({ error: e.message }); }
 });
 
@@ -1087,7 +1090,7 @@ app.post('/api/ai/actions/propose', aiLimiter, authAdmin, requireDurableStore, a
     const created = await storeCreateIfAbsent('erpData/aiActionProposals/' + id, proposal);
     if (!created) return res.status(409).json({ error: 'Could not create a unique action proposal.' });
     try {
-      await appendAuditEvent({
+      await appendAuditEvent({ actor: req.actor,
         action: 'ai_action_proposed', entityType, entityId, phase: 'proposed',
         before: { status: beforeStatus }, after: { status: proposedStatus },
         source: 'ai', note: 'AI proposed an allow-listed ERP status transition'
@@ -1134,7 +1137,7 @@ app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStor
       current => !!current && current.status === 'pending' && Number(current.expiresAt) > Date.now(),
       current => ({ ...current, status: 'executing', executionStartedAt: new Date().toISOString() }));
     if (!claimed) return res.status(409).json({ error: 'Action proposal was already used, expired, or changed.' });
-    const intent = await appendAuditEvent({
+    const intent = await appendAuditEvent({ actor: req.actor,
       action: 'ai_action_confirmed', entityType: proposal.entityType, entityId: proposal.entityId,
       phase: 'started', before: { status: proposal.beforeStatus }, after: { status: proposal.proposedStatus },
       source: 'ai', note: 'Proposal ' + proposal.id
@@ -1161,11 +1164,11 @@ app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStor
     }
     if (!updated) {
       await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Target record changed during confirmation.', completedAt: new Date().toISOString() }));
-      await appendAuditEvent({ action: 'ai_action_failed', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'failed', before: { status: proposal.beforeStatus }, after: { status: currentStatus }, source: 'ai', note: 'Proposal ' + proposal.id + '; intent ' + intent.id });
+      await appendAuditEvent({ actor: req.actor, action: 'ai_action_failed', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'failed', before: { status: proposal.beforeStatus }, after: { status: currentStatus }, source: 'ai', note: 'Proposal ' + proposal.id + '; intent ' + intent.id });
       return res.status(409).json({ error: 'Target record changed during confirmation. No action was applied.' });
     }
     const updatedStatus = updated.status;
-    await appendAuditEvent({ action: 'ai_action_succeeded', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'completed', before: { status: proposal.beforeStatus }, after: { status: updatedStatus }, source: 'ai', note: 'Proposal ' + proposal.id });
+    await appendAuditEvent({ actor: req.actor, action: 'ai_action_succeeded', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'completed', before: { status: proposal.beforeStatus }, after: { status: updatedStatus }, source: 'ai', note: 'Proposal ' + proposal.id });
     await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'completed', completedAt: new Date().toISOString() }));
     res.set('Cache-Control', 'no-store').json({ ok: true, entityType: proposal.entityType, entityId: proposal.entityId, status: updatedStatus, auditEventId: intent.id, message: 'Action लागू हुआ और Audit Log में दर्ज किया गया।' });
   } catch (error) { res.status(503).json({ error: error.message }); }
@@ -1211,7 +1214,7 @@ app.post('/api/payments/record-utr', authAdmin, requireDurableStore, async (req,
     const record={id,...parsed.data,status:'pending-verification',createdAt:new Date().toISOString()};
     try { await storeSet('erpData/payments/'+id,record); }
     catch(error) { await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{}); throw error; }
-    await appendAuditEvent({action:'payment_utr_submitted',entityType:'payment',entityId:id,before:null,after:{status:record.status,amount:record.amount,method:record.method},note:'UTR submitted; not treated as verified settlement'});
+    await appendAuditEvent({ actor: req.actor,action:'payment_utr_submitted',entityType:'payment',entityId:id,before:null,after:{status:record.status,amount:record.amount,method:record.method},note:'UTR submitted; not treated as verified settlement'});
     res.status(201).json({ok:true,payment:record,message:'Payment entry saved for manual/provider verification. UTR is not proof of settlement by itself.'});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
@@ -1236,7 +1239,7 @@ app.post('/api/payments/:id/verify', authAdmin, requireDurableStore, async (req,
       if(!existing)return res.status(404).json({error:'Payment not found'});
       return res.status(409).json({error:'Payment has already been reviewed and cannot be changed.'});
     }
-    await appendAuditEvent({action:'payment_verification',entityType:'payment',entityId:req.params.id,before:{status:paymentBefore?.status||null,amount:Number(paymentBefore?.amount)||0},after:{status:payment.status,amount:Number(payment.amount)||0},note:parsed.data.verified?'Payment verified':'Payment rejected'});
+    await appendAuditEvent({ actor: req.actor,action:'payment_verification',entityType:'payment',entityId:req.params.id,before:{status:paymentBefore?.status||null,amount:Number(paymentBefore?.amount)||0},after:{status:payment.status,amount:Number(payment.amount)||0},note:parsed.data.verified?'Payment verified':'Payment rejected'});
     res.json({ok:true,payment});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
