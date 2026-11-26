@@ -285,9 +285,9 @@ test('dispatch and return handlers reject duplicate submissions and always relea
   const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
   const ret=html.slice(html.indexOf('async function completeManualReturnProcess()'),html.indexOf('let currentDocumentItems = []'));
   for (const [name,fn,flag] of [['dispatch',dispatch,'__rkDispatchInProgress'],['return',ret,'__rkReturnInProgress']]) {
-    assert.ok(fn.includes('if(window.'+flag+')'),name+' duplicate guard missing');
-    assert.ok(fn.includes('window.'+flag+'=true'),name+' lock acquisition missing');
-    assert.ok(fn.includes('finally { window.'+flag+'=false; }'),name+' lock release missing');
+    assert.ok(fn.includes('if(globalThis.'+flag+')'),name+' duplicate guard missing');
+    assert.ok(fn.includes('globalThis.'+flag+'=true'),name+' lock acquisition missing');
+    assert.ok(fn.includes('finally { globalThis.'+flag+'=false; }'),name+' lock release missing');
   }
 });
 
