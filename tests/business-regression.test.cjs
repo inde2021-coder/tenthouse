@@ -1584,3 +1584,19 @@ test('Royal admin dashboard KPIs are read-only, data-backed and quick actions re
   assert.match(css,/\.rk-admin-kpi-grid/);
   assert.match(css,/\.rk-admin-quick-actions/);
 });
+
+
+test('Design Manager exposes all six reference-collage themes without touching ERP data', () => {
+  const themeNames=['royal','light','neon','emerald','purple','ocean'];
+  for (const name of themeNames) {
+    assert.ok(html.includes('data-rk-theme="'+name+'"'), 'Missing Design Manager option: '+name);
+  }
+  assert.match(html,/rkDesignPreset/);
+  assert.match(html,/localStorage\.setItem\('rkDesignPreset',name\)/);
+  assert.match(html,/rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean/);
+  const css=fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8');
+  for (const name of ['light','neon','emerald','purple','ocean']) {
+    assert.ok(css.includes('rk-theme-'+name), 'Missing CSS preset: '+name);
+  }
+  assert.match(css,/\.rk-design-options/);
+});
