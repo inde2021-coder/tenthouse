@@ -190,3 +190,14 @@ Main पर मिले root causes:
 - GitHub Actions run #662 सफल (90/90 tests); PR #4 अभी अलग खुला है और production `main` में merge नहीं हुआ है।
 
 - OTP send concurrency test भी पास: एक ही मोबाइल के लिए समान समय पर दो send requests में एक ही request स्वीकार होती है; दूसरी को conflict मिलता है। Demo-provider delay केवल development test environment में enabled है।
+
+
+## Merge एवं अंतिम CI स्थिति — 26 नवंबर 2026, 08:31 IST
+
+यह section ऊपर के पुराने snapshot/status को supersede करता है:
+- PR #4 (OTP delivery/verification hardening) सफलतापूर्वक `main` में merge हुआ: merge commit `e7633319bd0fadfe3a0d9749a714453ec833ed95`।
+- PR #3 (admin gate, booking lookup rate-limit, AI aggregate-only privacy, UI shell sync और regression coverage) सफलतापूर्वक `main` में merge हुआ: merge commit `bd4fdf95ecde9d7ab9a9cc84169342da828b2753`।
+- Merge के बाद combined CI में 97 में से 95 tests पास और 2 fail हुए। दोनों failures shared global API limiter के 60-request test budget से थे (HTTP 429), business validation failure नहीं।
+- Test-only API budget override जोड़ा गया: backend default/production limit 60 ही रहता है; backend test harness में `API_RATE_LIMIT_MAX=500` रखा गया ताकि unrelated test cases एक-दूसरे का rate budget समाप्त न करें।
+- इस सुधार के बाद GitHub Actions run `45749356603` सफल: **97/97 tests PASS, 0 FAIL**; backend syntax और package/manifest JSON validation भी PASS।
+- कोई Vercel deployment नहीं किया गया। यह merge केवल `inde2021-coder/tenthouse-` repository की `main` शाखा में है; production Vercel project के source repo mismatch तथा live Firebase/WhatsApp/UPI/device/print checks अभी अलग से सत्यापित होने बाकी हैं।
