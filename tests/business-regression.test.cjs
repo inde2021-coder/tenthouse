@@ -1085,3 +1085,32 @@ test('payment ledger keeps pending online amount separate from verified cash rec
   assert.match(verify,/p\.onlineStatus=verified\?'verified':'rejected'/);
   assert.match(verify,/if\(verified\)b\.totalPaid=/);
 });
+
+
+test('income and expense totals ignore malformed, negative and unknown ledger rows', () => {
+  const start=html.indexOf('function calculateIncomeExpenseTotals(rows)');
+  const end=html.indexOf('function loadIncomeExpenseTable()',start);
+  assert.ok(start>=0&&end>start,'income/expense totals calculator must exist');
+  const context={Array,Number,String};
+  vm.runInNewContext(html.slice(start,end)+`
+    result=calculateIncomeExpenseTotals([
+      {type:'Income',amount:1200},{type:'Expense',amount:450},
+      {type:'income',amount:'300.50'},{type:'expense',amount:'bad'},
+      {type:'Expense',amount:-50},{type:'Refund',amount:900},
+      {type:'Income',amount:0}
+    ]);
+  `,context);
+  const totals=JSON.parse(JSON.stringify(context.result));
+  assert.equal(totals.income,1500.5);
+  assert.equal(totals.expense,450);
+  assert.equal(totals.net,1050.5);
+  assert.equal(totals.validRows,4);
+  assert.equal(totals.ignoredRows,3);
+});
+
+test('income and expense table summary uses the shared validated totals calculator', () => {
+  const code=sourceBetween('function loadIncomeExpenseTable()', "window.addEventListener('resize'");
+  assert.match(code,/calculateIncomeExpenseTotals\(list\)/);
+  assert.match(code,/totalInc=totals\.income/);
+  assert.match(code,/totalExp=totals\.expense/);
+});
