@@ -1321,13 +1321,14 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                                 if (Object.prototype.hasOwnProperty.call(cloudData, cloudKey) && cloudData[cloudKey] !== null) {
                                     if (localKey === 'softwareSettings') {
                                         const existingLocal = safeGetStorage('softwareSettings', {});
-                                        const sanitizedRemote = sanitizeCloudSettings(cloudData[cloudKey]);
+                                        const cloudSafeSettings = sanitizeCloudSettings(cloudData[cloudKey]);
+                                        const localSettings = { ...cloudSafeSettings };
                                         for (const secretKey of Object.keys(existingLocal || {})) {
-                                            if (/(token|secret|password|private.?key|api.?key|gateway.?key|access.?key)/i.test(secretKey)) sanitizedRemote[secretKey] = existingLocal[secretKey];
+                                            if (/(token|secret|password|private.?key|api.?key|gateway.?key|access.?key)/i.test(secretKey)) localSettings[secretKey] = existingLocal[secretKey];
                                         }
-                                        localStorage.setItem(localKey, JSON.stringify(sanitizedRemote));
-                                        if (JSON.stringify(sanitizedRemote) !== JSON.stringify(cloudData[cloudKey])) {
-                                            dbRef.child(cloudKey).set(sanitizeCloudSettings(cloudData[cloudKey])).catch(error => console.warn('Firebase secret cleanup failed', error));
+                                        localStorage.setItem(localKey, JSON.stringify(localSettings));
+                                        if (JSON.stringify(cloudSafeSettings) !== JSON.stringify(cloudData[cloudKey])) {
+                                            dbRef.child(cloudKey).set(cloudSafeSettings).catch(error => console.warn('Firebase secret cleanup failed', error));
                                         }
                                     } else localStorage.setItem(localKey, JSON.stringify(cloudData[cloudKey]));
                                 }
