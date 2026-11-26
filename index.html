@@ -4009,6 +4009,24 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
 </style>
 
+<script>
+(function(){
+ const allowed=['royal','emerald','purple'];
+ window.applyRkDesign=function(name){
+  if(!allowed.includes(name)) return;
+  document.documentElement.classList.remove('rk-theme-emerald','rk-theme-purple');
+  if(name!=='royal') document.documentElement.classList.add('rk-theme-'+name);
+  try{localStorage.setItem('rkDesignPreset',name)}catch(e){}
+  document.querySelectorAll('[data-rk-theme]').forEach(b=>b.classList.toggle('selected',b.dataset.rkTheme===name));
+  const status=document.getElementById('rkDesignStatus');
+  if(status)status.textContent='डिजाइन लागू: '+({royal:'Royal Blue',emerald:'Emerald',purple:'Royal Purple'}[name]);
+ };
+ document.addEventListener('DOMContentLoaded',function(){
+  let saved='royal';try{saved=localStorage.getItem('rkDesignPreset')||'royal'}catch(e){}
+  window.applyRkDesign(saved);
+ });
+})();
+</script>
 <style id="rk-admin-dark-controls-final">
 /* Final admin control theme: defeat legacy light-theme and browser autofill rules. */
 #adminPanel,#welcomeOverlay,[role="dialog"],.modal-content{color-scheme:dark}
@@ -4042,22 +4060,5 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
   -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;transition:background-color 99999s ease-out 0s!important
 }
 </style>
-<script>
-(function(){
- const allowed=['royal','emerald','purple'];
- window.applyRkDesign=function(name){
-  if(!allowed.includes(name)) return;
-  document.documentElement.classList.remove('rk-theme-emerald','rk-theme-purple');
-  if(name!=='royal') document.documentElement.classList.add('rk-theme-'+name);
-  try{localStorage.setItem('rkDesignPreset',name)}catch(e){}
-  document.querySelectorAll('[data-rk-theme]').forEach(b=>b.classList.toggle('selected',b.dataset.rkTheme===name));
-  const status=document.getElementById('rkDesignStatus');
-  if(status)status.textContent='डिजाइन लागू: '+({royal:'Royal Blue',emerald:'Emerald',purple:'Royal Purple'}[name]);
- };
- document.addEventListener('DOMContentLoaded',function(){
-  let saved='royal';try{saved=localStorage.getItem('rkDesignPreset')||'royal'}catch(e){}
-  window.applyRkDesign(saved);
- });
-})();
-</script>
+
 </body></html>
