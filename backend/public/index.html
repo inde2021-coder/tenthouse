@@ -2116,10 +2116,15 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const list=isThird?thirdParty:stock;
                 const row=isThird?list.find(y=>(y.partyName||'')===(x.it.partyName||'')&&(y.item||y.name)===x.it.name):list.find(y=>y.name===x.it.name);
                 if(!row){showActionMessage('स्टॉक रिकॉर्ड नहीं मिला: '+(x.it.name||'अज्ञात सामान'),'error');return;}
-                const available=Number(row.qty);
-                if(!Number.isSafeInteger(available)||available<0){showActionMessage('स्टॉक मात्रा पूर्ण और सही संख्या में नहीं है: '+x.it.name,'error');return;}
-                if(available<x.qty){showActionMessage('पर्याप्त स्टॉक नहीं: '+x.it.name+' (उपलब्ध '+available+', चाहिए '+x.qty+')','error');return;}
-                requirements.push({row,qty:x.qty});
+                let requirement=requirements.find(entry=>entry.row===row);
+                if(!requirement){requirement={row,qty:0,itemName:x.it.name};requirements.push(requirement);}
+                requirement.qty+=x.qty;
+                if(!Number.isSafeInteger(requirement.qty)){showActionMessage('Dispatch की कुल मात्रा सही पूर्ण संख्या नहीं है: '+x.it.name,'error');return;}
+            }
+            for(const requirement of requirements){
+                const available=Number(requirement.row.qty);
+                if(String(requirement.row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0){showActionMessage('स्टॉक मात्रा पूर्ण और सही संख्या में नहीं है: '+requirement.itemName,'error');return;}
+                if(available<requirement.qty){showActionMessage('पर्याप्त स्टॉक नहीं: '+requirement.itemName+' (उपलब्ध '+available+', कुल चाहिए '+requirement.qty+')','error');return;}
             }
             requirements.forEach(x=>x.row.qty=Number(x.row.qty)-x.qty);
             b.items=items;
