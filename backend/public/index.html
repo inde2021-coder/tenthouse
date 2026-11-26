@@ -2171,8 +2171,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         async function completeDispatch(id) {
-            if(window.__rkDispatchInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
-            window.__rkDispatchInProgress=true;
+            if(globalThis.__rkDispatchInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
+            globalThis.__rkDispatchInProgress=true;
             try {
             const bookings = safeGetStorage('softwareBookings', []);
             const b = bookings.find(x => String(x.id) === String(id));
@@ -2259,7 +2259,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             loadAllFirebaseData();showActionMessage('Dispatch सेव हुआ; बुकिंग Return पूरा होने तक सूची में रहेगी','success');
             if(b.mob&&typeof sendWhatsAppMessage==='function')sendWhatsAppMessage(id,'dispatch');
         
-            } finally { window.__rkDispatchInProgress=false; }
+            } finally { globalThis.__rkDispatchInProgress=false; }
         }
 
         function printDispatchSlip(id) {
@@ -3253,8 +3253,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         function renderMissingRecoveryRows(b){const body=document.getElementById('missingRecoveryBody');if(!body)return;const rows=safeGetStorage('missingItemsDatabase',[]).filter(m=>String(m.bookingId)===String(b.id)&&!m.resolved&&(Number(m.qty)||0)>0);body.innerHTML=rows.length?rows.map((m,i)=>`<tr><td>${escapeHtml(m.item)}<small style="display:block">${m.source==='third-party'?'वेंडर: '+escapeHtml(m.partyName||'-'):'एडमिन स्टॉक'}</small></td><td>${Number(m.qty)||0}</td><td><input type="number" min="1" max="${Number(m.qty)||0}" step="1" id="recoverMissingQty_${i}" value="${Number(m.qty)||0}" style="width:85px"></td><td><button type="button" class="action-btn" onclick="recoverMissingItem('${String(m.id)}',${i})">वापसी दर्ज करें</button></td></tr>`).join(''):'<tr><td colspan="4">इस बुकिंग में वापस मिलने वाला खुला मिसिंग सामान नहीं है</td></tr>';}
         async function recoverMissingItem(recordId,rowIndex){
             const bId=activeReturnBookingId;if(bId==null)return;
-            if(window.__rkMissingRecoveryInProgress)return;
-            window.__rkMissingRecoveryInProgress=true;
+            if(globalThis.__rkMissingRecoveryInProgress)return;
+            globalThis.__rkMissingRecoveryInProgress=true;
             try {
             const missing=safeGetStorage('missingItemsDatabase',[]),m=missing.find(x=>String(x.id)===String(recordId)&&String(x.bookingId)===String(bId));
             if(!m){showActionMessage('मिसिंग रिकॉर्ड नहीं मिला','error');return;}
@@ -3284,11 +3284,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
             loadAllFirebaseData();const q=document.getElementById('returnBarcodeInput');if(q)q.value=String(bId);
             loadReturnBookingForCounting();showActionMessage('मिसिंग सामान की वापसी दर्ज हुई और स्टॉक अपडेट हुआ','success');
-            } finally { window.__rkMissingRecoveryInProgress=false; }
+            } finally { globalThis.__rkMissingRecoveryInProgress=false; }
         }
         async function completeManualReturnProcess(){
-            if(window.__rkReturnInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
-            window.__rkReturnInProgress=true;
+            if(globalThis.__rkReturnInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
+            globalThis.__rkReturnInProgress=true;
             try {
             if(activeReturnBookingId==null){showActionMessage('पहले बुकिंग लोड करें','error');return;}
             const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(activeReturnBookingId));
@@ -3356,7 +3356,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();
             showActionMessage(fullyReturned?'Return पूरा हुआ; Missing सामान अलग सूची में दर्ज है, कोई Missing चार्ज बिल में नहीं जुड़ेगा':'Partial Return सेव हुआ; बाकी सामान अभी Missing नहीं माना गया, बाद में Return करें','success');
         
-            } finally { window.__rkReturnInProgress=false; }
+            } finally { globalThis.__rkReturnInProgress=false; }
         }
 
         let currentDocumentItems = [];
