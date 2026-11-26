@@ -1199,3 +1199,11 @@ test('income and expense edit rejects impossible calendar dates', () => {
   assert.equal(writes,0);
   assert.equal(row.date,'2026-02-28');
 });
+
+
+test('daily expense edit and delete do not claim success when persistence fails', () => {
+  const edit=sourceBetween('function editIncomeExpense(index)', 'function loadCustomerList()');
+  assert.ok(edit.includes("if(!safeSetStorage('incomeExpenseDatabase',rows))return"));
+  const remove=edit.slice(edit.indexOf('function deleteIncomeExpense(index)'));
+  assert.ok(remove.includes("if(!safeSetStorage('incomeExpenseDatabase',rows))return"));
+});
