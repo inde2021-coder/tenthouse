@@ -1275,6 +1275,30 @@ test('vendor dispatch decrements only the selected vendor stock and records vend
   assert.equal(store.softwareBookings[0].dispatchEntries[0].vendorMissingCost,25);
 });
 
+test('missing item recovery restores stock and reduces missing liability exactly once', () => {
+  const store={
+    missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'third-party',partyName:'Vendor A',qty:3,resolved:false}],
+    softwareBookings:[{id:88,status:'Returned',items:[{name:'Chair',qty:5,returnedQty:2,missingQty:3,source:'third-party',partyName:'Vendor A'}],returnEntries:[]}],
+    realStockDatabase:[],thirdPartyDatabase:[{partyName:'Vendor A',item:'Chair',qty:1}]
+  };
+  const messages=[];
+  const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '2',safeGetStorage:key=>store[key],safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:(m)=>messages.push(m)};
+  const code=sourceBetween('function resolveMissingItem(missingId)', 'function exportFullBackup()');
+  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("b-0");',context);
+  assert.equal(store.thirdPartyDatabase[0].qty,3);
+  assert.equal(store.softwareBookings[0].items[0].returnedQty,4);
+  assert.equal(store.softwareBookings[0].items[0].missingQty,1);
+  assert.equal(store.missingItemsDatabase[0].qty,1);
+  assert.equal(store.missingItemsDatabase[0].resolved,false);
+  assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
+});
+test('missing item recovery refuses to write if the source stock row is missing', () => {
+  const store={missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:88,items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}]}],realStockDatabase:[],thirdPartyDatabase:[]};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:()=>{}};
+  const code=sourceBetween('function resolveMissingItem(missingId)', 'function exportFullBackup()');
+  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("b-0");',context);
+  assert.equal(writes,0);assert.equal(store.missingItemsDatabase[0].resolved,undefined);
+});
 test('vendor partial return adds only received quantity back to the matching vendor stock', async () => {
   const bookings=[{id:89,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',lastDispatchDate:'2026-11-01',
     items:[{name:'Light',qty:5,returnedQty:0,source:'third-party',partyName:'Vendor B'}],
