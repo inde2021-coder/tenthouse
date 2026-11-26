@@ -1959,7 +1959,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate): (scheduled>today?scheduled:today);
                 rentalTotal=items.reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rentPrice??500))*calculateRentalDays(b.date,endDate),0);
             }
-            // Only explicitly Admin-approved missing-item charges enter the customer bill.
+            // All unresolved missing-item charges enter the customer bill automatically at the saved stock rate.
             const missingCharge=getMissingChargeTotal(b);
             const other=Math.max(0,Number(b.otherCharges)||0),discount=Math.max(0,Number(b.discountAmount)||0);
             return Math.max(0,Math.round((rentalTotal+other+missingCharge-discount)*100)/100);
@@ -3055,8 +3055,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(otherField && document.activeElement!==otherField) otherField.value=Number(b.otherCharges)||0;
 
             let totalRent = calculateBookingTotalRent(b);
-            const approvedMissingRows=safeGetStorage('missingItemsDatabase',[]).filter(row=>String(row.bookingId)===String(b.id)&&!row.resolved&&(Number(row.qty)||0)>0);
-            const approvedMissingTotal=getMissingChargeTotal(b);
+            const missingChargeRows=safeGetStorage('missingItemsDatabase',[]).filter(row=>String(row.bookingId)===String(b.id)&&!row.resolved&&(Number(row.qty)||0)>0);
+            const missingChargeTotal=getMissingChargeTotal(b);
             const invoiceRentRows=(Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length)
                 ?getDispatchEntryRentalSlices(b).map(slice=>{const e=slice.entry,item=b.items?.[Number(e.itemIndex)]||{};return {name:e.itemName||item.name||'सामान',qty:slice.qty,rate:Number(e.unitRent??item.rentPrice??500),date:e.date||b.date,endDate:slice.endDate};})
                 :(b.items||[]).map(item=>({name:item.name,qty:Number(item.qty)||0,rate:Number(item.rentPrice??500),date:b.date,endDate:b.actualReturnDate||b.returnDate}));
@@ -3076,8 +3076,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         <thead><tr style="background:#edf2f7;"><th>सामान</th><th>मात्रा</th><th>Dispatch तारीख → Return तारीख / दिन</th><th>कुल किराया</th></tr></thead>
                         <tbody>${invoiceRentRows.map(e=>{const days=calculateRentalDays(e.date,e.endDate);return `<tr><td>${escapeHtml(e.name)}</td><td>${e.qty}</td><td>${escapeHtml(e.date)} → ${escapeHtml(e.endDate)} (${days} दिन)</td><td>₹${e.qty*e.rate*days}</td></tr>`;}).join('')}</tbody>
                     </table>
-                    ${approvedMissingRows.length?`<section style="margin-top:12px;border:1px solid #dc2626;border-radius:8px;padding:10px;background:#fff7f7"><h3 style="color:#991b1b;margin:0 0 8px">मिसिंग सामान शुल्क विवरण (स्वतः लागू)</h3><table style="width:100%;border-collapse:collapse" border="1"><thead><tr><th>सामान</th><th>मिसिंग मात्रा</th><th>प्रति पीस</th><th>कुल शुल्क</th></tr></thead><tbody>${approvedMissingRows.map(row=>`<tr><td>${escapeHtml(row.item)}</td><td>${Number(row.qty)||0}</td><td>₹${(Number(row.unitCharge)||0).toFixed(2)}</td><td>₹${(Number(row.penalty)||((Number(row.qty)||0)*Math.max(0,Number(row.unitCharge)||0))).toFixed(2)}</td></tr>`).join('')}</tbody><tfoot><tr><th colspan="3">स्वचालित Missing Charge</th><th>₹${approvedMissingTotal.toFixed(2)}</th></tr></tfoot></table></section>`:''}
-                    <div style="margin-top:10px;text-align:right"><p>किराया: ₹${Math.max(0,totalRent-(Number(b.otherCharges)||0)+(Number(b.discountAmount)||0)).toFixed(2)}</p><p>Missing सामान का लागू शुल्क: ₹${approvedMissingTotal.toFixed(2)}</p><p>अन्य चार्ज: ₹${(Number(b.otherCharges)||0).toFixed(2)}</p><p>डिस्काउंट: −₹${(Number(b.discountAmount)||0).toFixed(2)}</p><h3 style="color:#2b6cb0">कुल देय राशि: ₹${totalRent.toFixed(2)}</h3><p>पहले जमा: ₹${getBookingPaidAmount(b).toFixed(2)} · बाकी: ₹${Math.max(0,totalRent-getBookingPaidAmount(b)).toFixed(2)}</p></div>
+                    ${missingChargeRows.length?`<section style="margin-top:12px;border:1px solid #dc2626;border-radius:8px;padding:10px;background:#fff7f7"><h3 style="color:#991b1b;margin:0 0 8px">मिसिंग सामान शुल्क विवरण (स्वतः लागू)</h3><table style="width:100%;border-collapse:collapse" border="1"><thead><tr><th>सामान</th><th>मिसिंग मात्रा</th><th>प्रति पीस</th><th>कुल शुल्क</th></tr></thead><tbody>${missingChargeRows.map(row=>`<tr><td>${escapeHtml(row.item)}</td><td>${Number(row.qty)||0}</td><td>₹${(Number(row.unitCharge)||0).toFixed(2)}</td><td>₹${(Number(row.penalty)||((Number(row.qty)||0)*Math.max(0,Number(row.unitCharge)||0))).toFixed(2)}</td></tr>`).join('')}</tbody><tfoot><tr><th colspan="3">स्वचालित Missing Charge</th><th>₹${missingChargeTotal.toFixed(2)}</th></tr></tfoot></table></section>`:''}
+                    <div style="margin-top:10px;text-align:right"><p>किराया: ₹${Math.max(0,totalRent-(Number(b.otherCharges)||0)+(Number(b.discountAmount)||0)).toFixed(2)}</p><p>Missing सामान का लागू शुल्क: ₹${missingChargeTotal.toFixed(2)}</p><p>अन्य चार्ज: ₹${(Number(b.otherCharges)||0).toFixed(2)}</p><p>डिस्काउंट: −₹${(Number(b.discountAmount)||0).toFixed(2)}</p><h3 style="color:#2b6cb0">कुल देय राशि: ₹${totalRent.toFixed(2)}</h3><p>पहले जमा: ₹${getBookingPaidAmount(b).toFixed(2)} · बाकी: ₹${Math.max(0,totalRent-getBookingPaidAmount(b)).toFixed(2)}</p></div>
                     ${settings.termsConditions ? `<section style="margin-top:12px;border-top:1px solid #cbd5e1;padding-top:8px"><b>Terms &amp; Conditions / नियम व शर्तें</b><p style="white-space:pre-wrap">${escapeHtml(settings.termsConditions)}</p></section>` : ''}
                     <div style="margin-top:15px; display:flex; gap:10px;">
                         <button onclick="printInvoice()" class="glass-btn-green" style="flex:0 1 auto;"><i class="fa-solid fa-print"></i> प्रिंट इनवॉइस</button>

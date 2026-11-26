@@ -169,7 +169,7 @@ test('missing-item charge is automatic from stock rate without an approval flag'
 
 test('invoice shows automatic missing charge breakdown without admin approval controls', () => {
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
-  assert.match(invoice,/approvedMissingRows/);
+  assert.match(invoice,/missingChargeRows/);
   assert.match(invoice,/Missing सामान का लागू शुल्क/);
   assert.match(invoice,/getMissingChargeTotal\(b\)/);
   assert.doesNotMatch(invoice,/शुल्क स्वीकृत करें/);
@@ -177,7 +177,7 @@ test('invoice shows automatic missing charge breakdown without admin approval co
 
 test('invoice exposes automatically applied missing charge rows without approval gating', () => {
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
-  assert.match(invoice,/approvedMissingRows/);
+  assert.match(invoice,/missingChargeRows/);
   assert.match(invoice,/Missing सामान का लागू शुल्क/);
   assert.match(invoice,/getMissingChargeTotal\(b\)/);
   assert.doesNotMatch(invoice,/स्वीकृत Missing Charge|शुल्क स्वीकृत करें|getApprovedMissingChargeTotal/);
@@ -1948,4 +1948,36 @@ test('server audit log is append-only and records booking and payment mutations'
   assert.match(backend,/customer_booking_status_changed/);
   assert.match(backend,/customer_advance_verification/);
   assert.match(backend,/payment_verification/);
+});
+
+
+test('all 19 Admin modules have a page section and their primary handlers', () => {
+  const modules = {
+    dashboard: ['renderRoyalDashboardMetrics', 'calculateDashboardStockShortages'],
+    'master-ledger': ['loadMasterLedgerData', 'loadPaymentLedgerTable'],
+    'ai-assistant': ['executeAiCommand'],
+    'customer-list': ['loadCustomerList'],
+    'booking-list': ['loadBookingsListTable', 'approveBooking'],
+    dispatch: ['completeDispatch', 'printDispatchSlip'],
+    return: ['completeManualReturnProcess', 'printReturnSlip'],
+    'missing-item': ['renderMissingItems', 'getMissingChargeTotal'],
+    stock: ['saveStockItemReal', 'importStockFromCSV'],
+    'third-party': ['saveThirdPartyEntry', 'recordThirdPartyPayment'],
+    purchase: ['savePurchaseEntry', 'editPurchase', 'deletePurchase'],
+    'income-expense': ['saveDailyExpense', 'calculateIncomeExpenseTotals'],
+    installments: ['loadInstallmentsTable'],
+    'payment-ledger': ['savePaymentEntry', 'verifyLedgerPayment'],
+    'calendar-view': ['loadCalendarGrid', 'changeCalendarMonth'],
+    bill: ['searchBillingCustomer', 'updatePaymentTotals', 'printInvoice'],
+    'business-card': ['saveBusinessCard', 'printBusinessCard'],
+    documents: ['saveBusinessDocument', 'printBusinessDocument'],
+    setting: ['saveSettings', 'saveAdvancedSettings']
+  };
+  assert.equal((html.match(/class=["'][^"']*\bpage-section\b[^"']*["']/g) || []).length, 19);
+  for (const [moduleId, handlers] of Object.entries(modules)) {
+    assert.ok(html.includes('id="' + moduleId + '"'), 'missing Admin module section: ' + moduleId);
+    for (const handler of handlers) {
+      assert.match(html, new RegExp('function\\s+' + handler + '\\s*\\('), moduleId + ' handler missing: ' + handler);
+    }
+  }
 });
