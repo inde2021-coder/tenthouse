@@ -1136,6 +1136,14 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     <div id="setting" class="page-section">
                         <form onsubmit="saveSettings(event)" class="glass-card-blue" style="margin-bottom: 12px;">
                             <h3 style="color:var(--primary-blue); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-gear"></i> सेटिंग्स, पेमेंट गेटवे, UPI और इमेज स्टैम्प्स</h3>
+<div class="rk-design-manager" aria-label="डिजाइन मैनेजर">
+ <div><strong>डिजाइन मैनेजर</strong><small>ERP का रंग-रूप बदलें। बुकिंग, स्टॉक और हिसाब के डेटा पर कोई असर नहीं होगा।</small></div>
+ <div class="rk-design-options">
+  <button type="button" class="rk-design-choice" data-rk-theme="royal" onclick="applyRkDesign('royal')"><span class="rk-design-swatch royal"></span>Royal Blue</button>
+  <button type="button" class="rk-design-choice" data-rk-theme="emerald" onclick="applyRkDesign('emerald')"><span class="rk-design-swatch emerald"></span>Emerald</button>
+  <button type="button" class="rk-design-choice" data-rk-theme="purple" onclick="applyRkDesign('purple')"><span class="rk-design-swatch purple"></span>Royal Purple</button>
+ </div><small id="rkDesignStatus" role="status">चुनी गई थीम इसी डिवाइस पर सेव होगी।</small>
+</div>
                             <div class="form-grid">
                                 <div><label>दुकान का नाम</label><input type="text" id="settingBusinessName" required></div>
                                 <div><label>संपर्क नंबर</label><input type="tel" id="settingContactNo" required></div>
@@ -4034,4 +4042,22 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
   -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;transition:background-color 99999s ease-out 0s!important
 }
 </style>
+<script>
+(function(){
+ const allowed=['royal','emerald','purple'];
+ window.applyRkDesign=function(name){
+  if(!allowed.includes(name)) return;
+  document.documentElement.classList.remove('rk-theme-emerald','rk-theme-purple');
+  if(name!=='royal') document.documentElement.classList.add('rk-theme-'+name);
+  try{localStorage.setItem('rkDesignPreset',name)}catch(e){}
+  document.querySelectorAll('[data-rk-theme]').forEach(b=>b.classList.toggle('selected',b.dataset.rkTheme===name));
+  const status=document.getElementById('rkDesignStatus');
+  if(status)status.textContent='डिजाइन लागू: '+({royal:'Royal Blue',emerald:'Emerald',purple:'Royal Purple'}[name]);
+ };
+ document.addEventListener('DOMContentLoaded',function(){
+  let saved='royal';try{saved=localStorage.getItem('rkDesignPreset')||'royal'}catch(e){}
+  window.applyRkDesign(saved);
+ });
+})();
+</script>
 </body></html>
