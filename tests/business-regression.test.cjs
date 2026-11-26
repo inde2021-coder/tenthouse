@@ -1973,11 +1973,11 @@ test('all 19 Admin modules have a page section and their primary handlers', () =
     documents: ['saveBusinessDocument', 'printBusinessDocument'],
     setting: ['saveSettings', 'saveAdvancedSettings']
   };
-  assert.equal((html.match(/class=["'][^"']*\\bpage-section\\b[^"']*["']/g) || []).length, 19);
+  assert.equal((html.match(/class=["'][^"']*\bpage-section\b[^"']*["']/g) || []).length, 19);
   for (const [moduleId, handlers] of Object.entries(modules)) {
     assert.ok(html.includes('id="' + moduleId + '"'), 'missing Admin module section: ' + moduleId);
     for (const handler of handlers) {
-      assert.match(html, new RegExp('function\\\\s+' + handler + '\\\\s*\\\\('), moduleId + ' handler missing: ' + handler);
+      assert.match(html, new RegExp('function\\s+' + handler + '\\s*\\('), moduleId + ' handler missing: ' + handler);
     }
   }
 });
