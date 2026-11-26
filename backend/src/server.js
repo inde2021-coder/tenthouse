@@ -873,9 +873,11 @@ function aiProjectRecord(datasetKey, record) {
 async function buildAiErpReadContext(question) {
   const root = await storeGet('tent_erp_data');
   if (!root || typeof root !== 'object') return 'Live ERP डेटा उपलब्ध नहीं है: Firebase ERP data root पढ़ा नहीं जा सका।';
-  const q = String(question || '').toLowerCase();
-  const selected = AI_ERP_DATASETS.filter(dataset => dataset.pattern.test(q));
-  const datasets = selected.length ? selected : [];
+  const rawQuestion = String(question || '');
+  const q = rawQuestion.split(/\n\s*\n/)[0].replace(/^उपयोगकर्ता का प्रश्न:\s*/i, '').toLowerCase();
+  const dashboardQuery = /dashboard|डैशबोर्ड|report|रिपोर्ट/.test(q);
+  const selected = dashboardQuery ? AI_ERP_DATASETS : AI_ERP_DATASETS.filter(dataset => dataset.pattern.test(q));
+  const datasets = selected;
   if (!datasets.length) return 'Live ERP data access उपलब्ध है। किसी module/record का नाम बताने पर उसी module का सीमित read-only रिकॉर्ड खोजा जाएगा।';
   const tokens = q.split(/[^\p{L}\p{N}]+/u).filter(token => token.length >= 3);
   const sections = [];
