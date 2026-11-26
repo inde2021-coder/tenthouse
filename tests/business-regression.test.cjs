@@ -1,3 +1,22 @@
+test('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
+  const rules = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
+  assert.equal(rules['.read'], false);
+  assert.equal(rules['.write'], false);
+  assert.equal(rules.tent_erp_data['.read'], "auth != null && root.child('erp_admins').child(auth.uid).val() === true");
+  assert.equal(rules.tent_erp_data['.write'], "auth != null && root.child('erp_admins').child(auth.uid).val() === true");
+  assert.equal(rules.erp_admins['$uid']['.read'], 'auth != null && auth.uid === $uid');
+  assert.equal(rules.erp_admins['$uid']['.write'], false);
+});
+test('Google admin login verifies the signed-in UID grant before revealing admin data', () => {
+  const login = sourceBetween('async function loginWithGoogle(adminToken)', '// Keep local writes immediate');
+  const signIn = login.indexOf('signInWithPopup');
+  const grantRead = login.indexOf("ref('erp_admins/'+signedInUser.uid).once('value')");
+  const deny = login.indexOf("adminGrant.val()!==true");
+  const reveal = login.indexOf("getElementById('adminPanel').style.display='block'");
+  assert.ok(signIn >= 0 && grantRead > signIn && deny > grantRead && reveal > deny);
+  assert.ok(login.includes('await firebase.auth().signOut()'));
+});
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
