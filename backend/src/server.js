@@ -459,8 +459,10 @@ app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async
     if (!item) return res.status(404).json({ error: 'WhatsApp booking request not found.' });
     item.status = parsed.data.status;
     if (parsed.data.note !== undefined) item.note = parsed.data.note;
+    const before={status:item.status};
     item.updatedAt = new Date().toISOString();
     await storeSet(path, item);
+    await appendAuditEvent({action:'whatsapp_booking_request_reviewed',entityType:'whatsapp_booking_request',entityId:req.params.id,before,after:{status:item.status},note:parsed.data.note||''});
     res.json({ ok: true, request: item });
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
@@ -594,6 +596,7 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
       try{await storeSet('erpData/payments/advance-'+id,{id:'advance-'+id,bookingId:String(id),amount:parsed.data.advanceAmount,utr:parsed.data.utrNumber.trim(),method:'upi',phone:parsed.data.mob,status:'pending-verification',createdAt:booking.createdAt});}
       catch(error){await storeDelete('erpData/customerBookings/'+String(id)).catch(()=>{});await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{});throw error;}
     }
+    await appendAuditEvent({action:'customer_booking_created',entityType:'customer_booking',entityId:String(id),before:null,after:auditBookingSummary(booking),source:'customer-portal',note:'New customer portal booking'});
     res.status(201).json({ok:true,booking,message:'बुकिंग Admin Panel में approval के लिए भेज दी गई। Advance payment UTR सत्यापन के लिए Pending है।'});
   }catch(error){res.status(503).json({error:error.message});}
   finally{if(releaseReservationLock){try{await releaseReservationLock();}catch(lockError){console.error('Customer booking reservation lock release failed:',lockError.message);}}}
@@ -841,7 +844,7 @@ app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, a
 app.post('/api/whatsapp/send', whatsappSendLimiter, authAdmin, async (req,res) => {
   const parsed = z.object({ to: phoneSchema, message: z.string().min(1).max(4000) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid to and message are required.' });
-  try { res.json({ ok: true, provider: await sendWhatsAppText(parsed.data.to, parsed.data.message) }); }
+  try { const provider = await sendWhatsAppText(parsed.data.to, parsed.data.message); await appendAuditEvent({action:'whatsapp_message_sent',entityType:'whatsapp_message',entityId:String(provider?.messageId || provider?.id || crypto.randomUUID()),before:null,after:{provider:provider?.provider||null,status:'accepted'},note:'Provider accepted outbound message; delivery receipt is separate'}); res.json({ ok: true, provider }); }
   catch(e) { res.status(502).json({ error: e.message }); }
 });
 
@@ -1079,6 +1082,7 @@ app.post('/api/ai/actions/propose', aiLimiter, authAdmin, requireDurableStore, a
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
 app.get('/api/ai/actions/:id', authAdmin, requireDurableStore, async (req, res) => {
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid action proposal ID.' });
   try {
     const proposal = await storeGet('erpData/aiActionProposals/' + req.params.id);
     if (!proposal) return res.status(404).json({ error: 'Action proposal not found.' });
@@ -1091,6 +1095,7 @@ app.get('/api/ai/actions/:id', authAdmin, requireDurableStore, async (req, res) 
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
 app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStore, async (req, res) => {
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid action proposal ID.' });
   const parsed = z.object({ confirmationText: z.string().min(1).max(40) }).strict().safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Exact confirmation text is required.' });
   const proposalPath = 'erpData/aiActionProposals/' + req.params.id;
@@ -1165,6 +1170,7 @@ app.post('/api/payments/record-utr', authAdmin, requireDurableStore, async (req,
     const record={id,...parsed.data,status:'pending-verification',createdAt:new Date().toISOString()};
     try { await storeSet('erpData/payments/'+id,record); }
     catch(error) { await storeDelete('erpPrivate/utrIndex/'+utrKey).catch(()=>{}); throw error; }
+    await appendAuditEvent({action:'payment_utr_submitted',entityType:'payment',entityId:id,before:null,after:{status:record.status,amount:record.amount,method:record.method},note:'UTR submitted; not treated as verified settlement'});
     res.status(201).json({ok:true,payment:record,message:'Payment entry saved for manual/provider verification. UTR is not proof of settlement by itself.'});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
