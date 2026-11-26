@@ -2053,3 +2053,110 @@ test('synthetic Customer Booking → Dispatch → Final Return → Missing Charg
   assert.equal(paid, 500);
   assert.equal(total - paid, 650);
 });
+
+
+test('installments page lists only unpaid active bookings', () => {
+  const code = sourceBetween('function loadInstallmentsTable()', 'function openDueInstallment(id)');
+  const body = { innerHTML: '' };
+  const bookings = [
+    { id: 1, name: 'Due Customer', mob: '9999999999', status: 'Returned', total: 1000, paid: 400 },
+    { id: 2, name: 'Paid Customer', mob: '8888888888', status: 'Returned', total: 500, paid: 500 },
+    { id: 3, name: 'Cancelled Customer', mob: '7777777777', status: 'Cancelled', total: 700, paid: 0 }
+  ];
+  const context = {
+    safeGetStorage: () => bookings,
+    document: { getElementById: id => id === 'installmentsTableBody' ? body : null },
+    calculateBookingTotalRent: b => b.total, getBookingPaidAmount: b => b.paid,
+    phoneCallLink: value => String(value), escapeHtml: value => String(value),
+    Math, Number, String, Array
+  };
+  vm.runInNewContext(code + '\nloadInstallmentsTable();', context);
+  assert.ok(body.innerHTML.includes('Due Customer'));
+  assert.ok(!body.innerHTML.includes('Paid Customer'));
+  assert.ok(!body.innerHTML.includes('Cancelled Customer'));
+  assert.ok(body.innerHTML.includes('Cash किस्त जमा करें'));
+});
+
+test('cash installments persist safely and update the booking due exactly once', async () => {
+  const store = { softwareBookings: [{ id: 71, source: 'admin', status: 'Returned', totalPaid: 200, dueAmount: 800, partPayments: [] }] };
+  const input = { value: '300', focus() {} };
+  const messages = [];
+  const code = sourceBetween('async function saveInstallment(id)', 'function printReturnSlip()');
+  const context = {
+    Math, Number, String, Array, Date, JSON, console,
+    document: { getElementById: id => id === 'inst_amt_71' ? input : ({paymentLedgerTableBody:{innerHTML:''},totalCashSum:{textContent:''},totalOnlineSum:{textContent:''},totalOnlinePendingSum:{textContent:''},ledgerBookingTableBody:{innerHTML:''}}[id] || null), addEventListener: () => {} },
+    safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
+    safeSetStorageBatch: entries => { for (const [key,value] of entries) store[key] = value; return true; },
+    getBookingPaidAmount: b => Math.max(Number(b.totalPaid)||0,(b.partPayments||[]).reduce((n,p)=>n+(Number(p.amount)||0),0)),
+    escapeHtml: value => String(value), phoneCallLink: value => String(value),
+    calculateBookingTotalRent: b => 1000,
+    syncCustomerBookingWorkflow: async () => true,
+    loadCustomerList: () => {}, loadInstallmentsTable: () => {}, loadPaymentLedgerTable: () => {}, loadMasterLedgerData: () => {}, loadAllFirebaseData: () => {},
+    showActionMessage: message => messages.push(message)
+  };
+  vm.runInNewContext(code + '\nresult=saveInstallment(71);', context);
+  await context.result;
+  assert.equal(store.softwareBookings[0].partPayments.length, 1);
+  assert.equal(store.softwareBookings[0].partPayments[0].method, 'cash');
+  assert.equal(store.softwareBookings[0].partPayments[0].amount, 300);
+  assert.equal(store.softwareBookings[0].totalPaid, 500);
+  assert.equal(store.softwareBookings[0].dueAmount, 500);
+  assert.ok(messages.some(message => message.includes('किश्त जमा हो गई')));
+});
+
+test('failed installment persistence does not report success or mutate stored booking data', async () => {
+  const original = { id: 72, source: 'admin', totalPaid: 100, dueAmount: 900, partPayments: [] };
+  const store = { softwareBookings: [original] };
+  const input = { value: '250', focus() {} };
+  const messages = [];
+  const code = sourceBetween('async function saveInstallment(id)', 'function printReturnSlip()');
+  const context = {
+    Math, Number, String, Array, Date, JSON, console,
+    document: { getElementById: id => id === 'inst_amt_72' ? input : null, addEventListener: () => {} },
+    safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
+    safeSetStorageBatch: () => false,
+    getBookingPaidAmount: b => Number(b.totalPaid)||0,
+    calculateBookingTotalRent: () => 1000,
+    syncCustomerBookingWorkflow: async () => true,
+    loadCustomerList: () => {}, loadInstallmentsTable: () => {}, loadPaymentLedgerTable: () => {}, loadMasterLedgerData: () => {}, loadAllFirebaseData: () => {},
+    showActionMessage: message => messages.push(message)
+  };
+  vm.runInNewContext(code + '\nresult=saveInstallment(72);', context);
+  await context.result;
+  assert.equal(store.softwareBookings[0].partPayments.length, 0);
+  assert.equal(store.softwareBookings[0].totalPaid, 100);
+  assert.ok(messages.some(message => message.includes('किस्त सेव नहीं हुई')));
+  assert.ok(!messages.some(message => message.includes('किश्त जमा हो गई')));
+});
+
+test('payment and Master Ledgers include cash installments and do not misclassify legacy unknown methods', () => {
+  const bookings = [{ id: 81, name: 'Ledger Customer', mob: '9999999999', total: 1000, paid: 300, partPayments: [
+    { amount: 200, method: 'cash', date: '2026-11-20', source: 'installments-page' },
+    { amount: 100, date: '2026-11-21', source: 'installments-page' }
+  ] }];
+  const ledgerBody = { innerHTML: '' }, cashTotal = { textContent: '' }, onlineTotal = { textContent: '' }, pendingTotal = { textContent: '' };
+  const paymentCode = sourceBetween('function loadPaymentLedgerTable()', 'async function applyInvoiceAdjustments');
+  const paymentContext = {
+    safeGetStorage: key => key === 'softwareBookings' ? bookings : [],
+    document: { getElementById: id => ({ paymentLedgerTableBody: ledgerBody, totalCashSum: cashTotal, totalOnlineSum: onlineTotal, totalOnlinePendingSum: pendingTotal }[id] || null) },
+    escapeHtml: value => String(value), phoneCallLink: value => String(value),
+    Math, Number, String, Array
+  };
+  vm.runInNewContext(paymentCode + '\nloadPaymentLedgerTable();', paymentContext);
+  assert.equal(cashTotal.textContent, '₹200.00');
+  assert.ok(ledgerBody.innerHTML.includes('Cash किस्त'));
+  assert.ok(ledgerBody.innerHTML.includes('Manual किस्त · method दर्ज नहीं'));
+
+  const masterBody = { innerHTML: '' };
+  const masterCode = sourceBetween('function loadMasterLedgerData()', 'function exportLedgerToExcel()');
+  const masterContext = {
+    safeGetStorage: key => key === 'softwareBookings' ? bookings : [],
+    document: { getElementById: id => id === 'ledgerBookingTableBody' ? masterBody : null },
+    calculateBookingTotalRent: b => b.total, getBookingPaidAmount: b => b.paid,
+    escapeHtml: value => String(value), phoneCallLink: value => String(value),
+    Math, Number, String, Array
+  };
+  vm.runInNewContext(masterCode + '\nloadMasterLedgerData();', masterContext);
+  assert.ok(masterBody.innerHTML.includes('Cash किस्त'));
+  assert.ok(masterBody.innerHTML.includes('Manual किस्त (method दर्ज नहीं)'));
+});
