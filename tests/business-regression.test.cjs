@@ -178,7 +178,7 @@ test('invoice shows automatic missing charge breakdown without admin approval co
 test('invoice exposes automatically applied missing charge rows without approval gating', () => {
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
   assert.match(invoice,/approvedMissingRows/);
-  assert.match(invoice,/मिसिंग सामान का लागू शुल्क/);
+  assert.match(invoice,/Missing सामान का लागू शुल्क/);
   assert.match(invoice,/getMissingChargeTotal\\(b\\)/);
   assert.doesNotMatch(invoice,/स्वीकृत Missing Charge|शुल्क स्वीकृत करें|getApprovedMissingChargeTotal/);
 });
@@ -582,7 +582,7 @@ test('vendor rent and missing replacement liability remain separate from custome
   assert.ok(html.includes('const vendorMissingLiability=bookings.reduce'));
   assert.ok(!html.includes('customerMissingRevenue'));
   assert.ok(html.includes('margin=customerRent-vendorCost'));
-  assert.ok(html.includes('Missing सामान का ग्राहक से कोई शुल्क नहीं'));
+  assert.ok(html.includes('Missing सामान का स्वचालित ग्राहक शुल्क Booking Total में शामिल'));
   assert.ok(html.includes('Missing Vendor सामान की Replacement Liability'));
   assert.ok(html.includes('वास्तविक Dispatch × दिन'));
 });
