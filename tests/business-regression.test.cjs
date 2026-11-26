@@ -281,6 +281,15 @@ test('dispatch order additions report success only after booking storage succeed
   assert.ok(!vendor.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'vendor add must not announce success after unchecked save');
 });
 
+test('payment entry and UTR verification prevent duplicate concurrent submissions', () => {
+  const save=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment');
+  const verify=sourceBetween('async function verifyLedgerPayment', 'function printReturnSlip');
+  assert.ok(save.includes('if(globalThis.__rkPaymentInProgress)'), 'payment submit lock missing');
+  assert.ok(save.includes('finally { globalThis.__rkPaymentInProgress=false; }'), 'payment submit lock must release');
+  assert.ok(verify.includes('if(globalThis.__rkPaymentVerifyInProgress)'), 'UTR verify lock missing');
+  assert.ok(verify.includes('finally { globalThis.__rkPaymentVerifyInProgress=false; }'), 'UTR verify lock must release');
+});
+
 test('payment recording and UTR verification save ledger and booking totals atomically', () => {
   const save=html.slice(html.indexOf('async function savePaymentEntry()'),html.indexOf('async function verifyLedgerPayment('));
   const verify=html.slice(html.indexOf('async function verifyLedgerPayment('),html.indexOf('function printReturnSlip('));
