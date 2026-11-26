@@ -1327,7 +1327,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!row){showActionMessage('संबंधित Stock रिकॉर्ड नहीं मिला; Missing रिकॉर्ड खुला रहेगा','error');return;} 
             const currentStockQty=Number(row.qty);if(String(row.qty??'').trim()===''||!Number.isSafeInteger(currentStockQty)||currentStockQty<0||!Number.isSafeInteger(currentStockQty+qty)){showActionMessage('Stock मात्रा गलत है; Missing रिकॉर्ड और स्टॉक नहीं बदले गए','error');return;}
             row.qty=currentStockQty+qty;item.returnedQty=Math.max(0,Number(item.returnedQty)||0)+qty;item.missingQty=Math.max(0,Number(item.missingQty)||0)-qty;
-            record.qty=remaining-qty;record.resolved=record.qty===0;record.penalty=Math.round(Math.max(0,Number(record.unitCharge)||0)*record.qty*100)/100;record.record.resolvedAt=record.resolved?new Date().toISOString():null;
+            record.qty=remaining-qty;record.resolved=record.qty===0;record.penalty=Math.round(Math.max(0,Number(record.unitCharge)||0)*record.qty*100)/100;record.resolvedAt=record.resolved?new Date().toISOString():null;
             booking.returnEntries=Array.isArray(booking.returnEntries)?booking.returnEntries:[];booking.returnEntries.push({date:new Date().toLocaleDateString('en-CA'),mode:'MISSING_RECOVERY',items:[{itemIndex,qty}],createdAt:new Date().toISOString()});
             if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',vendors],['missingItemsDatabase',rows]])){showActionMessage('Missing Recovery सेव नहीं हुआ; कोई बदलाव लागू नहीं रखा गया','error');return;}
             if(booking.source==='customer-portal'){
