@@ -2177,7 +2177,7 @@ test('bill discount and other-charge changes stop when booking persistence fails
     showActionMessage: message => messages.push(message),
     Math, Number, String, Array
   };
-  vm.runInNewContext(code + '\\nresult=applyInvoiceAdjustments();', context);
+  vm.runInNewContext(code + '\nresult=applyInvoiceAdjustments();', context);
   await context.result;
   assert.equal(original.discountAmount, 0);
   assert.equal(original.otherCharges, 0);
