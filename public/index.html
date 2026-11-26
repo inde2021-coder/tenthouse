@@ -2480,14 +2480,15 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         function savePurchaseEntry(event) {
             event.preventDefault();
-            const itemName=document.getElementById('purItemName').value.trim(), qty=Number(document.getElementById('purItemQty').value), price=Number(document.getElementById('purItemPrice').value), singleRent=Number(document.getElementById('purSingleRent')?.value)||0, setRent=Number(document.getElementById('purSetRent')?.value)||0, missingCharge=Number(document.getElementById('purMissingCharge')?.value)||0;
-            if(!itemName||!Number.isSafeInteger(qty)||qty<=0||!Number.isFinite(price)||price<0||![singleRent,setRent,missingCharge].every(Number.isFinite)||[singleRent,setRent,missingCharge].some(value=>value<0)){showActionMessage('सामान, पूर्ण संख्या में मात्रा और शून्य या उससे अधिक सही कीमत/दरें दर्ज करें','error');return;}
-            const pur=safeGetStorage('purchaseDatabase',[]); pur.push({id:Date.now(),date:document.getElementById('purDate').value||new Date().toLocaleDateString('en-CA'),itemName,qty,price,supplier:document.getElementById('purSupplier').value.trim()});
-            let stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[])); const old=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===itemName.toLowerCase());
+            const itemName=document.getElementById('purItemName').value.trim(),qty=Number(document.getElementById('purItemQty').value),price=Number(document.getElementById('purItemPrice').value);
+            const optionalAmount=id=>{const value=document.getElementById(id)?.value;return String(value??'').trim()===''?0:Number(value);};
+            const singleRent=optionalAmount('purSingleRent'),setRent=optionalAmount('purSetRent'),missingCharge=optionalAmount('purMissingCharge');
+            if(!itemName||!Number.isSafeInteger(qty)||qty<1||!Number.isFinite(price)||price<0||![singleRent,setRent,missingCharge].every(Number.isFinite)||[singleRent,setRent,missingCharge].some(value=>value<0)){showActionMessage('सामान, पूर्ण संख्या में मात्रा और शून्य या उससे अधिक सही कीमत/दरें दर्ज करें','error');return;}
+            const pur=safeGetStorage('purchaseDatabase',[]);pur.push({id:Date.now(),date:document.getElementById('purDate').value||new Date().toLocaleDateString('en-CA'),itemName,qty,price,supplier:document.getElementById('purSupplier').value.trim()});
+            let stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));const old=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===itemName.toLowerCase());
             if(old){old.qty=Math.max(0,Number(old.qty)||0)+qty;old.singleRent=singleRent;old.setRent=setRent;old.missingCharge=missingCharge;old.missingUnitPrice=missingCharge;}else stock.push({name:itemName,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
-            const nextStock=mergeDuplicateStockRows(stock),previousPurchases=safeGetStorage('purchaseDatabase',[]);
-            if(!safeSetStorage('purchaseDatabase',pur))return;
-            if(!safeSetStorage('realStockDatabase',nextStock)){safeSetStorage('purchaseDatabase',previousPurchases);showActionMessage('स्टॉक सेव नहीं हुआ; परचेज रिकॉर्ड वापस पुरानी स्थिति में रखा गया।','error');return;}
+            const nextStock=mergeDuplicateStockRows(stock);
+            if(!safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return;
             event.target.reset();document.getElementById('purDate').value=new Date().toLocaleDateString('en-CA');loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड सेव हुआ; उसी सामान की स्टॉक मात्रा मौजूदा रिकॉर्ड में जोड़ी गई','success');
         }
         function loadPurchaseTable() {
