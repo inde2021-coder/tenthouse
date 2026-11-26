@@ -46,6 +46,7 @@ before(async () => {
       ADMIN_API_TOKEN: adminToken,
       OTP_HMAC_SECRET: otpSecret,
       OTP_PROVIDER: 'demo',
+      OTP_DEMO_DELAY_MS: '100',
       WHATSAPP_WEBHOOK_VERIFY_TOKEN: 'test-webhook-verify-token',
       WHATSAPP_APP_SECRET: 'test-whatsapp-app-secret',
       PUBLIC_ORIGIN: 'https://erp.example.test'
