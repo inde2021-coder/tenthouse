@@ -272,6 +272,16 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
 
+test('dispatch and return handlers reject duplicate submissions and always release their locks', () => {
+  const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
+  const ret=html.slice(html.indexOf('async function completeManualReturnProcess()'),html.indexOf('let currentDocumentItems = []'));
+  for (const [name,fn,flag] of [['dispatch',dispatch,'__rkDispatchInProgress'],['return',ret,'__rkReturnInProgress']]) {
+    assert.ok(fn.includes('if(window.'+flag+')'),name+' duplicate guard missing');
+    assert.ok(fn.includes('window.'+flag+'=true'),name+' lock acquisition missing');
+    assert.ok(fn.includes('finally { window.'+flag+'=false; }'),name+' lock release missing');
+  }
+});
+
 test('missing recovery preserves prior recovery history and blocks duplicate submissions', () => {
   const recovery=html.slice(html.indexOf('async function recoverMissingItem(recordId,rowIndex)'),html.indexOf('async function completeManualReturnProcess()'));
   assert.ok(recovery.includes('window.__rkMissingRecoveryInProgress'));
