@@ -2009,7 +2009,7 @@ test('synthetic Customer Booking → Dispatch → Final Return → Missing Charg
     isValidCalendarDate: value => { const parts=String(value||'').split('-').map(Number); if(parts.length!==3||String(value||'').length!==10)return false; const [y,mo,d]=parts,dt=new Date(y,mo-1,d); return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d; }
   };
   const dispatchCode = sourceBetween('async function completeDispatch(id)', 'function printDispatchSlip');
-  vm.runInNewContext(storageBatchSource() + '\\n' + dispatchCode + '\\nresult=completeDispatch(42);', dispatchContext);
+  vm.runInNewContext(storageBatchSource() + '\n' + dispatchCode + '\nresult=completeDispatch(42);', dispatchContext);
   await dispatchContext.result;
   assert.equal(store.realStockDatabase[0].qty, 0);
   assert.equal(store.softwareBookings[0].status, 'Dispatched');
@@ -2031,7 +2031,7 @@ test('synthetic Customer Booking → Dispatch → Final Return → Missing Charg
     isValidCalendarDate: dispatchContext.isValidCalendarDate
   };
   const returnCode = sourceBetween('async function completeManualReturnProcess()', '        window.onload = function()');
-  vm.runInNewContext(storageBatchSource() + '\\n' + returnCode + '\\nresult=completeManualReturnProcess();', returnContext);
+  vm.runInNewContext(storageBatchSource() + '\n' + returnCode + '\nresult=completeManualReturnProcess();', returnContext);
   await returnContext.result;
 
   const booking = store.softwareBookings[0];
@@ -2048,7 +2048,7 @@ test('synthetic Customer Booking → Dispatch → Final Return → Missing Charg
   booking.partPayments = [{ amount: 500, method: 'Cash', date: '2026-11-03' }];
   const total = runRentFunction('calculateBookingTotalRent', booking, store.missingItemsDatabase);
   const paidCode = sourceBetween('function getBookingPaidAmount(b)', 'function getEffectiveMissingCharge(item)');
-  const paid = vm.runInNewContext(paidCode + '\\ngetBookingPaidAmount(booking);', { booking, Math, Number, String, Array });
+  const paid = vm.runInNewContext(paidCode + '\ngetBookingPaidAmount(booking);', { booking, Math, Number, String, Array });
   assert.equal(total, 1150);
   assert.equal(paid, 500);
   assert.equal(total - paid, 650);
