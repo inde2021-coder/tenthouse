@@ -482,11 +482,12 @@ test('customer and admin royal theme assets are served from the production stati
   const html = await request('/');
   assert.equal(html.status, 200);
   const markup = await html.text();
-  assert.match(markup, /rk-reference-theme\.css\?v=5/);
+  const themeAsset = markup.match(/href=["']\.?\/?(rk-reference-theme\.css\?v=\d+)["']/);
+  assert.ok(themeAsset, 'The production HTML must reference the versioned royal theme stylesheet.');
   assert.match(markup, /applyRkDesign/);
   assert.match(markup, /rkDesignPreset/);
 
-  const theme = await request('/rk-reference-theme.css?v=5');
+  const theme = await request('/' + themeAsset[1]);
   assert.equal(theme.status, 200);
   assert.match(theme.headers.get('content-type') || '', /text\/css/i);
   const css = await theme.text();
