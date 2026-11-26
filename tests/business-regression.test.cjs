@@ -1925,3 +1925,27 @@ test('legacy missing recovery refuses fractional or malformed source stock witho
     assert.equal(store.softwareBookings[0].items[0].returnedQty,1);
   }
 });
+
+
+test('server-side AI actions require an allow-listed proposal and exact explicit confirmation', () => {
+  assert.match(backend,/app\.post\('\/api\/ai\/actions\/propose', aiLimiter, authAdmin, requireDurableStore/);
+  assert.match(backend,/type: z\.literal\('customer_booking_status'\)/);
+  assert.match(backend,/status: z\.enum\(\['Confirmed', 'Rejected'\]\)/);
+  assert.match(backend,/confirmationText !== expectedConfirmation/);
+  assert.match(backend,/type: z\.literal\('payment_verification'\)/);
+  assert.match(backend,/Only pending payments can be verified or rejected/);
+  assert.match(backend,/storeTransitionRecord\(proposalPath/);
+  assert.match(backend,/Only a booking in Pending Approval/);
+  assert.match(backend,/Action proposal is expired or already used/);
+  assert.doesNotMatch(backend,/app\.post\('\/api\/ai\/actions\/execute'/);
+});
+
+test('server audit log is append-only and records booking and payment mutations', () => {
+  assert.match(backend,/async function appendAuditEvent/);
+  assert.match(backend,/storeCreateIfAbsent\('erpData\/auditLogs\/' \+ id, event\)/);
+  assert.match(backend,/app\.get\('\/api\/audit-log', authAdmin, requireDurableStore/);
+  assert.match(backend,/customer_booking_workflow_updated/);
+  assert.match(backend,/customer_booking_status_changed/);
+  assert.match(backend,/customer_advance_verification/);
+  assert.match(backend,/payment_verification/);
+});
