@@ -462,7 +462,7 @@ app.post('/api/whatsapp/inbox/:id/status', authAdmin, requireDurableStore, async
     const before={status:item.status};
     item.updatedAt = new Date().toISOString();
     await storeSet(path, item);
-    await appendAuditEvent({action:'whatsapp_booking_request_reviewed',entityType:'whatsapp_booking_request',entityId:req.params.id,before,after:{status:item.status},note:parsed.data.note||''});
+    await appendAuditEvent({action:'whatsapp_booking_request_reviewed',entityType:'whatsapp_booking_request',entityId:req.params.id,before,after:{status:item.status},note:'WhatsApp booking request status changed'});
     res.json({ ok: true, request: item });
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
@@ -1068,7 +1068,7 @@ app.post('/api/ai/actions/propose', aiLimiter, authAdmin, requireDurableStore, a
       await appendAuditEvent({
         action: 'ai_action_proposed', entityType: 'customer_booking', entityId: parsed.data.bookingId,
         phase: 'proposed', before: { status: booking.status }, after: { status: parsed.data.status },
-        source: 'ai', note: 'Proposal ' + id + ': ' + parsed.data.reason
+        source: 'ai', note: 'AI proposed a customer booking status transition'
       });
     } catch (auditError) {
       await storeDelete('erpData/aiActionProposals/' + id).catch(() => {});
