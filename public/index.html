@@ -3096,7 +3096,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const row=stock.find(x=>String(x.name||x.item)===String(m.item)&&(m.source!=='third-party'||String(x.partyName||'')===String(m.partyName||'')));
             if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला; Missing Recovery सेव नहीं हुई','error');return;}
             const currentStockQty=Number(row.qty);
-            if(!Number.isSafeInteger(currentStockQty)||currentStockQty<0||!Number.isSafeInteger(currentStockQty+qty)){showActionMessage('स्टॉक मात्रा पूर्ण और सही संख्या में नहीं है; Missing Recovery सेव नहीं हुई','error');return;}
+            if(String(row.qty??'').trim()===''||!Number.isSafeInteger(currentStockQty)||currentStockQty<0||!Number.isSafeInteger(currentStockQty+qty)){showActionMessage('स्टॉक मात्रा पूर्ण और सही संख्या में नहीं है; Missing Recovery सेव नहीं हुई','error');return;}
             const previousState={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(missing)),stock:JSON.parse(JSON.stringify(stock))};
             it.missingQty=Math.max(0,(Number(it.missingQty)||0)-qty);it.returnedQty=(Number(it.returnedQty)||0)+qty;
             m.qty=remaining-qty;m.penalty=0;m.resolved=m.qty===0;m.recoveryEntries=Array.isArray(m.recoveryEntries)?m.recoveryEntries:[];
@@ -3143,7 +3143,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 :stock.find(x=>x.name===item.name);
               if(!row){showActionMessage('Return stock record नहीं मिला: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
               const available=Number(row.qty);
-              if(!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(available+qty)){showActionMessage('Return stock की मात्रा गलत है: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
+              if(String(row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(available+qty)){showActionMessage('Return stock की मात्रा गलत है: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
             }
             inputs.forEach(input=>{
               const idx=Number(input.dataset.returnIndex),item=b.items[idx];
