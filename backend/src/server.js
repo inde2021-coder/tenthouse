@@ -203,7 +203,7 @@ async function sendWhatsAppText(to, body) {
   if (!token || !phoneId) throw new Error('WhatsApp Cloud API credentials are not configured on the server.');
   const version = process.env.WHATSAPP_API_VERSION || 'v23.0';
   const response = await fetch(`https://graph.facebook.com/${version}/${phoneId}/messages`, {
-    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    method: 'POST', signal: AbortSignal.timeout(20_000), headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: to.replace(/\D/g,''), type: 'text', text: { preview_url: false, body } })
   });
   const data = await response.json().catch(() => ({}));
@@ -218,14 +218,14 @@ async function sendOtpProvider(phone, otp, channel) {
     const sid = process.env.TWILIO_ACCOUNT_SID, token = process.env.TWILIO_AUTH_TOKEN, from = process.env.TWILIO_FROM_NUMBER;
     if (!sid || !token || !from) throw new Error('Twilio SMS credentials are not configured.');
     const form = new URLSearchParams({ To: phone, From: from, Body: msg });
-    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, { method:'POST', headers:{ Authorization:'Basic '+Buffer.from(`${sid}:${token}`).toString('base64'), 'Content-Type':'application/x-www-form-urlencoded' }, body:form });
+    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, { method:'POST', signal:AbortSignal.timeout(20_000), headers:{ Authorization:'Basic '+Buffer.from(`${sid}:${token}`).toString('base64'), 'Content-Type':'application/x-www-form-urlencoded' }, body:form });
     if (!r.ok) throw new Error('SMS provider rejected the request.'); return r.json();
   }
   if (provider === 'msg91') {
     // MSG91 template/flow setup varies by account; use the provider's approved OTP API template.
     const key = process.env.MSG91_AUTH_KEY, template = process.env.MSG91_TEMPLATE_ID;
     if (!key || !template) throw new Error('MSG91 Auth Key and approved template ID are required.');
-    const r = await fetch('https://control.msg91.com/api/v5/otp', { method:'POST', headers:{ authkey:key, 'Content-Type':'application/json' }, body:JSON.stringify({ template_id:template, mobile:phone.replace('+',''), otp }) });
+    const r = await fetch('https://control.msg91.com/api/v5/otp', { method:'POST', signal:AbortSignal.timeout(20_000), headers:{ authkey:key, 'Content-Type':'application/json' }, body:JSON.stringify({ template_id:template, mobile:phone.replace('+',''), otp }) });
     if (!r.ok) throw new Error('MSG91 rejected the request.'); return r.json();
   }
   if (provider === 'demo' && !isProd) return { demo: true };
