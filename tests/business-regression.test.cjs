@@ -1062,6 +1062,7 @@ test('admin stock entry rejects fractional and invalid quantities without saving
       event:null
     };
     const event={preventDefault(){},target:{reset(){reset=true;}}};
+    context.event=event;
     vm.runInNewContext(code+'\nresult=saveStockItemReal(event);',context);
     assert.equal(writes,0,'invalid admin stock quantity must not be saved');
     assert.equal(reset,false,'invalid form must retain entered values');
