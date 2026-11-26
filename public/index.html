@@ -2201,11 +2201,15 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         if(!Number.isInteger(qty)||qty<1||qty>Number(row.qty||0)){showActionMessage(name+' की मात्रा उपलब्ध स्टॉक के भीतर पूर्ण संख्या हो','error');return;}
                         let itemIndex=items.findIndex(it=>String(it.name||'').toLowerCase()===name.toLowerCase()&&it.source===selected.source&&String(it.partyName||'')===String(row.partyName||''));
                         if(itemIndex<0){
-                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):Number(row.singleRent??row.rentPrice??0);
+                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):getItemRentRate(row,qty);
                             items.push({name,qty:0,rentPrice:Math.max(0,rent),missingCharge:Math.max(0,Number(row.missingCharge??row.missingUnitPrice)||0),vendorRentRate:selected.source==='third-party'?Math.max(0,Number(row.costPrice??row.vendorRentRate)||0):0,vendorMissingCost:selected.source==='third-party'?Math.max(0,Number(row.missingCost??row.vendorMissingCost)||0):0,source:selected.source,partyName:String(row.partyName||'')});
                             itemIndex=items.length-1;
                         }
                         items[itemIndex].qty=Math.max(0,Number(items[itemIndex].qty)||0)+qty;
+                        if(selected.source==='admin'){
+                            items[itemIndex].rentPrice=getItemRentRate(row,items[itemIndex].qty);
+                            items[itemIndex].rateMode=items[itemIndex].qty>=3?'set':'single';
+                        }
                     }
                 }
             }
@@ -2338,14 +2342,22 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
         }
 
+        // Quantity pricing: 1-2 pieces use Single Rent; 3+ pieces use Set/Bulk Rent.
+        function getItemRentRate(stock, quantity) {
+            const qty=Math.max(0,Number(quantity)||0);
+            const single=Math.max(0,Number(stock?.singleRent)||0);
+            const bulk=Math.max(0,Number(stock?.setRent)||0);
+            return qty>=3 && bulk>0 ? bulk : (single>0 ? single : bulk);
+        }
+
         function addSelectedItemToCart() {
             const sel=document.getElementById('portalStockSelect');if(!sel||!sel.value)return;
             const qtyRaw=document.getElementById('portalItemQty')?.value,qty=Number(qtyRaw);
             if(!qtyRaw||!Number.isInteger(qty)||qty<1){showActionMessage('सामान की मात्रा 1 या उससे अधिक पूर्ण संख्या में भरें','error');return;}
             const stock=(Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:safeGetStorage('realStockDatabase',[])).find(x=>String(x.name)===String(sel.value));
             if(!stock){showActionMessage('चुना गया सामान स्टॉक में नहीं मिला; सूची रीफ्रेश करें','error');return;}
-            const rate=Number(stock.setRent)>0?Number(stock.setRent):Math.max(0,Number(stock.singleRent)||0);
-            customerCart.push({name:sel.value,qty,rentPrice:rate,missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
+            const rate=getItemRentRate(stock,qty);
+            customerCart.push({name:sel.value,qty,rentPrice:rate,rateMode:qty>=3?'set':'single',missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
             renderCustomerCart();document.getElementById('portalItemQty').value='';
         }
 
@@ -2389,8 +2401,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 if(!b.items) b.items = [];
                 const stockItem=safeGetStorage('realStockDatabase', []).find(x=>x.name===itemName)||{};
                 const singleRate=!!document.getElementById('dispatchSingleRateToggle')?.checked;
-                const chosenRate=Number(singleRate?stockItem.singleRent:stockItem.setRent);
-                b.items.push({ name:itemName, qty, rentPrice:chosenRate>0?chosenRate:500, missingCharge:Math.max(0,Number(stockItem.missingCharge)||0), rateMode:singleRate?'single':'set', source:'admin' });
+                const chosenRate=singleRate?Math.max(0,Number(stockItem.singleRent)||0):getItemRentRate(stockItem,qty);
+                b.items.push({ name:itemName, qty, rentPrice:chosenRate>0?chosenRate:500, missingCharge:Math.max(0,Number(stockItem.missingCharge)||0), rateMode:singleRate?'single':(qty>=3?'set':'single'), source:'admin' });
                 safeSetStorage('softwareBookings', bookings);
                 loadDispatchTable();
                 showActionMessage("सामान आर्डर में जोड़ा गया", "success");
