@@ -2556,12 +2556,21 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             lines.forEach(line=>{ctx.beginPath();ctx.lineWidth=2.5;ctx.strokeStyle=line.color;months.forEach((m,i)=>{const px=x(i),py=y(line.value(m));if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)});ctx.stroke();months.forEach((m,i)=>{ctx.beginPath();ctx.fillStyle=line.color;ctx.arc(x(i),y(line.value(m)),3,0,Math.PI*2);ctx.fill()});});
             canvas.setAttribute('aria-label','छह महीनों का लाइन ग्राफ। '+months.map(m=>`${m.label}: आमदनी ${Math.round(m.income)}, खर्च ${Math.round(m.expense)}, नेट लाभ ${Math.round(m.income-m.expense)}`).join('; '));
         }
+        function calculateIncomeExpenseTotals(rows) {
+            const totals={income:0,expense:0,net:0,validRows:0,ignoredRows:0};
+            (Array.isArray(rows)?rows:[]).forEach(row=>{
+                const type=String(row?.type||'').trim().toLowerCase(),amount=Number(row?.amount);
+                if((type!=='income'&&type!=='expense')||!Number.isFinite(amount)||amount<0){totals.ignoredRows++;return;}
+                totals[type]+=amount;totals.validRows++;
+            });
+            totals.net=totals.income-totals.expense;
+            return totals;
+        }
         function loadIncomeExpenseTable() {
             const list = safeGetStorage('incomeExpenseDatabase', []);
             const tbody = document.getElementById('incomeExpenseTableBody');
             if(tbody) tbody.innerHTML = list.length === 0 ? `<tr><td colspan="5" style="text-align:center;">कोई रिकॉर्ड नहीं</td></tr>` : list.map((i,index) => `<tr><td>${escapeHtml(i.date)}</td><td>${escapeHtml(i.desc)}</td><td>${escapeHtml(i.type)}</td><td>₹${(Number(i.amount)||0).toFixed(2)}</td><td class="table-actions"><button type="button" class="action-btn" onclick="editIncomeExpense(${index})">अपडेट</button><button type="button" class="action-btn danger-action" onclick="deleteIncomeExpense(${index})">डिलीट</button></td></tr>`).join('');
-            const totalInc = list.filter(x => String(x.type).toLowerCase() === 'income').reduce((sum, x) => sum + (Number(x.amount)||0), 0);
-            const totalExp = list.filter(x => String(x.type).toLowerCase() === 'expense').reduce((sum, x) => sum + (Number(x.amount)||0), 0);
+            const totals=calculateIncomeExpenseTotals(list),totalInc=totals.income,totalExp=totals.expense;
             const money = n => '₹' + n.toLocaleString('en-IN',{maximumFractionDigits:2});
             const incEl=document.getElementById('graphTotalIncome'), expEl=document.getElementById('graphTotalExpense'), netEl=document.getElementById('graphNetProfit');
             if(incEl) incEl.textContent=money(totalInc);
