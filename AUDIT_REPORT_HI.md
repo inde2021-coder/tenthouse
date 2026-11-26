@@ -287,3 +287,12 @@ Main पर मिले root causes:
 - महत्वपूर्ण सीमा: rules GitHub में committed हैं, लेकिन live Firebase Console में publish नहीं किए गए और admin UID allowlist भी provision नहीं की गई। इसलिए production Firebase permission/cross-device sync अभी वास्तविक रूप से verified नहीं है। Rules लागू करने के लिए admin UID चाहिए; इसे अनुमान से नहीं भरा गया।
 - Latest main head: `0cdd7aa7b633430884e13dcba157d388a1b3a5f8`।
 - कोई Vercel deployment या Firebase rules publish नहीं किया गया।
+
+
+## Production API outage — 26 नवंबर 2026
+- Read-only live check: https://tenthouse2026.vercel.app/api/health और /api/ready दोनों HTTP 500 लौटाते हैं: API initialization failed।
+- Vercel runtime error aggregation: TypeError: app is not a function at /var/task/api/[...path].js:13:12, deployment dpl_FeLVVHBKuZzgqZ48PkwUih3azJvn, commit 91754c406d151c0ed3fb61e2cb31c8a0317873a6।
+- यह production catch-all adapter और Express app export/import के बीच mismatch की ओर संकेत करता है। वास्तविक production source repository inde2021-coder/tenthouse इस GitHub connection में 404/not exposed है; इसलिए audit repository से production code को बदलना सुरक्षित नहीं है।
+- GitHub issue #41 में root-cause evidence और सुरक्षित repair steps दर्ज हैं: https://github.com/inde2021-coder/tenthouse-/issues/41
+- Production पर कोई code change, environment change, deploy, rollback या data write नहीं किया गया। Production repair के लिए सही repository access आवश्यक है।
+- Preview अलग है: /api/health HTTP 200, /api/ready HTTP 503 जब तक Firebase Admin credentials branch-specific Preview environment में नहीं जोड़ी जातीं।
