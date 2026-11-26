@@ -1781,7 +1781,7 @@ test('missing recovery updates the matching booking, stock and rental timeline b
     loadReturnBookingForCounting: () => {}
   };
   const code = sourceBetween('async function recoverMissingItem(', 'async function completeManualReturnProcess()');
-  vm.runInNewContext(code + '\\nresult = recoverMissingItem("42-0", 0);', context);
+  vm.runInNewContext(code + '\nresult = recoverMissingItem("42-0", 0);', context);
   await context.result;
   const booking = store.softwareBookings[0];
   assert.equal(store.realStockDatabase[0].qty, 3);
@@ -1808,7 +1808,7 @@ test('missing recovery rejects a quantity larger than the outstanding missing ba
     showActionMessage: () => {}, loadAllFirebaseData: () => {}, loadReturnBookingForCounting: () => {}
   };
   const code = sourceBetween('async function recoverMissingItem(', 'async function completeManualReturnProcess()');
-  vm.runInNewContext(storageBatchSource() + '\\n' + code + '\\nresult = recoverMissingItem("43-0", 0);', context);
+  vm.runInNewContext(storageBatchSource() + '\\n' + code + '\nresult = recoverMissingItem("43-0", 0);', context);
   await context.result;
   assert.equal(store.realStockDatabase[0].qty, 0);
   assert.equal(store.missingItemsDatabase[0].qty, 2);
