@@ -589,6 +589,19 @@ test('OTP verification has a dedicated brute-force rate limit', () => {
   assert.match(backend, /app\.post\('\/api\/otp\/verify', otpVerifyLimiter, requireDurableStore/);
 });
 
+test('AI provider receives aggregate business counts, never raw customer or payment records', () => {
+  const start = html.indexOf('const aiBusinessSummary = {');
+  const end = html.indexOf('const snapshotText = JSON.stringify(aiBusinessSummary);', start);
+  assert.ok(start >= 0 && end > start, 'privacy-safe summary must be built before sending the AI request');
+  const summary = html.slice(start, end);
+  for (const store of ["softwareBookings", "realStockDatabase", "incomeExpenseDatabase", "thirdPartyDatabase", "thirdPartyPayments"]) {
+    assert.ok(summary.includes("countRecords(safeGetStorage('" + store + "', []))"), 'aggregate count missing for ' + store);
+  }
+  assert.ok(!summary.includes('bookings: safeGetStorage'));
+  assert.ok(!summary.includes('JSON.stringify(aiBusinessSnapshot)'));
+  assert.ok(summary.includes('vendorPaymentRecordCount'));
+});
+
 test('AI chat and TTS endpoints have server-side cost-abuse rate limits', () => {
   assert.match(backend, /const aiLimiter = rateLimit\(\{ windowMs: 60_000, limit: 20/);
   assert.match(backend, /app\.post\('\/api\/ai\/chat', aiLimiter, authAdmin/);
@@ -653,18 +666,22 @@ test('premium dark glass enterprise UI system is present and all served frontend
 });
 
 
-test('premium design layer loads after legacy styles so the new theme wins the cascade', () => {
+test('premium design loads after legacy styles and final admin controls override it safely', () => {
   const start = html.indexOf('<style id="rk-premium-enterprise-visual-system">');
   const end = html.indexOf('</style>', start);
+  const adminStart = html.indexOf('<style id="rk-admin-dark-controls-final">');
+  const adminEnd = html.indexOf('</style>', adminStart);
   assert.ok(start > html.lastIndexOf('</style>', start - 1), 'premium layer is not duplicated');
-  assert.equal(end, html.lastIndexOf('</style>'), 'premium layer must be the final stylesheet in the document');
+  assert.ok(adminStart > end, 'final admin controls must load after the premium design layer');
+  assert.equal(adminEnd, html.lastIndexOf('</style>'), 'admin control override must be the final stylesheet');
   assert.ok(start > html.lastIndexOf('</script>', start), 'premium layer must load after legacy scripts and styles');
 });
 
-test('admin login is hidden behind a deliberate secret entry and server token verification', () => {
+test('admin login is hidden behind supported desktop and mobile secret-entry gestures and server token verification', () => {
+  assert.ok(html.includes('e.ctrlKey&&e.shiftKey'));
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
-  assert.ok(html.includes('setTimeout(show,3200)'));
-  assert.ok(html.includes('setTimeout(show,3200)'));
+  assert.ok(html.includes('setTimeout(show,1200)'));
+  assert.ok(html.includes('clickCount>=3'));
   assert.ok(html.includes('/api/admin/session'));
   assert.ok(html.includes("'x-admin-token':token"));
   assert.ok(html.includes('window.__rkVerifiedAdminToken'));
@@ -883,4 +900,55 @@ test('supplied hero artwork is shipped with all three app shells', () => {
     assert.ok(asset.includes('data:image/webp;base64,'));
     assert.ok(asset.includes('Radhe Krishn'));
   }
+});
+
+
+test('secret admin gate is reachable from shop-name action and hidden keyboard/mobile gestures', () => {
+  const opener = sourceBetween('function openCustomerLogin(event)', 'function closeWelcomeOverlay()');
+  assert.match(opener, /return revealAdminGate\(\)/);
+  const secret = sourceBetween('<script id="rk-secret-admin-entry">', '</script>');
+  assert.match(secret, /e\.ctrlKey&&e\.shiftKey/);
+  assert.match(secret, /\.rk-customer-brand/);
+  assert.match(secret, /clickCount>=3/);
+  assert.match(secret, /setTimeout\(show,1200\)/);
+  assert.ok(!opener.includes('व्यवस्थापक प्रवेश लॉक है'));
+});
+
+test('admin login explains backend configuration, invalid token, missing route and network errors', () => {
+  const login = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
+  assert.ok(login.includes("api.replace(/\\/+$/,''"));
+  for (const marker of ['response.status===401','response.status===404','response.status===429','response.status===503','Backend से संपर्क नहीं हो पाया']) {
+    assert.ok(login.includes(marker), 'missing actionable login diagnostic: '+marker);
+  }
+});
+
+test('admin text fields override legacy light-theme and browser autofill styles', () => {
+  assert.ok(html.includes('id="rk-admin-dark-controls-final"'));
+  assert.ok(html.includes('#adminPanel input:not([type="checkbox"])'));
+  assert.ok(html.includes('-webkit-text-fill-color:#edf5ff!important'));
+  assert.ok(html.includes('background:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important'));
+});
+
+test('the primary HTML document is explicitly closed after the final style overrides', () => {
+  assert.match(html, /<style id="rk-admin-dark-controls-final">[\s\S]*?<\/style>\s*<\/body>\s*<\/html>\s*$/);
+});
+
+
+test('Google login failure clears the verified admin token and reports failure to the caller', () => {
+  const login = html.slice(html.indexOf('async function loginWithGoogle(adminToken)'), html.indexOf('// Keep local writes immediate', html.indexOf('async function loginWithGoogle(adminToken)')));
+  assert.ok(login.includes("window.__rkVerifiedAdminToken=''"));
+  assert.ok(login.includes('return true'));
+  assert.ok(login.includes('return false'));
+  const admin = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
+  assert.ok(admin.includes('const googleLoginOk=await loginWithGoogle(token)'));
+});
+
+
+test('WhatsApp webhook verification secret is never published in setup documentation', () => {
+  const guide = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'SETUP_CREDENTIALS_HI.md'), 'utf8');
+  const secretLines = guide.split(/\r?\n/).filter(line => /WHATSAPP_WEBHOOK_VERIFY_TOKEN|hub\.verify_token=/i.test(line));
+  assert.ok(secretLines.length >= 2);
+  assert.doesNotMatch(secretLines.join('\n'), /\b\d{10,}\b/);
+  assert.match(guide, /पुरानी Git history/);
+  assert.match(guide, /नया random/);
 });

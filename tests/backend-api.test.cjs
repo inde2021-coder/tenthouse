@@ -169,6 +169,14 @@ test('public customer booking requires at least one stock item and status lookup
   assert.equal(invalidMobile.status, 400);
   const missingBooking = await request('/api/customer/bookings/123456789012/status?mobile=9876543210');
   assert.equal(missingBooking.status, 404);
+
+  // Invalid and missing lookups count too; repeated ID/mobile guessing must be throttled.
+  for (let i = 0; i < 28; i++) {
+    await request('/api/customer/bookings/123456789012/status?mobile=9876543210');
+  }
+  const limited = await request('/api/customer/bookings/123456789012/status?mobile=9876543210');
+  assert.equal(limited.status, 429);
+  assert.match((await limited.json()).error, /15 मिनट/);
 });
 
 test('customer item bookings fail closed when the server stock catalog is unavailable', async () => {

@@ -1470,7 +1470,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
         }
 
-        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});const result=await firebase.auth().signInWithPopup(provider);document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');}}
+        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');return true;}catch(error){window.__rkVerifiedAdminToken='';const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
         // Keep local writes immediate, then mirror each dataset to Firebase for other devices.
         function syncToCloud(key, value) {
             if (applyingCloudSnapshot) return Promise.resolve(false);
@@ -1686,8 +1686,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         function openCustomerLogin(event) {
             if(event){event.preventDefault();event.stopPropagation();}
-            showActionMessage('व्यवस्थापक प्रवेश लॉक है।','info');
-            return false;
+            return revealAdminGate();
         }
         function handleShopNameTripleClick(event) { return openCustomerLogin(event); }
         function closeWelcomeOverlay() {
@@ -1698,24 +1697,43 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             document.getElementById('customerFirstPortal').style.display='flex';
         }
         async function handleDirectAdminLogin(event) {
-            event.preventDefault();
+            if(event){event.preventDefault();event.stopPropagation();}
             const field=document.getElementById('rkAdminAccessToken');
-            const token=String(field?.value||'').trim();
-            if(token.length<32){showActionMessage('अमान्य एक्सेस टोकन।','error');return;}
-            const settings=safeGetStorage('softwareSettings',{});
-            const api=getBackendApiUrl(settings);
-            const submit=event.submitter;
-            if(submit){submit.disabled=true;submit.dataset.originalText=submit.innerHTML;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
+            const form=field?.closest('form');
+            const submit=event?.submitter||form?.querySelector('button[type="submit"]');
+            const original=submit?.innerHTML;
+            if(submit){submit.disabled=true;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
             try{
-                const response=await fetch(api+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
-                if(!response.ok)throw new Error(response.status===429?'बहुत अधिक प्रयास। कुछ समय बाद पुनः प्रयास करें।':'एक्सेस सत्यापित नहीं हुआ।');
+                const token=String(field?.value||'').trim();
+                if(token.length<32)throw new Error('अमान्य Access Token। कम-से-कम 32 अक्षरों वाला ADMIN_API_TOKEN दर्ज करें।');
+                const settings=safeGetStorage('softwareSettings',{});
+                const api=getBackendApiUrl(settings);
+                if(!api)throw new Error('Backend API URL सेट नहीं है। Settings में सही HTTPS Backend URL भरें।');
+                const response=await fetch(api.replace(/\/+$/,'')+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
+                if(!response.ok){
+                    const details=await response.json().catch(()=>({}));
+                    if(response.status===429)throw new Error('बहुत अधिक प्रयास। 15 मिनट बाद पुनः प्रयास करें।');
+                    if(response.status===503)throw new Error('Backend पर ADMIN_API_TOKEN सेट नहीं है या 32 अक्षरों से छोटा है। Hosting Environment Variables जाँचें।');
+                    if(response.status===401)throw new Error('Access Token गलत है। Hosting में सेट किए गए ADMIN_API_TOKEN से मिलान करें।');
+                    if(response.status===404)throw new Error('Admin login API route नहीं मिली। Backend URL और deployment जाँचें।');
+                    throw new Error(details.error||('Admin सत्यापन विफल (HTTP '+response.status+')'));
+                }
                 const result=await response.json();
-                if(result.ok!==true)throw new Error('एक्सेस सत्यापित नहीं हुआ।');
+                if(result.ok!==true)throw new Error('Server ने Admin Access की पुष्टि नहीं की।');
                 window.__rkVerifiedAdminToken=token;
                 if(field)field.value='';
-                await loginWithGoogle(token);
-            }catch(error){window.__rkVerifiedAdminToken='';showActionMessage(error.message||'व्यवस्थापक लॉगिन विफल।','error');}
-            finally{if(submit){submit.disabled=false;submit.innerHTML=submit.dataset.originalText||'सत्यापित करें और आगे बढ़ें';}}
+                const googleLoginOk=await loginWithGoogle(token);
+                if(googleLoginOk!==true)window.__rkVerifiedAdminToken='';
+            }catch(error){
+                window.__rkVerifiedAdminToken='';
+                const message=error?.message||'व्यवस्थापक लॉगिन विफल।';
+                showActionMessage(/Failed to fetch|NetworkError|Load failed/i.test(message)
+                    ? 'Backend से संपर्क नहीं हो पाया। Backend URL, CORS में website domain और internet connection जाँचें।'
+                    : message,'error');
+            }finally{
+                if(submit){submit.disabled=false;submit.innerHTML=original||'<i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें';}
+            }
+            return false;
         }
         function returnToCustomerPortal() {
             closeAppMenu();
@@ -2937,17 +2955,18 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
               try {
                 // AI receives only the app's current local snapshot. Firebase cloud sync updates this snapshot when signed in/online.
                 // Never send Firebase config/API keys or Gemini secrets to the model.
-                const aiBusinessSnapshot = {
-                  bookings: safeGetStorage('softwareBookings', []),
-                  stock: safeGetStorage('realStockDatabase', []),
-                  expenses: safeGetStorage('incomeExpenseDatabase', []),
-                  vendorStock: safeGetStorage('thirdPartyDatabase', []),
-                  vendorPayments: safeGetStorage('thirdPartyPayments', []),
+                const countRecords = value => Array.isArray(value) ? value.length : (value && typeof value === 'object' ? Object.keys(value).length : 0);
+                // Privacy boundary: only aggregate counts go to the AI provider, never raw customer/payment records.
+                const aiBusinessSummary = {
+                  bookingRecordCount: countRecords(safeGetStorage('softwareBookings', [])),
+                  stockRecordCount: countRecords(safeGetStorage('realStockDatabase', [])),
+                  expenseRecordCount: countRecords(safeGetStorage('incomeExpenseDatabase', [])),
+                  vendorStockRecordCount: countRecords(safeGetStorage('thirdPartyDatabase', [])),
+                  vendorPaymentRecordCount: countRecords(safeGetStorage('thirdPartyPayments', [])),
                   lastCloudSync: safeGetStorage('rkLastCloudSyncAt', null)
                 };
-                let snapshotText = JSON.stringify(aiBusinessSnapshot);
-                if (snapshotText.length > 14000) snapshotText = snapshotText.slice(0, 14000) + '… [डेटा सीमा के कारण बाकी हिस्सा छोड़ा गया]';
-                const aiUserMessage = 'उपयोगकर्ता का प्रश्न: ' + question + '\n\nऐप का उपलब्ध व्यावसायिक डेटा (यह लोकल snapshot है; Firebase से नवीनतम sync की पुष्टि केवल lastCloudSync से करें):\n' + snapshotText + '\n\nकेवल दिए गए डेटा के आधार पर उत्तर दें। डेटा मौजूद न हो तो स्पष्ट बताएं; अनुमान लगाकर रकम/रिकॉर्ड न बनाएं।';
+                const snapshotText = JSON.stringify(aiBusinessSummary);
+                const aiUserMessage = 'उपयोगकर्ता का प्रश्न: ' + question + '\n\nगोपनीयता-सुरक्षित व्यावसायिक सारांश (केवल रिकॉर्ड की गिनती; ग्राहक/भुगतान विवरण शामिल नहीं):\n' + snapshotText + '\n\nइन सीमित आँकड़ों से आगे की जानकारी उपलब्ध न हो तो स्पष्ट बताएं; रकम, ग्राहक या रिकॉर्ड का अनुमान न लगाएं।';
                 const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages:[{role:'system',content:'आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।'}, {role:'user',content:aiUserMessage}]})}); const data=await r.json(); if(!r.ok) throw Error(data.error||('AI HTTP '+r.status)); if(data.reply){aiStatus(data.reply); let geminiVoicePlayed=false; try { const tr=await fetch(api+'/api/ai/tts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({text:data.reply})}); const td=await tr.json(); if(tr.ok && td.audioBase64){ const audio=new Audio('data:'+(td.mimeType||'audio/wav')+';base64,'+td.audioBase64); await audio.play(); geminiVoicePlayed=true; } else { console.warn('Gemini TTS unavailable:',td.error||tr.status); } } catch(te){ console.warn('Gemini TTS unavailable',te); } if(!geminiVoicePlayed && 'speechSynthesis' in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(data.reply);u.lang='hi-IN';window.speechSynthesis.speak(u);} return;} throw Error('AI उत्तर खाली है'); }
               catch(e){ console.warn('AI backend unavailable',e); aiStatus('AI सर्वर से उत्तर नहीं मिला: '+e.message+'। नीचे उपलब्ध लोकल जानकारी दे रही हूँ।',true); }
             }
@@ -3506,7 +3525,40 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 </div>
 
 <script id="rk-secret-admin-entry">
-(()=>{let holdTimer=null;const show=()=>{if(typeof window.revealAdminGate==='function')window.revealAdminGate();};document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&e.shiftKey&&!e.repeat&&(e.key||'').toLowerCase()==='k'){e.preventDefault();show();}});const bind=()=>{const mark=document.querySelector('.rk-dev-title');if(!mark||mark.dataset.secretEntryBound)return;mark.dataset.secretEntryBound='1';mark.setAttribute('aria-hidden','true');mark.addEventListener('contextmenu',e=>e.preventDefault());mark.addEventListener('pointerdown',e=>{if(e.button!==0)return;clearTimeout(holdTimer);holdTimer=setTimeout(show,3200);});['pointerup','pointerleave','pointercancel','blur'].forEach(name=>mark.addEventListener(name,()=>{clearTimeout(holdTimer);holdTimer=null;}));};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();})();
+(()=> {
+  let holdTimer=null, clickCount=0, clickWindow=null, fired=false;
+  const show=()=>{
+    if(fired)return;
+    fired=true;
+    if(typeof window.revealAdminGate==='function')window.revealAdminGate();
+    else {
+      const gate=document.getElementById('welcomeOverlay');
+      if(gate){gate.style.display='flex';gate.style.visibility='visible';gate.style.opacity='1';}
+    }
+    setTimeout(()=>{fired=false;},500);
+  };
+  const isBrand=target=>target instanceof Element?target.closest('.rk-customer-brand,.rk-customer-brand-mark,.rk-dev-title'):null;
+  const cancelHold=()=>{if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}};
+  document.addEventListener('keydown',e=>{
+    const key=String(e.key||'').toLowerCase();
+    if((e.ctrlKey&&e.shiftKey&&(key==='k'||e.code==='KeyK'))||
+       (e.ctrlKey&&e.altKey&&e.shiftKey&&(key==='k'||e.code==='KeyK'))){
+      e.preventDefault();e.stopPropagation();show();
+    }
+  },true);
+  document.addEventListener('pointerdown',e=>{
+    if(!isBrand(e.target)||(e.pointerType==='mouse'&&e.button!==0))return;
+    cancelHold();fired=false;holdTimer=setTimeout(show,1200);
+  },true);
+  ['pointerup','pointercancel','mouseup','touchend','touchcancel'].forEach(type=>document.addEventListener(type,cancelHold,true));
+  document.addEventListener('click',e=>{
+    if(!isBrand(e.target))return;
+    clickCount++;clearTimeout(clickWindow);
+    if(clickCount>=3){clickCount=0;show();return;}
+    clickWindow=setTimeout(()=>{clickCount=0;},2400);
+  },true);
+  window.addEventListener('blur',cancelHold);
+})();
 </script>
 </body></html>');w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print()},250)};
 
@@ -3807,3 +3859,38 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       @media(max-width:390px){.rk-customer-brand-seal{display:none}.rk-customer-brand{gap:10px}.rk-customer-brand-mark{width:43px;height:43px;flex-basis:43px}.rk-customer-section-title{font-size:14px!important}}
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
 </style>
+
+<style id="rk-admin-dark-controls-final">
+/* Final admin control theme: defeat legacy light-theme and browser autofill rules. */
+#adminPanel,#welcomeOverlay,[role="dialog"],.modal-content{color-scheme:dark}
+#adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+#adminPanel select,#adminPanel textarea,
+#welcomeOverlay input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+#welcomeOverlay select,#welcomeOverlay textarea,
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+[role="dialog"] select,[role="dialog"] textarea,
+.modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+.modal-content select,.modal-content textarea{
+  background:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important;
+  background-color:#0d1929!important;color:#edf5ff!important;-webkit-text-fill-color:#edf5ff!important;
+  border:1px solid rgba(126,174,220,.34)!important;border-radius:12px!important;
+  box-shadow:inset 4px 4px 9px rgba(0,0,0,.46),inset -1px -1px 3px rgba(140,184,226,.06),0 4px 12px rgba(0,0,0,.12)!important;
+  caret-color:#83d9f0!important;min-width:0;outline:none
+}
+#adminPanel input::placeholder,#adminPanel textarea::placeholder,
+#welcomeOverlay input::placeholder,#welcomeOverlay textarea::placeholder,
+[role="dialog"] input::placeholder,[role="dialog"] textarea::placeholder,
+.modal-content input::placeholder,.modal-content textarea::placeholder{color:#8fa8c4!important;opacity:1!important;-webkit-text-fill-color:#8fa8c4!important}
+#adminPanel input:focus,#adminPanel select:focus,#adminPanel textarea:focus,
+#welcomeOverlay input:focus,#welcomeOverlay select:focus,#welcomeOverlay textarea:focus,
+[role="dialog"] input:focus,[role="dialog"] select:focus,[role="dialog"] textarea:focus,
+.modal-content input:focus,.modal-content select:focus,.modal-content textarea:focus{
+  border-color:#62c5df!important;box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.16)!important;outline:none!important
+}
+#adminPanel select option,#welcomeOverlay select option,[role="dialog"] select option,.modal-content select option{background:#101d2e!important;color:#edf5ff!important}
+#adminPanel input:-webkit-autofill,#adminPanel input:-webkit-autofill:hover,#adminPanel input:-webkit-autofill:focus,
+#welcomeOverlay input:-webkit-autofill,[role="dialog"] input:-webkit-autofill,.modal-content input:-webkit-autofill{
+  -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;transition:background-color 99999s ease-out 0s!important
+}
+</style>
+</body></html>
