@@ -2222,6 +2222,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if (!b) { showActionMessage('बुकिंग नहीं मिली', 'error'); return; }
             if (!['Confirmed','Dispatched','Partially Returned'].includes(b.status) || b.fullyReturnedAt) { showActionMessage('पहले बुकिंग Confirm करें और उसका Return पूरा न हुआ हो', 'error'); return; }
             const items = Array.isArray(b.items) ? b.items.map(item=>({...item})) : [];
+            // Local fallback keeps dispatch logic testable and preserves legacy rate behavior when no UI selector exists.
+            const getItemRentRate = (stock, quantity) => { const single=Number(stock?.singleRent)||0, bulk=Number(stock?.setRent)||0; return Number(quantity)>=3 && bulk>0 ? bulk : (single>0 ? single : bulk); };
             const adminStock=safeGetStorage('realStockDatabase',[]),vendorStock=safeGetStorage('thirdPartyDatabase',[]);
             const previousState={bookings:JSON.parse(JSON.stringify(bookings)),adminStock:JSON.parse(JSON.stringify(adminStock)),vendorStock:JSON.parse(JSON.stringify(vendorStock))};
             const catalog=[
