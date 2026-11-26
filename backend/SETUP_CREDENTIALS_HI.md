@@ -84,3 +84,17 @@ Firebase credentials के बिना `/api/ready` का HTTP 503 देन�
 ## Webhook secret rotation — आवश्यक सुरक्षा कदम
 
 इस repository की पुरानी Git history में पहले इस्तेमाल किया गया webhook verification token मौजूद हो सकता है। केवल इस documentation को बदलने से Git history साफ नहीं होती। Production में नया random `WHATSAPP_WEBHOOK_VERIFY_TOKEN` Hosting Environment Variables में सेट करें, Meta App Dashboard के Webhooks configuration में वही नया मान डालें, फिर backend redeploy करके webhook verify करें। पुराने मान को दोबारा उपयोग न करें।
+
+
+## 6. Firebase Realtime Database Rules — Admin UID allowlist
+
+Repository root में `database.rules.json` fail-closed rules template है। यह `tent_erp_data` को केवल signed-in और explicitly allowlisted Firebase Auth UID को read/write करने देता है। सामान्य authenticated Google account को अपने-आप ERP data access नहीं मिलता।
+
+Firebase Console में लागू करने के चरण:
+1. Firebase Console → Realtime Database → Rules खोलें।
+2. Repository की `database.rules.json` सामग्री Rules editor में paste करके Publish करें।
+3. Authentication → Users में अपने verified admin Google account का Firebase UID देखें।
+4. Realtime Database → Data में root पर `erp_admins` object बनाएँ और उसके अंदर key को उस exact UID से match करें, value Boolean `true` रखें। उदाहरण: `erp_admins/ADMIN_FIREBASE_UID = true`।
+5. दूसरे किसी account को UID allowlist में न जोड़ें। `erp_admins` को client-side app से लिखने की अनुमति न दें; rules में उसका read/write बंद है। Admin SDK/server-side Firebase credentials ही allowlist provision/update करें।
+
+महत्वपूर्ण: यह repository में सुरक्षित template है, Production Firebase Console पर अपने-आप लागू नहीं हुआ है। UID allowlist provision किए बिना ये rules सभी browser clients के लिए cloud read/write deny करेंगे। Production में apply करने के बाद admin Google login, cloud read, cloud write और cross-device sync को वास्तविक account से जाँचना आवश्यक है।
