@@ -593,8 +593,7 @@ html,body{max-width:100%;overflow-x:hidden!important}
 #customerFirstPortal .rk-tracker-fields input{min-height:35px!important;background:#f3f7ff!important;color:#12254b!important}
 #customerFirstPortal .rk-tracker-submit{min-height:35px!important;padding:7px 13px!important;background:linear-gradient(180deg,#398aff,#0752bd)!important;border:1px solid #a7d0ff!important;color:#fff!important}
 #customerFirstPortal .rk-developer-footer{margin-top:8px!important;padding:8px 10px!important;border:1px solid #294e84!important;border-radius:9px!important;background:#040b1b!important;color:#d4e1f8!important}
-#customerFirstPortal .rk-design-manager{display:none!important}
-#adminPanel .rk-design-manager{display:none!important}
+
 #adminPanel .sidebar-brand{border-color:#d5ae4b!important;background:linear-gradient(145deg,#102d58,#050d1e)!important}
 #adminPanel .header{background:linear-gradient(90deg,#040b1a,#102d59,#040b1a)!important;border-bottom:1px solid #3276ce!important}
 #adminPanel .glass-card-blue,#adminPanel .glass-card-purple,#adminPanel .glass-card-green,#adminPanel .welcome-card,#adminPanel .stat-card,#adminPanel .dashboard-card,#adminPanel .settings-section{border-color:#225da8!important;background:linear-gradient(145deg,#0b2148,#050e21)!important;color:#edf4ff!important}
@@ -615,3 +614,20 @@ html,body{max-width:100%;overflow-x:hidden!important}
 }
 @media(max-width:380px){#customerFirstPortal .rk-customer-brand-seal{display:none!important}#customerFirstPortal .rk-hero-copy h2{font-size:26px!important}}
 @media print{#customerFirstPortal .rk-design-manager,#adminPanel .rk-design-manager{display:none!important}}
+
+
+/* Five ZIP screenshot presets. All remain within the supplied dark luxury family. */
+.rk-design-manager{display:flex!important;visibility:visible!important;opacity:1!important}
+.rk-design-choice.active{outline:2px solid #f5cf63!important;box-shadow:0 0 0 3px #f5cf6333,0 8px 20px #0008!important;transform:translateY(-1px)}
+.rk-design-choice{min-height:38px!important;cursor:pointer!important}
+html.rk-ref1{--rk-ref-accent:#e7bd51;--rk-ref-blue:#123d83;--rk-ref-panel:#07162e}
+html.rk-ref2{--rk-ref-accent:#e9c45c;--rk-ref-blue:#0754bb;--rk-ref-panel:#061b3c}
+html.rk-ref3{--rk-ref-accent:#36d8ff;--rk-ref-blue:#0066bd;--rk-ref-panel:#03172b}
+html.rk-ref4{--rk-ref-accent:#f4c65b;--rk-ref-blue:#5720b8;--rk-ref-panel:#160b32}
+html.rk-ref5{--rk-ref-accent:#f3ca63;--rk-ref-blue:#34207f;--rk-ref-panel:#0c102d}
+html[class*="rk-ref"] #customerFirstPortal .rk-customer-brand,html[class*="rk-ref"] #adminPanel .sidebar-brand{border-color:var(--rk-ref-accent)!important}
+html[class*="rk-ref"] #customerFirstPortal .rk-customer-section,html[class*="rk-ref"] #customerFirstPortal .rk-booking-tracker,html[class*="rk-ref"] #adminPanel .glass-card-blue,html[class*="rk-ref"] #adminPanel .glass-card-purple,html[class*="rk-ref"] #adminPanel .glass-card-green,html[class*="rk-ref"] #adminPanel .welcome-card,html[class*="rk-ref"] #adminPanel .stat-card,html[class*="rk-ref"] #adminPanel .dashboard-card,html[class*="rk-ref"] #adminPanel .settings-section{background:linear-gradient(145deg,var(--rk-ref-blue),var(--rk-ref-panel) 78%)!important;border-color:var(--rk-ref-accent)!important}
+html[class*="rk-ref"] #customerFirstPortal .rk-customer-section-title,html[class*="rk-ref"] #customerFirstPortal .rk-customer-identity>div:first-child,html[class*="rk-ref"] #adminPanel .page-section>h2,html[class*="rk-ref"] #adminPanel .page-section>h3{color:var(--rk-ref-accent)!important}
+html[class*="rk-ref"] #customerFirstPortal .rk-customer-submit{background:linear-gradient(180deg,#fff0a0,var(--rk-ref-accent))!important}
+html[class*="rk-ref"] #customerFirstPortal .rk-tracker-submit{background:linear-gradient(180deg,#3d9bff,var(--rk-ref-blue))!important}
+@media(max-width:720px){.rk-design-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.rk-design-choice{width:100%!important}}
