@@ -1565,3 +1565,22 @@ test('royal print theme is synchronized and covers customer-facing business docu
   assert.doesNotMatch(dispatch, /remark/i, 'Dispatch Slip must not contain a Remark field');
   assert.ok(html.includes('<th>मिसिंग मात्रा</th>'), 'Return Slip must retain the Missing Quantity column');
 });
+
+
+test('Royal admin dashboard KPIs are read-only, data-backed and quick actions reuse existing tabs', () => {
+  for (const id of ['rkKpiBookings','rkKpiPending','rkKpiDispatch','rkKpiReturns','rkKpiStock','rkKpiVendor']) {
+    assert.ok(html.includes('id="' + id + '"'));
+  }
+  const metrics=sourceBetween('function renderRoyalDashboardMetrics()', 'function renderDashboardLineGraph()');
+  assert.match(metrics,/safeGetStorage\('softwareBookings'/);
+  assert.match(metrics,/safeGetStorage\('realStockDatabase'/);
+  assert.match(metrics,/safeGetStorage\('thirdPartyDatabase'/);
+  assert.doesNotMatch(metrics,/safeSetStorage|safeSetStorageBatch|\.set\(/);
+  assert.ok(html.includes("window.rkQuickNav=function(tabId)"));
+  assert.ok(html.includes("switchTab(tabId,menu||null)"));
+  assert.ok(html.includes("if(tabId==='dashboard' && typeof renderRoyalDashboardMetrics==='function')"));
+  const path=require('node:path');
+  const css=fs.readFileSync(path.join(__dirname,'..','rk-reference-theme.css'),'utf8');
+  assert.match(css,/\.rk-admin-kpi-grid/);
+  assert.match(css,/\.rk-admin-quick-actions/);
+});
