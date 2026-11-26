@@ -6,6 +6,23 @@ const vm = require('node:vm');
 const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
 const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
 
+test('Firebase settings sync strips admin tokens, API keys, and payment gateway secrets', () => {
+  const code=sourceBetween('function sanitizeCloudSettings(settings)', '        // Keep local writes immediate');
+  const context={Object,Array};
+  const result=vm.runInNewContext(code+';sanitizeCloudSettings({businessName:"RK Tent House",backendApiUrl:"https://api.example",aiAccessToken:"admin-secret",payGatewayKey:"gateway-secret",publicApiKey:"public-but-sensitive",termsConditions:"Terms",otpChannel:"off"})',context);
+  assert.deepEqual({...result},{businessName:"RK Tent House",backendApiUrl:"https://api.example",termsConditions:"Terms",otpChannel:"off"});
+});
+test('Firebase sync, pending queue, and initial sync sanitize software settings', () => {
+  const sync=sourceBetween('function sanitizeCloudSettings(settings)', "        window.addEventListener('online'");
+  assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)/);
+  assert.match(html,/sanitizeCloudValue\(cloudKey, JSON.parse\(raw\)\)/);
+  assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)\); delete q\[cloudKey\]/);
+  assert.match(html,/Firebase secret cleanup failed/);
+  assert.match(html,/existingLocal\[secretKey\]/);
+  assert.match(html,/JSON\.stringify\(cloudSafeSettings\) !== JSON\.stringify\(cloudData\[cloudKey\]\)/);
+  assert.match(html,/dbRef\.child\(cloudKey\)\.set\(cloudSafeSettings\)/);
+});
+
 test('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
   const rules = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
   assert.equal(rules['.read'], false);
