@@ -1721,7 +1721,7 @@ test('exactly five ZIP reference themes are selectable and persist across reload
   assert.match(html,/window\.applyRkDesign=\(name\)=>apply\(name,true\)/);
   const css=fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8');
   // The theme manager remains visible on screen; hiding it for print is intentional.
-  assert.match(css,/.rk-design-manager\\{display:flex!important/);
+  assert.match(css,/.rk-design-manager\{display:flex!important/);
   assert.match(css,/html\.rk-ref1/);
   assert.match(css,/html\.rk-ref5/);
   assert.match(css,/#customerFirstPortal \.rk-customer-form/);
