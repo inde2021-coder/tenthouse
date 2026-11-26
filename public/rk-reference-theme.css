@@ -193,3 +193,99 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
 .rk-theme-purple #adminPanel .glass-card-blue,.rk-theme-purple #adminPanel .glass-card-purple,.rk-theme-purple #adminPanel .glass-card-green,.rk-theme-purple #customerFirstPortal .rk-customer-section{border-color:#9b6ac7!important}
 .rk-theme-purple #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#1c1035,#492477)!important;border-color:#9b6ac7!important}
 .rk-theme-purple #customerFirstPortal .rk-customer-hero{background-color:#1c1035!important}
+
+
+/* Additional exact adminpanelimeage reference layer ported from the verified preview branch. */
+/* Matching adminpanelimeage print language: white paper, navy rules and restrained gold accents. */
+@media print {
+  #printableSlipArea .rk-slip, #printableSlipArea .rk-slip table { color:#172033!important; font-family:Arial,"Noto Sans Devanagari",sans-serif!important; }
+  #printableSlipArea .rk-slip header, #printableSlipArea .rk-slip>div:first-child { border-color:#b88935!important; }
+  #printableSlipArea .rk-slip h2 { color:#173b63!important; letter-spacing:.02em; }
+  #printableSlipArea .rk-slip h3 { color:#173b63!important; }
+  #printableSlipArea .rk-slip th { background:#eaf1f8!important; color:#173b63!important; border:1px solid #b88935!important; }
+  #printableSlipArea .rk-slip td { border:1px solid #9aa9b9!important; color:#172033!important; }
+}
+
+/* ADMINPANELIMEAGE — visual reference implementation: preserve existing data/actions. */
+#adminPanel{background:#050c18!important;color:#edf5ff!important}
+#adminPanel .admin-container{background:#050c18!important}
+#adminPanel .sidebar{background:linear-gradient(180deg,#061225 0%,#091a31 55%,#061225 100%)!important;border-right:1px solid rgba(43,147,255,.55)!important;box-shadow:8px 0 32px rgba(0,91,190,.16)!important}
+#adminPanel .sidebar-brand{position:relative!important;min-height:132px!important;justify-content:center!important;align-items:center!important;text-align:center!important;padding:18px 12px!important;margin:2px 4px 16px!important;border:1px solid rgba(65,161,255,.65)!important;border-radius:16px!important;background:radial-gradient(ellipse at 50% 0%,rgba(22,121,255,.28),transparent 65%),linear-gradient(145deg,#102b4c,#071426)!important;color:#ffd978!important;box-shadow:0 0 22px rgba(0,113,255,.2),inset 0 1px 0 rgba(255,255,255,.13)!important}
+#adminPanel .sidebar-brand:before{content:"🪶";display:block;font-size:30px;line-height:1.1;margin-bottom:8px;filter:drop-shadow(0 0 8px rgba(255,199,78,.5))}
+#adminPanel .sidebar-brand #overlayShopName{font-size:18px!important;line-height:1.25!important;font-weight:900!important;color:#ffdc83!important;text-shadow:0 0 12px rgba(255,183,62,.22)}
+#adminPanel .menu-item{background:rgba(13,34,59,.92)!important;border:1px solid rgba(70,130,190,.22)!important;color:#d7e8fc!important;border-radius:11px!important;min-height:43px!important}
+#adminPanel .menu-item i{width:20px;text-align:center;color:#70cfff!important;font-size:15px!important}
+#adminPanel .menu-item.active{background:linear-gradient(100deg,#a86b12,#f3c75b 52%,#a76a12)!important;color:#101a29!important;border:1px solid #ffe39a!important;box-shadow:0 0 18px rgba(255,190,63,.38),inset 0 1px 0 rgba(255,255,255,.6)!important}
+#adminPanel .menu-item.active i{color:#14243a!important}
+#adminPanel .main-content{background:#06101e!important}
+#adminPanel .header{background:linear-gradient(90deg,#071426,#0d2037 70%,#071426)!important;border-bottom:1px solid rgba(44,145,255,.45)!important;box-shadow:0 5px 22px rgba(0,0,0,.24)!important}
+#adminPanel #pageTitle{color:#f2f7ff!important;font-size:17px!important;font-weight:850!important}
+#adminPanel .content-body{background:radial-gradient(ellipse at 70% 0%,rgba(12,73,133,.16),transparent 40%),#06101e!important;padding:20px 22px 36px!important}
+#adminpanelimeage-hero{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:170px;margin:0 0 18px;padding:25px 30px;overflow:hidden;border:1px solid rgba(69,164,255,.72);border-radius:19px;background:radial-gradient(ellipse at 10% 50%,rgba(27,113,220,.28),transparent 40%),radial-gradient(ellipse at 95% 0%,rgba(255,186,64,.18),transparent 35%),linear-gradient(112deg,#07172d 0%,#102b4d 50%,#071426 100%);box-shadow:0 12px 30px rgba(0,0,0,.32),0 0 22px rgba(0,114,255,.13),inset 0 1px 0 rgba(255,255,255,.13)}
+#adminpanelimeage-hero:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(74,163,255,.09) 58%,transparent 72%);pointer-events:none}
+#adminpanelimeage-hero:after{content:"";position:absolute;z-index:-1;right:19%;top:-125px;width:280px;height:280px;border:1px solid rgba(255,205,111,.18);border-radius:50%;box-shadow:0 0 0 22px rgba(255,205,111,.035),0 0 0 48px rgba(255,205,111,.025),0 0 45px rgba(0,136,255,.15)}
+.rk-admin-hero-copy{min-width:0;position:relative;z-index:1}
+.rk-admin-hero-kicker{display:block;margin-bottom:9px;color:#80d9f4;font-size:9px;font-weight:900;letter-spacing:.22em}
+.rk-admin-hero-copy h1{margin:0!important;color:#ffda8a!important;font-family:'Great Vibes','Plus Jakarta Sans',cursive!important;font-size:clamp(29px,4vw,47px)!important;line-height:1.15!important;font-weight:800!important;text-shadow:0 2px 16px rgba(255,183,61,.2)!important}
+.rk-admin-hero-copy p{margin:7px 0 0!important;color:#edf4ff!important;font-size:clamp(12px,1.5vw,17px)!important;font-weight:650!important;letter-spacing:.025em}
+.rk-admin-hero-art{display:flex;align-items:center;justify-content:center;gap:clamp(2px,1.2vw,14px);flex:0 0 auto;min-width:32%;padding:12px 15px;border:1px solid rgba(255,206,119,.22);border-radius:16px;background:linear-gradient(145deg,rgba(3,10,19,.58),rgba(14,35,58,.7));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.2)}
+.rk-admin-hero-art span{font-size:clamp(25px,3vw,43px);filter:drop-shadow(0 5px 7px rgba(0,0,0,.55))}
+#adminPanel .glass-card-green,#adminPanel .glass-card-blue,#adminPanel .glass-card-purple{background:linear-gradient(145deg,#102641,#09182b)!important;border:1px solid rgba(68,145,218,.42)!important;box-shadow:0 9px 25px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.07)!important}
+#adminPanel .glass-card-green h3,#adminPanel .glass-card-blue h3,#adminPanel .glass-card-purple h3{color:#eaf4ff!important}
+#adminPanel .table-responsive{background:#071526!important;border:1px solid rgba(67,137,203,.42)!important;box-shadow:0 8px 24px rgba(0,0,0,.2)!important}
+#adminPanel .table-responsive th{background:#183554!important;color:#e8f4ff!important;border-bottom:1px solid #42678e!important}
+#adminPanel .table-responsive td{background:#0b1c30!important;color:#dceafa!important;border-bottom:1px solid rgba(77,121,165,.2)!important}
+#adminPanel .table-responsive tr:nth-child(even) td{background:#10243b!important}
+#adminPanel button:not(.menu-item):not(#menuToggleBtn){border-radius:10px!important;box-shadow:0 5px 14px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.18)!important}
+@media(max-width:700px){
+ #adminPanel .content-body{padding:12px 11px 26px!important}
+ #adminpanelimeage-hero{min-height:128px;padding:17px 15px;margin-bottom:13px;border-radius:15px}
+ .rk-admin-hero-kicker{font-size:8px;letter-spacing:.13em}
+ .rk-admin-hero-copy h1{font-size:clamp(24px,7vw,34px)!important}
+ .rk-admin-hero-copy p{font-size:11px!important;max-width:220px}
+ .rk-admin-hero-art{min-width:0;gap:2px;padding:8px 6px;flex-direction:column}
+ .rk-admin-hero-art span{font-size:20px}
+}
+@media(max-width:390px){#adminpanelimeage-hero{gap:8px;padding:14px 11px}.rk-admin-hero-art{padding:6px 4px}.rk-admin-hero-art span{font-size:17px}}
+
+</style>
+
+<style id="rk-final-dark-input-contrast-v1">
+/* One final field contract for every customer, admin, modal and lookup form. */
+@media screen {
+  html body #customerFirstPortal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body #customerFirstPortal select, html body #customerFirstPortal textarea,
+  html body #adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body #adminPanel select, html body #adminPanel textarea,
+  html body #welcomeOverlay input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body #welcomeOverlay select, html body #welcomeOverlay textarea,
+  html body [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body [role="dialog"] select, html body [role="dialog"] textarea {
+    appearance:none!important;color-scheme:dark!important;background:#0d1929!important;
+    background-image:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important;
+    color:#edf5ff!important;-webkit-text-fill-color:#edf5ff!important;
+    border:1px solid rgba(126,174,220,.38)!important;border-radius:11px!important;
+    box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),inset -1px -1px 3px rgba(140,184,226,.06)!important;
+    caret-color:#83d9f0!important;
+  }
+  html body #customerFirstPortal input::placeholder,html body #customerFirstPortal textarea::placeholder,
+  html body #adminPanel input::placeholder,html body #adminPanel textarea::placeholder,
+  html body #welcomeOverlay input::placeholder,html body [role="dialog"] input::placeholder,
+  html body [role="dialog"] textarea::placeholder{color:#8fa8c4!important;opacity:1!important}
+  html body #customerFirstPortal input:focus,html body #customerFirstPortal select:focus,
+  html body #customerFirstPortal textarea:focus,html body #adminPanel input:focus,
+  html body #adminPanel select:focus,html body #adminPanel textarea:focus,
+  html body #welcomeOverlay input:focus,html body [role="dialog"] input:focus,
+  html body [role="dialog"] select:focus,html body [role="dialog"] textarea:focus{
+    border-color:#62c5df!important;box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.16)!important;outline:none!important
+  }
+  html body #customerFirstPortal select option,html body #adminPanel select option,
+  html body [role="dialog"] select option{background:#101d2e!important;color:#edf5ff!important}
+  html body #customerFirstPortal input:-webkit-autofill,html body #customerFirstPortal input:-webkit-autofill:hover,
+  html body #customerFirstPortal input:-webkit-autofill:focus,html body #adminPanel input:-webkit-autofill,
+  html body #welcomeOverlay input:-webkit-autofill,html body [role="dialog"] input:-webkit-autofill{
+    -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;
+    transition:background-color 99999s ease-out 0s!important
+  }
+}
+@media print{#printableSlipArea input,#printableSlipArea select,#printableSlipArea textarea{background:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important;box-shadow:none!important}}
