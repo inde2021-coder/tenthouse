@@ -245,3 +245,12 @@ Main पर मिले root causes:
 - PR branch CI run `45750931511`: 111/111 PASS; merge के बाद main CI run `45751023708`: **111/111 PASS, 0 FAIL**।
 - Latest main head: `40e0bccffddf7ffac4e68b18edd73d96d1baa48d`।
 - Production deployment नहीं किया गया।
+
+
+## Purchase Stock Reconciliation — 26 नवंबर 2026, 09:21 IST
+- PR #14 merged: `bec77a528b8080b3a5e51d51643363e4826f7edd`। Purchase edit अब same-item update में केवल quantity delta लागू करता है; item rename तभी होगा जब पुरानी खरीदी मात्रा पूरी उपलब्ध हो। Purchase delete भी तभी होगा जब पूरी खरीदी मात्रा stock में उपलब्ध हो। इससे पहले से Dispatch/उपयोग हुए सामान के कारण स्टॉक को गलत तरीके से शून्य या दूसरे item में recreate होने से रोका गया।
+- Purchase और stock दोनों records multi-key rollback helper से एक साथ सेव होते हैं।
+- तीनों HTML shells byte-identical हैं।
+- PR branch CI run `45751199885`: 115/115 PASS; merge के बाद main CI run `45751304784`: **115/115 PASS, 0 FAIL**।
+- Latest main head: `bec77a528b8080b3a5e51d51643363e4826f7edd`।
+- Production deployment नहीं किया गया।
