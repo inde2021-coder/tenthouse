@@ -905,12 +905,31 @@ test('Tent House AI chat keeps recent conversation context across turns and rese
 });
 
 test('AI request payload stays within backend message limits and Hindi TTS falls back safely', () => {
-  assert.ok(html.includes('snapshotText.length>8500'));
+  assert.ok(html.includes('const aiBusinessSummary='));
+  assert.ok(html.includes('bookingRecordCount:countRecords('));
+  assert.ok(html.includes('Privacy boundary: never send raw bookings'));
+  assert.ok(!html.includes('const aiBusinessSnapshot={bookings:safeGetStorage'));
+  assert.ok(!html.includes('snapshotText.length>8500'));
   assert.ok(html.includes("fetch(api+'/api/ai/tts'"));
   assert.ok(html.includes('if(!voicePlayed&&\'speechSynthesis\'in window)'));
   assert.ok(backend.includes("app.post('/api/ai/tts'"));
   assert.ok(backend.includes("z.string().trim().min(1).max(4000)"));
 });
+
+
+test('AI provider receives only aggregate business counts and no raw customer or payment records', () => {
+  const start=html.indexOf('const aiBusinessSummary=');
+  const end=html.indexOf('const aiUserMessage=',start);
+  assert.ok(start>=0&&end>start,'privacy-safe summary must be constructed before the AI request');
+  const summary=html.slice(start,end);
+  for(const rawStore of ["safeGetStorage('softwareBookings',[])","safeGetStorage('incomeExpenseDatabase',[])","safeGetStorage('thirdPartyPayments',[])"]) {
+    assert.ok(summary.includes('countRecords('+rawStore+')'));
+  }
+  assert.ok(!summary.includes('JSON.stringify(safeGetStorage'));
+  assert.ok(summary.includes('bookingRecordCount'));
+  assert.ok(summary.includes('vendorPaymentRecordCount'));
+});
+
 
 test('all three deployed app shells remain byte-identical after AI chat updates', () => {
   assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8'), html);
