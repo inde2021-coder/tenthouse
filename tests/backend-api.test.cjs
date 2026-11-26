@@ -464,3 +464,26 @@ test('frontend Content Security Policy permits only the required inline legacy U
   assert.match(csp, /object-src 'none'/);
   assert.match(csp, /frame-ancestors 'self'/);
 });
+
+
+test('customer and admin royal theme assets are served from the production static root', async () => {
+  const html = await request('/');
+  assert.equal(html.status, 200);
+  const markup = await html.text();
+  assert.match(markup, /rk-reference-theme\.css\?v=4/);
+  assert.match(markup, /applyRkDesign/);
+  assert.match(markup, /rkDesignPreset/);
+
+  const theme = await request('/rk-reference-theme.css?v=4');
+  assert.equal(theme.status, 200);
+  assert.match(theme.headers.get('content-type') || '', /text\/css/i);
+  const css = await theme.text();
+  assert.match(css, /#customerFirstPortal/);
+  assert.match(css, /#adminPanel/);
+  assert.match(css, /rk-theme-royal-purple/);
+
+  const hero = await request('/bartan-hero.svg');
+  assert.equal(hero.status, 200);
+  assert.match(hero.headers.get('content-type') || '', /image\/svg\+xml/i);
+  assert.match(await hero.text(), /<svg[\s>]/i);
+});
