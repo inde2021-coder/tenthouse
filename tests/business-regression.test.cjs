@@ -2184,3 +2184,18 @@ test('bill discount and other-charge changes stop when booking persistence fails
   assert.ok(messages.some(message => message.includes('बिल बदलाव सेव नहीं हुआ')));
   assert.ok(!messages.some(message => message.includes('बिल में लागू हुए')));
 });
+
+
+test('Shraddha AI renders a server proposal and requires an explicit Admin confirmation click', () => {
+  const code = sourceBetween('async function submitAiActionProposal(api,token,action)', 'function startVoiceRecognition()');
+  assert.match(code,/\/api\/ai\/actions\/propose/);
+  assert.match(code,/addEventListener\('click'/);
+  assert.match(code,/\/api\/ai\/actions\//);
+  assert.match(code,/\/confirm/);
+  assert.match(code,/confirmationText:data\.confirmationText/);
+  assert.match(code,/pendingBookings:/);
+  assert.match(code,/pendingPayments:/);
+  assert.match(code,/केवल ऊपर दिए pending IDs का उपयोग करें/);
+  assert.match(code,/Dispatch, Return, Stock/);
+  assert.match(code,/card\.append\(detail,button\)/);
+});
