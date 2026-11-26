@@ -134,3 +134,13 @@ Main पर मिले root causes:
 - The production project's visible environment-variable names (values not decrypted/read) are `FIREBASE_DATABASE_URL`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_PROJECT_ID`, `AI_API_KEY`, and `ADMIN_API_TOKEN`. No WhatsApp, OTP-HMAC, or `PUBLIC_ORIGIN` variable names appeared in the returned production list. The actual application requirements cannot be confirmed until the production repo is accessible.
 - Production build warnings: open-ended Node engine `>=20` and unsupported npm `cache-dir` configuration. Latest production build itself succeeded.
 - A 30-minute production runtime-log query returned no matching error/warning entries; this is not proof of zero runtime errors, especially on the Hobby retention tier.
+
+
+## Verification refresh — 26 नवंबर 2026, 02:50 UTC
+
+- PR #3 की वर्तमान head commit `e66a1ede7017bd27751b4a6da45156c1b65807e1` है; पुरानी रिपोर्ट में दिया गया PR head SHA अब ऐतिहासिक है।
+- इसी head पर GitHub Actions run `45690822299` (run #611) सफल हुआ: backend syntax check, business regression tests, package/manifest JSON validation — सभी पास; PR विवरण में दर्ज test suite परिणाम 92/92 PASS है।
+- PR #2 की वर्तमान head commit `e182d3b02398b4d249fb43f139a2ff30808ad3a6` पर push run `45744643609` (run #615) सफल हुआ। इसमें backend syntax, business regression suite और package/manifest JSON checks पास हुए।
+- PR #2 में AI provider को भेजे जाने वाले business context को raw booking/stock/expense/vendor/payment records से बदलकर केवल aggregate record counts किया गया। Regression test इस बात की जाँच करता है कि customer identifiers और payment details AI request में serialize न हों।
+- PR #2 अभी पुरानी audit branch को base करता है; PR #3 audit-preview repository का है। इनमें से कोई भी production deployment या production merge नहीं है।
+- Repository rename/name change को audit, production repository access, credentials rotation और live acceptance checks पूरा होने तक स्थगित रखा गया है।
