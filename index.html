@@ -757,6 +757,21 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 <div class="content-body">
                     <!-- Dashboard -->
                     <div id="dashboard" class="page-section active">
+                        <section class="rk-admin-kpi-grid" aria-label="मुख्य कारोबार सारांश">
+                          <article class="rk-admin-kpi" data-tone="gold"><span class="rk-admin-kpi-icon"><i class="fa-solid fa-calendar-check"></i></span><span class="rk-admin-kpi-copy"><small>कुल बुकिंग</small><strong id="rkKpiBookings">0</strong></span></article>
+                          <article class="rk-admin-kpi" data-tone="purple"><span class="rk-admin-kpi-icon"><i class="fa-solid fa-hourglass-half"></i></span><span class="rk-admin-kpi-copy"><small>पेंडिंग बुकिंग</small><strong id="rkKpiPending">0</strong></span></article>
+                          <article class="rk-admin-kpi" data-tone="blue"><span class="rk-admin-kpi-icon"><i class="fa-solid fa-truck-fast"></i></span><span class="rk-admin-kpi-copy"><small>डिस्पैच एंट्री</small><strong id="rkKpiDispatch">0</strong></span></article>
+                          <article class="rk-admin-kpi" data-tone="green"><span class="rk-admin-kpi-icon"><i class="fa-solid fa-rotate-left"></i></span><span class="rk-admin-kpi-copy"><small>रिटर्न बुकिंग</small><strong id="rkKpiReturns">0</strong></span></article>
+                          <article class="rk-admin-kpi" data-tone="cyan"><span class="rk-admin-kpi-icon"><i class="fa-solid fa-boxes-stacked"></i></span><span class="rk-admin-kpi-copy"><small>उपलब्ध स्टॉक यूनिट</small><strong id="rkKpiStock">0</strong></span></article>
+                          <article class="rk-admin-kpi" data-tone="rose"><span class="rk-admin-kpi-icon"><i class="fa-solid fa-warehouse"></i></span><span class="rk-admin-kpi-copy"><small>वेंडर स्टॉक आइटम</small><strong id="rkKpiVendor">0</strong></span></article>
+                        </section>
+                        <section class="rk-admin-quick-actions" aria-label="त्वरित कार्य">
+                          <span class="rk-admin-quick-label">त्वरित कार्य</span>
+                          <button type="button" class="rk-admin-quick-action" onclick="rkQuickNav('booking-list')"><i class="fa-solid fa-calendar-plus"></i> नई बुकिंग देखें</button>
+                          <button type="button" class="rk-admin-quick-action" onclick="rkQuickNav('dispatch')"><i class="fa-solid fa-truck"></i> डिस्पैच</button>
+                          <button type="button" class="rk-admin-quick-action" onclick="rkQuickNav('return')"><i class="fa-solid fa-rotate-left"></i> रिटर्न</button>
+                          <button type="button" class="rk-admin-quick-action" onclick="rkQuickNav('stock')"><i class="fa-solid fa-boxes-stacked"></i> स्टॉक</button>
+                        </section>
                         <div class="glass-card-green" style="margin-bottom: 12px;">
                             <h3 style="color:var(--emerald-neon); font-size:15px; margin-bottom:8px;"><i class="fa-solid fa-chart-line"></i> आमदनी व खर्च का सारांश</h3>
                             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -1917,6 +1932,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         function switchTab(tabId, element) {
             closeAppMenu();
+            if(tabId==='dashboard' && typeof renderRoyalDashboardMetrics==='function') renderRoyalDashboardMetrics();
             // Hard-hide every page before showing the selected page. This prevents
             // dashboard-only widgets (including the low-stock/vendor-order table)
             // from remaining visible after navigation due to stale CSS state.
@@ -2577,6 +2593,25 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             loadAllFirebaseData();
             showActionMessage(type==='Income'?'आमदनी दर्ज हुई':'खर्च दर्ज हुआ', 'success');
         }
+
+        function renderRoyalDashboardMetrics() {
+            const bookings=safeGetStorage('softwareBookings',[]);
+            const stock=safeGetStorage('realStockDatabase',[]);
+            const vendorStock=safeGetStorage('thirdPartyDatabase',[]);
+            const rows=Array.isArray(bookings)?bookings:[];
+            const adminRows=Array.isArray(stock)?stock:[];
+            const vendorRows=Array.isArray(vendorStock)?vendorStock:[];
+            const pending=rows.filter(b=>String(b.status||'').trim().toLowerCase().includes('pending')).length;
+            const dispatch=rows.reduce((n,b)=>n+(Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:0),0);
+            const returned=rows.filter(b=>Boolean(b.actualReturnDate)||String(b.status||'').toLowerCase().includes('return')||(Array.isArray(b.items)&&b.items.some(i=>Number(i.returnedQty)>0))).length;
+            const stockUnits=adminRows.reduce((n,item)=>{const q=Number(item.qty);return n+(Number.isSafeInteger(q)&&q>0?q:0);},0);
+            const values={rkKpiBookings:rows.length,rkKpiPending:pending,rkKpiDispatch:dispatch,rkKpiReturns:returned,rkKpiStock:stockUnits,rkKpiVendor:vendorRows.length};
+            Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=Number(value).toLocaleString('en-IN');});
+        }
+        window.rkQuickNav=function(tabId) {
+            const menu=Array.from(document.querySelectorAll('.menu-item')).find(el=>String(el.getAttribute('onclick')||'').includes("'" + tabId + "'"));
+            switchTab(tabId,menu||null);
+        };
 
         function renderDashboardLineGraph() {
             const canvas = document.getElementById('dashboardLineGraph');
@@ -3330,6 +3365,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         window.onload = function() {
             // Local-first admin data; public customers load the safe stock catalog from the backend.
             loadAllFirebaseData();
+            renderRoyalDashboardMetrics();
             refreshPublicCustomerStock();
             clearBusinessDocument();
         };
