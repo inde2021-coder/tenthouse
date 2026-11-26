@@ -11,6 +11,8 @@ test('Firebase sync, pending queue, and initial sync sanitize software settings'
   assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)\); delete q\[cloudKey\]/);
   assert.match(html,/Firebase secret cleanup failed/);
   assert.match(html,/existingLocal\[secretKey\]/);
+  assert.match(html,/JSON\.stringify\(cloudSafeSettings\) !== JSON\.stringify\(cloudData\[cloudKey\]\)/);
+  assert.match(html,/dbRef\.child\(cloudKey\)\.set\(cloudSafeSettings\)/);
 });
 
 const test = require('node:test');
