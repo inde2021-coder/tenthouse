@@ -482,7 +482,7 @@ test('customer and admin royal theme assets are served from the production stati
   const html = await request('/');
   assert.equal(html.status, 200);
   const markup = await html.text();
-  assert.match(markup, /rk-reference-theme\.css\?v=4/);
+  assert.match(markup, /rk-reference-theme\.css\?v=5/);
   assert.match(markup, /applyRkDesign/);
   assert.match(markup, /rkDesignPreset/);
 
