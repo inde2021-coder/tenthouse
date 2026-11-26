@@ -1633,6 +1633,18 @@ test('Design Manager exposes all six reference-collage themes without touching E
 });
 
 
+
+test('quantity-based item rent uses Single Rent for 1-2 pieces and Set/Bulk Rent for 3+ pieces', () => {
+  assert.match(html,/function getItemRentRate\(stock, quantity\)/);
+  assert.match(html,/qty>=3 && bulk>0 \? bulk : \(single>0 \? single : bulk\)/);
+  assert.match(html,/getItemRentRate\(stock,qty\)/);
+  assert.match(html,/rateMode:qty>=3\?'set':'single'/);
+  assert.match(html,/getItemRentRate\(row,qty\)/);
+  assert.match(html,/getItemRentRate\(row,items\[itemIndex\]\.qty\)/);
+  assert.match(html,/वेंडर \?Number\(row\.customerRent/);
+});
+
+
 test('customer booking tracker looks up status through the mobile-verified public backend endpoint', () => {
   for (const id of ['rkTrackBookingId','rkTrackMobile','rkBookingTrackResult']) {
     assert.ok(html.includes('id="'+id+'"'));
