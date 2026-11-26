@@ -1615,7 +1615,7 @@ test('customer booking tracker looks up status through the mobile-verified publi
   assert.match(tracker,/escapeHtml\(b\.id\)/);
   assert.match(tracker,/escapeHtml\(item\.name/);
   assert.match(tracker,/cache:'no-store'/);
-  assert.match(tracker,/Array\.isArray\(b\.dispatchEntries\)/);
-  assert.match(tracker,/Array\.isArray\(b\.returnEntries\)/);
+  assert.match(tracker,/b\.dispatchEntryCount/);
+  assert.match(tracker,/b\.returnEntryCount/);
   assert.match(fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8'),/rk-booking-tracker/);
 });
