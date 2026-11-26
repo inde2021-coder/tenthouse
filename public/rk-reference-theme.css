@@ -1,0 +1,437 @@
+/* Radhe Krishn Bartan Rental — reference-matched royal UI layer.
+   Presentation only: existing ERP DOM, IDs, handlers, Firebase and business rules stay intact. */
+:root{
+ --rk-ink:#050916;--rk-navy:#07152f;--rk-blue:#0758d8;--rk-blue2:#123f9e;
+ --rk-gold:#ffd34f;--rk-gold2:#f5a900;--rk-purple:#7124cf;--rk-green:#08bd54;
+ --rk-glass:rgba(7,18,43,.92);--rk-edge:rgba(83,151,255,.72);
+ --rk-glow:0 0 0 1px rgba(44,126,255,.32),0 12px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.13);
+}
+html,body{background:#030817!important;color:#f4f7ff!important}
+body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),linear-gradient(145deg,#020611,#07152d 54%,#020611)!important}
+#customerFirstPortal,#adminPanel{background:transparent!important;color:#f4f7ff!important}
+.customer-scroll-wrap{max-width:1500px!important;padding:10px clamp(10px,2vw,28px)!important;gap:12px!important}
+#customerFirstPortal .rk-customer-brand{order:0!important;min-height:66px!important;padding:10px 18px!important;border-radius:15px!important;display:flex!important;gap:12px!important;align-items:center!important;background:linear-gradient(100deg,#07132b 0%,#102d61 48%,#090e22 100%)!important;border:1px solid #2368d0!important;box-shadow:var(--rk-glow)!important}
+#customerFirstPortal .rk-customer-brand-mark{width:44px!important;height:44px!important;flex-basis:44px!important;border-radius:12px!important;background:linear-gradient(145deg,#ffe17b,#bd7900 62%,#6d3a00)!important;color:#10172b!important;font-size:20px!important}
+#customerFirstPortal .rk-customer-eyebrow{color:#ffdb62!important;letter-spacing:.12em!important}
+#customerFirstPortal .rk-customer-brand h1{font-family:Georgia,serif!important;color:#ffdf63!important;font-size:clamp(19px,2.3vw,29px)!important;letter-spacing:0!important;text-shadow:0 2px 10px #000}
+#customerFirstPortal .rk-customer-subtitle{color:#e5edff!important;font-size:10px!important}
+#customerFirstPortal .rk-customer-brand-seal{background:linear-gradient(135deg,#173b80,#09142b)!important;border:1px solid #4789ff!important;color:#fff!important}
+#customerFirstPortal .rk-customer-hero{order:1!important;display:grid!important;grid-template-columns:1.08fr .92fr!important;align-items:center!important;min-height:clamp(220px,24vw,330px)!important;max-width:1500px!important;margin:0!important;padding:clamp(20px,3vw,42px)!important;border-radius:17px!important;border:1px solid #2878ef!important;background:linear-gradient(90deg,rgba(3,9,25,.98) 0%,rgba(4,16,43,.92) 42%,rgba(5,12,29,.24) 100%),url('./bartan-hero.svg') center right/cover no-repeat!important;box-shadow:0 16px 42px #0009,inset 0 1px #ffffff24!important}
+#customerFirstPortal .rk-hero-copy{max-width:620px!important}
+#customerFirstPortal .rk-hero-kicker{background:linear-gradient(90deg,#133d8e,#101c40)!important;border:1px solid #3984ff!important;color:#ffe078!important;border-radius:7px!important}
+#customerFirstPortal .rk-hero-eyebrow{color:#ffcf42!important;margin:14px 0 6px!important}
+#customerFirstPortal .rk-hero-copy h2{font-family:Georgia,serif!important;font-size:clamp(30px,4vw,52px)!important;line-height:1.04!important;text-shadow:0 3px 14px #000!important}
+#customerFirstPortal .rk-hero-copy h2 em{color:#ffd84d!important}
+#customerFirstPortal .rk-hero-description{color:#f0f3ff!important;line-height:1.55!important;max-width:490px!important}
+#customerFirstPortal .rk-hero-cta{background:linear-gradient(180deg,#ffe783,#e9a900)!important;color:#151a2b!important;border:1px solid #fff0a6!important;border-radius:9px!important;min-height:40px!important}
+#customerFirstPortal .rk-hero-trust{color:#fff!important}
+#customerFirstPortal .rk-hero-trust i{color:#ffd84d!important}
+#customerFirstPortal .rk-hero-art{min-height:180px!important}
+#customerFirstPortal .rk-hero-image{width:min(100%,440px)!important;border:2px solid #f5c75c!important;border-radius:12px!important;transform:none!important;box-shadow:0 15px 38px #000b,0 0 24px #ffcf5838!important}
+#customerFirstPortal .rk-hero-orbit,#customerFirstPortal .rk-hero-float{display:none!important}
+#customerFirstPortal .rk-hero-bottomline{bottom:8px!important;color:#ffdf73!important;letter-spacing:1px!important}
+#customerFirstPortal .rk-customer-shell{order:2!important;max-width:1500px!important;width:100%!important;margin:0!important}
+#customerFirstPortal .rk-customer-form{display:grid!important;grid-template-columns:minmax(0,1.12fr) minmax(280px,.88fr)!important;grid-template-areas:"identity payment" "event payment" "items payment" "submit submit"!important;gap:10px!important;align-items:stretch!important}
+#customerFirstPortal .rk-customer-identity{grid-area:identity!important}
+#customerFirstPortal .rk-customer-event{grid-area:event!important}
+#customerFirstPortal .rk-customer-items{grid-area:items!important}
+#customerFirstPortal .rk-customer-payment{grid-area:payment!important}
+#customerFirstPortal .rk-customer-submit{grid-area:submit!important}
+#customerFirstPortal .rk-customer-section{padding:14px 16px!important;border-radius:12px!important;border:1px solid #176ce4!important;background:linear-gradient(145deg,rgba(9,28,67,.98),rgba(5,13,34,.98))!important;box-shadow:0 8px 24px #0008,inset 0 1px #ffffff1a!important}
+#customerFirstPortal .rk-customer-section-title,#customerFirstPortal .rk-customer-identity>div:first-child{color:#ffdc57!important;border-bottom:1px solid #2a5a9b!important;padding-bottom:9px!important;margin-bottom:11px!important}
+#customerFirstPortal .rk-customer-section-title i{color:#5da4ff!important}
+#customerFirstPortal label{color:#d7e6ff!important;font-size:11px!important}
+#customerFirstPortal input:not([type=checkbox]):not([type=radio]),#customerFirstPortal select,#customerFirstPortal textarea{background:linear-gradient(180deg,#f5f8ff,#dce8ff)!important;color:#12234a!important;border:1px solid #7da9e8!important;border-radius:7px!important;min-height:37px!important;padding:8px 10px!important;box-shadow:inset 0 2px 4px #183c6b20,0 2px 5px #0005!important;font-weight:700!important}
+#customerFirstPortal input::placeholder,#customerFirstPortal textarea::placeholder{color:#637795!important}
+#customerFirstPortal .form-grid{gap:8px 10px!important}
+#customerFirstPortal .rk-customer-section button{border-radius:8px!important;min-height:36px!important}
+#customerFirstPortal .rk-customer-payment #onlinePaymentSection{background:linear-gradient(145deg,#07152f,#030916)!important;border:1px solid #2d74df!important;border-radius:12px!important}
+#customerFirstPortal .rk-customer-payment canvas{background:#fff!important;padding:8px!important;border:4px solid #fff!important}
+#customerFirstPortal .rk-customer-submit{min-height:46px!important;border-radius:9px!important;background:linear-gradient(180deg,#17dc68,#00963b)!important;color:#fff!important;border:1px solid #7bffad!important;font-weight:900!important;box-shadow:0 7px 20px #00a74755,inset 0 1px #ffffff77!important}
+#customerFirstPortal .rk-developer-footer{order:3!important;background:#060d20!important;border:1px solid #234c8a!important;color:#b8c8e8!important;border-radius:10px!important;padding:10px!important}
+#customerFirstPortal .rk-dev-title,#customerFirstPortal .rk-dev-name{color:#ffdb61!important}
+#customerFirstPortal .rk-dev-byline,#customerFirstPortal .rk-dev-rights{color:#b8c8e8!important}
+#customerFirstPortal .rk-dev-contact a{border-color:#356ec2!important;color:#fff!important}
+#adminPanel{background:radial-gradient(ellipse at 45% 0%,#102c5a,transparent 50%),#030817!important}
+#adminPanel .admin-container{background:transparent!important}
+#adminPanel .sidebar{background:linear-gradient(180deg,#07152f,#030916)!important;border-right:1px solid #205ab0!important;box-shadow:10px 0 28px #0008!important}
+#adminPanel .sidebar-brand{background:linear-gradient(110deg,#102e67,#07152f)!important;border:1px solid #3278e9!important;color:#ffdc5a!important;border-radius:10px!important;box-shadow:0 7px 20px #0008!important}
+#adminPanel .menu-item{background:linear-gradient(110deg,#0d1e3d,#081329)!important;border:1px solid #183b70!important;color:#d8e6ff!important;border-radius:8px!important;margin-bottom:5px!important}
+#adminPanel .menu-item i{color:#ffcf42!important}
+#adminPanel .menu-item.active{background:linear-gradient(110deg,#1266dc,#163d91)!important;border-color:#79b5ff!important;color:#fff!important;box-shadow:inset 0 1px #ffffff55,0 5px 14px #0008!important}
+#adminPanel .header{background:linear-gradient(90deg,#08152e,#102d61,#071329)!important;border-bottom:1px solid #2368c9!important;min-height:58px!important}
+#adminPanel #pageTitle{color:#ffdc57!important;font-family:Georgia,serif!important}
+#adminPanel #menuToggleBtn{background:linear-gradient(180deg,#2678f2,#0a3d9c)!important;border:1px solid #8bc0ff!important;color:#fff!important}
+#adminPanel .content-body{background:transparent!important;padding:14px!important}
+#adminPanel .page-section>h2,#adminPanel .page-section>h3{color:#ffdc57!important;font-family:Georgia,serif!important}
+#adminPanel .glass-card-blue,#adminPanel .glass-card-purple,#adminPanel .glass-card-green,#adminPanel .welcome-card,#adminPanel .stat-card,#adminPanel .dashboard-card,#adminPanel .settings-section{background:linear-gradient(145deg,rgba(9,28,66,.97),rgba(4,12,30,.98))!important;border:1px solid #1c65ce!important;border-radius:12px!important;box-shadow:0 10px 28px #0008,inset 0 1px #ffffff18!important;color:#edf4ff!important}
+#adminPanel .glass-card-green h3,#adminPanel .glass-card-blue h3,#adminPanel .glass-card-purple h3{color:#ffda58!important}
+#adminPanel label,#adminPanel small{color:#c1d4f2!important}
+#adminPanel input:not([type=checkbox]):not([type=radio]),#adminPanel select,#adminPanel textarea{background:linear-gradient(180deg,#f5f8ff,#dce8ff)!important;color:#10234b!important;border:1px solid #78a7e9!important;border-radius:7px!important;box-shadow:inset 0 2px 4px #17345a22!important;min-height:38px!important}
+#adminPanel input::placeholder,#adminPanel textarea::placeholder{color:#637795!important}
+#adminPanel button:not(.menu-item):not(#menuToggleBtn),#customerFirstPortal button:not(.rk-hero-cta){border-radius:8px!important;box-shadow:0 5px 12px #0007,inset 0 1px #ffffff55!important}
+#adminPanel .glass-btn-blue,#adminPanel button.glass-btn-blue{background:linear-gradient(180deg,#368dff,#0750bd)!important;color:#fff!important;border:1px solid #8cc3ff!important}
+#adminPanel .glass-btn-green{background:linear-gradient(180deg,#19d96b,#008c3c)!important;color:#fff!important;border:1px solid #7affaa!important}
+#adminPanel .glass-btn-cyan{background:linear-gradient(180deg,#a65cff,#5b1cb9)!important;color:#fff!important;border:1px solid #d2a8ff!important}
+#adminPanel .action-btn{background:linear-gradient(180deg,#1d3c70,#0a1a37)!important;color:#f6d86a!important;border:1px solid #386ab0!important}
+#adminPanel .table-responsive{background:#030a19!important;border:1px solid #1e5db7!important;border-radius:10px!important;box-shadow:inset 0 2px 12px #0009!important}
+#adminPanel table thead th,#customerFirstPortal table thead th{background:linear-gradient(180deg,#174c9b,#0b2860)!important;color:#ffe16b!important;border-bottom:1px solid #4c91f1!important}
+#adminPanel table tbody td,#customerFirstPortal table tbody td{background:rgba(5,16,39,.94)!important;color:#e5eeff!important;border-bottom:1px solid #173966!important}
+#adminPanel table tbody tr:nth-child(even) td{background:rgba(13,32,68,.96)!important}
+#adminPanel .rk-payment-total-card span{color:#10234b!important}
+#adminPanel .rk-payment-total-card h3{color:#10234b!important}
+#adminPanel #dashboard:before{content:"RADHE KRISHN  •  BARTAN TENT HOUSE  |  PREMIUM RENTAL ERP";display:flex;align-items:flex-end;min-height:clamp(110px,15vw,190px);padding:18px 22px;margin:0 0 12px;border:1px solid #3278e9;border-radius:13px;background:linear-gradient(90deg,#030916 0%,rgba(4,15,39,.96) 34%,rgba(4,15,39,.25) 100%),url('./bartan-hero.svg') center right/cover no-repeat;color:#ffe06b;font:800 clamp(16px,2vw,25px) Georgia,serif;letter-spacing:.04em;text-shadow:0 2px 10px #000;box-shadow:0 12px 30px #0008,inset 0 1px #ffffff33}
+#adminPanel #rkDigitalClock{background:linear-gradient(130deg,#0b2a61,#07152f)!important;border:1px solid #2e75db!important;color:#fff!important}
+#adminPanel #rkClockDate{color:#ffda57!important}
+#adminPanel .calendar-grid-header{background:linear-gradient(120deg,#0a2860,#09152d)!important;border-color:#2368c9!important}
+#adminPanel .calendar-grid-header h3{color:#ffdc57!important}
+#adminPanel .calendar-weekdays{background:#102b58!important}
+#adminPanel .calendar-weekdays>*{color:#ffdc57!important}
+#adminPanel .calendar-days-grid{background:#06132c!important;border-color:#1f5db2!important}
+#adminPanel .calendar-day-cell{background:#0c1d3c!important;border-color:#234a83!important}
+#adminPanel .calendar-day-number{color:#f3f7ff!important}
+#adminPanel .settings-section summary{color:#ffdc57!important}
+@media(max-width:720px){
+ #customerFirstPortal .rk-customer-hero{grid-template-columns:1fr!important;min-height:0!important;padding:20px 17px 38px!important}
+ #customerFirstPortal .rk-hero-art{display:none!important}
+ #customerFirstPortal .rk-customer-form{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"identity" "event" "items" "payment" "submit"!important}
+ #customerFirstPortal .rk-customer-brand-seal{display:none!important}
+ #adminPanel .content-body{padding:9px!important}
+ #adminPanel #dashboard:before{min-height:110px;padding:13px;font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){#adminPanel *,#customerFirstPortal *{animation:none!important;transition:none!important}}
+@media print{#adminPanel,#customerFirstPortal{background:#fff!important}#printableSlipArea,#printableSlipArea *{color:#111!important}}
+
+/* Reference alignment refinement: keep the supplied event artwork visible.
+   The original customer-hero.svg is already part of the app and remains the hero image. */
+#customerFirstPortal .rk-customer-hero{
+ grid-template-columns:minmax(0,1.04fr) minmax(260px,.96fr)!important;
+ min-height:clamp(260px,27vw,350px)!important;
+ background:linear-gradient(100deg,rgba(3,9,25,.97) 0%,rgba(4,16,43,.82) 48%,rgba(5,12,29,.16) 100%),url('./bartan-hero.svg') center/cover no-repeat!important;
+}
+#customerFirstPortal .rk-hero-art{
+ display:grid!important;min-height:210px!important;align-content:center!important;
+}
+#customerFirstPortal .rk-hero-image{
+ display:block!important;width:min(100%,480px)!important;max-height:225px!important;
+ aspect-ratio:480/194!important;object-fit:cover!important;opacity:1!important;
+}
+#customerFirstPortal .rk-hero-orbit{display:block!important;opacity:.38!important}
+#customerFirstPortal .rk-hero-float{display:flex!important}
+#customerFirstPortal .rk-customer-brand{
+ order:0!important;min-height:72px!important;padding:10px 18px!important;
+ border-radius:14px!important;gap:14px!important;
+ background:linear-gradient(100deg,#06132c,#102e64 52%,#06132c)!important;
+ border:1px solid #2874e8!important;
+}
+#customerFirstPortal .rk-customer-brand-mark{width:48px!important;height:48px!important;flex-basis:48px!important}
+#customerFirstPortal .rk-customer-brand h1{font-size:clamp(20px,2.6vw,32px)!important}
+#customerFirstPortal .rk-customer-brand-seal{display:flex!important}
+#customerFirstPortal .rk-customer-shell{max-width:1500px!important}
+#customerFirstPortal .rk-customer-form{
+ grid-template-columns:minmax(0,1.1fr) minmax(290px,.9fr)!important;
+ grid-template-areas:"identity payment" "event payment" "items payment" "submit submit"!important;
+ gap:10px!important;
+}
+#customerFirstPortal .rk-customer-identity{grid-area:identity!important}
+#customerFirstPortal .rk-customer-event{grid-area:event!important}
+#customerFirstPortal .rk-customer-items{grid-area:items!important}
+#customerFirstPortal .rk-customer-payment{grid-area:payment!important}
+#customerFirstPortal .rk-customer-submit{grid-area:submit!important}
+#customerFirstPortal .rk-customer-section{
+ border-radius:12px!important;padding:14px 16px!important;
+ background:linear-gradient(145deg,#0b2453,#06132e)!important;
+ border:1px solid #236bd2!important;
+}
+#customerFirstPortal .rk-customer-section-title,
+#customerFirstPortal .rk-customer-identity>div:first-child{
+ color:#ffe06a!important;border-bottom:1px solid #2b5c9f!important;
+}
+#customerFirstPortal .rk-customer-section input:not([type=checkbox]):not([type=radio]),
+#customerFirstPortal .rk-customer-section select,
+#customerFirstPortal .rk-customer-section textarea{
+ background:linear-gradient(180deg,#f7f9ff,#dce8ff)!important;
+ color:#10234b!important;border:1px solid #82afea!important;
+ border-radius:8px!important;min-height:40px!important;
+}
+#customerFirstPortal .rk-customer-submit{
+ background:linear-gradient(180deg,#ffe77e,#efa900)!important;
+ color:#171a27!important;border:1px solid #fff0a8!important;
+}
+#customerFirstPortal .rk-customer-payment #onlinePaymentSection{
+ background:linear-gradient(145deg,#06142e,#030916)!important;
+ border:1px solid #347ce4!important;
+}
+@media(max-width:720px){
+ #customerFirstPortal .rk-customer-hero{grid-template-columns:1fr!important;min-height:0!important}
+ #customerFirstPortal .rk-hero-art{min-height:120px!important}
+ #customerFirstPortal .rk-hero-image{max-height:135px!important;width:min(100%,340px)!important}
+ #customerFirstPortal .rk-customer-brand-seal{display:none!important}
+ #customerFirstPortal .rk-customer-form{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-areas:"identity" "event" "items" "payment" "submit"!important;
+ }
+}
+
+/* Admin-selectable visual presets; presentation-only and isolated from ERP data. */
+.rk-design-manager{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:14px;border:1px solid #3278d5;border-radius:14px;background:linear-gradient(135deg,#071a3a,#102d60);color:#f4f7ff}
+.rk-design-manager>div:first-child{display:grid;gap:4px}.rk-design-manager strong{color:#ffe17b;font-size:14px}.rk-design-manager small{color:#c4d5f1;font-size:11px}
+.rk-design-options{display:flex;gap:8px;flex-wrap:wrap}
+.rk-design-choice{display:inline-flex;align-items:center;gap:7px!important;width:auto!important;padding:8px 11px!important;border:1px solid #456caa!important;border-radius:10px!important;background:#0b1b39!important;color:#fff!important;font-size:11px!important}
+.rk-design-choice.selected{border-color:#ffe17b!important;box-shadow:0 0 0 2px #ffe17b55!important}
+.rk-design-swatch{width:15px;height:15px;border-radius:50%;display:inline-block;border:1px solid #ffffff99}
+.rk-design-swatch.royal{background:linear-gradient(135deg,#0b3b8e,#e8bd46)}
+.rk-design-swatch.emerald{background:linear-gradient(135deg,#075d4d,#b7e8a1)}
+.rk-design-swatch.purple{background:linear-gradient(135deg,#4b237d,#edb5ff)}
+.rk-theme-emerald #adminPanel .sidebar,.rk-theme-emerald #adminPanel .header{background:linear-gradient(120deg,#042b28,#07594d)!important}
+.rk-theme-emerald #adminPanel .menu-item.active{background:linear-gradient(110deg,#0c8b70,#1ca987)!important}
+.rk-theme-emerald #adminPanel .glass-card-blue,.rk-theme-emerald #adminPanel .glass-card-purple,.rk-theme-emerald #adminPanel .glass-card-green,.rk-theme-emerald #customerFirstPortal .rk-customer-section{border-color:#269b7d!important}
+.rk-theme-emerald #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#042b28,#07594d)!important;border-color:#269b7d!important}
+.rk-theme-emerald #customerFirstPortal .rk-customer-hero{background-color:#042b28!important}
+.rk-theme-purple #adminPanel .sidebar,.rk-theme-purple #adminPanel .header{background:linear-gradient(120deg,#1c1035,#492477)!important}
+.rk-theme-purple #adminPanel .menu-item.active{background:linear-gradient(110deg,#7440a7,#a36ad1)!important}
+.rk-theme-purple #adminPanel .glass-card-blue,.rk-theme-purple #adminPanel .glass-card-purple,.rk-theme-purple #adminPanel .glass-card-green,.rk-theme-purple #customerFirstPortal .rk-customer-section{border-color:#9b6ac7!important}
+.rk-theme-purple #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#1c1035,#492477)!important;border-color:#9b6ac7!important}
+.rk-theme-purple #customerFirstPortal .rk-customer-hero{background-color:#1c1035!important}
+
+
+/* Additional exact adminpanelimeage reference layer ported from the verified preview branch. */
+/* Matching adminpanelimeage print language: white paper, navy rules and restrained gold accents. */
+@media print {
+  #printableSlipArea .rk-slip, #printableSlipArea .rk-slip table { color:#172033!important; font-family:Arial,"Noto Sans Devanagari",sans-serif!important; }
+  #printableSlipArea .rk-slip header, #printableSlipArea .rk-slip>div:first-child { border-color:#b88935!important; }
+  #printableSlipArea .rk-slip h2 { color:#173b63!important; letter-spacing:.02em; }
+  #printableSlipArea .rk-slip h3 { color:#173b63!important; }
+  #printableSlipArea .rk-slip th { background:#eaf1f8!important; color:#173b63!important; border:1px solid #b88935!important; }
+  #printableSlipArea .rk-slip td { border:1px solid #9aa9b9!important; color:#172033!important; }
+}
+
+/* ADMINPANELIMEAGE — visual reference implementation: preserve existing data/actions. */
+#adminPanel{background:#050c18!important;color:#edf5ff!important}
+#adminPanel .admin-container{background:#050c18!important}
+#adminPanel .sidebar{background:linear-gradient(180deg,#061225 0%,#091a31 55%,#061225 100%)!important;border-right:1px solid rgba(43,147,255,.55)!important;box-shadow:8px 0 32px rgba(0,91,190,.16)!important}
+#adminPanel .sidebar-brand{position:relative!important;min-height:132px!important;justify-content:center!important;align-items:center!important;text-align:center!important;padding:18px 12px!important;margin:2px 4px 16px!important;border:1px solid rgba(65,161,255,.65)!important;border-radius:16px!important;background:radial-gradient(ellipse at 50% 0%,rgba(22,121,255,.28),transparent 65%),linear-gradient(145deg,#102b4c,#071426)!important;color:#ffd978!important;box-shadow:0 0 22px rgba(0,113,255,.2),inset 0 1px 0 rgba(255,255,255,.13)!important}
+#adminPanel .sidebar-brand:before{content:"🪶";display:block;font-size:30px;line-height:1.1;margin-bottom:8px;filter:drop-shadow(0 0 8px rgba(255,199,78,.5))}
+#adminPanel .sidebar-brand #overlayShopName{font-size:18px!important;line-height:1.25!important;font-weight:900!important;color:#ffdc83!important;text-shadow:0 0 12px rgba(255,183,62,.22)}
+#adminPanel .menu-item{background:rgba(13,34,59,.92)!important;border:1px solid rgba(70,130,190,.22)!important;color:#d7e8fc!important;border-radius:11px!important;min-height:43px!important}
+#adminPanel .menu-item i{width:20px;text-align:center;color:#70cfff!important;font-size:15px!important}
+#adminPanel .menu-item.active{background:linear-gradient(100deg,#a86b12,#f3c75b 52%,#a76a12)!important;color:#101a29!important;border:1px solid #ffe39a!important;box-shadow:0 0 18px rgba(255,190,63,.38),inset 0 1px 0 rgba(255,255,255,.6)!important}
+#adminPanel .menu-item.active i{color:#14243a!important}
+#adminPanel .main-content{background:#06101e!important}
+#adminPanel .header{background:linear-gradient(90deg,#071426,#0d2037 70%,#071426)!important;border-bottom:1px solid rgba(44,145,255,.45)!important;box-shadow:0 5px 22px rgba(0,0,0,.24)!important}
+#adminPanel #pageTitle{color:#f2f7ff!important;font-size:17px!important;font-weight:850!important}
+#adminPanel .content-body{background:radial-gradient(ellipse at 70% 0%,rgba(12,73,133,.16),transparent 40%),#06101e!important;padding:20px 22px 36px!important}
+#adminpanelimeage-hero{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:170px;margin:0 0 18px;padding:25px 30px;overflow:hidden;border:1px solid rgba(69,164,255,.72);border-radius:19px;background:radial-gradient(ellipse at 10% 50%,rgba(27,113,220,.28),transparent 40%),radial-gradient(ellipse at 95% 0%,rgba(255,186,64,.18),transparent 35%),linear-gradient(112deg,#07172d 0%,#102b4d 50%,#071426 100%);box-shadow:0 12px 30px rgba(0,0,0,.32),0 0 22px rgba(0,114,255,.13),inset 0 1px 0 rgba(255,255,255,.13)}
+#adminpanelimeage-hero:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(74,163,255,.09) 58%,transparent 72%);pointer-events:none}
+#adminpanelimeage-hero:after{content:"";position:absolute;z-index:-1;right:19%;top:-125px;width:280px;height:280px;border:1px solid rgba(255,205,111,.18);border-radius:50%;box-shadow:0 0 0 22px rgba(255,205,111,.035),0 0 0 48px rgba(255,205,111,.025),0 0 45px rgba(0,136,255,.15)}
+.rk-admin-hero-copy{min-width:0;position:relative;z-index:1}
+.rk-admin-hero-kicker{display:block;margin-bottom:9px;color:#80d9f4;font-size:9px;font-weight:900;letter-spacing:.22em}
+.rk-admin-hero-copy h1{margin:0!important;color:#ffda8a!important;font-family:'Great Vibes','Plus Jakarta Sans',cursive!important;font-size:clamp(29px,4vw,47px)!important;line-height:1.15!important;font-weight:800!important;text-shadow:0 2px 16px rgba(255,183,61,.2)!important}
+.rk-admin-hero-copy p{margin:7px 0 0!important;color:#edf4ff!important;font-size:clamp(12px,1.5vw,17px)!important;font-weight:650!important;letter-spacing:.025em}
+.rk-admin-hero-art{display:flex;align-items:center;justify-content:center;gap:clamp(2px,1.2vw,14px);flex:0 0 auto;min-width:32%;padding:12px 15px;border:1px solid rgba(255,206,119,.22);border-radius:16px;background:linear-gradient(145deg,rgba(3,10,19,.58),rgba(14,35,58,.7));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.2)}
+.rk-admin-hero-art span{font-size:clamp(25px,3vw,43px);filter:drop-shadow(0 5px 7px rgba(0,0,0,.55))}
+#adminPanel .glass-card-green,#adminPanel .glass-card-blue,#adminPanel .glass-card-purple{background:linear-gradient(145deg,#102641,#09182b)!important;border:1px solid rgba(68,145,218,.42)!important;box-shadow:0 9px 25px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.07)!important}
+#adminPanel .glass-card-green h3,#adminPanel .glass-card-blue h3,#adminPanel .glass-card-purple h3{color:#eaf4ff!important}
+#adminPanel .table-responsive{background:#071526!important;border:1px solid rgba(67,137,203,.42)!important;box-shadow:0 8px 24px rgba(0,0,0,.2)!important}
+#adminPanel .table-responsive th{background:#183554!important;color:#e8f4ff!important;border-bottom:1px solid #42678e!important}
+#adminPanel .table-responsive td{background:#0b1c30!important;color:#dceafa!important;border-bottom:1px solid rgba(77,121,165,.2)!important}
+#adminPanel .table-responsive tr:nth-child(even) td{background:#10243b!important}
+#adminPanel button:not(.menu-item):not(#menuToggleBtn){border-radius:10px!important;box-shadow:0 5px 14px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.18)!important}
+@media(max-width:700px){
+ #adminPanel .content-body{padding:12px 11px 26px!important}
+ #adminpanelimeage-hero{min-height:128px;padding:17px 15px;margin-bottom:13px;border-radius:15px}
+ .rk-admin-hero-kicker{font-size:8px;letter-spacing:.13em}
+ .rk-admin-hero-copy h1{font-size:clamp(24px,7vw,34px)!important}
+ .rk-admin-hero-copy p{font-size:11px!important;max-width:220px}
+ .rk-admin-hero-art{min-width:0;gap:2px;padding:8px 6px;flex-direction:column}
+ .rk-admin-hero-art span{font-size:20px}
+}
+@media(max-width:390px){#adminpanelimeage-hero{gap:8px;padding:14px 11px}.rk-admin-hero-art{padding:6px 4px}.rk-admin-hero-art span{font-size:17px}}
+
+</style>
+
+<style id="rk-final-dark-input-contrast-v1">
+/* One final field contract for every customer, admin, modal and lookup form. */
+@media screen {
+  html body #customerFirstPortal input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body #customerFirstPortal select, html body #customerFirstPortal textarea,
+  html body #adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body #adminPanel select, html body #adminPanel textarea,
+  html body #welcomeOverlay input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body #welcomeOverlay select, html body #welcomeOverlay textarea,
+  html body [role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  html body [role="dialog"] select, html body [role="dialog"] textarea {
+    appearance:none!important;color-scheme:dark!important;background:#0d1929!important;
+    background-image:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important;
+    color:#edf5ff!important;-webkit-text-fill-color:#edf5ff!important;
+    border:1px solid rgba(126,174,220,.38)!important;border-radius:11px!important;
+    box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),inset -1px -1px 3px rgba(140,184,226,.06)!important;
+    caret-color:#83d9f0!important;
+  }
+  html body #customerFirstPortal input::placeholder,html body #customerFirstPortal textarea::placeholder,
+  html body #adminPanel input::placeholder,html body #adminPanel textarea::placeholder,
+  html body #welcomeOverlay input::placeholder,html body [role="dialog"] input::placeholder,
+  html body [role="dialog"] textarea::placeholder{color:#8fa8c4!important;opacity:1!important}
+  html body #customerFirstPortal input:focus,html body #customerFirstPortal select:focus,
+  html body #customerFirstPortal textarea:focus,html body #adminPanel input:focus,
+  html body #adminPanel select:focus,html body #adminPanel textarea:focus,
+  html body #welcomeOverlay input:focus,html body [role="dialog"] input:focus,
+  html body [role="dialog"] select:focus,html body [role="dialog"] textarea:focus{
+    border-color:#62c5df!important;box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.16)!important;outline:none!important
+  }
+  html body #customerFirstPortal select option,html body #adminPanel select option,
+  html body [role="dialog"] select option{background:#101d2e!important;color:#edf5ff!important}
+  html body #customerFirstPortal input:-webkit-autofill,html body #customerFirstPortal input:-webkit-autofill:hover,
+  html body #customerFirstPortal input:-webkit-autofill:focus,html body #adminPanel input:-webkit-autofill,
+  html body #welcomeOverlay input:-webkit-autofill,html body [role="dialog"] input:-webkit-autofill{
+    -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;
+    transition:background-color 99999s ease-out 0s!important
+  }
+}
+@media print{#printableSlipArea input,#printableSlipArea select,#printableSlipArea textarea{background:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important;box-shadow:none!important}}
+
+
+/* Royal white-paper print system for slips, bills, quotations and tax invoices. */
+@media print{
+ @page{size:A4;margin:10mm}
+ #printableSlipArea{background:#fff!important;color:#17243a!important;font-family:Arial,"Noto Sans Devanagari",sans-serif!important}
+ #printableSlipArea .rk-slip{
+  box-sizing:border-box!important;width:100%!important;max-width:none!important;
+  padding:9mm!important;margin:0!important;border:1px solid #c7a34b!important;
+  border-radius:0!important;background:#fff!important;color:#17243a!important;
+  box-shadow:none!important;font-family:Arial,"Noto Sans Devanagari",sans-serif!important;
+  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important
+ }
+ #printableSlipArea .rk-slip header,
+ #printableSlipArea .rk-slip>.rk-slip-header,
+ #printableSlipArea .rk-slip>.rk-dispatch-slip,
+ #printableSlipArea .rk-slip>.rk-return-slip{
+  border-bottom:2px solid #102b55!important;padding-bottom:9px!important;
+  margin-bottom:12px!important;color:#102b55!important
+ }
+ #printableSlipArea .rk-slip h1,
+ #printableSlipArea .rk-slip h2,
+ #printableSlipArea .rk-slip h3,
+ #printableSlipArea .rk-slip h4{color:#102b55!important;font-family:Georgia,serif!important}
+ #printableSlipArea .rk-slip header:after{content:"";display:block;height:2px;margin-top:5px;background:linear-gradient(90deg,#9b7422,#f0d98a,#9b7422)!important}
+ #printableSlipArea .rk-slip p,
+ #printableSlipArea .rk-slip li,
+ #printableSlipArea .rk-slip b,
+ #printableSlipArea .rk-slip strong{color:#17243a!important}
+ #printableSlipArea .rk-slip table{width:100%!important;border-collapse:collapse!important;margin-top:10px!important}
+ #printableSlipArea .rk-slip thead{display:table-header-group}
+ #printableSlipArea .rk-slip th{
+  background:#102b55!important;color:#f7df91!important;
+  border:1px solid #b99643!important;font-weight:800!important;
+  padding:7px 6px!important;text-align:left!important
+ }
+ #printableSlipArea .rk-slip td{
+  background:#fff!important;color:#17243a!important;
+  border:1px solid #c9b16e!important;padding:7px 6px!important
+ }
+ #printableSlipArea .rk-slip tr{break-inside:avoid;page-break-inside:avoid}
+ #printableSlipArea .rk-slip img{max-width:100%!important;object-fit:contain!important}
+ #printableSlipArea .rk-slip section{border-color:#c9b16e!important;break-inside:avoid;page-break-inside:avoid}
+ #printableSlipArea .rk-slip .no-print{display:none!important}
+ #printableSlipArea .rk-slip .rk-slip-total,
+ #printableSlipArea .rk-slip .total-row{background:#fff8df!important;color:#102b55!important;border:1px solid #c7a34b!important}
+}
+
+
+/* Admin dashboard composition aligned with the supplied Royal Dark reference board. */
+#adminPanel .rk-admin-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 10px}
+#adminPanel .rk-admin-kpi{
+ position:relative;display:flex;align-items:center;gap:12px;min-width:0;min-height:82px;
+ padding:13px 14px;border:1px solid rgba(205,171,84,.55);border-radius:13px;
+ background:linear-gradient(145deg,#10264b 0%,#08162f 62%,#050c1c 100%);
+ box-shadow:0 9px 22px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);
+ overflow:hidden
+}
+#adminPanel .rk-admin-kpi:after{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,#e8c86c,transparent);opacity:.75}
+#adminPanel .rk-admin-kpi-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:12px;font-size:18px;background:linear-gradient(145deg,#1d4b83,#0b1c39);border:1px solid #6b8fbf;color:#ffdc77;box-shadow:0 5px 14px #0007,inset 0 1px #ffffff38}
+#adminPanel .rk-admin-kpi-copy{display:grid;gap:5px;min-width:0}
+#adminPanel .rk-admin-kpi-copy small{font-size:11px;line-height:1.3;color:#c5d6f2!important;font-weight:700}
+#adminPanel .rk-admin-kpi-copy strong{font-size:clamp(20px,2.2vw,27px);line-height:1;color:#fff!important;font-weight:900;font-variant-numeric:tabular-nums}
+#adminPanel .rk-admin-kpi[data-tone="gold"]{border-color:#d8ad4b}
+#adminPanel .rk-admin-kpi[data-tone="gold"] .rk-admin-kpi-icon{color:#ffe17b;border-color:#d6ad4e;background:linear-gradient(145deg,#73501c,#2b1e0d)}
+#adminPanel .rk-admin-kpi[data-tone="purple"]{border-color:#9562d7}
+#adminPanel .rk-admin-kpi[data-tone="purple"] .rk-admin-kpi-icon{color:#d9b8ff;border-color:#9562d7;background:linear-gradient(145deg,#552d8b,#21143f)}
+#adminPanel .rk-admin-kpi[data-tone="blue"]{border-color:#3986e5}
+#adminPanel .rk-admin-kpi[data-tone="blue"] .rk-admin-kpi-icon{color:#9bcaff;border-color:#3986e5}
+#adminPanel .rk-admin-kpi[data-tone="green"]{border-color:#279d69}
+#adminPanel .rk-admin-kpi[data-tone="green"] .rk-admin-kpi-icon{color:#8ef2ba;border-color:#279d69;background:linear-gradient(145deg,#125b43,#082b27)}
+#adminPanel .rk-admin-kpi[data-tone="cyan"]{border-color:#239eae}
+#adminPanel .rk-admin-kpi[data-tone="cyan"] .rk-admin-kpi-icon{color:#8defff;border-color:#239eae;background:linear-gradient(145deg,#10596a,#082b3b)}
+#adminPanel .rk-admin-kpi[data-tone="rose"]{border-color:#c25c9d}
+#adminPanel .rk-admin-kpi[data-tone="rose"] .rk-admin-kpi-icon{color:#ffc0e4;border-color:#c25c9d;background:linear-gradient(145deg,#71345e,#2e1830)}
+#adminPanel .rk-admin-quick-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 0 12px;border:1px solid #244c82;border-radius:12px;background:linear-gradient(110deg,#07152e,#0d2853,#07152e);box-shadow:inset 0 1px #ffffff18}
+#adminPanel .rk-admin-quick-label{margin-right:4px;color:#ffdc72;font-size:12px;font-weight:900;white-space:nowrap}
+#adminPanel .rk-admin-quick-action{min-height:34px!important;padding:7px 11px!important;margin:0!important;border:1px solid #376eb1!important;border-radius:8px!important;background:linear-gradient(180deg,#1b4d8c,#0b2855)!important;color:#f1f6ff!important;font-size:11px!important;font-weight:800!important;box-shadow:0 4px 10px #0007,inset 0 1px #ffffff36!important}
+#adminPanel .rk-admin-quick-action i{color:#ffdc72}
+#adminPanel #dashboard .glass-card-green>div[style*="display:flex"]>div{background:linear-gradient(145deg,#102b55,#08162f)!important;border:1px solid #285b9a!important;box-shadow:inset 0 1px #ffffff16,0 5px 13px #0006!important}
+#adminPanel #dashboard .glass-card-green>div[style*="background:rgba(255,255,255,.88)"]{background:linear-gradient(145deg,#07152f,#0d2245)!important;border:1px solid #285b9a!important}
+#adminPanel #dashboard .glass-card-green>div[style*="display:flex"]>div span{color:#d7e5ff!important}
+#adminPanel #dashboard .glass-card-green>div[style*="display:flex"]>div h3{color:#ffe17b!important}
+@media(max-width:720px){
+ #adminPanel .rk-admin-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #adminPanel .rk-admin-kpi{min-height:72px;padding:10px;gap:9px}
+ #adminPanel .rk-admin-kpi-icon{width:36px;height:36px;flex-basis:36px;font-size:15px}
+ #adminPanel .rk-admin-kpi-copy small{font-size:10px}
+ #adminPanel .rk-admin-kpi-copy strong{font-size:21px}
+ #adminPanel .rk-admin-quick-actions{gap:6px;padding:8px}
+ #adminPanel .rk-admin-quick-label{width:100%}
+ #adminPanel .rk-admin-quick-action{flex:1 1 calc(50% - 6px);min-width:0}
+}
+@media(max-width:360px){#adminPanel .rk-admin-kpi{padding:8px;gap:7px}#adminPanel .rk-admin-kpi-icon{width:32px;height:32px;flex-basis:32px}}
+
+
+/* Six selectable presets based on the supplied Royal Admin theme collage. */
+.rk-design-options{display:flex!important;flex-wrap:wrap!important;gap:7px!important}
+.rk-design-swatch.light{background:linear-gradient(135deg,#f8fbff,#79c7f2)}
+.rk-design-swatch.neon{background:linear-gradient(135deg,#18052e,#ff00d4 55%,#00eaff)}
+.rk-design-swatch.ocean{background:linear-gradient(135deg,#eaf7ff,#087bdc)}
+.rk-design-choice{min-height:34px!important;padding:6px 10px!important;border:1px solid #315b91!important;border-radius:9px!important;background:linear-gradient(145deg,#10294f,#07142c)!important;color:#f4f7ff!important;font-size:11px!important;font-weight:800!important}
+.rk-design-choice.selected{border-color:#ffda66!important;box-shadow:0 0 0 1px #ffda66,0 0 16px #e9b83b66!important;color:#ffe58a!important}
+html.rk-theme-light body{background:linear-gradient(145deg,#eaf4ff,#c8e1f6)!important;color:#15345b!important}
+html.rk-theme-light #adminPanel,html.rk-theme-light #customerFirstPortal{color:#17385f!important}
+html.rk-theme-light #adminPanel .sidebar,html.rk-theme-light #adminPanel .header{background:linear-gradient(135deg,#f7fbff,#dceeff)!important;border-color:#9dc8ed!important;color:#14518a!important}
+html.rk-theme-light #adminPanel .glass-card-blue,html.rk-theme-light #adminPanel .glass-card-purple,html.rk-theme-light #adminPanel .glass-card-green,html.rk-theme-light #adminPanel .welcome-card,html.rk-theme-light #adminPanel .stat-card,html.rk-theme-light #adminPanel .dashboard-card,html.rk-theme-light #adminPanel .settings-section{background:linear-gradient(145deg,#ffffffed,#e2f2ffed)!important;border-color:#a8d4f5!important;color:#17385f!important}
+html.rk-theme-light #adminPanel .glass-card-blue h3,html.rk-theme-light #adminPanel .glass-card-purple h3,html.rk-theme-light #adminPanel .glass-card-green h3,html.rk-theme-light #adminPanel label,html.rk-theme-light #adminPanel th,html.rk-theme-light #adminPanel td{color:#174b7c!important}
+html.rk-theme-light #customerFirstPortal .rk-customer-brand,html.rk-theme-light #customerFirstPortal .rk-customer-section{background:linear-gradient(145deg,#f8fcff,#dcefff)!important;border-color:#9bc9ef!important;color:#17385f!important}
+html.rk-theme-light #customerFirstPortal .rk-customer-brand h1,html.rk-theme-light #customerFirstPortal .rk-hero-copy h2{color:#14518a!important}
+html.rk-theme-neon #adminPanel .sidebar,html.rk-theme-neon #adminPanel .header{background:linear-gradient(120deg,#16072c,#31065a)!important;border-color:#d500ff!important}
+html.rk-theme-neon #adminPanel .menu-item.active{background:linear-gradient(110deg,#6c00bd,#e000d8)!important;box-shadow:0 0 16px #e000d877!important}
+html.rk-theme-neon #adminPanel .glass-card-blue,html.rk-theme-neon #adminPanel .glass-card-purple,html.rk-theme-neon #adminPanel .glass-card-green,html.rk-theme-neon #customerFirstPortal .rk-customer-section{border-color:#b500ef!important;box-shadow:0 0 18px #9d00ff35,inset 0 1px #ffffff18!important}
+html.rk-theme-neon #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#17072f,#39075e)!important;border-color:#c000ff!important}
+html.rk-theme-neon #customerFirstPortal .rk-hero-cta{background:linear-gradient(100deg,#00d9ff,#b800ff)!important;color:#fff!important}
+html.rk-theme-ocean #adminPanel .sidebar,html.rk-theme-ocean #adminPanel .header{background:linear-gradient(120deg,#06264a,#0879b8)!important;border-color:#5bc9f4!important}
+html.rk-theme-ocean #adminPanel .menu-item.active{background:linear-gradient(110deg,#0879d8,#20b8e8)!important}
+html.rk-theme-ocean #adminPanel .glass-card-blue,html.rk-theme-ocean #adminPanel .glass-card-purple,html.rk-theme-ocean #adminPanel .glass-card-green,html.rk-theme-ocean #customerFirstPortal .rk-customer-section{border-color:#48b9e9!important}
+html.rk-theme-ocean #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#06264a,#0879b8)!important;border-color:#48b9e9!important}
+@media(max-width:720px){.rk-design-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.rk-design-choice{min-width:0!important}}
+
+
+/* Customer self-service booking tracker, using the same Royal glass card system. */
+#customerFirstPortal .rk-booking-tracker{width:100%;max-width:1500px;margin:12px auto 0;padding:18px 20px!important;border:1px solid rgba(91,157,255,.72)!important;border-radius:16px!important;background:linear-gradient(145deg,rgba(8,24,54,.97),rgba(4,12,29,.98))!important;box-shadow:0 12px 30px #0007,inset 0 1px #ffffff18!important;color:#f3f7ff!important}
+#customerFirstPortal .rk-tracker-hint{margin:4px 0 12px;color:#cbdaf4;font-size:12px}
+#customerFirstPortal .rk-tracker-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;align-items:end}
+#customerFirstPortal .rk-tracker-fields label{display:grid;gap:5px;color:#e7efff;font-size:11px;font-weight:800}
+#customerFirstPortal .rk-tracker-fields input{width:100%;min-height:40px;padding:9px 11px;border:1px solid #376eae;border-radius:9px;background:#06142c;color:#fff;outline:none}
+#customerFirstPortal .rk-tracker-fields input:focus{border-color:#ffd45c;box-shadow:0 0 0 2px #ffd45c35}
+#customerFirstPortal .rk-tracker-submit{min-height:40px;padding:9px 16px;border:1px solid #ffe69a;border-radius:9px;background:linear-gradient(180deg,#ffe58a,#d99a16);color:#171b29;font-weight:900;white-space:nowrap;box-shadow:0 5px 13px #0006,inset 0 1px #fff8}
+#customerFirstPortal .rk-tracker-result{margin-top:12px;padding:12px;border:1px solid #234b80;border-radius:11px;background:rgba(3,12,29,.72);color:#eaf2ff;font-size:12px;min-height:42px}
+#customerFirstPortal .rk-tracker-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#customerFirstPortal .rk-tracker-summary>div{display:grid;gap:3px}
+#customerFirstPortal .rk-tracker-summary small{color:#a9c2e8;font-size:10px}
+#customerFirstPortal .rk-tracker-summary strong{color:#ffdf78;font-size:18px}
+#customerFirstPortal .rk-tracker-status{padding:6px 10px;border:1px solid #d9b451;border-radius:999px;background:#2c2511;color:#ffe58a;font-weight:900}
+#customerFirstPortal .rk-tracker-meta{display:flex;gap:8px 16px;flex-wrap:wrap;margin:10px 0;color:#c6d8f5}
+#customerFirstPortal .rk-tracker-items{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:0;padding:0}
+#customerFirstPortal .rk-tracker-items li{display:flex;justify-content:space-between;gap:10px;padding:7px 9px;border:1px solid #234b80;border-radius:8px;background:#0a1b37}
+#customerFirstPortal .rk-tracker-items b{color:#ffdf78}
+#customerFirstPortal .rk-tracker-payment{display:flex;gap:8px 18px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid #284b78;color:#dce9ff}
+html.rk-theme-light #customerFirstPortal .rk-booking-tracker{background:linear-gradient(145deg,#fff,#e2f2ff)!important;border-color:#9bc9ef!important;color:#17385f!important}
+html.rk-theme-light #customerFirstPortal .rk-tracker-hint,html.rk-theme-light #customerFirstPortal .rk-tracker-fields label,html.rk-theme-light #customerFirstPortal .rk-tracker-meta,html.rk-theme-light #customerFirstPortal .rk-tracker-payment{color:#24527d!important}
+html.rk-theme-light #customerFirstPortal .rk-tracker-fields input{background:#fff;color:#17385f;border-color:#9bc9ef}
+html.rk-theme-light #customerFirstPortal .rk-tracker-result{background:#f3f9ff;color:#17385f;border-color:#a8d4f5}
+@media(max-width:640px){#customerFirstPortal .rk-booking-tracker{padding:14px!important}#customerFirstPortal .rk-tracker-fields{grid-template-columns:minmax(0,1fr)!important}#customerFirstPortal .rk-tracker-submit{width:100%}}
