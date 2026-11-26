@@ -1385,6 +1385,36 @@ test('missing item recovery restores stock and reduces missing liability exactly
   assert.equal(store.missingItemsDatabase[0].resolved,false);
   assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
 });
+test('missing recovery uses the exact item index and records the real recovery date for rental accounting', async () => {
+  const store={
+    missingItemsDatabase:[{id:'m-1',bookingId:92,itemIndex:1,item:'Chair',source:'admin',qty:2,resolved:false}],
+    softwareBookings:[{id:92,source:'admin',items:[
+      {name:'Chair',qty:2,returnedQty:2,missingQty:0,source:'admin'},
+      {name:'Chair',qty:2,returnedQty:0,missingQty:2,source:'admin'}
+    ],returnEntries:[]}],
+    realStockDatabase:[{name:'Chair',qty:5}],thirdPartyDatabase:[]
+  };
+  const input={value:'1'};
+  const context={
+    Math,Number,String,Array,Date,JSON,console,activeReturnBookingId:92,
+    document:{getElementById:id=>id==='recoverMissingQty_0'?input:{value:'92'}},
+    safeGetStorage:key=>store[key],
+    safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},
+    loadAllFirebaseData:()=>{},loadReturnBookingForCounting:()=>{},showActionMessage:()=>{}
+  };
+  const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)', 'function resolveMissingItem');
+  vm.runInNewContext(storageBatchSource()+'\\n'+code+'\\nresult=recoverMissingItem("m-1",0);',context);
+  await context.result;
+  assert.equal(store.softwareBookings[0].items[0].returnedQty,2);
+  assert.equal(store.softwareBookings[0].items[1].returnedQty,1);
+  assert.equal(store.softwareBookings[0].items[1].missingQty,1);
+  assert.equal(store.realStockDatabase[0].qty,6);
+  assert.equal(store.missingItemsDatabase[0].qty,1);
+  assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
+  assert.equal(store.softwareBookings[0].returnEntries[0].items[0].itemIndex,1);
+  assert.equal(store.softwareBookings[0].returnEntries[0].items[0].qty,1);
+});
+
 test('legacy missing recovery refuses ambiguous duplicate item identities', async () => {
   const store={missingItemsDatabase:[{id:'old',bookingId:90,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:90,items:[{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'},{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
   let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
