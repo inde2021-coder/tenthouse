@@ -2580,8 +2580,44 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         window.addEventListener('resize',()=>{ if(document.getElementById('dashboardLineGraph')) renderDashboardLineGraph(); });
 
-        function editPurchase(index){const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;const qty=prompt('मात्रा',p.qty);if(qty===null)return;const price=prompt('कुल कीमत ₹',p.price);if(price===null)return;const supplier=prompt('सप्लायर',p.supplier||'');if(supplier===null)return;const nQty=Number(qty),nPrice=Number(price);if(!itemName.trim()||!Number.isSafeInteger(nQty)||nQty<=0||!Number.isFinite(nPrice)||nPrice<0){showActionMessage('सामान, पूर्ण संख्या में मात्रा और सही कीमत भरें','error');return}const stock=safeGetStorage('realStockDatabase',[]);const oldStock=stock.find(x=>String(x.name).toLowerCase()===String(p.itemName).toLowerCase());if(oldStock)oldStock.qty=Math.max(0,Number(oldStock.qty||0)-Number(p.qty||0)+nQty);else stock.push({name:itemName.trim(),qty:nQty,setRent:0,singleRent:0,missingCharge:0,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});rows[index]={...p,itemName:itemName.trim(),qty:nQty,price:nPrice,supplier:supplier.trim()};safeSetStorage('purchaseDatabase',rows);safeSetStorage('realStockDatabase',stock);loadAllFirebaseData();showActionMessage('परचेज अपडेट हुई; स्टॉक मात्रा समायोजित की गई','success')}
-        function deletePurchase(index){const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;if(!confirm('यह खरीद रिकॉर्ड हटाएँ और स्टॉक से इसकी मात्रा घटाएँ?'))return;const stock=safeGetStorage('realStockDatabase',[]),item=stock.find(x=>String(x.name).toLowerCase()===String(p.itemName).toLowerCase());if(item)item.qty=Math.max(0,Number(item.qty||0)-Number(p.qty||0));rows.splice(index,1);safeSetStorage('purchaseDatabase',rows);safeSetStorage('realStockDatabase',stock);loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड हटाया; स्टॉक समायोजित हुआ','success')}
+        function editPurchase(index){
+            const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
+            const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;
+            const qty=prompt('मात्रा',p.qty);if(qty===null)return;
+            const price=prompt('कुल कीमत ₹',p.price);if(price===null)return;
+            const supplier=prompt('सप्लायर',p.supplier||'');if(supplier===null)return;
+            const nQty=Number(qty),nPrice=Number(price),newName=itemName.trim(),oldName=String(p.itemName||'').trim();
+            if(!newName||!Number.isSafeInteger(nQty)||nQty<=0||!Number.isFinite(nPrice)||nPrice<0){showActionMessage('सामान, पूर्ण संख्या में मात्रा और सही कीमत भरें','error');return;}
+            const stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));
+            const oldStock=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===oldName.toLowerCase());
+            const oldQty=Number(p.qty),currentQty=Number(oldStock?.qty);
+            if(!oldStock||!Number.isSafeInteger(oldQty)||oldQty<0||!Number.isSafeInteger(currentQty)||currentQty<0){showActionMessage('पुराना खरीद-स्टॉक रिकॉर्ड सही नहीं है; बदलाव रोक दिया गया।','error');return;}
+            if(oldName.toLowerCase()===newName.toLowerCase()){
+                const nextQty=currentQty-oldQty+nQty;
+                if(!Number.isSafeInteger(nextQty)||nextQty<0){showActionMessage('इस खरीद की मात्रा का कुछ सामान पहले ही Dispatch/उपयोग हो चुका है; स्टॉक घटाकर खरीद बदलना संभव नहीं।','error');return;}
+                oldStock.qty=nextQty;
+            }else{
+                if(currentQty<oldQty){showActionMessage('पुराने सामान की पूरी खरीदी मात्रा स्टॉक में उपलब्ध नहीं है; Dispatch/उपयोग हो चुका सामान दूसरे नाम में नहीं बदला जा सकता।','error');return;}
+                oldStock.qty=currentQty-oldQty;
+                const target=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===newName.toLowerCase());
+                if(target)target.qty=Math.max(0,Number(target.qty)||0)+nQty;
+                else stock.push({name:newName,qty:nQty,setRent:0,singleRent:0,missingCharge:0,missingUnitPrice:0,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
+            }
+            rows[index]={...p,itemName:newName,qty:nQty,price:nPrice,supplier:supplier.trim()};
+            if(!safeSetStorageBatch([['purchaseDatabase',rows],['realStockDatabase',mergeDuplicateStockRows(stock)]]))return;
+            loadAllFirebaseData();showActionMessage('परचेज अपडेट हुई; स्टॉक मात्रा सुरक्षित रूप से समायोजित की गई','success');
+        }
+        function deletePurchase(index){
+            const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
+            if(!confirm('यह खरीद रिकॉर्ड हटाएँ और उसकी पूरी मात्रा स्टॉक से घटाएँ?'))return;
+            const qty=Number(p.qty),stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));
+            const item=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===String(p.itemName||'').trim().toLowerCase());
+            const available=Number(item?.qty);
+            if(!item||!Number.isSafeInteger(qty)||qty<0||!Number.isSafeInteger(available)||available<qty){showActionMessage('इस खरीद की पूरी मात्रा अभी स्टॉक में उपलब्ध नहीं है; Dispatch/उपयोग के बाद रिकॉर्ड हटाने से स्टॉक गलत होगा।','error');return;}
+            item.qty=available-qty;rows.splice(index,1);
+            if(!safeSetStorageBatch([['purchaseDatabase',rows],['realStockDatabase',stock]]))return;
+            loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड हटाया और स्टॉक सही मात्रा से समायोजित हुआ','success');
+        }
         function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:n};safeSetStorage('incomeExpenseDatabase',rows);loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
         function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);safeSetStorage('incomeExpenseDatabase',rows);loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड हटाया गया','success')}
 
