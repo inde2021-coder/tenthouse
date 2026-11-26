@@ -249,6 +249,7 @@ async function runReturn(mode) {
     prompt: () => answers.shift(),
     document,
     safeGetStorage: key => store[key],
+    getEffectiveMissingCharge: item => Math.max(0,Number(item?.missingCharge??item?.missingUnitPrice)||0),
     safeSetStorage: (key, value) => { store[key] = value; return true; },
     localStorage: mockStorageForBatch(store), syncToCloud: () => {}, console,
     showActionMessage: () => {}, loadAllFirebaseData: () => {}, renderMissingItems: () => {}
@@ -538,13 +539,13 @@ test('admin booking list displays UTR and payment verification controls', () => 
   assert.ok(html.includes('/advance'));
 });
 
-test('missing items are shown as quantity only and never added to the customer invoice', () => {
-  assert.ok(html.includes('मिसिंग सामान की अलग सूची (केवल मात्रा)'));
-  assert.ok(html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
-  assert.doesNotMatch(html, /मिसिंग सामान चार्ज:/);
-  assert.doesNotMatch(html, /totalRent-\(Number\(b\.missingChargeTotal\)/);
-  assert.doesNotMatch(html, /rentalTotal\+missingTotal/);
-  assert.doesNotMatch(html, /rental\+missing\+/);
+test('missing items display charge approval and approved charges flow into invoice totals', () => {
+  assert.ok(html.includes('मिसिंग शुल्क'));
+  assert.ok(html.includes('शुल्क स्वीकृत करें'));
+  assert.ok(html.includes('स्वीकृत Missing Charge'));
+  assert.ok(html.includes('getApprovedMissingChargeTotal(b)'));
+  assert.ok(html.includes('chargeApproved===true'));
+  assert.ok(!html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
   assert.ok(html.includes('Customer status mirrors the invoice: missing items are quantity-only'));
 });
 
