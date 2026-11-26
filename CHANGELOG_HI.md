@@ -80,5 +80,5 @@
 - Desktop पर दो-column settings grid, mobile पर single-column layout, बेहतर upload cards, recessed dark inputs, collapsible Backend/Backup sections और स्पष्ट save actions जोड़े गए।
 - Root, `public/` और `backend/public/` की तीनों HTML copies byte-identical रखी गईं।
 - Regression test `tests/settings-ui.test.cjs` जोड़ा गया। GitHub Actions run #945 सफल: backend syntax, business regression और JSON validation सहित **141/141 tests PASS**।
-- Preview deployment का प्रयास Vercel daily API deployment quota (100/day) से रोका गया; कोई नया deployment live होने का दावा नहीं है।
+- Direct Vercel deployment API call daily quota (100/day) से रोकी गई, लेकिन GitHub PR integration ने इसी branch/commit का preview स्वतः deploy किया: deployment READY। Live API endpoints को इस session के web client से पढ़ा नहीं जा सका।
 - बदलाव Draft PR #40 में हैं; production repository अलग है और इस GitHub connection में उपलब्ध नहीं है।
