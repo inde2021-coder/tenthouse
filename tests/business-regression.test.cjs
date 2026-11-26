@@ -1939,7 +1939,8 @@ test('server-side AI actions require an allow-listed proposal and exact explicit
   assert.match(backend,/confirmationText !== expectedConfirmation/);
   assert.match(backend,/type: z\.literal\('payment_verification'\)/);
   assert.match(backend,/Only pending payments can be verified or rejected/);
-  assert.match(backend,/storeTransitionRecord\(proposalPath/);
+  assert.match(backend,/completeAiActionAtomically/);
+  assert.match(backend,/adminDb\.ref\('erpData'\)\.transaction/);
   assert.match(backend,/Only a booking in Pending Approval/);
   assert.match(backend,/Action proposal is expired or already used/);
   assert.doesNotMatch(backend,/app\.post\('\/api\/ai\/actions\/execute'/);
