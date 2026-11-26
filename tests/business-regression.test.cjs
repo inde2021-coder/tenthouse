@@ -1045,3 +1045,43 @@ test('master ledger online transaction row uses verified amount and explicit UTR
   assert.ok(code.includes('UTR सत्यापन लंबित')===false,'status is supplied by the payment-state helper, not hard-coded as received');
   assert.ok(code.includes('display.status'));
 });
+
+
+test('booking paid amount excludes pending and rejected UPI advance until explicitly verified', () => {
+  const start=html.indexOf('function getBookingPaidAmount(b)');
+  const end=html.indexOf('function getEffectiveMissingCharge(item)',start);
+  assert.ok(start>=0&&end>start,'paid amount calculator must exist');
+  const context={Math,Number,Array,String};
+  vm.runInNewContext(html.slice(start,end)+`
+    result=[
+      getBookingPaidAmount({source:'customer-portal',advanceAmount:500,advancePaymentStatus:'pending-verification',advancePaymentVerified:false}),
+      getBookingPaidAmount({source:'customer-portal',advanceAmount:500,advancePaymentStatus:'rejected',advancePaymentVerified:false}),
+      getBookingPaidAmount({source:'customer-portal',advanceAmount:500,advancePaymentStatus:'verified',advancePaymentVerified:true})
+    ];
+  `,context);
+  assert.deepEqual(Array.from(context.result),[0,0,500]);
+});
+
+test('booking paid amount includes cash advance and verified UPI plus installments without double counting', () => {
+  const start=html.indexOf('function getBookingPaidAmount(b)');
+  const end=html.indexOf('function getEffectiveMissingCharge(item)',start);
+  const context={Math,Number,Array,String};
+  vm.runInNewContext(html.slice(start,end)+`
+    result=[
+      getBookingPaidAmount({payMode:'Cash',advanceAmount:300,partPayments:[{amount:200}]}),
+      getBookingPaidAmount({source:'customer-portal',advanceAmount:400,advancePaymentVerified:true,partPayments:[{amount:150}],totalPaid:550}),
+      getBookingPaidAmount({source:'customer-portal',advanceAmount:400,advancePaymentVerified:false,partPayments:[{amount:150}],totalPaid:150})
+    ];
+  `,context);
+  assert.deepEqual(Array.from(context.result),[500,550,150]);
+});
+
+test('payment ledger keeps pending online amount separate from verified cash receipts', () => {
+  const code=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment(');
+  assert.match(code,/paid:verifiedPaid/);
+  assert.match(code,/onlineStatus:v\.online>0\?'pending-verification'/);
+  assert.match(code,/b\.totalPaid=verifiedPaid/);
+  const verify=sourceBetween('async function verifyLedgerPayment(', 'function ');
+  assert.match(verify,/p\.onlineStatus=verified\?'verified':'rejected'/);
+  assert.match(verify,/if\(verified\)b\.totalPaid=/);
+});
