@@ -228,7 +228,11 @@ async function sendOtpProvider(phone, otp, channel) {
     const r = await fetch('https://control.msg91.com/api/v5/otp', { method:'POST', signal:AbortSignal.timeout(20_000), headers:{ authkey:key, 'Content-Type':'application/json' }, body:JSON.stringify({ template_id:template, mobile:phone.replace('+',''), otp }) });
     if (!r.ok) throw new Error('MSG91 rejected the request.'); return r.json();
   }
-  if (provider === 'demo' && !isProd) return { demo: true };
+  if (provider === 'demo' && !isProd) {
+    const testDelay = Math.min(500, Math.max(0, Number(process.env.OTP_DEMO_DELAY_MS) || 0));
+    if (testDelay) await new Promise(resolve => setTimeout(resolve, testDelay));
+    return { demo: true };
+  }
   throw new Error('OTP provider is not configured. Configure an approved SMS/WhatsApp provider in backend .env.');
 }
 app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
