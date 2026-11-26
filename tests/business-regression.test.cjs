@@ -272,6 +272,16 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
 
+test('payment recording and UTR verification save ledger and booking totals atomically', () => {
+  const save=html.slice(html.indexOf('async function savePaymentEntry()'),html.indexOf('async function verifyLedgerPayment('));
+  const verify=html.slice(html.indexOf('async function verifyLedgerPayment('),html.indexOf('function printReturnSlip('));
+  assert.ok(save.includes("safeSetStorageBatch([[key,ledger],['softwareBookings',rows]])"),'payment ledger and booking must commit together');
+  assert.ok(!save.includes("safeSetStorage(key,ledger)"),'payment must not save ledger separately');
+  assert.ok(verify.includes("paymentWrites=[['rkPaymentLedger',ledger]]"),'verification must stage ledger');
+  assert.ok(verify.includes("paymentWrites.push(['softwareBookings',rows])"),'verification must stage booking');
+  assert.ok(verify.includes('safeSetStorageBatch(paymentWrites)'), 'verification must commit atomically');
+});
+
 test('dispatch aggregates duplicate stock-row requirements before checking and deducting availability', () => {
   const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
   assert.ok(dispatch.includes('const requirementMap=new Map()'));
