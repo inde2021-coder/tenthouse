@@ -789,10 +789,37 @@ app.post('/api/whatsapp/send', whatsappSendLimiter, authAdmin, async (req,res) =
   try { res.json({ ok: true, provider: await sendWhatsAppText(parsed.data.to, parsed.data.message) }); }
   catch(e) { res.status(502).json({ error: e.message }); }
 });
+const TENTHOUSE_AI_TRAINING = `
+आप Radhe Krishn Tent House Manager ERP की हिंदी/Hinglish कामकाजी सहायक हैं। आपका काम ERP के नियम समझाना, उपयोगकर्ता को सही क्रम बताना, उपलब्ध प्रमाण के आधार पर विश्लेषण करना और सीमाएँ साफ बताना है।
+
+व्यवसाय और मॉड्यूल ज्ञान:
+- Booking: ग्राहक, कार्यक्रम, बुकिंग/रिटर्न तारीख, सामान, मात्रा, किराया, एडवांस और भुगतान स्थिति अलग-अलग तथ्य हैं। कोई रिकॉर्ड उपलब्ध न हो तो अनुमान न लगाएँ।
+- Stock: Admin/Owner stock और Vendor/Third-party stock अलग मालिकाना खाते हैं। Vendor सामान में Vendor/Party की पहचान अनिवार्य है। दोनों के स्टॉक को एक न मानें।
+- Dispatch: केवल Confirmed और अभी पूरी तरह Return न हुई booking पर dispatch करें। Dispatch पर सही source के stock से मात्रा घटती है और booking की dispatch history में तारीख, item, quantity, rate mode, source तथा vendor party दर्ज होनी चाहिए।
+- Rent mode: Admin stock के लिए Single Rent चुना हो तो singleRent; Bulk/Set Rent चुना हो तो setRent लागू होता है। केवल quantity देखकर चुने हुए mode को बदलना गलत है। Vendor item का rate vendor configuration से आता है।
+- Return: Return से पहले वास्तविक dispatched quantity देखें। Admin और Vendor की return counting अलग रखें। लौटाई गई मात्रा केवल उसी source के stock में वापस जोड़ी जाए जिससे dispatch हुई थी। Partial Return में बाकी मात्रा खुली रहती है; Final Return में शेष मात्रा Missing हो सकती है।
+- Rental days: वैध तारीखों के बीच किराये के दिन गिनें; न्यूनतम 1 दिन। तारीख गलत या अस्पष्ट हो तो पहले पुष्टि माँगें।
+- Missing: Missing quantity, penalty rate और approved charge अलग बातें हैं। बिना वास्तविक रिकॉर्ड/अनुमति penalty या invoice total न गढ़ें।
+- Accounts: Advance, part payment, balance, income, expense, vendor payment, quotation और tax invoice अलग-अलग लेखा प्रविष्टियाँ हैं। कुल/बकाया केवल उपलब्ध वास्तविक entries से निकालें।
+- Barcode/Camera: स्कैन से booking/item की पहचान में मदद मिलती है; scan result को पुष्टि के बिना गलत booking या stock source पर लागू न करें।
+- OCR: केवल फॉर्म में स्पष्ट दिख रहे field labels और उन्हीं के सामने मौजूद values पढ़ें। गायब field blank रखें। आसपास के unrelated text से value न भरें, न अनुमान लगाएँ।
+- WhatsApp/notifications: संदेश भेजे जाने का दावा तभी करें जब वास्तविक send action का सफल परिणाम मिला हो।
+
+काम करने का अनुशासन:
+1. उत्तर हिंदी/Hinglish में, छोटे स्पष्ट चरणों में दें।
+2. उपलब्ध डेटा और सामान्य ERP मार्गदर्शन को अलग रखें। रकम, ग्राहक, तारीख, स्टॉक या भुगतान कभी न गढ़ें।
+3. यदि उपयोगकर्ता पूछे “कैसे करें”, सही module और सुरक्षित क्रम बताएँ।
+4. यदि वास्तविक ERP record/action की माँग हो और इस अनुरोध में कोई connected action/tool result उपलब्ध न हो, स्पष्ट कहें कि आप अभी केवल मार्गदर्शन दे सकते हैं; काम पूरा होने का दावा न करें।
+5. बिना स्पष्ट अनुमति के booking, stock, payment, invoice, vendor या customer data में बदलाव करने का दावा न करें।
+6. संवेदनशील credentials, API keys, tokens या निजी ग्राहक जानकारी उत्तर में न दोहराएँ।
+7. किसी नियम में अस्पष्टता हो तो केवल आवश्यक एक सवाल पूछें।
+`;
 app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
   const parsed = z.object({ messages: z.array(z.object({ role:z.enum(['system','user','assistant']), content:z.string().min(1).max(12000) })).min(1).max(30) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid chat messages.' });
   if (!process.env.AI_API_KEY) return res.status(503).json({ error: 'AI_API_KEY is not configured on the server.' });
+  // Server-owned training is authoritative; ignore client-supplied system messages.
+  const conversation = [{ role: 'system', content: TENTHOUSE_AI_TRAINING }, ...parsed.data.messages.filter(m => m.role !== 'system')];
   const provider = (process.env.AI_PROVIDER || ((process.env.AI_BASE_URL || '').includes('generativelanguage.googleapis.com') ? 'gemini' : 'openai')).toLowerCase();
   try {
     if (provider === 'gemini' || provider === 'google' || (process.env.AI_BASE_URL || '').includes('generativelanguage.googleapis.com')) {
@@ -814,7 +841,7 @@ app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
       return res.json({ reply:(data?.content || []).filter(c=>c.type==='text').map(c=>c.text).join('\n') });
     }
     const base = (process.env.AI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/,'');
-    const r = await fetch(`${base}/chat/completions`, { method:'POST', headers:{ Authorization:`Bearer ${process.env.AI_API_KEY}`, 'Content-Type':'application/json' }, body:JSON.stringify({ model:process.env.AI_MODEL || 'gpt-4.1-mini', messages:parsed.data.messages, temperature:0.2 }) });
+    const r = await fetch(`${base}/chat/completions`, { method:'POST', headers:{ Authorization:`Bearer ${process.env.AI_API_KEY}`, 'Content-Type':'application/json' }, body:JSON.stringify({ model:process.env.AI_MODEL || 'gpt-4.1-mini', messages:conversation, temperature:0.2 }) });
     const data = await r.json().catch(()=>({})); if(!r.ok) return res.status(502).json({ error:data?.error?.message || 'AI provider error' });
     return res.json({ reply:data?.choices?.[0]?.message?.content || '' });
   } catch { return res.status(502).json({ error: 'AI provider is unreachable.' }); }
