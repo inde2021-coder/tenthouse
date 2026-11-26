@@ -1114,3 +1114,40 @@ test('income and expense table summary uses the shared validated totals calculat
   assert.match(code,/totalInc=totals\.income/);
   assert.match(code,/totalExp=totals\.expense/);
 });
+
+
+test('admin stock entry rejects fractional and invalid quantities without saving', () => {
+  const code=sourceBetween('function saveStockItemReal(event)', 'function mergeDuplicateStockRows');
+  for(const qty of ['1.5','0','-2','abc','']) {
+    let writes=0,reset=false;
+    const values={stockItemName:'Chair',stockItemQty:qty,stockItemSetRent:'10',stockItemSingleRent:'5',stockItemMissing:'100'};
+    const context={Number,Math,String,Array,Map,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},confirm:()=>true,event:null};
+    const event={preventDefault(){},target:{reset(){reset=true;}}};context.event=event;
+    vm.runInNewContext(code+'\nresult=saveStockItemReal(event);',context);
+    assert.equal(writes,0);assert.equal(reset,false);
+  }
+});
+
+test('vendor stock entry rejects fractional, negative and malformed quantities without saving', () => {
+  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  for(const qty of ['1.25','0','-4','bad','']) {
+    let writes=0,reset=false;
+    const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:qty,tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
+    const context={Number,Math,String,Array,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadThirdPartyLedger:()=>{},loadThirdPartyDropdownsForDispatch:()=>{},event:null};
+    const event={preventDefault(){},target:{reset(){reset=true;}}};context.event=event;
+    vm.runInNewContext(code+'\nresult=saveThirdPartyEntry(event);',context);
+    assert.equal(writes,0);assert.equal(reset,false);
+  }
+});
+
+test('vendor stock entry rejects negative or non-numeric prices without saving', () => {
+  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  for(const field of ['tpItemCost','tpItemCharge','tpVendorMissingCost','tpMissingCharge']) {
+    for(const value of ['-1','abc']) {
+      let writes=0;const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:'3',tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};values[field]=value;
+      const context={Number,Math,String,Array,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadThirdPartyLedger:()=>{},loadThirdPartyDropdownsForDispatch:()=>{}};
+      vm.runInNewContext(code+'\nresult=saveThirdPartyEntry({preventDefault(){},target:{reset(){}}});',context);
+      assert.equal(writes,0,field+' must reject '+value);
+    }
+  }
+});
