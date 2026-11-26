@@ -2224,6 +2224,8 @@ test('third-party payment entry writes only to the separate vendor payment ledge
   assert.equal(store.thirdPartyPayments[0].partyName, 'Vendor A');
   assert.equal(store.thirdPartyPayments[0].amount, 100);
   assert.equal(store.thirdPartyPayments[0].type, 'vendor-payment');
+  assert.equal(store.thirdPartyPayments[0].method, 'Cash');
+  assert.equal(store.thirdPartyPayments[0].note, 'Advance');
   assert.equal(store.softwareBookings, undefined);
   assert.equal(store.rkPaymentLedger, undefined);
 });
