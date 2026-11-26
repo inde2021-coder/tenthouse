@@ -604,6 +604,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(max-width:720px){#customerFirstPortal .rk-customer-hero.has-custom-image::after{top:auto;left:0;right:0;bottom:0;width:100%;height:44%;border-radius:0 0 23px 23px;background-image:linear-gradient(180deg,#111a35 0%,rgba(17,26,53,.18) 55%),var(--rk-hero-bg)}#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-copy{max-width:100%;padding-bottom:125px}}
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
+    <link rel="stylesheet" href="./luxury-reference.css?v=1">
 </head>
 <body>
 
@@ -651,7 +652,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 <div class="rk-hero-copy"><div class="rk-hero-kicker"><i class="fa-solid fa-sparkles"></i> YOUR CELEBRATION, OUR ARRANGEMENT</div><p class="rk-hero-eyebrow">हर खुशी के मौके पर</p><h2>यादगार समारोह की<br><em>शानदार शुरुआत</em></h2><p class="rk-hero-description">शादी, जन्मदिन और हर खास अवसर के लिए टेंट, फर्नीचर और इवेंट सामान की आसान बुकिंग करें।</p><button type="button" class="rk-hero-cta" onclick="document.getElementById('portalCustName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName').focus();">बुकिंग शुरू करें <i class="fa-solid fa-arrow-down"></i></button><div class="rk-hero-trust"><span><i class="fa-solid fa-shield-heart"></i> भरोसेमंद सेवा</span><span><i class="fa-solid fa-calendar-check"></i> आसान बुकिंग</span></div></div>
 <div class="rk-hero-art" aria-hidden="true"><div class="rk-hero-orbit"></div><div class="rk-hero-stage"><div class="rk-stage-roof"></div><div class="rk-stage-curtain left"></div><div class="rk-stage-curtain right"></div><div class="rk-stage-arch"><div class="rk-stage-inner"></div><div class="rk-stage-lights"></div></div><div class="rk-stage-floor"></div><span class="rk-stage-star s1">✦</span><span class="rk-stage-star s2">✧</span></div><div class="rk-hero-float f1"><i class="fa-solid fa-champagne-glasses"></i> Special Events</div><div class="rk-hero-float f2"><i class="fa-solid fa-couch"></i> Complete Setup</div></div>
 <div class="rk-hero-bottomline"><span>RADHE KRISHN TENT HOUSE</span><span>CELEBRATE BEAUTIFULLY · BOOK EASILY</span></div></section>
-            <header class="rk-customer-brand">
+            <header class="rk-customer-brand" id="customerPortalTop">
                 <div class="rk-customer-brand-mark" aria-hidden="true"><i class="fa-solid fa-crown"></i></div>
                 <div class="rk-customer-brand-copy">
                     <div class="rk-customer-eyebrow">RADHE KRISHN · TENT HOUSE</div>
@@ -659,9 +660,17 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     <div class="rk-customer-subtitle">कस्टमर बुकिंग पोर्टल</div>
                 </div>
                 <div class="rk-customer-brand-seal"><i class="fa-solid fa-shield-check" aria-hidden="true"></i><span>Direct Booking</span></div>
+                <button type="button" class="rk-admin-login-trigger" onclick="revealAdminGate()"><i class="fa-solid fa-lock"></i> Admin Login (Secret)</button>
             </header>
+            <nav class="rk-luxury-nav" aria-label="मुख्य मेन्यू">
+              <a href="#customerPortalTop"><i class="fa-solid fa-house"></i> Home</a>
+              <a href="#customerBookingForm"><i class="fa-solid fa-calendar-check"></i> Customer Booking</a>
+              <a href="#rkCustomerTrackPanel"><i class="fa-solid fa-magnifying-glass"></i> Track Booking</a>
+              <a href="#rkDeveloperFooter"><i class="fa-solid fa-circle-info"></i> About Us</a>
+              <a href="#rkDeveloperFooter"><i class="fa-solid fa-phone"></i> Contact Us</a>
+            </nav>
             <div class="rk-customer-shell">
-                <form class="rk-customer-form" onsubmit="saveCustomerBooking(event)">
+                <form id="customerBookingForm" class="rk-customer-form" onsubmit="saveCustomerBooking(event)">
                     <div class="glass-card-blue rk-customer-section rk-customer-identity">
                         <div style="font-size: 14px; font-weight: 800; color: var(--primary-blue); margin-bottom: 8px;"><i class="fa-solid fa-user"></i> ग्राहक विवरण</div>
                         <div class="form-grid">
@@ -708,7 +717,24 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     </div>
                     <button type="submit" class="glass-btn-cyan rk-customer-submit"><i class="fa-solid fa-paper-plane"></i> बुकिंग सबमिट करें</button>
                 </form>
-                <footer class="rk-developer-footer" aria-label="सॉफ्टवेयर डेवलपर और कॉपीराइट">
+                <section class="rk-customer-track" id="rkCustomerTrackPanel" aria-label="बुकिंग ट्रैक करें">
+                  <h2><i class="fa-solid fa-magnifying-glass" style="color:#19aaff"></i> Track Your Booking</h2>
+                  <p class="rk-track-subtitle">बुकिंग नंबर और मोबाइल नंबर डालकर Booking, Dispatch, Return और Bill की स्थिति देखें</p>
+                  <div class="rk-track-fields">
+                    <div><label for="rkCustomerTrackBookingId">Booking Number</label><input id="rkCustomerTrackBookingId" type="text" inputmode="numeric" maxlength="16" placeholder="बुकिंग नंबर"></div>
+                    <div><label for="rkCustomerTrackMobile">Mobile Number</label><input id="rkCustomerTrackMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 अंकों का मोबाइल"></div>
+                  </div>
+                  <button class="rk-track-submit" type="button" onclick="trackCustomerBooking()"><i class="fa-solid fa-magnifying-glass"></i> Search Booking</button>
+                  <div class="rk-track-progress" aria-hidden="true"><span>Booked</span><span>Dispatched</span><span>Returned</span><span>Billed</span></div>
+                  <div class="rk-track-result" id="rkCustomerTrackResult" aria-live="polite"></div>
+                  <div class="rk-track-features">
+                    <div><i class="fa-solid fa-crown"></i> Premium Bartan Collection</div>
+                    <div><i class="fa-solid fa-shield-halved"></i> Hygienic & Well Maintained</div>
+                    <div><i class="fa-solid fa-headset"></i> 24×7 Customer Support</div>
+                    <div><i class="fa-solid fa-handshake"></i> Trusted Service</div>
+                  </div>
+                </section>
+                <footer id="rkDeveloperFooter" class="rk-developer-footer" aria-label="सॉफ्टवेयर डेवलपर और कॉपीराइट">
                   <div class="rk-dev-title">SOFTWARE DESIGN &amp; DEVELOPMENT</div>
                   <div class="rk-dev-name">Radhe Krishn Tent House Manager</div>
                   <div class="rk-dev-byline">Designed &amp; Developed by <strong>Sarat Patel</strong></div>
@@ -3474,7 +3500,33 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
    if(!canvas||!url){alert('पहले QR बनाएं।');return}
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
+   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p>
+<script id="rk-luxury-booking-tracker">
+async function trackCustomerBooking(){
+  const id=String(document.getElementById('rkCustomerTrackBookingId')?.value||'').trim();
+  const mobile=String(document.getElementById('rkCustomerTrackMobile')?.value||'').replace(/\\D/g,'').slice(-10);
+  const out=document.getElementById('rkCustomerTrackResult');
+  if(!/^\\d{10,16}$/.test(id)){if(out)out.textContent='कृपया सही Booking Number दर्ज करें।';return;}
+  if(!/^\\d{10}$/.test(mobile)){if(out)out.textContent='कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।';return;}
+  if(out)out.textContent='बुकिंग विवरण खोजे जा रहे हैं…';
+  try{
+    const settings=typeof safeGetStorage==='function'?safeGetStorage('softwareSettings',{}):{};
+    const api=typeof getBackendApiUrl==='function'?getBackendApiUrl(settings):window.location.origin;
+    const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(id)+'/status?mobile='+encodeURIComponent(mobile),{method:'GET',headers:{'Accept':'application/json'},cache:'no-store'});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'बुकिंग नहीं मिली।');
+    const b=data.booking||{};
+    const safe=v=>typeof escapeHtml==='function'?escapeHtml(v??'-'):String(v??'-').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const items=Array.isArray(b.items)&&b.items.length?b.items.map(x=>safe(x.name)+' × '+safe(x.qty)).join('<br>'):'—';
+    const dispatch=Array.isArray(b.dispatchEntries)?b.dispatchEntries.reduce((n,x)=>n+(Number(x.qty)||0),0):0;
+    const returned=Array.isArray(b.returnEntries)?b.returnEntries.reduce((n,x)=>n+(Number(x.qty)||0),0):0;
+    out.innerHTML='<strong style="color:#ffda52">Booking Found · #'+safe(b.id)+'</strong><hr style="border-color:#34547d;margin:8px 0"><div><b>नाम:</b> '+safe(b.name)+'</div><div><b>मोबाइल:</b> '+safe(b.mob)+'</div><div><b>कार्यक्रम:</b> '+safe(b.eventType)+'</div><div><b>Dispatch Date:</b> '+safe(b.date)+'</div><div><b>Return Date:</b> '+safe(b.returnDate)+'</div><div><b>Status:</b> <strong style="color:#45ef8b">'+safe(b.status)+'</strong></div><div style="margin-top:7px"><b>Items:</b><br>'+items+'</div><div style="margin-top:7px"><b>Dispatch Qty:</b> '+dispatch+' &nbsp; <b>Return Qty:</b> '+returned+'</div><div><b>Advance:</b> ₹'+safe(b.advanceAmount||0)+'</div>';
+  }catch(error){if(out)out.textContent=error.message||'बुकिंग खोजने में समस्या हुई।';}
+}
+window.trackCustomerBooking=trackCustomerBooking;
+</script>
+
+</body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
  document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#aiAccessTokenInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
