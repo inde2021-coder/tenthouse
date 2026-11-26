@@ -85,7 +85,7 @@ function mockStorageForBatch(store) {
   };
 }
 
-function runRentFunction(functionName, booking) {
+function runRentFunction(functionName, booking, missingRows = []) {
   const start = html.indexOf(`function ${functionName}(`);
   const next = functionName === 'calculateBookingTotalRent'
     ? html.indexOf('        function loadAllFirebaseData()', start)
@@ -96,7 +96,7 @@ function runRentFunction(functionName, booking) {
   const helperEnd = html.indexOf('        function calculateBookingTotalRent(b)', helperStart);
   const sharedHelpers = helperStart >= 0 && helperEnd >= 0 ? html.slice(helperStart, helperEnd) : '';
   const code = html.slice(start, next);
-  const context = { booking, calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, Date, result: null };
+  const context = { booking, safeGetStorage: key => key === 'missingItemsDatabase' ? missingRows : [], getApprovedMissingChargeTotal: b => missingRows.filter(row => String(row.bookingId) === String(b.id) && row.chargeApproved === true && !row.resolved && (Number(row.qty)||0)>0).reduce((sum,row)=>sum+Math.max(0,Number(row.penalty)||0),0), calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, Date, result: null };
   vm.runInNewContext(`${sharedHelpers}\n${code}\nresult = ${functionName}(booking);`, context);
   return context.result;
 }
@@ -157,6 +157,22 @@ test('booking total adds rent, other charges and discount but excludes missing i
     otherCharges: 50, discountAmount: 25
   });
   assert.equal(total, 425);
+});
+
+test('only explicitly approved missing-item penalties are added to invoice total', () => {
+  const booking={id:77,date:'2026-11-01',returnDate:'2026-11-03',items:[{name:'Chair',qty:2,rentPrice:100,missingQty:1,missingCharge:500}],otherCharges:50,discountAmount:25};
+  const pending=runRentFunction('calculateBookingTotalRent',booking,[{bookingId:77,qty:1,penalty:500,chargeApproved:false}]);
+  const approved=runRentFunction('calculateBookingTotalRent',booking,[{bookingId:77,qty:1,unitCharge:500,penalty:500,chargeApproved:true,resolved:false}]);
+  assert.equal(pending,425);
+  assert.equal(approved,925);
+});
+
+test('invoice exposes approved missing charge rows and separates pending approval', () => {
+  const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
+  assert.match(invoice,/approvedMissingRows/);
+  assert.match(invoice,/स्वीकृत Missing Charge/);
+  assert.match(invoice,/getApprovedMissingChargeTotal\(b\)/);
+  assert.doesNotMatch(invoice,/केवल मात्रा की सूची \(कोई शुल्क नहीं\)/);
 });
 
 test('rent uses actual dispatch quantities and their saved unit rate', () => {
@@ -233,6 +249,7 @@ async function runReturn(mode) {
     prompt: () => answers.shift(),
     document,
     safeGetStorage: key => store[key],
+    getEffectiveMissingCharge: item => Math.max(0,Number(item?.missingCharge??item?.missingUnitPrice)||0),
     safeSetStorage: (key, value) => { store[key] = value; return true; },
     localStorage: mockStorageForBatch(store), syncToCloud: () => {}, console,
     showActionMessage: () => {}, loadAllFirebaseData: () => {}, renderMissingItems: () => {}
@@ -522,13 +539,13 @@ test('admin booking list displays UTR and payment verification controls', () => 
   assert.ok(html.includes('/advance'));
 });
 
-test('missing items are shown as quantity only and never added to the customer invoice', () => {
-  assert.ok(html.includes('मिसिंग सामान की अलग सूची (केवल मात्रा)'));
-  assert.ok(html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
-  assert.doesNotMatch(html, /मिसिंग सामान चार्ज:/);
-  assert.doesNotMatch(html, /totalRent-\(Number\(b\.missingChargeTotal\)/);
-  assert.doesNotMatch(html, /rentalTotal\+missingTotal/);
-  assert.doesNotMatch(html, /rental\+missing\+/);
+test('missing items display charge approval and approved charges flow into invoice totals', () => {
+  assert.ok(html.includes('मिसिंग शुल्क'));
+  assert.ok(html.includes('शुल्क स्वीकृत करें'));
+  assert.ok(html.includes('स्वीकृत Missing Charge'));
+  assert.ok(html.includes('getApprovedMissingChargeTotal(b)'));
+  assert.ok(html.includes('chargeApproved===true'));
+  assert.ok(!html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
   assert.ok(html.includes('Customer status mirrors the invoice: missing items are quantity-only'));
 });
 
