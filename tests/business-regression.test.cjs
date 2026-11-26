@@ -278,7 +278,7 @@ test('dispatch aggregates duplicate stock-row requirements before checking and d
   assert.ok(dispatch.includes('if(previous)previous.qty+=x.qty'));
   assert.ok(dispatch.includes('if(available<requirement.qty)'));
   assert.ok(dispatch.includes('requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty))'));
-  assert.ok(html.includes('· बाकी '+Math.max(0,planned-sent)));
+  assert.ok(html.includes("· बाकी '+Math.max(0,planned-sent)"));
 });
 
 test('dispatch and return handlers reject duplicate submissions and always release their locks', () => {
@@ -293,8 +293,8 @@ test('dispatch and return handlers reject duplicate submissions and always relea
 
 test('missing recovery preserves prior recovery history and blocks duplicate submissions', () => {
   const recovery=html.slice(html.indexOf('async function recoverMissingItem(recordId,rowIndex)'),html.indexOf('async function completeManualReturnProcess()'));
-  assert.ok(recovery.includes('window.__rkMissingRecoveryInProgress'));
-  assert.ok(recovery.includes('finally { window.__rkMissingRecoveryInProgress=false; }'));
+  assert.ok(recovery.includes('globalThis.__rkMissingRecoveryInProgress'));
+  assert.ok(recovery.includes('finally { globalThis.__rkMissingRecoveryInProgress=false; }'));
   assert.ok(html.includes('recoveryEntries:Array.isArray(existing?.recoveryEntries)?existing.recoveryEntries:[]'));
   assert.ok(recovery.includes('m.recoveryEntries.push({qty,date:recoveryDate,createdAt:recoveredAt})'));
 });
