@@ -2204,3 +2204,30 @@ test('Shraddha AI renders a server proposal and requires an explicit Admin confi
   assert.match(code,/Dispatch, Return, Stock/);
   assert.match(code,/card\.append\(detail,button\)/);
 });
+
+
+test('calendar excludes cancelled bookings, ends early returns on the actual date and escapes customer names', () => {
+  const code = sourceBetween('function loadCalendarGrid()', 'window.customerOtpVerifiedPhone=null');
+  const title = { textContent: '' }, grid = { innerHTML: '' };
+  const bookings = [
+    { id: 1, status: 'Confirmed', date: '2026-11-02', returnDate: '2026-11-05', name: '<img src=x onerror=alert(1)>' },
+    { id: 2, status: 'Cancelled', date: '2026-11-02', returnDate: '2026-11-05', name: 'Cancelled Customer' },
+    { id: 3, status: 'Returned', date: '2026-11-01', returnDate: '2026-11-05', actualReturnDate: '2026-11-02', name: 'Early Return' },
+    { id: 4, status: 'Rejected', date: '2026-11-02', returnDate: '2026-11-05', name: 'Rejected Customer' }
+  ];
+  const context = {
+    currentCalendarDate: new Date(2026, 10, 1),
+    document: { getElementById: id => id === 'calendarMonthTitle' ? title : id === 'calendarDaysContainer' ? grid : null },
+    safeGetStorage: () => bookings,
+    escapeHtml: value => String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;"),
+    Date, String, Array
+  };
+  vm.runInNewContext(code + '\\nloadCalendarGrid();', context);
+  assert.equal(title.textContent, 'नवंबर 2026');
+  assert.ok(grid.innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;'));
+  assert.ok(!grid.innerHTML.includes('<img src=x'));
+  assert.ok(!grid.innerHTML.includes('Cancelled Customer'));
+  assert.ok(!grid.innerHTML.includes('Rejected Customer'));
+  const earlyReturnTagCount = (grid.innerHTML.match(/#3 Early Return/g)||[]).length;
+  assert.equal(earlyReturnTagCount, 1);
+});
