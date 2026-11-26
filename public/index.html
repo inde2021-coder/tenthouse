@@ -3225,15 +3225,20 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!Number.isInteger(qty)||qty<1||qty>remaining){showActionMessage('वापस मिली मात्रा 1 से मिसिंग बाकी मात्रा तक भरें','error');return;}
             const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(bId));
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
-            const it=(b.items||[]).find(x=>String(x.name)===String(m.item)&&String(x.source==='third-party'?'third-party':'admin')===String(m.source||'admin')&&String(x.partyName||'')===String(m.partyName||''));
-            if(!it){showActionMessage('बुकिंग में संबंधित सामान नहीं मिला; स्टॉक नहीं बदला गया','error');return;}
+            const hasItemIndex=m.itemIndex!==undefined&&m.itemIndex!==null&&m.itemIndex!==''&&Number.isInteger(Number(m.itemIndex));
+            const matches=(b.items||[]).map((item,index)=>({item,index})).filter(({item})=>String(item.name)===String(m.item)&&String(item.source==='third-party'?'third-party':'admin')===String(m.source||'admin')&&String(item.partyName||'')===String(m.partyName||''));
+            if(!hasItemIndex&&matches.length!==1){showActionMessage(matches.length?'एक जैसे कई सामान मिले; Missing रिकॉर्ड की सही पहचान नहीं हुई। स्टॉक नहीं बदला गया।':'बुकिंग में संबंधित सामान नहीं मिला; स्टॉक नहीं बदला गया','error');return;}
+            const itemIndex=hasItemIndex?Number(m.itemIndex):matches[0].index,it=b.items?.[itemIndex];
+            if(!it||String(it.name)!==String(m.item)||String(it.source==='third-party'?'third-party':'admin')!==String(m.source||'admin')||String(it.partyName||'')!==String(m.partyName||'')){showActionMessage('Missing रिकॉर्ड का सामान बुकिंग से मेल नहीं खाता; स्टॉक नहीं बदला गया','error');return;}
             const stockKey=m.source==='third-party'?'thirdPartyDatabase':'realStockDatabase',stock=safeGetStorage(stockKey,[]);
             const row=stock.find(x=>String(x.name||x.item)===String(m.item)&&(m.source!=='third-party'||String(x.partyName||'')===String(m.partyName||'')));
             if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला; Missing Recovery सेव नहीं हुई','error');return;}
             const previousState={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(missing)),stock:JSON.parse(JSON.stringify(stock))};
-            it.missingQty=Math.max(0,(Number(it.missingQty)||0)-qty);it.returnedQty=(Number(it.returnedQty)||0)+qty;
-            m.qty=remaining-qty;m.penalty=0;m.resolved=m.qty===0;m.recoveryEntries=Array.isArray(m.recoveryEntries)?m.recoveryEntries:[];
-            m.recoveryEntries.push({qty,date:new Date().toLocaleDateString('en-CA'),createdAt:new Date().toISOString()});
+            const recoveryDate=new Date().toLocaleDateString('en-CA'),recoveredAt=new Date().toISOString();
+            it.missingQty=Math.max(0,(Number(it.missingQty)||0)-qty);it.returnedQty=(Number(it.returnedQty)||0)+qty;it.lastReturnDate=recoveryDate;
+            m.qty=remaining-qty;m.penalty=0;m.resolved=m.qty===0;m.resolvedAt=m.resolved?recoveredAt:null;m.recoveryEntries=Array.isArray(m.recoveryEntries)?m.recoveryEntries:[];
+            m.recoveryEntries.push({qty,date:recoveryDate,createdAt:recoveredAt});
+            b.returnEntries=Array.isArray(b.returnEntries)?b.returnEntries:[];b.returnEntries.push({date:recoveryDate,mode:'MISSING_RECOVERY',items:[{itemIndex,qty}],createdAt:recoveredAt});
             row.qty=Math.max(0,Number(row.qty)||0)+qty;
             if(!safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){showActionMessage('Missing Recovery सेव नहीं हुई; आंशिक अपडेट वापस करने की कोशिश की गई।','error');return;}
             if(b.source==='customer-portal'){
