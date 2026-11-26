@@ -2887,6 +2887,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const bookings=safeGetStorage('softwareBookings',[]), body=document.getElementById('ledgerBookingTableBody'); if(!body)return;
             const bookingRows=bookings.map(b=>{const total=calculateBookingTotalRent(b),paid=getBookingPaidAmount(b),items=(b.items||[]).map(i=>`${escapeHtml(i.name)} × ${Number(i.qty)||0}`).join(', ')||'-';return `<tr><td>#${escapeHtml(b.id)}</td><td><b>${escapeHtml(b.name||'-')}</b></td><td>${phoneCallLink(b.mob)}</td><td>${escapeHtml(b.address||'-')}</td><td>${escapeHtml(b.eventType||'-')}</td><td>${escapeHtml(b.date||'-')}</td><td>${escapeHtml(b.returnDate||'-')}</td><td>${items}</td><td>₹${total}</td><td>₹${Number(b.advanceAmount)||0}</td><td>₹${paid}</td><td>₹${Math.max(0,total-paid)}</td><td>${escapeHtml(b.status||'Pending')}</td><td>बुकिंग</td></tr>`;});
             const ledger=safeGetStorage('rkPaymentLedger',[]), paymentRows=[];ledger.forEach(p=>{const b=bookings.find(x=>String(x.id)===String(p.bookingId)),name=escapeHtml(b?.name||p.customer||'-'),mobile=phoneCallLink(b?.mob||p.mobile||''),cash=Math.max(0,Number(p.cash)||0),online=Math.max(0,Number(p.online)||0);if(cash>0)paymentRows.push(`<tr><td>#${escapeHtml(p.bookingId)}</td><td><b>${name}</b></td><td>${mobile}</td><td>${escapeHtml(b?.address||'-')}</td><td>${escapeHtml(b?.eventType||'-')}</td><td>${escapeHtml(b?.date||'-')}</td><td>${escapeHtml(b?.returnDate||'-')}</td><td>Cash भुगतान</td><td>—</td><td>₹${cash.toFixed(2)}</td><td>₹${cash.toFixed(2)}</td><td>—</td><td>${escapeHtml(p.createdAt||'').slice(0,10)||'Recorded'}</td><td>Cash</td></tr>`);if(online>0){const display=getMasterLedgerOnlinePaymentDisplay(p);paymentRows.push(`<tr><td>#${escapeHtml(p.bookingId)}</td><td><b>${name}</b></td><td>${mobile}</td><td>${escapeHtml(b?.address||'-')}</td><td>${escapeHtml(b?.eventType||'-')}</td><td>${escapeHtml(b?.date||'-')}</td><td>${escapeHtml(b?.returnDate||'-')}</td><td>Online / UPI ₹${display.amount.toFixed(2)}</td><td>—</td><td>—</td><td>₹${display.received.toFixed(2)}</td><td>—</td><td>${escapeHtml(display.status)} · ${escapeHtml(p.utr||'-')}</td><td>Online</td></tr>`);}});
+            bookings.forEach(b=>(Array.isArray(b.partPayments)?b.partPayments:[]).forEach(p=>{
+                const amount=Math.max(0,Number(p.amount)||0);if(!amount)return;
+                const isCash=String(p.method||'').toLowerCase()==='cash';
+                paymentRows.push(`<tr><td>#${escapeHtml(b.id)}</td><td><b>${escapeHtml(b.name||'-')}</b></td><td>${phoneCallLink(b.mob||'')}</td><td>${escapeHtml(b.address||'-')}</td><td>${escapeHtml(b.eventType||'-')}</td><td>${escapeHtml(b.date||'-')}</td><td>${escapeHtml(b.returnDate||'-')}</td><td>${isCash?'Cash किस्त':'Manual किस्त (method दर्ज नहीं)'}</td><td>—</td><td>${isCash?'₹'+amount.toFixed(2):'—'}</td><td>₹${amount.toFixed(2)}</td><td>—</td><td>${escapeHtml(p.date||'')}</td><td>Installment</td></tr>`);
+            }));
             body.innerHTML=bookingRows.concat(paymentRows).join('')||'<tr><td colspan="14" style="text-align:center;">कोई डेटा नहीं</td></tr>';
         }
 
@@ -2925,23 +2930,22 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         function loadInstallmentsTable() {
-            let bookings = safeGetStorage('softwareBookings', []);
-            let tbody = document.getElementById('installmentsTableBody');
-            if(tbody) {
-                tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr>` : bookings.map(b => {
-                    let totalRent = calculateBookingTotalRent(b);
-                    let paid = getBookingPaidAmount(b);
-                    let due = Math.max(0, totalRent - paid);
-                    return `<tr>
-                        <td><b>${b.name}</b></td>
-                        <td>${phoneCallLink(b.mob)}</td>
-                        <td>₹${totalRent}</td>
-                        <td>₹${paid}</td>
-                        <td style="color:#e53e3e;">₹${due}</td>
-                        <td><div class="installment-action-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0"><input type="number" id="inst_amt_${escapeHtml(String(b.id))}" min="0.01" step="0.01" inputmode="decimal" aria-label="${escapeHtml(b.name||'ग्राहक')} की जमा राशि" placeholder="रुपये" style="width:clamp(72px,10vw,110px);max-width:100%;flex:0 1 100px;display:inline-block;margin:0"><button type="button" onclick="saveInstallment(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})" class="action-btn" style="white-space:nowrap;color:var(--emerald-neon);">जमा करें</button><button type="button" class="action-btn" onclick="openDueInstallment(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})">Due Installment पेमेंट</button></div></td>
-                    </tr>`;
-                }).join('');
-            }
+            const bookings = safeGetStorage('softwareBookings', []);
+            const tbody = document.getElementById('installmentsTableBody');
+            if (!tbody) return;
+            const dueBookings = bookings.map(b => {
+                const totalRent = calculateBookingTotalRent(b);
+                const paid = getBookingPaidAmount(b);
+                return { booking: b, totalRent, paid, due: Math.max(0, totalRent - paid) };
+            }).filter(row => row.due > 0.009 && !['Rejected','Cancelled'].includes(String(row.booking.status||'')));
+            tbody.innerHTML = dueBookings.length === 0 ? '<tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr>' : dueBookings.map(({booking:b,totalRent,paid,due}) => `<tr>
+                <td><b>${escapeHtml(b.name||'-')}</b></td>
+                <td>${phoneCallLink(b.mob)}</td>
+                <td>₹${totalRent.toFixed(2)}</td>
+                <td>₹${paid.toFixed(2)}</td>
+                <td style="color:#e53e3e;">₹${due.toFixed(2)}</td>
+                <td><div class="installment-action-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0"><input type="number" id="inst_amt_${escapeHtml(String(b.id))}" min="0.01" step="0.01" inputmode="decimal" aria-label="${escapeHtml(b.name||'ग्राहक')} की जमा राशि" placeholder="रुपये" style="width:clamp(72px,10vw,110px);max-width:100%;flex:0 1 100px;display:inline-block;margin:0"><button type="button" onclick="saveInstallment(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})" class="action-btn" style="white-space:nowrap;color:var(--emerald-neon);">Cash किस्त जमा करें</button><button type="button" class="action-btn" onclick="openDueInstallment(${JSON.stringify(String(b.id)).replace(/"/g, '&quot;')})">Due Installment पेमेंट</button></div></td>
+            </tr>`).join('');
         }
 
         function openDueInstallment(id){
@@ -2976,11 +2980,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const total = Math.round(calculateBookingTotalRent(b) * 100) / 100;
                 const due = Math.max(0, Math.round((total - previousPaid) * 100) / 100);
                 if (amt > due + 0.001) { showActionMessage('किस्त बकाया राशि से अधिक नहीं हो सकती', 'error'); return; }
-                b.partPayments.push({ id: (globalThis.crypto?.randomUUID?.() || String(Date.now())+'-'+Math.random().toString(36).slice(2)), date: new Date().toLocaleDateString('en-CA'), amount: amt, source: 'installments-page' });
+                b.partPayments.push({ id: (globalThis.crypto?.randomUUID?.() || String(Date.now())+'-'+Math.random().toString(36).slice(2)), date: new Date().toLocaleDateString('en-CA'), amount: amt, method: 'cash', source: 'installments-page' });
                 b.totalPaid = Math.round((previousPaid + amt) * 100) / 100;
                 b.lastInstallmentPayment = { amount: amt, date: new Date().toISOString(), source: 'installments-page' };
                 b.dueAmount = Math.max(0, Math.round((total - b.totalPaid) * 100) / 100);
-                safeSetStorage('softwareBookings', bookings);
+                if(!safeSetStorageBatch([['softwareBookings',bookings]])){showActionMessage('किस्त सेव नहीं हुई; बकाया रिकॉर्ड नहीं बदला।','error');return;}
                 if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
                 amountInput.value = '';
                 loadCustomerList(); loadInstallmentsTable(); loadPaymentLedgerTable(); loadMasterLedgerData();
@@ -3015,6 +3019,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const action=!advanceVerified&&b.source==='customer-portal'?`<button type="button" class="action-btn" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},true)">सत्यापित</button><button type="button" class="action-btn danger-action" onclick="verifyCustomerAdvance(${JSON.stringify(String(b.id)).replace(/"/g,'&quot;')},false)">अस्वीकार</button>`:'';
                 rows.push(`<tr class="${mode==='cash'?'rk-payment-cash-row':'rk-payment-online-row'}"><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${phoneCallLink(b.mob||'')}</td><td>${money(amount)}</td><td><span class="rk-payment-mode ${mode==='cash'?'rk-payment-mode-cash':'rk-payment-mode-online'}">${escapeHtml(b.payMode||'Cash')} Advance</span></td><td>${escapeHtml(b.utrNumber||'-')}</td><td>${status}</td><td>${action}</td></tr>`);
             });
+            bookings.forEach(b=>(Array.isArray(b.partPayments)?b.partPayments:[]).forEach((p,index)=>{
+                const amount=Math.max(0,Number(p.amount)||0);if(!amount)return;
+                const method=String(p.method||'').toLowerCase(),isCash=method==='cash';
+                if(isCash)cashSum+=amount;
+                const label=isCash?'Cash किस्त':'Manual किस्त · method दर्ज नहीं';
+                rows.push(`<tr class="rk-payment-cash-row"><td>#${escapeHtml(b.id)}</td><td>${escapeHtml(b.name||'-')}</td><td>${phoneCallLink(b.mob||'')}</td><td>${money(amount)}</td><td><span class="rk-payment-mode rk-payment-mode-cash">${label}</span></td><td>-</td><td>जमा · ${escapeHtml(p.date||'')}</td><td>Installment</td></tr>`);
+            }));
             if(document.getElementById('totalCashSum'))document.getElementById('totalCashSum').textContent=money(cashSum);
             if(document.getElementById('totalOnlineSum'))document.getElementById('totalOnlineSum').textContent=money(onlineSum);
             if(document.getElementById('totalOnlinePendingSum'))document.getElementById('totalOnlinePendingSum').textContent=money(pendingOnlineSum);
