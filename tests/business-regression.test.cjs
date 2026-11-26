@@ -1546,3 +1546,22 @@ test('all inline JavaScript in the deployable HTML parses successfully', () => {
     assert.doesNotThrow(() => new vm.Script(match[2], { filename: 'inline-script-' + index }), 'inline script ' + index + ' must parse');
   }
 });
+
+
+test('royal print theme is synchronized and covers customer-facing business documents', () => {
+  const path = require('node:path');
+  const cssFiles = [
+    path.join(__dirname, '..', 'rk-reference-theme.css'),
+    path.join(__dirname, '..', 'public', 'rk-reference-theme.css'),
+    path.join(__dirname, '..', 'backend', 'public', 'rk-reference-theme.css')
+  ];
+  const styles = cssFiles.map(file => fs.readFileSync(file, 'utf8'));
+  assert.equal(styles[0], styles[1]);
+  assert.equal(styles[0], styles[2]);
+  assert.match(styles[0], /Royal white-paper print system/);
+  assert.match(styles[0], /#printableSlipArea \.rk-slip th/);
+  assert.match(styles[0], /#printableSlipArea \.rk-slip td/);
+  const dispatch = sourceBetween('function printDispatchSlip(id)', 'function printReturnSlip');
+  assert.doesNotMatch(dispatch, /remark/i, 'Dispatch Slip must not contain a Remark field');
+  assert.match(html, /<th>मिसिंग मात्रा<\\/th>/, 'Return Slip must retain the Missing Quantity column');
+});
