@@ -1931,7 +1931,7 @@ test('server-side AI actions require an allow-listed proposal and exact explicit
   assert.match(backend,/app\.post\('\/api\/ai\/actions\/propose', aiLimiter, authAdmin, requireDurableStore/);
   assert.match(backend,/type: z\.literal\('customer_booking_status'\)/);
   assert.match(backend,/status: z\.enum\(\['Confirmed', 'Rejected'\]\)/);
-  assert.match(backend,/confirmationText !== 'CONFIRM ' \+ proposal\.bookingId/);
+  assert.match(backend,/confirmationText !== expectedConfirmation/);\n  assert.match(backend,/type: z\.literal\('payment_verification'\)/);\n  assert.match(backend,/Only pending payments can be verified or rejected/);
   assert.match(backend,/storeTransitionRecord\(proposalPath/);
   assert.match(backend,/Only a booking in Pending Approval/);
   assert.match(backend,/Action proposal is expired or already used/);
