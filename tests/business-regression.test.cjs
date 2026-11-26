@@ -1478,6 +1478,26 @@ test('business card printing waits for images and cleans the shared print target
 });
 
 
+test('Firebase shared-data listener detaches on sign-out and can reattach on next sign-in', () => {
+  const code=sourceBetween('function initFirebaseConnection() {','// Settings persistence:');
+  let authCallback,attached=0,detached=0;
+  const ref={on:(event)=>{if(event==='value')attached++;},off:(event)=>{if(event==='value')detached++;}};
+  const auth={onAuthStateChanged:callback=>{authCallback=callback;}};
+  const firebase={apps:[{}],app:()=>({}),database:Object.assign(()=>({ref:()=>ref}),{}),auth:()=>auth};
+  const window={firebase};
+  const context={window,firebase,CLOUD_KEY_MAP:{softwareBookings:'bookings'},dbRef:null,cloudListenerAttached:false,
+    firebaseApp:null,flushPendingCloudSync:()=>{},showActionMessage:()=>{},console};
+  vm.runInNewContext(code,context);
+  context.initFirebaseConnection();
+  authCallback({uid:'admin-1'});
+  assert.equal(attached,1);
+  authCallback(null);
+  assert.equal(detached,1);
+  assert.equal(context.cloudListenerAttached,false);
+  authCallback({uid:'admin-1'});
+  assert.equal(attached,2);
+  assert.equal(context.cloudListenerAttached,true);
+});
 test('Firebase Realtime Database rules fail closed and allow only explicitly allowlisted admin UIDs', () => {
   const rules=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'..','database.rules.json'),'utf8')).rules;
   assert.equal(rules['.read'],false);
