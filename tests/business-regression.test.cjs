@@ -1366,3 +1366,29 @@ test('Firebase Realtime Database rules fail closed and allow only explicitly all
   assert.equal(rules.erp_admins['.read'],false);
   assert.equal(rules.erp_admins['.write'],false);
 });
+
+test('dispatch refuses fractional existing stock without saving', async () => {
+  const store={softwareBookings:[{id:401,status:'Confirmed',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:1,rentPrice:100,source:'admin'}],dispatchEntries:[]}],realStockDatabase:[{name:'Chair',qty:1.5}],thirdPartyDatabase:[]};
+  let writes=0;
+  const context={Math,Number,String,Array,Date,JSON,prompt:message=>String(message).includes('नंबर चुनें')?'':'1',isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},sendWhatsAppMessage:()=>{},syncCustomerBookingWorkflow:()=>{}};
+  const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
+  vm.runInNewContext(code+'\nresult=completeDispatch(401);',context);await context.result;
+  assert.equal(writes,0);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);assert.equal(store.realStockDatabase[0].qty,1.5);
+});
+
+test('return refuses fractional existing stock without saving booking quantities', async () => {
+  const store={softwareBookings:[{id:402,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:2,returnedQty:0,source:'admin'}],dispatchEntries:[{itemIndex:0,qty:2,date:'2026-11-01'}]}],missingItemsDatabase:[],realStockDatabase:[{name:'Chair',qty:1.5}],thirdPartyDatabase:[]};
+  const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
+  const context={activeReturnBookingId:402,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  const code=sourceBetween('async function completeManualReturnProcess()','        let currentDocumentItems = []');
+  vm.runInNewContext(code+'\nresult=completeManualReturnProcess();',context);await context.result;
+  assert.equal(writes,0);assert.equal(store.softwareBookings[0].items[0].returnedQty,0);assert.equal(store.realStockDatabase[0].qty,1.5);
+});
+
+test('missing recovery refuses fractional existing stock without changing the missing ledger', async () => {
+  const store={softwareBookings:[{id:403,items:[{name:'Chair',qty:2,returnedQty:0,missingQty:1,source:'admin'}]}],missingItemsDatabase:[{id:'m1',bookingId:403,item:'Chair',qty:1,source:'admin'}],realStockDatabase:[{name:'Chair',qty:1.5}],thirdPartyDatabase:[]};
+  const context={activeReturnBookingId:403,Math,Number,String,Array,Date,JSON,document:{getElementById:()=>({value:'1'})},safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{throw new Error('must not save');},showActionMessage:()=>{}};
+  const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)','async function completeManualReturnProcess()');
+  vm.runInNewContext(code+'\nresult=recoverMissingItem("m1",0);',context);await context.result;
+  assert.equal(store.missingItemsDatabase[0].qty,1);assert.equal(store.realStockDatabase[0].qty,1.5);
+});
