@@ -272,6 +272,15 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
 
+test('dispatch order additions report success only after booking storage succeeds', () => {
+  const admin=html.slice(html.indexOf('function addItemToPendingBookingDispatch()'),html.indexOf('function addThirdPartyItemToDispatch()'));
+  const vendor=html.slice(html.indexOf('function addThirdPartyItemToDispatch()'),html.indexOf('function searchDispatchBooking()'));
+  assert.ok(admin.includes("if(!safeSetStorage('softwareBookings', bookings))"),'admin dispatch add must check storage result');
+  assert.ok(vendor.includes("if(!safeSetStorage('softwareBookings', bookings))"),'vendor dispatch add must check storage result');
+  assert.ok(!admin.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'admin add must not announce success after unchecked save');
+  assert.ok(!vendor.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'vendor add must not announce success after unchecked save');
+});
+
 test('payment recording and UTR verification save ledger and booking totals atomically', () => {
   const save=html.slice(html.indexOf('async function savePaymentEntry()'),html.indexOf('async function verifyLedgerPayment('));
   const verify=html.slice(html.indexOf('async function verifyLedgerPayment('),html.indexOf('function printReturnSlip('));
