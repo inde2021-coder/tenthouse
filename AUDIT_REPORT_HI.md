@@ -270,3 +270,11 @@ Main पर मिले root causes:
 - पुराने conflicted PR #18 को latest-main PR #19 के merge के बाद बंद किया गया।
 - Latest main head: `1311dac45ebad0c153c7c204a391925d7b257de4`।
 - Production deployment नहीं किया गया।
+
+
+## Business Document Print Lifecycle — 26 नवंबर 2026, 09:31 IST
+- PR #20 merged: `9ad94b5392c552f59109b2d1d9e6d1df0cb8abc0`। Business Document print अब shared image-aware `printWithStampImages()` routine इस्तेमाल करता है और print dialog पूरा होने से पहले printable area hide नहीं करता। Existing `afterprint` cleanup document को सही समय पर बंद करता है।
+- तीनों HTML shells byte-identical हैं।
+- PR branch CI run `45752255796`: 122/122 PASS; merge के बाद main CI run `45752349356`: **122/122 PASS, 0 FAIL**।
+- Latest main head: `9ad94b5392c552f59109b2d1d9e6d1df0cb8abc0`।
+- Production deployment नहीं किया गया।
