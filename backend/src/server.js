@@ -263,8 +263,11 @@ const verifyWhatsAppWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-  const expected = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-  if (mode === 'subscribe' && expected && token === expected && typeof challenge === 'string') return res.status(200).type('text/plain').send(challenge);
+  const expected = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
+  const supplied = typeof token === 'string' ? Buffer.from(token) : Buffer.alloc(0);
+  const configured = Buffer.from(expected);
+  const tokenMatches = configured.length > 0 && supplied.length === configured.length && crypto.timingSafeEqual(supplied, configured);
+  if (mode === 'subscribe' && tokenMatches && typeof challenge === 'string') return res.status(200).type('text/plain').send(challenge);
   return res.sendStatus(403);
 };
 // Keep both paths available: the already-verified production Meta callback
