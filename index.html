@@ -4050,7 +4050,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
 <script>
 (function(){
- const allowed=['royal','emerald','purple'];
+ const allowed=['royal','light','neon','emerald','purple','ocean'];
  window.applyRkDesign=function(name){
   if(!allowed.includes(name)) return;
   document.documentElement.classList.remove('rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean');
@@ -4058,7 +4058,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
   try{localStorage.setItem('rkDesignPreset',name)}catch(e){}
   document.querySelectorAll('[data-rk-theme]').forEach(b=>b.classList.toggle('selected',b.dataset.rkTheme===name));
   const status=document.getElementById('rkDesignStatus');
-  if(status)status.textContent='डिजाइन लागू: '+({royal:'Royal Blue',emerald:'Emerald',purple:'Royal Purple'}[name]);
+  if(status)status.textContent='डिजाइन लागू: '+({royal:'Royal Dark',light:'Light Royal',neon:'Neon',emerald:'Green Nature',purple:'Purple Royal',ocean:'Ocean Blue'}[name]);
  };
  document.addEventListener('DOMContentLoaded',function(){
   let saved='royal';try{saved=localStorage.getItem('rkDesignPreset')||'royal'}catch(e){}
