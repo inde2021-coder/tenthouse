@@ -1,3 +1,11 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+
+const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
+
 test('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
   const rules = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
   assert.equal(rules['.read'], false);
@@ -16,14 +24,6 @@ test('Google admin login verifies the signed-in UID grant before revealing admin
   assert.ok(signIn >= 0 && grantRead > signIn && deny > grantRead && reveal > deny);
   assert.ok(login.includes('await firebase.auth().signOut()'));
 });
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-
-const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
-const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
 
 test('Vercel backend serves the synced frontend and PWA assets from its project root', () => {
   const path = require('node:path');
