@@ -409,3 +409,29 @@ html.rk-theme-ocean #adminPanel .menu-item.active{background:linear-gradient(110
 html.rk-theme-ocean #adminPanel .glass-card-blue,html.rk-theme-ocean #adminPanel .glass-card-purple,html.rk-theme-ocean #adminPanel .glass-card-green,html.rk-theme-ocean #customerFirstPortal .rk-customer-section{border-color:#48b9e9!important}
 html.rk-theme-ocean #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#06264a,#0879b8)!important;border-color:#48b9e9!important}
 @media(max-width:720px){.rk-design-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.rk-design-choice{min-width:0!important}}
+
+
+/* Customer self-service booking tracker, using the same Royal glass card system. */
+#customerFirstPortal .rk-booking-tracker{width:100%;max-width:1500px;margin:12px auto 0;padding:18px 20px!important;border:1px solid rgba(91,157,255,.72)!important;border-radius:16px!important;background:linear-gradient(145deg,rgba(8,24,54,.97),rgba(4,12,29,.98))!important;box-shadow:0 12px 30px #0007,inset 0 1px #ffffff18!important;color:#f3f7ff!important}
+#customerFirstPortal .rk-tracker-hint{margin:4px 0 12px;color:#cbdaf4;font-size:12px}
+#customerFirstPortal .rk-tracker-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;align-items:end}
+#customerFirstPortal .rk-tracker-fields label{display:grid;gap:5px;color:#e7efff;font-size:11px;font-weight:800}
+#customerFirstPortal .rk-tracker-fields input{width:100%;min-height:40px;padding:9px 11px;border:1px solid #376eae;border-radius:9px;background:#06142c;color:#fff;outline:none}
+#customerFirstPortal .rk-tracker-fields input:focus{border-color:#ffd45c;box-shadow:0 0 0 2px #ffd45c35}
+#customerFirstPortal .rk-tracker-submit{min-height:40px;padding:9px 16px;border:1px solid #ffe69a;border-radius:9px;background:linear-gradient(180deg,#ffe58a,#d99a16);color:#171b29;font-weight:900;white-space:nowrap;box-shadow:0 5px 13px #0006,inset 0 1px #fff8}
+#customerFirstPortal .rk-tracker-result{margin-top:12px;padding:12px;border:1px solid #234b80;border-radius:11px;background:rgba(3,12,29,.72);color:#eaf2ff;font-size:12px;min-height:42px}
+#customerFirstPortal .rk-tracker-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#customerFirstPortal .rk-tracker-summary>div{display:grid;gap:3px}
+#customerFirstPortal .rk-tracker-summary small{color:#a9c2e8;font-size:10px}
+#customerFirstPortal .rk-tracker-summary strong{color:#ffdf78;font-size:18px}
+#customerFirstPortal .rk-tracker-status{padding:6px 10px;border:1px solid #d9b451;border-radius:999px;background:#2c2511;color:#ffe58a;font-weight:900}
+#customerFirstPortal .rk-tracker-meta{display:flex;gap:8px 16px;flex-wrap:wrap;margin:10px 0;color:#c6d8f5}
+#customerFirstPortal .rk-tracker-items{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin:0;padding:0}
+#customerFirstPortal .rk-tracker-items li{display:flex;justify-content:space-between;gap:10px;padding:7px 9px;border:1px solid #234b80;border-radius:8px;background:#0a1b37}
+#customerFirstPortal .rk-tracker-items b{color:#ffdf78}
+#customerFirstPortal .rk-tracker-payment{display:flex;gap:8px 18px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid #284b78;color:#dce9ff}
+html.rk-theme-light #customerFirstPortal .rk-booking-tracker{background:linear-gradient(145deg,#fff,#e2f2ff)!important;border-color:#9bc9ef!important;color:#17385f!important}
+html.rk-theme-light #customerFirstPortal .rk-tracker-hint,html.rk-theme-light #customerFirstPortal .rk-tracker-fields label,html.rk-theme-light #customerFirstPortal .rk-tracker-meta,html.rk-theme-light #customerFirstPortal .rk-tracker-payment{color:#24527d!important}
+html.rk-theme-light #customerFirstPortal .rk-tracker-fields input{background:#fff;color:#17385f;border-color:#9bc9ef}
+html.rk-theme-light #customerFirstPortal .rk-tracker-result{background:#f3f9ff;color:#17385f;border-color:#a8d4f5}
+@media(max-width:640px){#customerFirstPortal .rk-booking-tracker{padding:14px!important}#customerFirstPortal .rk-tracker-fields{grid-template-columns:minmax(0,1fr)!important}#customerFirstPortal .rk-tracker-submit{width:100%}}
