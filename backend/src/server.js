@@ -241,7 +241,7 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   } catch (e) { res.status(503).json({ error: e.message }); }
 });
 app.post('/api/otp/verify', otpVerifyLimiter, requireDurableStore, async (req, res) => {
-  const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\\d{6}$/) }).safeParse(req.body);
+  const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\d{6}$/) }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ verified: false, error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
   const { phone, otp } = parsed.data;
   const path = 'erpPrivate/otp/' + phoneKey(phone);
