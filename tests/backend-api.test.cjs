@@ -243,6 +243,27 @@ test('concurrent OTP verification can succeed only once', async () => {
   assert.equal(results.filter(result => result.verified === true).length, 1);
 });
 
+test('OTP locks after five invalid attempts and rejects the correct code afterward', async () => {
+  const sent = await request('/api/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543212', channel: 'sms' })
+  });
+  assert.equal(sent.status, 200);
+  const { demoOtp } = await sent.json();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const invalid = await request('/api/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone: '9876543212', otp: '000000' === demoOtp ? '000001' : '000000' })
+    });
+    assert.equal(invalid.status, 400);
+  }
+  const locked = await request('/api/otp/verify', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543212', otp: demoOtp })
+  });
+  assert.equal(locked.status, 400);
+});
+
 test('WhatsApp webhook verifies challenge and authenticates signed, idempotent events', async () => {
   const challenge = 'test-challenge-123';
   const verified = await request('/api/webhook?hub.mode=subscribe&hub.verify_token=test-webhook-verify-token&hub.challenge=' + challenge);
