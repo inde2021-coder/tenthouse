@@ -278,3 +278,12 @@ Main पर मिले root causes:
 - PR branch CI run `45752255796`: 122/122 PASS; merge के बाद main CI run `45752349356`: **122/122 PASS, 0 FAIL**।
 - Latest main head: `9ad94b5392c552f59109b2d1d9e6d1df0cb8abc0`।
 - Production deployment नहीं किया गया।
+
+
+## Firebase RTDB Access Rules — 26 नवंबर 2026, 09:37 IST
+- PR #25 merged: `0cdd7aa7b633430884e13dcba157d388a1b3a5f8`। Repository में `database.rules.json` fail-closed template जोड़ा गया: default database read/write deny; `tent_erp_data` केवल signed-in Firebase UID allowlist `erp_admins/{uid}=true` को; allowlist को client से पढ़ना/लिखना निषिद्ध।
+- Hindi setup guide में rules publish और verified admin UID provision करने के चरण दर्ज हैं। Regression test rule policy को validate करता है।
+- PR branch CI run `45752858614`: 124/124 PASS; merge के बाद main CI run `45752965570`: **124/124 PASS, 0 FAIL**।
+- महत्वपूर्ण सीमा: rules GitHub में committed हैं, लेकिन live Firebase Console में publish नहीं किए गए और admin UID allowlist भी provision नहीं की गई। इसलिए production Firebase permission/cross-device sync अभी वास्तविक रूप से verified नहीं है। Rules लागू करने के लिए admin UID चाहिए; इसे अनुमान से नहीं भरा गया।
+- Latest main head: `0cdd7aa7b633430884e13dcba157d388a1b3a5f8`।
+- कोई Vercel deployment या Firebase rules publish नहीं किया गया।
