@@ -144,3 +144,14 @@ Main पर मिले root causes:
 - PR #2 में AI provider को भेजे जाने वाले business context को raw booking/stock/expense/vendor/payment records से बदलकर केवल aggregate record counts किया गया। Regression test इस बात की जाँच करता है कि customer identifiers और payment details AI request में serialize न हों।
 - PR #2 अभी पुरानी audit branch को base करता है; PR #3 audit-preview repository का है। इनमें से कोई भी production deployment या production merge नहीं है।
 - Repository rename/name change को audit, production repository access, credentials rotation और live acceptance checks पूरा होने तक स्थगित रखा गया है।
+
+
+## नवीनतम verification refresh — 26 नवंबर 2026, 08:23 IST
+- PR #3 वर्तमान head: `43ec8be8409b34589cbf4007b5f16cb78a178021`; PR अभी Draft और unmerged है।
+- GitHub Actions run #617 (`45745058356`) इसी head पर सफल: dependency install, backend JS syntax, business regression tests, package/manifest JSON validation — सभी PASS।
+- PR #2 वर्तमान head `e182d3b02398b4d249fb43f139a2ff30808ad3a6`; इसका run #615 सफल है।
+- Production Vercel read-only recheck: latest deployment READY, commit `91754c406d151c0ed3fb61e2cb31c8a0317873a6`; production project `tenthouse2026` का source repository `inde2021-coder/tenthouse` है।
+- Production repo GitHub connection से अभी भी 404 / unavailable है। Vercel deployment source-file tree भी उपलब्ध नहीं है; इसलिए deployed source की code-level समीक्षा इस access से संभव नहीं हुई।
+- Production env inventory (values read नहीं किए): केवल `FIREBASE_DATABASE_URL`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_PROJECT_ID`, `AI_API_KEY`, `ADMIN_API_TOKEN` दिखे। WhatsApp/OTP-HMAC/`PUBLIC_ORIGIN` नाम नहीं दिखे; application requirements से मिलान production source access के बाद ही होगा।
+- पिछले 30 मिनट के production runtime error/fatal log query में कोई matching entry नहीं मिली; इसे zero-error प्रमाण नहीं माना जाए।
+- किसी PR को merge या production deploy नहीं किया गया। नाम बदलने का काम स्थगित है।
