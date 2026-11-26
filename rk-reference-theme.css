@@ -172,3 +172,24 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
   grid-template-areas:"identity" "event" "items" "payment" "submit"!important;
  }
 }
+
+/* Admin-selectable visual presets; presentation-only and isolated from ERP data. */
+.rk-design-manager{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:14px;border:1px solid #3278d5;border-radius:14px;background:linear-gradient(135deg,#071a3a,#102d60);color:#f4f7ff}
+.rk-design-manager>div:first-child{display:grid;gap:4px}.rk-design-manager strong{color:#ffe17b;font-size:14px}.rk-design-manager small{color:#c4d5f1;font-size:11px}
+.rk-design-options{display:flex;gap:8px;flex-wrap:wrap}
+.rk-design-choice{display:inline-flex;align-items:center;gap:7px!important;width:auto!important;padding:8px 11px!important;border:1px solid #456caa!important;border-radius:10px!important;background:#0b1b39!important;color:#fff!important;font-size:11px!important}
+.rk-design-choice.selected{border-color:#ffe17b!important;box-shadow:0 0 0 2px #ffe17b55!important}
+.rk-design-swatch{width:15px;height:15px;border-radius:50%;display:inline-block;border:1px solid #ffffff99}
+.rk-design-swatch.royal{background:linear-gradient(135deg,#0b3b8e,#e8bd46)}
+.rk-design-swatch.emerald{background:linear-gradient(135deg,#075d4d,#b7e8a1)}
+.rk-design-swatch.purple{background:linear-gradient(135deg,#4b237d,#edb5ff)}
+.rk-theme-emerald #adminPanel .sidebar,.rk-theme-emerald #adminPanel .header{background:linear-gradient(120deg,#042b28,#07594d)!important}
+.rk-theme-emerald #adminPanel .menu-item.active{background:linear-gradient(110deg,#0c8b70,#1ca987)!important}
+.rk-theme-emerald #adminPanel .glass-card-blue,.rk-theme-emerald #adminPanel .glass-card-purple,.rk-theme-emerald #adminPanel .glass-card-green,.rk-theme-emerald #customerFirstPortal .rk-customer-section{border-color:#269b7d!important}
+.rk-theme-emerald #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#042b28,#07594d)!important;border-color:#269b7d!important}
+.rk-theme-emerald #customerFirstPortal .rk-customer-hero{background-color:#042b28!important}
+.rk-theme-purple #adminPanel .sidebar,.rk-theme-purple #adminPanel .header{background:linear-gradient(120deg,#1c1035,#492477)!important}
+.rk-theme-purple #adminPanel .menu-item.active{background:linear-gradient(110deg,#7440a7,#a36ad1)!important}
+.rk-theme-purple #adminPanel .glass-card-blue,.rk-theme-purple #adminPanel .glass-card-purple,.rk-theme-purple #adminPanel .glass-card-green,.rk-theme-purple #customerFirstPortal .rk-customer-section{border-color:#9b6ac7!important}
+.rk-theme-purple #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#1c1035,#492477)!important;border-color:#9b6ac7!important}
+.rk-theme-purple #customerFirstPortal .rk-customer-hero{background-color:#1c1035!important}
