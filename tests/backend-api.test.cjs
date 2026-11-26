@@ -486,7 +486,7 @@ test('customer and admin royal theme assets are served from the production stati
   assert.match(markup, /applyRkDesign/);
   assert.match(markup, /rkDesignPreset/);
 
-  const theme = await request('/rk-reference-theme.css?v=4');
+  const theme = await request('/rk-reference-theme.css?v=5');
   assert.equal(theme.status, 200);
   assert.match(theme.headers.get('content-type') || '', /text\/css/i);
   const css = await theme.text();
