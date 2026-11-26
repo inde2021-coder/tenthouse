@@ -227,3 +227,12 @@ Main पर मिले root causes:
 - PR #3, #4, #5 और #6 merged हैं।
 - कोई Vercel deployment trigger नहीं किया गया।
 - शेष वास्तविक device/provider verification: Firebase production sync/rules, WhatsApp delivery, UPI bank settlement, barcode camera on supported Android browser, PDF/print output on actual printers, and full booking→dispatch→partial/final return→missing recovery with persistent cloud data.
+
+
+## Stock Entry Validation — 26 नवंबर 2026, 09:14 IST
+- PR #11 merged: `d6dc0dfd4afe48f598de1982268d4a641a0f634b`। Admin और Vendor stock entry अब केवल positive whole-number quantities स्वीकार करते हैं; vendor cost/rent/missing rates के लिए negative और non-numeric values अस्वीकार हैं। Invalid submission local storage को नहीं बदलती और form reset नहीं होता। Admin stock write failure पर भी form reset नहीं होता।
+- तीनों frontend HTML shells समान रखे गए।
+- PR branch CI run `45750582942`: 105/105 tests PASS। Merge के बाद main CI run `45750664391`: **107/107 tests PASS**। Backend syntax और package/manifest validation भी PASS।
+- पुराना divergent duplicate PR #9 बंद किया गया; tested latest-main PR #11 merged है।
+- Latest main head: `d6dc0dfd4afe48f598de1982268d4a641a0f634b`।
+- Vercel deployment अब भी नहीं किया गया।
