@@ -1084,6 +1084,7 @@ test('vendor stock entry rejects fractional, negative and malformed quantities w
       event:null
     };
     const event={preventDefault(){},target:{reset(){reset=true;}}};
+    context.event=event;
     vm.runInNewContext(code+'\nresult=saveThirdPartyEntry(event);',context);
     assert.equal(writes,0,'invalid vendor stock quantity must not be saved');
     assert.equal(reset,false,'invalid form must retain entered values');
