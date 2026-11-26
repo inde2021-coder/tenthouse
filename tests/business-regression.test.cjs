@@ -169,7 +169,7 @@ test('missing-item charge is automatic from stock rate without an approval flag'
 
 test('invoice shows automatic missing charge breakdown without admin approval controls', () => {
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
-  assert.match(invoice,/approvedMissingRows/);
+  assert.match(invoice,/missingChargeRows/);
   assert.match(invoice,/Missing सामान का लागू शुल्क/);
   assert.match(invoice,/getMissingChargeTotal\(b\)/);
   assert.doesNotMatch(invoice,/शुल्क स्वीकृत करें/);
@@ -177,7 +177,7 @@ test('invoice shows automatic missing charge breakdown without admin approval co
 
 test('invoice exposes automatically applied missing charge rows without approval gating', () => {
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
-  assert.match(invoice,/approvedMissingRows/);
+  assert.match(invoice,/missingChargeRows/);
   assert.match(invoice,/Missing सामान का लागू शुल्क/);
   assert.match(invoice,/getMissingChargeTotal\(b\)/);
   assert.doesNotMatch(invoice,/स्वीकृत Missing Charge|शुल्क स्वीकृत करें|getApprovedMissingChargeTotal/);
