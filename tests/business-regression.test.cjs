@@ -1981,3 +1981,75 @@ test('all 19 Admin modules have a page section and their primary handlers', () =
     }
   }
 });
+
+
+test('synthetic Customer Booking → Dispatch → Final Return → Missing Charge → Accounting E2E', async () => {
+  const store = {
+    softwareBookings: [{
+      id: 42, source: 'customer-portal', status: 'Confirmed',
+      date: '2026-11-01', returnDate: '2026-11-05', name: 'Test Customer',
+      items: [{ name: 'Chair', qty: 5, rentPrice: 100, missingCharge: 50, source: 'admin', returnedQty: 0 }],
+      dispatchEntries: [], returnEntries: [], partPayments: []
+    }],
+    realStockDatabase: [{ name: 'Chair', qty: 5, singleRent: 100, missingCharge: 50 }],
+    thirdPartyDatabase: [],
+    missingItemsDatabase: []
+  };
+  const syncCalls = [];
+  const dispatchPrompts = ['2026-11-01', '', '5'];
+  const dispatchContext = {
+    Math, Number, String, Array, Date, JSON, console,
+    prompt: () => dispatchPrompts.shift(),
+    safeGetStorage: key => store[key],
+    safeSetStorage: (key, value) => { store[key] = value; return true; },
+    localStorage: mockStorageForBatch(store),
+    syncToCloud: () => {},
+    syncCustomerBookingWorkflow: async booking => { syncCalls.push({stage:'dispatch',status:booking.status}); return true; },
+    showActionMessage: () => {}, loadAllFirebaseData: () => {}, sendWhatsAppMessage: () => {},
+    isValidCalendarDate: value => { const parts=String(value||'').split('-').map(Number); if(parts.length!==3||String(value||'').length!==10)return false; const [y,mo,d]=parts,dt=new Date(y,mo-1,d); return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d; }
+  };
+  const dispatchCode = sourceBetween('async function completeDispatch(id)', 'function printDispatchSlip');
+  vm.runInNewContext(storageBatchSource() + '\\n' + dispatchCode + '\\nresult=completeDispatch(42);', dispatchContext);
+  await dispatchContext.result;
+  assert.equal(store.realStockDatabase[0].qty, 0);
+  assert.equal(store.softwareBookings[0].status, 'Dispatched');
+  assert.equal(store.softwareBookings[0].dispatchEntries[0].qty, 5);
+
+  const returnInput = { dataset: { returnIndex: '0' }, value: '2' };
+  const returnSection = { style: { display: 'block' } };
+  const returnPrompts = ['2026-11-03', 'FINAL'];
+  const returnContext = {
+    activeReturnBookingId: 42, Math, Number, String, Array, Date, JSON, console,
+    prompt: () => returnPrompts.shift(),
+    document: { querySelectorAll: () => [returnInput], getElementById: id => id === 'returnManualCountingSection' ? returnSection : null },
+    safeGetStorage: key => store[key],
+    getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0),
+    safeSetStorage: (key, value) => { store[key] = value; return true; },
+    localStorage: mockStorageForBatch(store), syncToCloud: () => {},
+    syncCustomerBookingWorkflow: async booking => { syncCalls.push({stage:'return',status:booking.status}); return true; },
+    showActionMessage: () => {}, loadAllFirebaseData: () => {}, renderMissingItems: () => {},
+    isValidCalendarDate: dispatchContext.isValidCalendarDate
+  };
+  const returnCode = sourceBetween('async function completeManualReturnProcess()', '        window.onload = function()');
+  vm.runInNewContext(storageBatchSource() + '\\n' + returnCode + '\\nresult=completeManualReturnProcess();', returnContext);
+  await returnContext.result;
+
+  const booking = store.softwareBookings[0];
+  const missing = store.missingItemsDatabase[0];
+  assert.equal(booking.status, 'Returned');
+  assert.equal(booking.items[0].returnedQty, 2);
+  assert.equal(booking.items[0].missingQty, 3);
+  assert.equal(store.realStockDatabase[0].qty, 2);
+  assert.equal(missing.qty, 3);
+  assert.equal(missing.unitCharge, 50);
+  assert.equal(missing.penalty, 150);
+  assert.equal(syncCalls.length, 2);
+
+  booking.partPayments = [{ amount: 500, method: 'Cash', date: '2026-11-03' }];
+  const total = runRentFunction('calculateBookingTotalRent', booking, store.missingItemsDatabase);
+  const paidCode = sourceBetween('function getBookingPaidAmount(b)', 'function getEffectiveMissingCharge(item)');
+  const paid = vm.runInNewContext(paidCode + '\\ngetBookingPaidAmount(booking);', { booking, Math, Number, String, Array });
+  assert.equal(total, 1150);
+  assert.equal(paid, 500);
+  assert.equal(total - paid, 650);
+});
