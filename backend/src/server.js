@@ -22,7 +22,9 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(new Error('Origin not allowed')); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization','X-Admin-Token'] }));
 app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { req.rawBody = Buffer.from(buf); } }));
-app.use('/api/', rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false }));
+const configuredApiLimit = Number.parseInt(process.env.API_RATE_LIMIT_MAX || '60', 10);
+const apiRateLimitMax = Number.isSafeInteger(configuredApiLimit) && configuredApiLimit > 0 ? configuredApiLimit : 60;
+app.use('/api/', rateLimit({ windowMs: 60_000, limit: apiRateLimitMax, standardHeaders: 'draft-7', legacyHeaders: false }));
 // Vercel project root is /backend, so serve the committed frontend from backend/public.
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(backendDir, '../public'), { index: 'index.html', maxAge: 0 }));
