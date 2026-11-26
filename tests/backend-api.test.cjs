@@ -203,6 +203,17 @@ test('admin-only booking list rejects missing token and accepts the configured t
   assert.ok(data.bookings.every(booking => booking && typeof booking.id !== 'undefined'));
 });
 
+test('concurrent OTP sends for one phone are serialized and cannot invalidate a delivered code', async () => {
+  const send = () => request('/api/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543213', channel: 'sms' })
+  });
+  const responses = await Promise.all([send(), send()]);
+  assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
+  const delivered = responses.find(response => response.status === 200);
+  assert.match((await delivered.json()).demoOtp, /^\\d{6}$/);
+});
+
 test('demo OTP is delivered only in development and verifies once', async () => {
   const sent = await request('/api/otp/send', {
     method: 'POST',
