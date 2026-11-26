@@ -2070,7 +2070,7 @@ test('installments page lists only unpaid active bookings', () => {
     phoneCallLink: value => String(value), escapeHtml: value => String(value),
     Math, Number, String, Array
   };
-  vm.runInNewContext(code + '\\nloadInstallmentsTable();', context);
+  vm.runInNewContext(code + '\nloadInstallmentsTable();', context);
   assert.ok(body.innerHTML.includes('Due Customer'));
   assert.ok(!body.innerHTML.includes('Paid Customer'));
   assert.ok(!body.innerHTML.includes('Cancelled Customer'));
@@ -2093,7 +2093,7 @@ test('cash installments persist safely and update the booking due exactly once',
     loadCustomerList: () => {}, loadInstallmentsTable: () => {}, loadPaymentLedgerTable: () => {}, loadMasterLedgerData: () => {}, loadAllFirebaseData: () => {},
     showActionMessage: message => messages.push(message)
   };
-  vm.runInNewContext(code + '\\nresult=saveInstallment(71);', context);
+  vm.runInNewContext(code + '\nresult=saveInstallment(71);', context);
   await context.result;
   assert.equal(store.softwareBookings[0].partPayments.length, 1);
   assert.equal(store.softwareBookings[0].partPayments[0].method, 'cash');
@@ -2120,7 +2120,7 @@ test('failed installment persistence does not report success or mutate stored bo
     loadCustomerList: () => {}, loadInstallmentsTable: () => {}, loadPaymentLedgerTable: () => {}, loadMasterLedgerData: () => {}, loadAllFirebaseData: () => {},
     showActionMessage: message => messages.push(message)
   };
-  vm.runInNewContext(code + '\\nresult=saveInstallment(72);', context);
+  vm.runInNewContext(code + '\nresult=saveInstallment(72);', context);
   await context.result;
   assert.equal(store.softwareBookings[0].partPayments.length, 0);
   assert.equal(store.softwareBookings[0].totalPaid, 100);
@@ -2141,7 +2141,7 @@ test('payment and Master Ledgers include cash installments and do not misclassif
     escapeHtml: value => String(value), phoneCallLink: value => String(value),
     Math, Number, String, Array
   };
-  vm.runInNewContext(paymentCode + '\\nloadPaymentLedgerTable();', paymentContext);
+  vm.runInNewContext(paymentCode + '\nloadPaymentLedgerTable();', paymentContext);
   assert.equal(cashTotal.textContent, '₹200.00');
   assert.ok(ledgerBody.innerHTML.includes('Cash किस्त'));
   assert.ok(ledgerBody.innerHTML.includes('Manual किस्त · method दर्ज नहीं'));
@@ -2155,7 +2155,7 @@ test('payment and Master Ledgers include cash installments and do not misclassif
     escapeHtml: value => String(value), phoneCallLink: value => String(value),
     Math, Number, String, Array
   };
-  vm.runInNewContext(masterCode + '\\nloadMasterLedgerData();', masterContext);
+  vm.runInNewContext(masterCode + '\nloadMasterLedgerData();', masterContext);
   assert.ok(masterBody.innerHTML.includes('Cash किस्त'));
   assert.ok(masterBody.innerHTML.includes('Manual किस्त (method दर्ज नहीं)'));
 });
