@@ -1014,3 +1014,34 @@ test('dashboard renderer uses source-aware active reservation calculator', () =>
   assert.ok(code.includes('x.bookingIds.join'));
   assert.ok(code.includes('वेंडर: '));
 });
+
+
+test('master ledger counts only verified UPI payments as received', () => {
+  const start=html.indexOf('function getMasterLedgerOnlinePaymentDisplay(');
+  const end=html.indexOf('function loadMasterLedgerData()',start);
+  assert.ok(start>=0&&end>start,'online payment display helper must exist');
+  const context={Math,Number,String};
+  vm.runInNewContext(html.slice(start,end)+`
+    result=[
+      getMasterLedgerOnlinePaymentDisplay({online:500,onlineStatus:'pending-verification'}),
+      getMasterLedgerOnlinePaymentDisplay({online:500,onlineStatus:'verified'}),
+      getMasterLedgerOnlinePaymentDisplay({online:500,onlineStatus:'rejected'}),
+      getMasterLedgerOnlinePaymentDisplay({online:500})
+    ];
+  `,context);
+  const rows=JSON.parse(JSON.stringify(context.result));
+  assert.deepEqual(rows.map(x=>x.received),[0,500,0,0]);
+  assert.deepEqual(rows.map(x=>x.status),[
+    'UTR सत्यापन लंबित','UTR सत्यापित','UTR अस्वीकृत',
+    'पुराना रिकॉर्ड: सत्यापन स्थिति उपलब्ध नहीं'
+  ]);
+  assert.ok(rows.every(x=>x.amount===500));
+});
+
+test('master ledger online transaction row uses verified amount and explicit UTR status', () => {
+  const code=sourceBetween('function loadMasterLedgerData()', 'function exportLedgerToExcel()');
+  assert.ok(code.includes('getMasterLedgerOnlinePaymentDisplay(p)'));
+  assert.ok(code.includes('₹${display.received.toFixed(2)}'));
+  assert.ok(code.includes('UTR सत्यापन लंबित')===false,'status is supplied by the payment-state helper, not hard-coded as received');
+  assert.ok(code.includes('display.status'));
+});
