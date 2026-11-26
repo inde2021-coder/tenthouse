@@ -201,3 +201,29 @@ Main पर मिले root causes:
 - Test-only API budget override जोड़ा गया: backend default/production limit 60 ही रहता है; backend test harness में `API_RATE_LIMIT_MAX=500` रखा गया ताकि unrelated test cases एक-दूसरे का rate budget समाप्त न करें।
 - इस सुधार के बाद GitHub Actions run `45749356603` सफल: **97/97 tests PASS, 0 FAIL**; backend syntax और package/manifest JSON validation भी PASS।
 - कोई Vercel deployment नहीं किया गया। यह merge केवल `inde2021-coder/tenthouse-` repository की `main` शाखा में है; production Vercel project के source repo mismatch तथा live Firebase/WhatsApp/UPI/device/print checks अभी अलग से सत्यापित होने बाकी हैं।
+
+
+## Dashboard Stock एवं Master Ledger सुधार — 26 नवंबर 2026, 09:09 IST
+
+यह section इन modules के लिए पुराने audit snapshot को आगे बढ़ाता है:
+
+### PR #5 — Dashboard Stock Shortage (merged)
+- PR #5 merge commit: `252438eaadc09e73e2e0ae73d96ec549ada67780`।
+- Dashboard shortage अब केवल `Pending Approval` और `Confirmed` bookings को future reservation मानता है। `Dispatched`, `Partially Returned`, `Returned`, `Rejected` और `Cancelled` को दोबारा reserve नहीं करता।
+- Admin और vendor stock को अलग-अलग compare करता है; vendor की पहचान में party name भी शामिल है।
+- Invalid/non-positive/fractional quantities shortage calculation में शामिल नहीं होतीं।
+- तीनों HTML shells byte-identical हैं।
+- Merge के बाद CI run `45749970327`: **100/100 tests PASS**।
+
+### PR #6 — Pending UPI ledger (merged)
+- PR #6 merge commit: `61847cab18193ebb38053d6503cee9a85db5c2d1`।
+- Master Ledger में UPI amount तभी received column में आता है जब `onlineStatus=verified` हो।
+- Pending UTR को pending label और ₹0 received दिखाता है; rejected को rejected और ₹0; पुराने records जिनकी verification state नहीं है उन्हें unknown label मिलता है।
+- तीनों HTML shells byte-identical हैं।
+- Merge के बाद CI run `45750189827`: **102/102 tests PASS**।
+
+### वर्तमान मुख्य शाखा
+- `main` head: `61847cab18193ebb38053d6503cee9a85db5c2d1`।
+- PR #3, #4, #5 और #6 merged हैं।
+- कोई Vercel deployment trigger नहीं किया गया।
+- शेष वास्तविक device/provider verification: Firebase production sync/rules, WhatsApp delivery, UPI bank settlement, barcode camera on supported Android browser, PDF/print output on actual printers, and full booking→dispatch→partial/final return→missing recovery with persistent cloud data.
