@@ -77,6 +77,28 @@ async function storeList(path) {
   }
   return [];
 }
+async function acquireOtpSendLock(phone) {
+  const path = 'erpPrivate/otpSendLocks/' + phoneKey(phone);
+  const owner = crypto.randomUUID();
+  const expiresAt = Date.now() + 30000;
+  if (adminDb) {
+    const ref = adminDb.ref(path);
+    const result = await ref.transaction(current => {
+      if (current && Number(current.expiresAt) > Date.now()) return;
+      return { owner, expiresAt };
+    });
+    if (!result.committed) return null;
+    return async () => {
+      await ref.transaction(current => current?.owner === owner ? null : undefined);
+    };
+  }
+  const current = memoryStore.get(path);
+  if (current && Number(current.expiresAt) > Date.now()) return null;
+  memoryStore.set(path, { owner, expiresAt });
+  return async () => {
+    if (memoryStore.get(path)?.owner === owner) memoryStore.delete(path);
+  };
+}
 async function consumeOtpAttempt(path, expectedDigest) {
   const now = Date.now();
   const matches = record => {
@@ -218,9 +240,12 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   const digest = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
   const otpPath = 'erpPrivate/otp/' + phoneKey(phone);
   const otpRecord = { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 };
+  let releaseSendLock = null;
   try {
-    // Persist the verifier BEFORE sending: otherwise a delivered OTP can arrive
-    // before its digest is stored, causing a legitimate customer to be rejected.
+    releaseSendLock = await acquireOtpSendLock(phone);
+    if (!releaseSendLock) return res.status(409).json({ error: 'इस मोबाइल नंबर पर OTP भेजने का अनुरोध पहले से चल रहा है; कुछ सेकंड बाद पुनः प्रयास करें।' });
+    // Persist the verifier BEFORE sending so a delivered OTP can never arrive
+    // before its matching digest is available for verification.
     await storeSet(otpPath, otpRecord);
     const channels = channel === 'both' ? ['sms','whatsapp'] : [channel];
     const outcomes = await Promise.allSettled(channels.map(ch => sendOtpProvider(phone, otp, ch)));
@@ -239,6 +264,12 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
     if (process.env.OTP_PROVIDER === 'demo' && !isProd) out.demoOtp = otp; // Never enabled in production.
     res.json(out);
   } catch (e) { res.status(503).json({ error: e.message }); }
+  finally {
+    if (releaseSendLock) {
+      try { await releaseSendLock(); }
+      catch (lockError) { console.error('OTP send lock release failed:', lockError.message); }
+    }
+  }
 });
 app.post('/api/otp/verify', otpVerifyLimiter, requireDurableStore, async (req, res) => {
   const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\d{6}$/) }).safeParse(req.body);
