@@ -1,6 +1,7 @@
 const { before, after, test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
+const crypto = require('node:crypto');
 const net = require('node:net');
 const path = require('node:path');
 
@@ -46,6 +47,7 @@ before(async () => {
       OTP_HMAC_SECRET: otpSecret,
       OTP_PROVIDER: 'demo',
       WHATSAPP_WEBHOOK_VERIFY_TOKEN: 'test-webhook-verify-token',
+      WHATSAPP_APP_SECRET: 'test-whatsapp-app-secret',
       PUBLIC_ORIGIN: 'https://erp.example.test'
     },
     stdio: 'ignore'
@@ -239,6 +241,34 @@ test('concurrent OTP verification can succeed only once', async () => {
   assert.deepEqual(statuses, [200, 400]);
   const results = await Promise.all(attempts.map(response => response.json()));
   assert.equal(results.filter(result => result.verified === true).length, 1);
+});
+
+test('WhatsApp webhook verifies challenge and authenticates signed, idempotent events', async () => {
+  const challenge = 'test-challenge-123';
+  const verified = await request('/api/webhook?hub.mode=subscribe&hub.verify_token=test-webhook-verify-token&hub.challenge=' + challenge);
+  assert.equal(verified.status, 200);
+  assert.equal(await verified.text(), challenge);
+
+  const denied = await request('/api/webhook?hub.mode=subscribe&hub.verify_token=wrong-token&hub.challenge=' + challenge);
+  assert.equal(denied.status, 403);
+
+  const payload = JSON.stringify({
+    object: 'whatsapp_business_account',
+    entry: [{ changes: [{ field: 'messages', value: {
+      contacts: [{ wa_id: '919876543210', profile: { name: 'Test Customer' } }],
+      messages: [{ id: 'wamid.test-message-001', from: '919876543210', type: 'text', text: { body: 'Booking enquiry' }, timestamp: '1795651200' }]
+    } }] }]
+  });
+  const signature = 'sha256=' + crypto.createHmac('sha256', 'test-whatsapp-app-secret').update(Buffer.from(payload)).digest('hex');
+  const send = () => request('/api/webhook', { method: 'POST', headers: { 'x-hub-signature-256': signature }, body: payload });
+  assert.equal((await request('/api/webhook', { method: 'POST', body: payload })).status, 401);
+  assert.equal((await send()).status, 200);
+  assert.equal((await send()).status, 200);
+
+  const inbox = await request('/api/whatsapp/inbox', { headers: { 'x-admin-token': adminToken } });
+  assert.equal(inbox.status, 200);
+  const data = await inbox.json();
+  assert.equal(data.requests.filter(item => item.whatsappMessageId === 'wamid.test-message-001').length, 1);
 });
 
 test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async () => {
