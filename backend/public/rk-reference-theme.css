@@ -16,7 +16,7 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
 #customerFirstPortal .rk-customer-brand h1{font-family:Georgia,serif!important;color:#ffdf63!important;font-size:clamp(19px,2.3vw,29px)!important;letter-spacing:0!important;text-shadow:0 2px 10px #000}
 #customerFirstPortal .rk-customer-subtitle{color:#e5edff!important;font-size:10px!important}
 #customerFirstPortal .rk-customer-brand-seal{background:linear-gradient(135deg,#173b80,#09142b)!important;border:1px solid #4789ff!important;color:#fff!important}
-#customerFirstPortal .rk-customer-hero{order:1!important;display:grid!important;grid-template-columns:1.08fr .92fr!important;align-items:center!important;min-height:clamp(220px,24vw,330px)!important;max-width:1500px!important;margin:0!important;padding:clamp(20px,3vw,42px)!important;border-radius:17px!important;border:1px solid #2878ef!important;background:linear-gradient(90deg,rgba(3,9,25,.98) 0%,rgba(4,16,43,.92) 42%,rgba(5,12,29,.24) 100%),url('./customer-hero.svg') center right/cover no-repeat!important;box-shadow:0 16px 42px #0009,inset 0 1px #ffffff24!important}
+#customerFirstPortal .rk-customer-hero{order:1!important;display:grid!important;grid-template-columns:1.08fr .92fr!important;align-items:center!important;min-height:clamp(220px,24vw,330px)!important;max-width:1500px!important;margin:0!important;padding:clamp(20px,3vw,42px)!important;border-radius:17px!important;border:1px solid #2878ef!important;background:linear-gradient(90deg,rgba(3,9,25,.98) 0%,rgba(4,16,43,.92) 42%,rgba(5,12,29,.24) 100%),url('./bartan-hero.svg') center right/cover no-repeat!important;box-shadow:0 16px 42px #0009,inset 0 1px #ffffff24!important}
 #customerFirstPortal .rk-hero-copy{max-width:620px!important}
 #customerFirstPortal .rk-hero-kicker{background:linear-gradient(90deg,#133d8e,#101c40)!important;border:1px solid #3984ff!important;color:#ffe078!important;border-radius:7px!important}
 #customerFirstPortal .rk-hero-eyebrow{color:#ffcf42!important;margin:14px 0 6px!important}
@@ -80,7 +80,7 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
 #adminPanel table tbody tr:nth-child(even) td{background:rgba(13,32,68,.96)!important}
 #adminPanel .rk-payment-total-card span{color:#10234b!important}
 #adminPanel .rk-payment-total-card h3{color:#10234b!important}
-#adminPanel #dashboard:before{content:"RADHE KRISHN  •  BARTAN TENT HOUSE  |  PREMIUM RENTAL ERP";display:flex;align-items:flex-end;min-height:clamp(110px,15vw,190px);padding:18px 22px;margin:0 0 12px;border:1px solid #3278e9;border-radius:13px;background:linear-gradient(90deg,#030916 0%,rgba(4,15,39,.96) 34%,rgba(4,15,39,.25) 100%),url('./customer-hero.svg') center right/cover no-repeat;color:#ffe06b;font:800 clamp(16px,2vw,25px) Georgia,serif;letter-spacing:.04em;text-shadow:0 2px 10px #000;box-shadow:0 12px 30px #0008,inset 0 1px #ffffff33}
+#adminPanel #dashboard:before{content:"RADHE KRISHN  •  BARTAN TENT HOUSE  |  PREMIUM RENTAL ERP";display:flex;align-items:flex-end;min-height:clamp(110px,15vw,190px);padding:18px 22px;margin:0 0 12px;border:1px solid #3278e9;border-radius:13px;background:linear-gradient(90deg,#030916 0%,rgba(4,15,39,.96) 34%,rgba(4,15,39,.25) 100%),url('./bartan-hero.svg') center right/cover no-repeat;color:#ffe06b;font:800 clamp(16px,2vw,25px) Georgia,serif;letter-spacing:.04em;text-shadow:0 2px 10px #000;box-shadow:0 12px 30px #0008,inset 0 1px #ffffff33}
 #adminPanel #rkDigitalClock{background:linear-gradient(130deg,#0b2a61,#07152f)!important;border:1px solid #2e75db!important;color:#fff!important}
 #adminPanel #rkClockDate{color:#ffda57!important}
 #adminPanel .calendar-grid-header{background:linear-gradient(120deg,#0a2860,#09152d)!important;border-color:#2368c9!important}
@@ -101,3 +101,7 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
 }
 @media(prefers-reduced-motion:reduce){#adminPanel *,#customerFirstPortal *{animation:none!important;transition:none!important}}
 @media print{#adminPanel,#customerFirstPortal{background:#fff!important}#printableSlipArea,#printableSlipArea *{color:#111!important}}
+
+#customerFirstPortal .rk-hero-art{display:none!important}
+#customerFirstPortal .rk-customer-hero{grid-template-columns:1fr!important;background-image:linear-gradient(90deg,rgba(3,9,25,.98) 0%,rgba(4,16,43,.84) 40%,rgba(4,16,43,.12) 100%),url('./bartan-hero.svg')!important;background-position:center!important;background-size:cover!important}
+#adminPanel #dashboard:before{background-image:linear-gradient(90deg,#030916 0%,rgba(4,15,39,.94) 32%,rgba(4,15,39,.12) 100%),url('./bartan-hero.svg')!important;background-position:center 58%!important}
