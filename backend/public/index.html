@@ -660,14 +660,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       <div class="welcome-card rk-admin-gate-card" style="width:min(92vw,420px);text-align:center">
         <div class="rk-admin-gate-mark"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 id="rkAdminGateTitle">सुरक्षित व्यवस्थापक प्रवेश</h2>
-        <p>प्राधिकृत एक्सेस टोकन आवश्यक है।</p>
+        <p>अपने अधिकृत Google / Gmail खाते से व्यवस्थापक लॉगिन करें।</p>
         <form onsubmit="handleDirectAdminLogin(event)" autocomplete="off">
-          <label for="rkAdminAccessToken">Access Token</label>
-          <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
-          <button type="submit" class="glass-btn-green"><i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें</button>
+          <button type="submit" class="glass-btn-green"><i class="fa-brands fa-google"></i> Google / Gmail से लॉगिन करें</button>
         </form>
         <button type="button" onclick="closeWelcomeOverlay()" class="action-btn rk-admin-cancel">बंद करें</button>
-        <p class="rk-admin-gate-note">सत्यापन के बाद Google खाते से दूसरा लॉगिन चरण आवश्यक होगा।</p>
+        <p class="rk-admin-gate-note">केवल Firebase में अनुमति प्राप्त व्यवस्थापक Google खाते को प्रवेश मिलेगा।</p>
       </div>
     </div>
 
@@ -1592,7 +1590,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
         }
 
-        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);const signedInUser=firebase.auth().currentUser;if(!signedInUser)throw Error('Google लॉगिन पूरा नहीं हुआ।');const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');if(adminGrant.val()!==true){await firebase.auth().signOut();throw Error('इस Google खाते को व्यवस्थापक अनुमति नहीं है। Firebase erp_admins में इस UID की अनुमति जाँचें।');}document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');return true;}catch(error){window.__rkVerifiedAdminToken='';const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
+        async function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);const signedInUser=firebase.auth().currentUser;if(!signedInUser)throw Error('Google लॉगिन पूरा नहीं हुआ।');const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');if(adminGrant.val()!==true){await firebase.auth().signOut();throw Error('इस Google खाते को व्यवस्थापक अनुमति नहीं है। Firebase erp_admins में इस UID की अनुमति जाँचें।');}document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक Google लॉगिन सफल।','success');return true;}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
         // Never send credentials or secret material to the shared Firebase settings node.
         function sanitizeCloudSettings(settings) {
             const safe = settings && typeof settings === 'object' && !Array.isArray(settings) ? { ...settings } : {};
@@ -1832,41 +1830,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         async function handleDirectAdminLogin(event) {
             if(event){event.preventDefault();event.stopPropagation();}
-            const field=document.getElementById('rkAdminAccessToken');
-            const form=field?.closest('form');
+            const form=event?.currentTarget;
             const submit=event?.submitter||form?.querySelector('button[type="submit"]');
             const original=submit?.innerHTML;
-            if(submit){submit.disabled=true;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> सत्यापन जारी…';}
-            try{
-                const token=String(field?.value||'').trim();
-                if(token.length<32)throw new Error('अमान्य Access Token। कम-से-कम 32 अक्षरों वाला ADMIN_API_TOKEN दर्ज करें।');
-                const settings=safeGetStorage('softwareSettings',{});
-                const api=getBackendApiUrl(settings);
-                if(!api)throw new Error('Backend API URL सेट नहीं है। Settings में सही HTTPS Backend URL भरें।');
-                const response=await fetch(api.replace(/\/+$/,'')+'/api/admin/session',{method:'GET',headers:{'x-admin-token':token,'Accept':'application/json'},cache:'no-store'});
-                if(!response.ok){
-                    const details=await response.json().catch(()=>({}));
-                    if(response.status===429)throw new Error('बहुत अधिक प्रयास। 15 मिनट बाद पुनः प्रयास करें।');
-                    if(response.status===503)throw new Error('Backend पर ADMIN_API_TOKEN सेट नहीं है या 32 अक्षरों से छोटा है। Hosting Environment Variables जाँचें।');
-                    if(response.status===401)throw new Error('Access Token गलत है। Hosting में सेट किए गए ADMIN_API_TOKEN से मिलान करें।');
-                    if(response.status===404)throw new Error('Admin login API route नहीं मिली। Backend URL और deployment जाँचें।');
-                    throw new Error(details.error||('Admin सत्यापन विफल (HTTP '+response.status+')'));
-                }
-                const result=await response.json();
-                if(result.ok!==true)throw new Error('Server ने Admin Access की पुष्टि नहीं की।');
-                window.__rkVerifiedAdminToken=token;
-                if(field)field.value='';
-                const googleLoginOk=await loginWithGoogle(token);
-                if(googleLoginOk!==true)window.__rkVerifiedAdminToken='';
-            }catch(error){
-                window.__rkVerifiedAdminToken='';
-                const message=error?.message||'व्यवस्थापक लॉगिन विफल।';
-                showActionMessage(/Failed to fetch|NetworkError|Load failed/i.test(message)
-                    ? 'Backend से संपर्क नहीं हो पाया। Backend URL, CORS में website domain और internet connection जाँचें।'
-                    : message,'error');
-            }finally{
-                if(submit){submit.disabled=false;submit.innerHTML=original||'<i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें';}
-            }
+            if(submit){submit.disabled=true;submit.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Google लॉगिन खुल रहा है…';}
+            try{ await loginWithGoogle(); }
+            catch(error){ showActionMessage(error?.message||'व्यवस्थापक लॉगिन विफल।','error'); }
+            finally{ if(submit){submit.disabled=false;submit.innerHTML=original||'<i class="fa-brands fa-google"></i> Google / Gmail से लॉगिन करें';} }
             return false;
         }
         function returnToCustomerPortal() {
