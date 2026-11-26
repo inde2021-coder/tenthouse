@@ -1504,6 +1504,6 @@ test('Firebase Realtime Database rules fail closed and allow only explicitly all
   assert.equal(rules.tent_erp_data['.read'],rules.tent_erp_data['.write']);
   assert.ok(rules.tent_erp_data['.read'].includes('auth != null'));
   assert.ok(rules.tent_erp_data['.read'].includes("root.child('erp_admins').child(auth.uid).val() === true"));
-  assert.equal(rules.erp_admins['.read'],false);
-  assert.equal(rules.erp_admins['.write'],false);
+  assert.equal(rules.erp_admins['$uid']['.read'],'auth != null && auth.uid === $uid');
+  assert.equal(rules.erp_admins['$uid']['.write'],false);
 });
