@@ -341,6 +341,29 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
     body: JSON.stringify(payload)
   });
   assert.equal(duplicate.status, 409);
+
+  const payment = (await saved.clone().json()).payment;
+  const verified = await request('/api/payments/' + payment.id + '/verify', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ verified: true, note: 'Bank statement matched' })
+  });
+  assert.equal(verified.status, 200);
+  assert.equal((await verified.json()).payment.status, 'verified');
+
+  const replay = await request('/api/payments/' + payment.id + '/verify', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ verified: false, note: 'Attempted status change' })
+  });
+  assert.equal(replay.status, 409);
+  assert.match((await replay.json()).error, /already been reviewed/);
+
+  const pending = await request('/api/payments/pending', {
+    headers: { 'x-admin-token': adminToken }
+  });
+  assert.equal(pending.status, 200);
+  assert.equal((await pending.json()).payments.some(item => item.id === payment.id), false);
 });
 
 test('customer booking rejects impossible calendar dates instead of accepting regex-shaped dates', async () => {
