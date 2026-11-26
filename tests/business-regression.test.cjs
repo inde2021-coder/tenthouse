@@ -1532,3 +1532,17 @@ test('Firebase Realtime Database rules fail closed and allow only explicitly all
   assert.equal(rules.erp_admins['$uid']['.read'],'auth != null && auth.uid === $uid');
   assert.equal(rules.erp_admins['$uid']['.write'],false);
 });
+
+
+test('all inline JavaScript in the deployable HTML parses successfully', () => {
+  const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi)];
+  const executable = scripts.filter(([, attrs]) => {
+    if (/\\bsrc\\s*=/.test(attrs)) return false;
+    const type = (attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i) || [,''])[1].toLowerCase();
+    return !type || ['text/javascript','application/javascript','module'].includes(type);
+  });
+  assert.ok(executable.length > 0, 'expected inline application scripts');
+  for (const [index, match] of executable.entries()) {
+    assert.doesNotThrow(() => new vm.Script(match[2], { filename: 'inline-script-' + index }), 'inline script ' + index + ' must parse');
+  }
+});
