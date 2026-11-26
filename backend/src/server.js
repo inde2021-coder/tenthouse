@@ -95,7 +95,7 @@ async function consumeOtpAttempt(path, expectedDigest) {
       decision = 'invalid';
       return { ...current, tries: Number(current.tries || 0) + 1 };
     });
-    if (!result.committed) return { status: 'conflict' };
+    if (!result.committed) return { status: result.snapshot?.exists() ? 'conflict' : 'missing' };
     return { status: decision };
   }
   const current = memoryStore.get(path);
