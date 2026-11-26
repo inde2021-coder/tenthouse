@@ -585,3 +585,38 @@ test('AI actions reject unknown mutation types and malformed proposals', async (
   });
   assert.equal(response.status, 400);
 });
+
+
+test('concurrent AI action confirmations commit the target and audit events exactly once', async () => {
+  const created = await request('/api/payments/record-utr', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({
+      bookingId: 'ai-action-race-booking',
+      amount: 980,
+      utr: 'AIACTIONRACE12345',
+      method: 'upi',
+      phone: '9876543216'
+    })
+  });
+  assert.equal(created.status, 201);
+  const payment = (await created.json()).payment;
+  const proposed = await request('/api/ai/actions/propose', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ type: 'payment_verification', paymentId: payment.id, verified: true, reason: 'Bank statement matched' })
+  });
+  assert.equal(proposed.status, 201);
+  const proposal = await proposed.json();
+  const confirm = () => request('/api/ai/actions/' + proposal.proposal.id + '/confirm', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ confirmationText: proposal.confirmationText })
+  });
+  const results = await Promise.all([confirm(), confirm()]);
+  assert.deepEqual(results.map(response => response.status).sort(), [200, 409]);
+  const audit = await request('/api/audit-log?limit=200', { headers: { 'x-admin-token': adminToken } });
+  const events = (await audit.json()).events.filter(event => event.entityId === payment.id);
+  assert.equal(events.filter(event => event.action === 'ai_action_succeeded').length, 1);
+  assert.equal(events.filter(event => event.action === 'ai_action_confirmed').length, 1);
+});
