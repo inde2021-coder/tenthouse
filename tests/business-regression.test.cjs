@@ -1,3 +1,11 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+
+const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
+
 test('Firebase settings sync strips admin tokens, API keys, and payment gateway secrets', () => {
   const code=sourceBetween('function sanitizeCloudSettings(settings)', '        // Keep local writes immediate');
   const context={Object,Array};
@@ -14,14 +22,6 @@ test('Firebase sync, pending queue, and initial sync sanitize software settings'
   assert.match(html,/JSON\.stringify\(cloudSafeSettings\) !== JSON\.stringify\(cloudData\[cloudKey\]\)/);
   assert.match(html,/dbRef\.child\(cloudKey\)\.set\(cloudSafeSettings\)/);
 });
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-
-const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
-const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
 
 test('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
   const rules = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
