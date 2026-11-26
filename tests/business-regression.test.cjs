@@ -1563,5 +1563,5 @@ test('royal print theme is synchronized and covers customer-facing business docu
   assert.match(styles[0], /#printableSlipArea \.rk-slip td/);
   const dispatch = sourceBetween('function printDispatchSlip(id)', 'function printReturnSlip');
   assert.doesNotMatch(dispatch, /remark/i, 'Dispatch Slip must not contain a Remark field');
-  assert.match(html, /<th>मिसिंग मात्रा<\\/th>/, 'Return Slip must retain the Missing Quantity column');
+  assert.ok(html.includes('<th>मिसिंग मात्रा</th>'), 'Return Slip must retain the Missing Quantity column');
 });
