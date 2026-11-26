@@ -515,7 +515,9 @@ test('customer front page exposes booking only and keeps admin workspace separat
 });
 
 test('customer item selection uses configured stock rent and safely renders item names', () => {
-  assert.ok(html.includes('Number(stock.setRent)>0?Number(stock.setRent)'));
+  assert.ok(html.includes('function getItemRentRate(stock, quantity)'));
+  assert.ok(html.includes('getItemRentRate(stock,qty)'));
+  assert.ok(html.includes('qty>=3 && bulk>0 ? bulk : (single>0 ? single : bulk)'));
   assert.ok(html.includes('missingCharge:Math.max(0,Number(stock.missingCharge)||0)'));
   assert.ok(!html.includes('rentPrice: 500 });'));
   assert.ok(html.includes('escapeHtml(i.name)'));
@@ -1402,7 +1404,7 @@ test('missing recovery uses the exact item index and records the real recovery d
     safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},
     loadAllFirebaseData:()=>{},loadReturnBookingForCounting:()=>{},showActionMessage:()=>{}
   };
-  const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)', 'function resolveMissingItem');
+  const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)', 'async function completeManualReturnProcess');
   vm.runInNewContext(storageBatchSource()+'\\n'+code+'\\nresult=recoverMissingItem("m-1",0);',context);
   await context.result;
   assert.equal(store.softwareBookings[0].items[0].returnedQty,2);
