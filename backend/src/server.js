@@ -229,6 +229,78 @@ async function appendAuditEvent({ action, entityType, entityId, phase = 'complet
   if (!created) throw new Error('Audit event could not be appended.');
   return event;
 }
+
+async function completeAiActionAtomically({ proposalId, targetCollection, targetId, expectedStatus, proposedStatus, actor }) {
+  const proposalPath = 'erpData/aiActionProposals/' + proposalId;
+  const targetPath = 'erpData/' + targetCollection + '/' + targetId;
+  const now = new Date().toISOString();
+  const startedId = crypto.randomUUID(), successId = crypto.randomUUID(), failedId = crypto.randomUUID(), expiredId = crypto.randomUUID();
+  const makeEvent = (id, action, phase, before, after, note) => ({
+    id, action, entityType: targetCollection === 'payments' ? 'payment' : 'customer_booking',
+    entityId: String(targetId), phase, source: 'ai',
+    actorType: actor?.type || 'system', actorId: actor?.id || null,
+    before: before || null, after: after || null, note: String(note || '').slice(0, 300), createdAt: now
+  });
+  const proposalNote = 'Proposal ' + proposalId;
+  if (adminDb) {
+    let decision = 'missing';
+    const result = await adminDb.ref('erpData').transaction(raw => {
+      if (!raw || typeof raw !== 'object') { decision = 'missing'; return; }
+      const currentProposal = raw.aiActionProposals?.[proposalId];
+      if (!currentProposal) { decision = 'missing'; return; }
+      if (currentProposal.status !== 'pending') { decision = 'used'; return; }
+      const next = JSON.parse(JSON.stringify(raw));
+      const proposals = { ...(next.aiActionProposals || {}) };
+      const auditLogs = { ...(next.auditLogs || {}) };
+      if (Number(currentProposal.expiresAt) <= Date.now()) {
+        proposals[proposalId] = { ...currentProposal, status: 'expired', completedAt: now };
+        auditLogs[expiredId] = makeEvent(expiredId, 'ai_action_expired', 'expired', { status: expectedStatus }, null, proposalNote);
+        next.aiActionProposals = proposals; next.auditLogs = auditLogs; decision = 'expired'; return next;
+      }
+      const currentTarget = next[targetCollection]?.[targetId];
+      if (!currentTarget || currentTarget.status !== expectedStatus) {
+        proposals[proposalId] = { ...currentProposal, status: 'failed', failureReason: 'Target record changed during confirmation.', completedAt: now };
+        auditLogs[failedId] = makeEvent(failedId, 'ai_action_failed', 'failed', { status: expectedStatus }, { status: currentTarget?.status || 'missing' }, proposalNote);
+        next.aiActionProposals = proposals; next.auditLogs = auditLogs; decision = 'conflict'; return next;
+      }
+      const updated = targetCollection === 'payments'
+        ? { ...currentTarget, status: proposedStatus, note: 'Admin confirmed AI-proposed payment review', verifiedAt: now }
+        : { ...currentTarget, status: proposedStatus, updatedAt: now, ...(proposedStatus === 'Confirmed' ? { confirmedAt: now } : {}) };
+      next[targetCollection] = { ...(next[targetCollection] || {}), [targetId]: updated };
+      proposals[proposalId] = { ...currentProposal, status: 'completed', completedAt: now };
+      auditLogs[startedId] = makeEvent(startedId, 'ai_action_confirmed', 'started', { status: expectedStatus }, { status: proposedStatus }, proposalNote);
+      auditLogs[successId] = makeEvent(successId, 'ai_action_succeeded', 'completed', { status: expectedStatus }, { status: proposedStatus }, proposalNote);
+      next.aiActionProposals = proposals; next.auditLogs = auditLogs; decision = 'success'; return next;
+    });
+    if (!result.committed) return { status: decision };
+    const root = result.snapshot.val() || {};
+    return { status: decision, updated: root[targetCollection]?.[targetId] || null, auditEventId: decision === 'success' ? successId : decision === 'conflict' ? failedId : expiredId };
+  }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  const currentProposal = memoryStore.get(proposalPath);
+  if (!currentProposal) return { status: 'missing' };
+  if (currentProposal.status !== 'pending') return { status: 'used' };
+  if (Number(currentProposal.expiresAt) <= Date.now()) {
+    memoryStore.set(proposalPath, { ...currentProposal, status: 'expired', completedAt: now });
+    memoryStore.set('erpData/auditLogs/' + expiredId, makeEvent(expiredId, 'ai_action_expired', 'expired', { status: expectedStatus }, null, proposalNote));
+    return { status: 'expired', auditEventId: expiredId };
+  }
+  const currentTarget = memoryStore.get(targetPath);
+  if (!currentTarget || currentTarget.status !== expectedStatus) {
+    memoryStore.set(proposalPath, { ...currentProposal, status: 'failed', failureReason: 'Target record changed during confirmation.', completedAt: now });
+    memoryStore.set('erpData/auditLogs/' + failedId, makeEvent(failedId, 'ai_action_failed', 'failed', { status: expectedStatus }, { status: currentTarget?.status || 'missing' }, proposalNote));
+    return { status: 'conflict', auditEventId: failedId };
+  }
+  const updated = targetCollection === 'payments'
+    ? { ...currentTarget, status: proposedStatus, note: 'Admin confirmed AI-proposed payment review', verifiedAt: now }
+    : { ...currentTarget, status: proposedStatus, updatedAt: now, ...(proposedStatus === 'Confirmed' ? { confirmedAt: now } : {}) };
+  memoryStore.set(targetPath, updated);
+  memoryStore.set(proposalPath, { ...currentProposal, status: 'completed', completedAt: now });
+  memoryStore.set('erpData/auditLogs/' + startedId, makeEvent(startedId, 'ai_action_confirmed', 'started', { status: expectedStatus }, { status: proposedStatus }, proposalNote));
+  memoryStore.set('erpData/auditLogs/' + successId, makeEvent(successId, 'ai_action_succeeded', 'completed', { status: expectedStatus }, { status: proposedStatus }, proposalNote));
+  return { status: 'success', updated, auditEventId: successId };
+}
+
 const requireDurableStore = (_req, res, next) => {
   if (!adminDb && isProd) return res.status(503).json({ error: 'Production database is not configured. Set FIREBASE_DATABASE_URL and either FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY before using data APIs.' });
   next();
@@ -1124,7 +1196,7 @@ app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStor
   if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid action proposal ID.' });
   const parsed = z.object({ confirmationText: z.string().min(1).max(140) }).strict().safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Exact confirmation text is required.' });
-  const proposalPath = 'erpData/aiActionProposals/' + req.params.id;
+
   try {
     const proposal = await storeGet(proposalPath);
     if (!proposal) return res.status(404).json({ error: 'Action proposal not found.' });
@@ -1133,44 +1205,22 @@ app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStor
       : 'CONFIRM ' + proposal.bookingId;
     if (parsed.data.confirmationText !== expectedConfirmation) return res.status(400).json({ error: 'Confirmation text does not match this action.' });
     if (proposal.status !== 'pending' || Number(proposal.expiresAt) <= Date.now()) return res.status(409).json({ error: 'Action proposal is expired or already used.' });
-    const claimed = await storeTransitionRecord(proposalPath,
-      current => !!current && current.status === 'pending' && Number(current.expiresAt) > Date.now(),
-      current => ({ ...current, status: 'executing', executionStartedAt: new Date().toISOString() }));
-    if (!claimed) return res.status(409).json({ error: 'Action proposal was already used, expired, or changed.' });
-    const intent = await appendAuditEvent({ actor: req.actor,
-      action: 'ai_action_confirmed', entityType: proposal.entityType, entityId: proposal.entityId,
-      phase: 'started', before: { status: proposal.beforeStatus }, after: { status: proposal.proposedStatus },
-      source: 'ai', note: 'Proposal ' + proposal.id
+    const targetCollection = proposal.type === 'payment_verification' ? 'payments' : 'customerBookings';
+    const targetId = proposal.type === 'payment_verification' ? proposal.paymentId : proposal.bookingId;
+    const expectedStatus = proposal.type === 'payment_verification' ? 'pending-verification' : proposal.beforeStatus;
+    const outcome = await completeAiActionAtomically({
+      proposalId: proposal.id, targetCollection, targetId, expectedStatus,
+      proposedStatus: proposal.proposedStatus, actor: req.actor
     });
-    let updated = null, currentStatus = null;
-    if (proposal.type === 'customer_booking_status') {
-      const path = 'erpData/customerBookings/' + proposal.bookingId;
-      const current = await storeGet(path); currentStatus = current?.status || 'missing';
-      if (current && current.status === proposal.beforeStatus) {
-        updated = await storeTransitionRecord(path,
-          value => !!value && value.status === proposal.beforeStatus,
-          value => ({ ...value, status: proposal.proposedStatus, updatedAt: new Date().toISOString(), ...(proposal.proposedStatus === 'Confirmed' ? { confirmedAt: new Date().toISOString() } : {}) }));
-      }
-    } else if (proposal.type === 'payment_verification') {
-      const path = 'erpData/payments/' + proposal.paymentId;
-      const current = await storeGet(path); currentStatus = current?.status || 'missing';
-      if (current && current.status === 'pending-verification') {
-        updated = await storeTransitionPendingPayment(path, value => ({
-          ...value, status: proposal.proposedStatus,
-          note: 'Admin confirmed AI-proposed payment review',
-          verifiedAt: new Date().toISOString()
-        }));
-      }
-    }
-    if (!updated) {
-      await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Target record changed during confirmation.', completedAt: new Date().toISOString() }));
-      await appendAuditEvent({ actor: req.actor, action: 'ai_action_failed', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'failed', before: { status: proposal.beforeStatus }, after: { status: currentStatus }, source: 'ai', note: 'Proposal ' + proposal.id + '; intent ' + intent.id });
-      return res.status(409).json({ error: 'Target record changed during confirmation. No action was applied.' });
-    }
-    const updatedStatus = updated.status;
-    await appendAuditEvent({ actor: req.actor, action: 'ai_action_succeeded', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'completed', before: { status: proposal.beforeStatus }, after: { status: updatedStatus }, source: 'ai', note: 'Proposal ' + proposal.id });
-    await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'completed', completedAt: new Date().toISOString() }));
-    res.set('Cache-Control', 'no-store').json({ ok: true, entityType: proposal.entityType, entityId: proposal.entityId, status: updatedStatus, auditEventId: intent.id, message: 'Action लागू हुआ और Audit Log में दर्ज किया गया।' });
+    if (outcome.status === 'expired' || outcome.status === 'used') return res.status(409).json({ error: 'Action proposal is expired or already used.' });
+    if (outcome.status === 'missing') return res.status(404).json({ error: 'Action proposal not found.' });
+    if (outcome.status === 'conflict') return res.status(409).json({ error: 'Target record changed during confirmation. No action was applied.' });
+    if (outcome.status !== 'success' || !outcome.updated) return res.status(503).json({ error: 'Atomic action commit did not complete.' });
+    res.set('Cache-Control', 'no-store').json({
+      ok: true, entityType: proposal.entityType, entityId: proposal.entityId,
+      status: outcome.updated.status, auditEventId: outcome.auditEventId,
+      message: 'Action और उसके Audit Events एक ही database transaction में सेव हुए।'
+    });
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
 app.get('/api/audit-log', authAdmin, requireDurableStore, async (req, res) => {
