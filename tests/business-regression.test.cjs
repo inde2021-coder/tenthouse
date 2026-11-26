@@ -272,6 +272,15 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
 
+test('dispatch aggregates duplicate stock-row requirements before checking and deducting availability', () => {
+  const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
+  assert.ok(dispatch.includes('const requirementMap=new Map()'));
+  assert.ok(dispatch.includes('if(previous)previous.qty+=x.qty'));
+  assert.ok(dispatch.includes('if(available<requirement.qty)'));
+  assert.ok(dispatch.includes('requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty))'));
+  assert.ok(html.includes('· बाकी '+Math.max(0,planned-sent)));
+});
+
 test('dispatch and return handlers reject duplicate submissions and always release their locks', () => {
   const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
   const ret=html.slice(html.indexOf('async function completeManualReturnProcess()'),html.indexOf('let currentDocumentItems = []'));
