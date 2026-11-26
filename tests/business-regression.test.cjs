@@ -1133,3 +1133,48 @@ test('income and expense table summary uses the shared validated totals calculat
   assert.match(code,/totalInc=totals\.income/);
   assert.match(code,/totalExp=totals\.expense/);
 });
+
+
+test('stock item edit rejects fractional quantities and preserves the original record', () => {
+  const code=sourceBetween('function editStockItem(index)', 'function deleteStockItem');
+  let writes=0;
+  const row={name:'Chair',qty:10,singleRent:5,setRent:20,missingCharge:100};
+  const answers=['Chair','2.5','5','20','100'];
+  const context={Number,Math,String,prompt:()=>answers.shift(),safeGetStorage:()=>[row],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(code+'\nresult=editStockItem(0);',context);
+  assert.equal(writes,0);
+  assert.equal(row.qty,10);
+});
+
+test('purchase entry rejects fractional quantities before changing purchase or stock ledgers', () => {
+  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  const values={purItemName:'Chair',purItemQty:'1.5',purItemPrice:'100',purSingleRent:'5',purSetRent:'20',purMissingCharge:'100',purDate:'2026-11-26',purSupplier:'Supplier'};
+  let writes=0;
+  const context={Number,Math,String,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},mergeDuplicateStockRows:rows=>rows};
+  vm.runInNewContext(code+'\nresult=savePurchaseEntry({preventDefault(){},target:{reset(){}}});',context);
+  assert.equal(writes,0);
+});
+
+test('purchase edit rejects fractional quantities before changing purchase or stock ledgers', () => {
+  const code=sourceBetween('function editPurchase(index)', 'function deletePurchase');
+  const row={itemName:'Chair',qty:10,price:100};
+  const answers=['Chair','2.5','100','Supplier'];
+  let writes=0;
+  const context={Number,Math,String,prompt:()=>answers.shift(),safeGetStorage:key=>key==='purchaseDatabase'?[row]:[{name:'Chair',qty:10}],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(code+'\nresult=editPurchase(0);',context);
+  assert.equal(writes,0);
+  assert.equal(row.qty,10);
+});
+
+test('income and expense edit rejects impossible calendar dates', () => {
+  const helperStart=html.indexOf('function isValidCalendarDate(value)');
+  const helperEnd=html.indexOf('function calculateRentalDays',helperStart);
+  const code=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense');
+  const row={date:'2026-02-28',desc:'Rent',type:'Expense',amount:100};
+  const answers=['2026-02-30','Rent','Expense','100'];
+  let writes=0;
+  const context={Date,String,Number,prompt:()=>answers.shift(),safeGetStorage:()=>[row],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(html.slice(helperStart,helperEnd)+'\n'+code+'\nresult=editIncomeExpense(0);',context);
+  assert.equal(writes,0);
+  assert.equal(row.date,'2026-02-28');
+});
