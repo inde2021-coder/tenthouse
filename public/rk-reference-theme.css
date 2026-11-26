@@ -435,3 +435,122 @@ html.rk-theme-light #customerFirstPortal .rk-tracker-hint,html.rk-theme-light #c
 html.rk-theme-light #customerFirstPortal .rk-tracker-fields input{background:#fff;color:#17385f;border-color:#9bc9ef}
 html.rk-theme-light #customerFirstPortal .rk-tracker-result{background:#f3f9ff;color:#17385f;border-color:#a8d4f5}
 @media(max-width:640px){#customerFirstPortal .rk-booking-tracker{padding:14px!important}#customerFirstPortal .rk-tracker-fields{grid-template-columns:minmax(0,1fr)!important}#customerFirstPortal .rk-tracker-submit{width:100%}}
+
+
+/* FINAL REFERENCE ALIGNMENT — Royal Dark dashboard hierarchy and readable shop branding.
+   Keep all six selectable visual presets and all ERP markup/data handlers intact. */
+@media screen {
+  #adminPanel .sidebar-brand {
+    box-sizing:border-box!important;
+    min-height:118px!important;
+    padding:16px 12px 14px!important;
+    margin:8px 10px 14px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    overflow:visible!important;
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(46,127,238,.32),transparent 68%),
+      linear-gradient(145deg,#102c55 0%,#07172f 58%,#050d1d 100%)!important;
+    border:1px solid rgba(255,211,92,.82)!important;
+    border-radius:15px!important;
+    box-shadow:0 10px 24px rgba(0,0,0,.42),0 0 18px rgba(40,117,220,.18),inset 0 1px 0 rgba(255,255,255,.16)!important;
+    color:#fff!important;
+  }
+  #adminPanel .sidebar-brand:before {
+    display:block!important;
+    margin:0 0 3px!important;
+    color:#ffdf78!important;
+    filter:drop-shadow(0 0 9px rgba(255,201,76,.55))!important;
+  }
+  #adminPanel .sidebar-brand #overlayShopName {
+    display:block!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:8px 9px!important;
+    border:1px solid rgba(255,220,125,.55)!important;
+    border-radius:9px!important;
+    background:linear-gradient(100deg,rgba(4,12,27,.98),rgba(13,34,66,.98),rgba(4,12,27,.98))!important;
+    color:#fff4c7!important;
+    -webkit-text-fill-color:#fff4c7!important;
+    opacity:1!important;
+    font-family:Georgia,"Noto Sans Devanagari",serif!important;
+    font-size:clamp(14px,1.1vw,18px)!important;
+    font-weight:900!important;
+    line-height:1.35!important;
+    letter-spacing:.015em!important;
+    text-align:center!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    text-shadow:0 1px 2px #000,0 0 10px rgba(255,196,70,.28)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 3px 9px rgba(0,0,0,.28)!important;
+  }
+  #adminPanel .header {
+    min-height:62px!important;
+    padding:0 20px!important;
+    background:linear-gradient(100deg,#061329 0%,#102b54 52%,#07152b 100%)!important;
+    border-bottom:1px solid rgba(76,151,245,.72)!important;
+    box-shadow:0 7px 20px rgba(0,0,0,.26)!important;
+  }
+  #adminPanel #pageTitle {
+    color:#ffe18a!important;
+    -webkit-text-fill-color:#ffe18a!important;
+    font-size:clamp(16px,1.35vw,20px)!important;
+    font-weight:900!important;
+    text-shadow:0 2px 9px rgba(0,0,0,.8)!important;
+  }
+  #adminPanel .rk-admin-kpi-grid {
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  #adminPanel .rk-admin-kpi {
+    min-height:86px!important;
+    border-radius:12px!important;
+    border-width:1px!important;
+    background:linear-gradient(145deg,#132c51 0%,#091a35 62%,#050d1d 100%)!important;
+  }
+  #adminPanel .rk-admin-kpi-copy small {
+    color:#e0eaff!important;
+    font-weight:800!important;
+  }
+  #adminPanel .rk-admin-kpi-copy strong {
+    color:#fff!important;
+    text-shadow:0 1px 8px rgba(0,0,0,.35)!important;
+  }
+  #adminPanel .rk-admin-quick-actions {
+    border-color:rgba(73,139,220,.72)!important;
+    background:linear-gradient(100deg,#07162e,#102c55 50%,#07162e)!important;
+  }
+  #customerFirstPortal .rk-customer-brand {
+    background:linear-gradient(100deg,#061329 0%,#102d59 52%,#061329 100%)!important;
+    border:1px solid #e3bd59!important;
+    box-shadow:0 9px 22px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.15)!important;
+  }
+  #customerFirstPortal .rk-customer-brand h1,
+  #customerFirstPortal .rk-customer-brand h1 *,
+  #customerFirstPortal .rk-customer-brand .shop-brand-title {
+    color:#fff1bd!important;
+    -webkit-text-fill-color:#fff1bd!important;
+    opacity:1!important;
+    text-shadow:0 2px 5px #000,0 0 12px rgba(255,199,75,.25)!important;
+  }
+  #customerFirstPortal .rk-customer-subtitle {
+    color:#f2f6ff!important;
+    -webkit-text-fill-color:#f2f6ff!important;
+    text-shadow:0 1px 3px #000!important;
+  }
+}
+@media(max-width:1100px) {
+  #adminPanel .rk-admin-kpi-grid {grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(max-width:720px) {
+  #adminPanel .sidebar-brand {min-height:92px!important;margin:5px 7px 10px!important;padding:10px!important}
+  #adminPanel .sidebar-brand #overlayShopName {font-size:14px!important;padding:7px!important}
+  #adminPanel .rk-admin-kpi-grid {grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:360px) {
+  #adminPanel .rk-admin-kpi-grid {grid-template-columns:minmax(0,1fr)!important}
+}
