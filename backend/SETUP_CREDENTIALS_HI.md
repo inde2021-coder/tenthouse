@@ -98,3 +98,33 @@ Firebase Console में लागू करने के चरण:
 5. दूसरे किसी account को UID allowlist में न जोड़ें। `erp_admins` को client-side app से लिखने की अनुमति न दें; rules में उसका read/write बंद है। Admin SDK/server-side Firebase credentials ही allowlist provision/update करें।
 
 महत्वपूर्ण: यह repository में सुरक्षित template है, Production Firebase Console पर अपने-आप लागू नहीं हुआ है। UID allowlist provision किए बिना ये rules सभी browser clients के लिए cloud read/write deny करेंगे। Production में apply करने के बाद admin Google login, cloud read, cloud write और cross-device sync को वास्तविक account से जाँचना आवश्यक है।
+
+
+## 7. Settings audit preview — वर्तमान branch configuration (26 नवंबर 2026)
+
+नया Settings UI इस branch पर deploy है:
+
+- Git branch: `audit/settings-page-polish-2026-11`
+- Preview URL: `https://tenthouse-audit-preview-rd2naim99-inde3.vercel.app`
+- इस branch के लिए `PUBLIC_ORIGIN` अलग से सेट है; Production origin/variables को न बदलें।
+
+इस preview की live readiness जाँच में:
+- `GET /api/health` → HTTP 200 (backend process चल रहा है)।
+- `GET /api/ready` → HTTP 503, `persistentDatabaseReady=false`। इसका अर्थ है कि इस branch के deployment में Firebase Admin credentials पूरी नहीं हैं; अभी customer booking/payment writes को live-ready न मानें।
+
+Vercel → `tenthouse-audit-preview` → Settings → Environment Variables में **Preview** target और branch `audit/settings-page-polish-2026-11` चुनकर नीचे के values जोड़ें/verify करें:
+
+- `FIREBASE_DATABASE_URL` — `https://radhe-krishna-online-booking-default-rtdb.firebaseio.com`
+- `FIREBASE_PROJECT_ID` — Firebase project ID
+- `FIREBASE_CLIENT_EMAIL` — Firebase Admin service-account client email
+- `FIREBASE_PRIVATE_KEY` — उसी service account की नई rotated private key; केवल encrypted environment variable में
+- वैकल्पिक: उपरोक्त तीन split credential variables की जगह `FIREBASE_SERVICE_ACCOUNT_JSON` का पूरा नया service-account JSON रखें
+- `ADMIN_API_TOKEN` — अलग random secret, कम-से-कम 32 characters
+- `OTP_HMAC_SECRET` — ADMIN token से अलग random secret, कम-से-कम 32 characters
+- `WHATSAPP_ACCESS_TOKEN` और `WHATSAPP_APP_SECRET` — Meta Cloud API credentials (यदि WhatsApp live test करना है)
+- `WHATSAPP_PHONE_NUMBER_ID` और `WHATSAPP_WEBHOOK_VERIFY_TOKEN` — उसी branch के Preview target में verify करें
+- `AI_API_KEY` — केवल AI endpoint का live test आवश्यक हो तभी; इसे GitHub/frontend में कभी न रखें
+
+Save के बाद इसी branch का नया Preview deployment बनाएँ और पहले `/api/ready` पर HTTP 200 तथा `persistentDatabaseReady=true` verify करें। उसके बाद ही admin-authenticated booking, payment, OTP और WhatsApp integration tests करें। Firebase Rules publish तथा `erp_admins/<verified-admin-uid>=true` allowlist provisioning अलग Firebase Console कार्रवाई है; backend Admin SDK credentials का होना browser-side rules publish होने का प्रमाण नहीं है।
+
+**सुरक्षा:** इस guide में कोई वास्तविक private key, token या provider secret न डालें। पहले साझा की गई Firebase key को revoke/rotate करने की आवश्यकता बनी हुई है।
