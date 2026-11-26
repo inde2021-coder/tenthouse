@@ -3603,6 +3603,56 @@ async function trackCustomerBooking(){
 window.trackCustomerBooking=trackCustomerBooking;
 </script>
 
+
+<style id="rk-final-dark-fields-override">
+/* FINAL OVERRIDE: keep every editable field dark; never use white/neumorphic inputs. */
+:root{color-scheme:dark!important}
+html,body{color-scheme:dark!important}
+#customerFirstPortal input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),
+#customerFirstPortal select,#customerFirstPortal textarea,
+#adminPanel input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),
+#adminPanel select,#adminPanel textarea,
+input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),
+select,textarea,
+.input-field,.form-control,[contenteditable="true"]{
+ background:#0a1830!important;
+ background-image:linear-gradient(145deg,#0b1b35 0%,#071226 100%)!important;
+ color:#f3f7ff!important;
+ -webkit-text-fill-color:#f3f7ff!important;
+ caret-color:#ffd76a!important;
+ border:1px solid rgba(100,166,255,.48)!important;
+ border-radius:12px!important;
+ box-shadow:inset 4px 4px 9px rgba(0,0,0,.48),inset -1px -1px 3px rgba(129,177,255,.08),0 0 10px rgba(25,112,255,.08)!important;
+}
+input::placeholder,textarea::placeholder,[contenteditable="true"]:empty:before{
+ color:#8298b9!important;-webkit-text-fill-color:#8298b9!important;opacity:1!important
+}
+input:focus,select:focus,textarea:focus,.input-field:focus,.form-control:focus,[contenteditable="true"]:focus{
+ background:#0c1d38!important;background-image:linear-gradient(145deg,#0d2040,#08152b)!important;
+ color:#fff!important;-webkit-text-fill-color:#fff!important;
+ border-color:#55a4ff!important;outline:none!important;
+ box-shadow:inset 3px 3px 7px rgba(0,0,0,.45),0 0 0 3px rgba(58,143,255,.18),0 0 16px rgba(58,143,255,.12)!important;
+}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus,textarea:-webkit-autofill,select:-webkit-autofill{
+ -webkit-text-fill-color:#f3f7ff!important;
+ -webkit-box-shadow:0 0 0 1000px #0a1830 inset!important;
+ box-shadow:0 0 0 1000px #0a1830 inset!important;
+ caret-color:#ffd76a!important;
+}
+select option,optgroup{background:#0a1830!important;color:#f3f7ff!important}
+input[type=date],input[type=time],input[type=datetime-local],input[type=month],input[type=week]{
+ color-scheme:dark!important;color:#f3f7ff!important
+}
+input[type=date]::-webkit-calendar-picker-indicator,
+input[type=time]::-webkit-calendar-picker-indicator,
+input[type=datetime-local]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(1.6)!important;opacity:.9}
+input[type=file]{background:#0a1830!important;color:#eaf2ff!important;-webkit-text-fill-color:#eaf2ff!important}
+input[type=file]::file-selector-button{
+ background:linear-gradient(135deg,#1556a8,#243b79)!important;color:#fff!important;
+ border:1px solid #5798e8!important;border-radius:8px!important;padding:7px 12px!important
+}
+input[type=checkbox],input[type=radio]{accent-color:#318cff!important}
+</style>
 </body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
