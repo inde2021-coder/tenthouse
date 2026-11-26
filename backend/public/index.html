@@ -1236,8 +1236,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!Number.isInteger(qty)||qty<=0||qty>Number(record.qty||0)){showActionMessage('वापस मिली सही पूर्ण संख्या दर्ज करें','error');return;}
             const bookings=safeGetStorage('softwareBookings',[]),booking=bookings.find(x=>String(x.id)===String(record.bookingId));
             if(!booking){showActionMessage('संबंधित बुकिंग नहीं मिली; स्टॉक नहीं बदला','error');return;}
-            const itemIndex=Number.isInteger(Number(record.itemIndex))?Number(record.itemIndex):(booking.items||[]).findIndex(item=>String(item.name)===String(record.item)&&String(item.source==='third-party'?'third-party':'admin')===String(record.source||'admin')&&String(item.partyName||'')===String(record.partyName||''));
-            const item=booking.items?.[itemIndex];if(!item){showActionMessage('बुकिंग में संबंधित सामान नहीं मिला; स्टॉक नहीं बदला','error');return;}
+            const hasItemIndex=record.itemIndex!==undefined&&record.itemIndex!==null&&record.itemIndex!==''&&Number.isInteger(Number(record.itemIndex));
+            const matches=(booking.items||[]).map((candidate,index)=>({candidate,index})).filter(({candidate})=>String(candidate.name)===String(record.item)&&String(candidate.source==='third-party'?'third-party':'admin')===String(record.source||'admin')&&String(candidate.partyName||'')===String(record.partyName||''));
+            if(!hasItemIndex&&matches.length!==1){showActionMessage(matches.length?'एक जैसे कई सामान मिले; पुराने Missing रिकॉर्ड को सुरक्षित रूप से पहचानना संभव नहीं। स्टॉक नहीं बदला।':'बुकिंग में संबंधित सामान नहीं मिला; स्टॉक नहीं बदला','error');return;}
+            const itemIndex=hasItemIndex?Number(record.itemIndex):matches[0].index;
+            const item=booking.items?.[itemIndex];
+            if(!item||String(item.name)!==String(record.item)||String(item.source==='third-party'?'third-party':'admin')!==String(record.source||'admin')||String(item.partyName||'')!==String(record.partyName||'')){showActionMessage('Missing रिकॉर्ड का सामान बुकिंग से मेल नहीं खाता; स्टॉक नहीं बदला','error');return;}
             const stock= safeGetStorage('realStockDatabase',[]),vendors=safeGetStorage('thirdPartyDatabase',[]);
             const previous={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(rows)),stock:JSON.parse(JSON.stringify(stock)),vendors:JSON.parse(JSON.stringify(vendors))};
             const row=item.source==='third-party'?vendors.find(x=>String(x.partyName)===String(item.partyName)&&String(x.item||x.name)===String(item.name)):stock.find(x=>String(x.name)===String(item.name));
