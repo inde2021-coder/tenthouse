@@ -179,7 +179,7 @@ test('invoice exposes automatically applied missing charge rows without approval
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
   assert.match(invoice,/approvedMissingRows/);
   assert.match(invoice,/Missing सामान का लागू शुल्क/);
-  assert.match(invoice,/getMissingChargeTotal\\(b\\)/);
+  assert.match(invoice,/getMissingChargeTotal\(b\)/);
   assert.doesNotMatch(invoice,/स्वीकृत Missing Charge|शुल्क स्वीकृत करें|getApprovedMissingChargeTotal/);
 });
 
