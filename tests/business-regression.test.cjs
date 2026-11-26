@@ -1399,12 +1399,12 @@ test('return and missing recovery reject blank or malformed legacy stock quantit
     const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
     const returnContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
     const returnCode=sourceBetween('async function completeManualReturnProcess()','        let currentDocumentItems = []');
-    vm.runInNewContext(returnCode+'\\nresult=completeManualReturnProcess();',returnContext);await returnContext.result;
+    vm.runInNewContext(returnCode+'\nresult=completeManualReturnProcess();',returnContext);await returnContext.result;
     assert.equal(writes,0,'return must reject '+String(invalid));
     assert.equal(store.softwareBookings[0].items[0].returnedQty,0);
     const recoverContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,document:{getElementById:()=>({value:'1'})},safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{}};
     const recoverCode=sourceBetween('async function recoverMissingItem(recordId,rowIndex)','async function completeManualReturnProcess()');
-    vm.runInNewContext(recoverCode+'\\nresult=recoverMissingItem("m2",0);',recoverContext);await context.result;
+    vm.runInNewContext(recoverCode+'\nresult=recoverMissingItem("m2",0);',recoverContext);await recoverContext.result;
     assert.equal(writes,0,'missing recovery must reject '+String(invalid));
     assert.equal(store.missingItemsDatabase[0].qty,1);
   }
