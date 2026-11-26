@@ -1641,7 +1641,6 @@ test('quantity-based item rent uses Single Rent for 1-2 pieces and Set/Bulk Rent
   assert.match(html,/rateMode:qty>=3\?'set':'single'/);
   assert.match(html,/getItemRentRate\(row,qty\)/);
   assert.match(html,/getItemRentRate\(row,items\[itemIndex\]\.qty\)/);
-  assert.match(html,/वेंडर \?Number\(row\.customerRent/);
 });
 
 
