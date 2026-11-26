@@ -2084,7 +2084,7 @@ test('cash installments persist safely and update the booking due exactly once',
   const code = sourceBetween('async function saveInstallment(id)', 'function printReturnSlip()');
   const context = {
     Math, Number, String, Array, Date, JSON, console,
-    document: { getElementById: id => id === 'inst_amt_71' ? input : null },
+    document: { getElementById: id => id === 'inst_amt_71' ? input : null, addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: entries => { for (const [key,value] of entries) store[key] = value; return true; },
     getBookingPaidAmount: b => Math.max(Number(b.totalPaid)||0,(b.partPayments||[]).reduce((n,p)=>n+(Number(p.amount)||0),0)),
@@ -2111,7 +2111,7 @@ test('failed installment persistence does not report success or mutate stored bo
   const code = sourceBetween('async function saveInstallment(id)', 'function printReturnSlip()');
   const context = {
     Math, Number, String, Array, Date, JSON, console,
-    document: { getElementById: id => id === 'inst_amt_72' ? input : null },
+    document: { getElementById: id => id === 'inst_amt_72' ? input : null, addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: () => false,
     getBookingPaidAmount: b => Number(b.totalPaid)||0,
