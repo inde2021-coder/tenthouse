@@ -550,7 +550,7 @@ test('customer front page exposes booking only and keeps admin workspace separat
 
 test('customer item selection uses configured stock rent and safely renders item names', () => {
   assert.ok(html.includes('function getItemRentRate(stock, quantity)'));
-  assert.ok(html.includes('getItemRentRate(stock,qty)'));
+  assert.ok(html.includes('getItemRentRate(stock,combinedQty)'));
   assert.ok(html.includes('qty>=3 && bulk>0 ? bulk : (single>0 ? single : bulk)'));
   assert.ok(html.includes('missingCharge:Math.max(0,Number(stock.missingCharge)||0)'));
   assert.ok(!html.includes('rentPrice: 500 });'));
