@@ -1415,7 +1415,7 @@ test('dispatch aggregates duplicate booking item rows before checking shared sto
   let writes=0;const answers=['2026-11-02','','4','4'];
   const context={Math,Number,String,Array,Date,JSON,prompt:()=>answers.shift(),isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},sendWhatsAppMessage:()=>{},syncCustomerBookingWorkflow:()=>{}};
   const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
-  vm.runInNewContext(code+'\\nresult=completeDispatch(404);',context);await context.result;
+  vm.runInNewContext(code+'\nresult=completeDispatch(404);',context);await context.result;
   assert.equal(writes,0);assert.equal(store.realStockDatabase[0].qty,5);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);
 });
 
@@ -1424,6 +1424,6 @@ test('dispatch aggregates duplicate vendor booking rows against the same vendor 
   let writes=0;const answers=['2026-11-02','','3','3'];
   const context={Math,Number,String,Array,Date,JSON,prompt:()=>answers.shift(),isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},sendWhatsAppMessage:()=>{},syncCustomerBookingWorkflow:()=>{}};
   const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
-  vm.runInNewContext(code+'\\nresult=completeDispatch(405);',context);await context.result;
+  vm.runInNewContext(code+'\nresult=completeDispatch(405);',context);await context.result;
   assert.equal(writes,0);assert.equal(store.thirdPartyDatabase[0].qty,4);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);
 });
