@@ -1439,7 +1439,7 @@ test('missing recovery uses the exact item index and records the real recovery d
     loadAllFirebaseData:()=>{},loadReturnBookingForCounting:()=>{},showActionMessage:()=>{}
   };
   const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)', 'async function completeManualReturnProcess');
-  vm.runInNewContext(storageBatchSource()+'\\n'+code+'\\nresult=recoverMissingItem("m-1",0);',context);
+  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=recoverMissingItem("m-1",0);',context);
   await context.result;
   assert.equal(store.softwareBookings[0].items[0].returnedQty,2);
   assert.equal(store.softwareBookings[0].items[1].returnedQty,1);
@@ -1673,7 +1673,8 @@ test('Design Manager exposes all six reference-collage themes without touching E
 test('quantity-based item rent uses Single Rent for 1-2 pieces and Set/Bulk Rent for 3+ pieces', () => {
   assert.match(html,/function getItemRentRate\(stock, quantity\)/);
   assert.match(html,/qty>=3 && bulk>0 \? bulk : \(single>0 \? single : bulk\)/);
-  assert.match(html,/getItemRentRate\(stock,qty\)/);
+  assert.match(html,/getItemRentRate\(stock,combinedQty\)/);
+  assert.match(backend,/qty>=3&&setRent>0\?setRent:\(singleRent>0\?singleRent:setRent\)/);
   assert.match(html,/rateMode:qty>=3\?'set':'single'/);
   assert.match(html,/getItemRentRate\(row,qty\)/);
   assert.match(html,/getItemRentRate\(row,items\[itemIndex\]\.qty\)/);
