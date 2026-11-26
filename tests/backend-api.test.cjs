@@ -224,6 +224,23 @@ test('demo OTP is delivered only in development and verifies once', async () => 
   assert.equal(replay.status, 400);
 });
 
+test('concurrent OTP verification can succeed only once', async () => {
+  const sent = await request('/api/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543211', channel: 'sms' })
+  });
+  assert.equal(sent.status, 200);
+  const { demoOtp } = await sent.json();
+  const attempts = await Promise.all([
+    request('/api/otp/verify', { method: 'POST', body: JSON.stringify({ phone: '9876543211', otp: demoOtp }) }),
+    request('/api/otp/verify', { method: 'POST', body: JSON.stringify({ phone: '9876543211', otp: demoOtp }) })
+  ]);
+  const statuses = attempts.map(response => response.status).sort();
+  assert.deepEqual(statuses, [200, 400]);
+  const results = await Promise.all(attempts.map(response => response.json()));
+  assert.equal(results.filter(result => result.verified === true).length, 1);
+});
+
 test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async () => {
   const payload = {
     bookingId: '1234567890123',
