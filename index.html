@@ -2033,7 +2033,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const advanceLabel=advance<=0?'एडवांस नहीं दिया':(b.advancePaymentVerified===true?'एडवांस सत्यापित':'एडवांस सत्यापन बाकी');
                 const statusLabels={Pending:'अनुमोदन बाकी',Confirmed:'बुकिंग कन्फर्म',Rejected:'बुकिंग अस्वीकृत',Cancelled:'बुकिंग रद्द',Dispatched:'सामान डिस्पैच',Completed:'बुकिंग पूरी'};
                 result.innerHTML='<div class="rk-tracker-summary"><div><small>बुकिंग नंबर</small><strong>#'+escapeHtml(b.id)+'</strong></div><span class="rk-tracker-status">'+escapeHtml(statusLabels[b.status]||b.status||'स्थिति उपलब्ध नहीं')+'</span></div>'+
-                  '<div class="rk-tracker-meta"><span>डिस्पैच: '+escapeHtml(b.date||'-')+'</span><span>वापसी: '+escapeHtml(b.returnDate||'-')+'</span><span>डिस्पैच एंट्री: '+(Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:0)+'</span><span>रिटर्न एंट्री: '+(Array.isArray(b.returnEntries)?b.returnEntries.length:0)+'</span></div>'+
+                  '<div class="rk-tracker-meta"><span>डिस्पैच: '+escapeHtml(b.date||'-')+'</span><span>वापसी: '+escapeHtml(b.returnDate||'-')+'</span><span>डिस्पैच एंट्री: '+(Number(b.dispatchEntryCount)||0)+'</span><span>रिटर्न एंट्री: '+(Number(b.returnEntryCount)||0)+'</span></div>'+
                   '<ul class="rk-tracker-items">'+itemRows+'</ul><div class="rk-tracker-payment"><span>'+advanceLabel+' · ₹'+advance.toFixed(2)+'</span><span>अतिरिक्त जमा: ₹'+payments.toFixed(2)+'</span></div>';
             }catch(error){result.textContent=error.message||'बुकिंग की जानकारी प्राप्त नहीं हो सकी।';}
         }
