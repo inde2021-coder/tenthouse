@@ -3000,10 +3000,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             let answer='',usedBackend=false;
             try{
                 if(api&&token&&navigator.onLine){
-                    const aiBusinessSnapshot={bookings:safeGetStorage('softwareBookings',[]),stock:safeGetStorage('realStockDatabase',[]),expenses:safeGetStorage('incomeExpenseDatabase',[]),vendorStock:safeGetStorage('thirdPartyDatabase',[]),vendorPayments:safeGetStorage('thirdPartyPayments',[]),lastCloudSync:safeGetStorage('rkLastCloudSyncAt',null)};
-                    let snapshotText=JSON.stringify(aiBusinessSnapshot);
-                    if(snapshotText.length>8500)snapshotText=snapshotText.slice(0,8500)+'… [डेटा सीमा के कारण बाकी हिस्सा छोड़ा गया]';
-                    const aiUserMessage='उपयोगकर्ता का प्रश्न: '+question+'\n\nऐप का उपलब्ध व्यावसायिक डेटा (यह लोकल snapshot है; Firebase से नवीनतम sync की पुष्टि केवल lastCloudSync से करें):\n'+snapshotText+'\n\nकेवल दिए गए डेटा के आधार पर उत्तर दें। डेटा मौजूद न हो तो स्पष्ट बताएं; अनुमान लगाकर रकम/रिकॉर्ड न बनाएं।';
+                    const countRecords=value=>Array.isArray(value)?value.length:(value&&typeof value==='object'?Object.keys(value).length:0);
+                    // Privacy boundary: never send raw bookings, customer PII, UTRs, addresses, or payment rows to an AI provider.
+                    const aiBusinessSummary={bookingRecordCount:countRecords(safeGetStorage('softwareBookings',[])),stockRecordCount:countRecords(safeGetStorage('realStockDatabase',[])),expenseRecordCount:countRecords(safeGetStorage('incomeExpenseDatabase',[])),vendorStockRecordCount:countRecords(safeGetStorage('thirdPartyDatabase',[])),vendorPaymentRecordCount:countRecords(safeGetStorage('thirdPartyPayments',[])),lastCloudSync:safeGetStorage('rkLastCloudSyncAt',null)};
+                    const snapshotText=JSON.stringify(aiBusinessSummary);
+                    const aiUserMessage='उपयोगकर्ता का प्रश्न: '+question+'\\n\\nगोपनीयता-सुरक्षित व्यावसायिक सारांश (केवल रिकॉर्ड की गिनती; ग्राहक/भुगतान विवरण शामिल नहीं):\\n'+snapshotText+'\\n\\nइन सीमित आँकड़ों से आगे की जानकारी उपलब्ध न हो तो स्पष्ट बताएं; रकम, ग्राहक या रिकॉर्ड का अनुमान न लगाएं।';
                     const systemMessage='आप श्रद्धा हैं, Radhe Krishn Tent House Manager की हिंदी सहायक। स्पष्ट और ईमानदार उत्तर दें। कोई कार्रवाई/डेटा परिवर्तन करने का दावा न करें जब तक ऐप का वास्तविक टूल उसे न करे। Firebase/व्यावसायिक रिकॉर्ड के प्रश्नों में केवल user message में दिए गए डेटा का उपयोग करें और निजी डेटा अनावश्यक रूप से न दोहराएं।';
                     const messages=[{role:'system',content:systemMessage},...rkAiConversation.slice(-20),{role:'user',content:aiUserMessage}];
                     const r=await fetch(api+'/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':token},body:JSON.stringify({messages})});
