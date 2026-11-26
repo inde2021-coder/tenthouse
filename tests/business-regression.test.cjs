@@ -2219,7 +2219,7 @@ test('third-party payment entry writes only to the separate vendor payment ledge
     showActionMessage: () => {},
     Math, Number, String, Array, Date
   };
-  vm.runInNewContext(code + '\\nresult=recordThirdPartyPayment({preventDefault(){prevented=true;},target:{reset(){reset=true;}}});', context);
+  vm.runInNewContext(code + '\nresult=recordThirdPartyPayment({preventDefault(){prevented=true;},target:{reset(){reset=true;}}});', context);
   assert.equal(prevented, true);
   assert.equal(reset, true);
   assert.equal(store.thirdPartyPayments.length, 1);
@@ -2252,7 +2252,7 @@ test('third-party ledger calculates vendor cost, missing liability, payment due 
     escapeHtml: value => String(value??''),
     Math, Number, String, Array, Date, JSON
   };
-  vm.runInNewContext(code + '\\nloadThirdPartyLedger();', context);
+  vm.runInNewContext(code + '\nloadThirdPartyLedger();', context);
   assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹240.00'));
   assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹50.00'));
   assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹290.00'));
