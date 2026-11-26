@@ -2044,9 +2044,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 let formattedDay = day.toString().padStart(2, '0');
                 let currentDateStr = `${year}-${formattedMonth}-${formattedDay}`;
 
-                let dayBookings = bookings.filter(b => b.date <= currentDateStr && currentDateStr <= b.returnDate);
+                let dayBookings = bookings.filter(b => !['Rejected','Cancelled'].includes(String(b.status||'')) && String(b.date||'') <= currentDateStr && currentDateStr <= String(b.actualReturnDate||b.returnDate||''));
                 let hasBookingClass = dayBookings.length > 0 ? 'has-booking' : '';
-                let bookingTags = dayBookings.map(b => `<div class="calendar-booking-tag" title="${b.name} (#${b.id})">#${b.id} ${b.name}</div>`).join('');
+                let bookingTags = dayBookings.map(b => `<div class="calendar-booking-tag" title="${escapeHtml(b.name||'')} (#${escapeHtml(b.id)})">#${escapeHtml(b.id)} ${escapeHtml(b.name||'')}</div>`).join('');
 
                 container.innerHTML += `
                     <div class="calendar-day-cell ${hasBookingClass}">
