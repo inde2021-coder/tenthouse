@@ -1329,3 +1329,20 @@ test('barcode camera stops a stream that resolves after the user closes the scan
   assert.equal(video.srcObject,null);
   assert.equal(modal.style.display,'none');
 });
+
+
+test('business document print keeps the print target visible until afterprint cleanup', () => {
+  const code=sourceBetween('function printBusinessDocument()', 'window.onload = function()');
+  assert.ok(code.includes('printWithStampImages()'));
+  assert.ok(!code.includes('window.print()'));
+  assert.ok(!code.includes("area.style.display='none'"));
+  const preview={innerHTML:'<p>Quotation</p>'};
+  const area={dataset:{},innerHTML:'',style:{display:'none'},classList:{add(){}}};
+  let printCalls=0;
+  const context={document:{getElementById:id=>id==='businessDocumentPreview'?preview:area},printWithStampImages:()=>{printCalls++;},showActionMessage:()=>{}};
+  vm.runInNewContext(code+'\nresult=printBusinessDocument();',context);
+  assert.equal(printCalls,1);
+  assert.equal(area.dataset.printRestore,'document');
+  assert.equal(area.style.display,'block');
+  assert.equal(area.innerHTML,'<p>Quotation</p>');
+});
