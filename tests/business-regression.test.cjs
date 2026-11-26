@@ -175,12 +175,12 @@ test('invoice shows automatic missing charge breakdown without admin approval co
   assert.doesNotMatch(invoice,/शुल्क स्वीकृत करें/);
 });
 
-test('invoice exposes approved missing charge rows and separates pending approval', () => {
+test('invoice exposes automatically applied missing charge rows without approval gating', () => {
   const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
   assert.match(invoice,/approvedMissingRows/);
-  assert.match(invoice,/स्वीकृत Missing Charge/);
-  assert.match(invoice,/getApprovedMissingChargeTotal\(b\)/);
-  assert.doesNotMatch(invoice,/केवल मात्रा की सूची \(कोई शुल्क नहीं\)/);
+  assert.match(invoice,/मिसिंग सामान का लागू शुल्क/);
+  assert.match(invoice,/getMissingChargeTotal\\(b\\)/);
+  assert.doesNotMatch(invoice,/स्वीकृत Missing Charge|शुल्क स्वीकृत करें|getApprovedMissingChargeTotal/);
 });
 
 test('rent uses actual dispatch quantities and their saved unit rate', () => {
