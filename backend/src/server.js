@@ -1295,4 +1295,9 @@ app.post('/api/payments/:id/verify', authAdmin, requireDurableStore, async (req,
   } catch(error) { res.status(503).json({error:error.message}); }
 });
 app.use((err,_req,res,_next) => { console.error(err.message); res.status(500).json({ error: isProd ? 'Internal server error' : err.message }); });
-app.listen(port, () => console.log(`ERP API listening on :${port}`));
+// Export the Express application for Vercel's Express adapter. Start a local
+// HTTP listener only when running this file directly outside Vercel.
+export default app;
+if (!process.env.VERCEL) {
+  app.listen(port, () => console.log(`ERP API listening on :${port}`));
+}
