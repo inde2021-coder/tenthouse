@@ -548,7 +548,7 @@ test('admin booking list displays UTR and payment verification controls', () => 
 });
 
 test('missing items are automatically charged from the stock entry rate', () => {
-  assert.ok(html.includes('मिसिंग शुल्क (स्वतः)'));
+  assert.ok(html.includes('मिसिंग सामान शुल्क विवरण (स्वतः लागू)'));
   assert.ok(html.includes('मिसिंग सामान शुल्क विवरण (स्वतः लागू)'));
   assert.ok(html.includes('getMissingChargeTotal(b)'));
   assert.ok(html.includes('chargeAppliedAt'));
