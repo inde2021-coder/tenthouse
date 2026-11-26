@@ -305,7 +305,7 @@ test('dispatch aggregates duplicate stock-row requirements before checking and d
   assert.ok(dispatch.includes('const requirementMap=new Map()'));
   assert.ok(dispatch.includes('if(previous)previous.qty+=x.qty'));
   assert.ok(dispatch.includes('if(available<requirement.qty)'));
-  assert.ok(dispatch.includes('requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty))'));
+  assert.ok(dispatch.includes('requirements.forEach(x=>x.row.qty=Number(x.row.qty)-x.qty)'));
   assert.ok(html.includes("· बाकी '+Math.max(0,planned-sent)"));
 });
 
@@ -1505,7 +1505,7 @@ test('missing recovery uses the exact item index and records the real recovery d
   assert.match(code,/String\(it\.name\)!==String\(m\.item\)/);
   assert.match(code,/m\.recoveryEntries\.push\(\{qty,date:recoveryDate,createdAt:recoveredAt\}\)/);
   assert.match(code,/mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
-  assert.match(code,/row\.qty=Math\.max\(0,Number\(row\.qty\)\|\|0\)\+qty/);
+  assert.match(code,/row\.qty=currentStockQty\+qty/);
   assert.match(code,/syncCustomerBookingWorkflow\(b,false\)/);
 });
 
@@ -1818,7 +1818,7 @@ test('missing recovery validates the outstanding balance and updates stock plus 
   assert.match(code, /it\.returnedQty=\(Number\(it\.returnedQty\)\|\|0\)\+qty/);
   assert.match(code, /m\.recoveryEntries\.push\(\{qty,date:recoveryDate/);
   assert.match(code, /mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
-  assert.match(code, /row\.qty=Math\.max\(0,Number\(row\.qty\)\|\|0\)\+qty/);
+  assert.match(code, /row\.qty=currentStockQty\+qty/);
   assert.match(code, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
 });
 
@@ -1883,4 +1883,19 @@ test('dispatch aggregates duplicate vendor booking rows against the same vendor 
   const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
   vm.runInNewContext(code+'\nresult=completeDispatch(405);',context);await context.result;
   assert.equal(writes,0);assert.equal(store.thirdPartyDatabase[0].qty,4);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);
+});
+
+test('legacy missing recovery refuses fractional or malformed source stock without changing ledgers', async () => {
+  for (const invalid of [1.5, '', 'bad', null]) {
+    const store={missingItemsDatabase:[{id:'legacy-'+String(invalid),bookingId:501,itemIndex:0,item:'Chair',source:'admin',qty:1,resolved:false}],softwareBookings:[{id:501,items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}],returnEntries:[]}],realStockDatabase:[{name:'Chair',qty:invalid}],thirdPartyDatabase:[]};
+    let writes=0;
+    const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:()=>{}};
+    const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
+    vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("legacy-'+String(invalid)+'");',context);
+    await context.result;
+    assert.equal(writes,0,'legacy missing recovery must reject '+String(invalid));
+    assert.equal(store.realStockDatabase[0].qty,invalid);
+    assert.equal(store.missingItemsDatabase[0].qty,1);
+    assert.equal(store.softwareBookings[0].items[0].returnedQty,1);
+  }
 });
