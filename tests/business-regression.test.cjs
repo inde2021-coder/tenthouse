@@ -1409,3 +1409,21 @@ test('return and missing recovery reject blank or malformed legacy stock quantit
     assert.equal(store.missingItemsDatabase[0].qty,1);
   }
 });
+
+test('dispatch aggregates duplicate booking item rows before checking shared stock', async () => {
+  const store={softwareBookings:[{id:404,status:'Confirmed',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:4,rentPrice:100,source:'admin'},{name:'Chair',qty:4,rentPrice:100,source:'admin'}],dispatchEntries:[]}],realStockDatabase:[{name:'Chair',qty:5}],thirdPartyDatabase:[]};
+  let writes=0;const answers=['2026-11-02','','4','4'];
+  const context={Math,Number,String,Array,Date,JSON,prompt:()=>answers.shift(),isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},sendWhatsAppMessage:()=>{},syncCustomerBookingWorkflow:()=>{}};
+  const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
+  vm.runInNewContext(code+'\\nresult=completeDispatch(404);',context);await context.result;
+  assert.equal(writes,0);assert.equal(store.realStockDatabase[0].qty,5);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);
+});
+
+test('dispatch aggregates duplicate vendor booking rows against the same vendor stock', async () => {
+  const store={softwareBookings:[{id:405,status:'Confirmed',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Light',qty:3,rentPrice:100,source:'third-party',partyName:'Vendor A'},{name:'Light',qty:3,rentPrice:100,source:'third-party',partyName:'Vendor A'}],dispatchEntries:[]}],realStockDatabase:[],thirdPartyDatabase:[{partyName:'Vendor A',item:'Light',qty:4}]};
+  let writes=0;const answers=['2026-11-02','','3','3'];
+  const context={Math,Number,String,Array,Date,JSON,prompt:()=>answers.shift(),isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},sendWhatsAppMessage:()=>{},syncCustomerBookingWorkflow:()=>{}};
+  const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
+  vm.runInNewContext(code+'\\nresult=completeDispatch(405);',context);await context.result;
+  assert.equal(writes,0);assert.equal(store.thirdPartyDatabase[0].qty,4);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);
+});
