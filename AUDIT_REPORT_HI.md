@@ -287,3 +287,13 @@ Main पर मिले root causes:
 - महत्वपूर्ण सीमा: rules GitHub में committed हैं, लेकिन live Firebase Console में publish नहीं किए गए और admin UID allowlist भी provision नहीं की गई। इसलिए production Firebase permission/cross-device sync अभी वास्तविक रूप से verified नहीं है। Rules लागू करने के लिए admin UID चाहिए; इसे अनुमान से नहीं भरा गया।
 - Latest main head: `0cdd7aa7b633430884e13dcba157d388a1b3a5f8`।
 - कोई Vercel deployment या Firebase rules publish नहीं किया गया।
+
+
+## Frontend CSP audit — 26 नवंबर 2026
+- Live Preview HTML में 6 inline script blocks और लगभग 120 inline event handlers हैं; साथ में cdnjs, jsDelivr, Google Fonts और Firebase SDK के external assets हैं।
+- Preview response का Helmet default CSP `script-src 'self'` तथा `script-src-attr 'none'` था। इससे inline app logic, event handlers और CDN scripts browser द्वारा block हो सकते हैं; Firebase Auth/Realtime Database requests भी default `connect-src 'self'` से block हो सकते हैं।
+- PR #42 में Helmet के लिए सीमित CSP allowlist जोड़ी गई: केवल app द्वारा इस्तेमाल किए गए CDN/Google/Firebase/AI/Meta origins; `object-src 'none'`, `frame-ancestors 'self'` और बाकी Helmet protections बरकरार।
+- मौजूदा legacy inline architecture के कारण `unsafe-inline` अस्थायी रूप से जरूरी है। इसे हटाने के लिए scripts/event handlers को nonce/hash आधारित CSP में migrate करना अलग hardening task है।
+- Regression test `tests/backend-api.test.cjs` CSP header में आवश्यक CDN/Firebase sources और restrictive object/frame directives verify करता है।
+- PR #42: https://github.com/inde2021-coder/tenthouse-/pull/42
+- Vercel preview redeploy daily free quota (100/day) से blocked है; GitHub Actions result इस नए head पर अभी उपलब्ध नहीं है। इसलिए CSP fix को अभी live deployed या test-passed घोषित नहीं किया जा रहा।

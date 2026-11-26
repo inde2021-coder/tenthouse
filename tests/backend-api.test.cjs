@@ -450,3 +450,17 @@ test('admin booking edits reject impossible calendar dates before attempting sto
   assert.equal(edited.status, 400);
   assert.match((await edited.json()).error, /वास्तविक कैलेंडर तारीख/);
 });
+
+test('frontend Content Security Policy permits only the required inline legacy UI and trusted Firebase/CDN origins', async () => {
+  const response = await request('/');
+  assert.equal(response.status, 200);
+  const csp = response.headers.get('content-security-policy') || '';
+  assert.match(csp, /script-src[^;]*'unsafe-inline'/);
+  assert.match(csp, /script-src[^;]*https:\/\/cdnjs\.cloudflare\.com/);
+  assert.match(csp, /script-src[^;]*https:\/\/www\.gstatic\.com/);
+  assert.match(csp, /script-src-attr 'unsafe-inline'/);
+  assert.match(csp, /connect-src[^;]*https:\/\/\*\.firebaseio\.com/);
+  assert.match(csp, /connect-src[^;]*wss:\/\/\*\.firebaseio\.com/);
+  assert.match(csp, /object-src 'none'/);
+  assert.match(csp, /frame-ancestors 'self'/);
+});
