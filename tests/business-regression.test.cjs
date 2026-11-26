@@ -1710,20 +1710,15 @@ test('Royal admin dashboard KPIs are read-only, data-backed and quick actions re
 });
 
 
-test('Design Manager exposes all six reference-collage themes without touching ERP data', () => {
-  const themeNames=['royal','light','neon','emerald','purple','ocean'];
-  for (const name of themeNames) {
-    assert.ok(html.includes('data-rk-theme="'+name+'"'), 'Missing Design Manager option: '+name);
-  }
-  assert.match(html,/rkDesignPreset/);
-  assert.match(html,/const allowed=\['royal','light','neon','emerald','purple','ocean'\]/);
-  assert.match(html,/localStorage\.setItem\('rkDesignPreset',name\)/);
-  assert.match(html,/rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean/);
+test('five-image ZIP reference is the only active design and alternate theme switching is locked', () => {
+  assert.match(html,/const applyRoyalReference/);
+  assert.match(html,/document\.documentElement\.classList\.remove\('rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean'\)/);
+  assert.match(html,/window\.applyRkDesign=function\(\)\{applyRoyalReference\(\)\}/);
   const css=fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8');
-  for (const name of ['light','neon','emerald','purple','ocean']) {
-    assert.ok(css.includes('rk-theme-'+name), 'Missing CSS preset: '+name);
-  }
-  assert.match(css,/\.rk-design-options/);
+  assert.match(css,/\.rk-design-manager\{display:none!important\}/);
+  assert.match(css,/ZIP MASTER REFERENCE LOCK/);
+  assert.match(css,/#customerFirstPortal \.rk-customer-form/);
+  assert.match(css,/#customerFirstPortal \.rk-booking-tracker/);
 });
 
 
