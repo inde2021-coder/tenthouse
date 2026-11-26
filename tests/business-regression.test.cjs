@@ -737,7 +737,7 @@ test('payment receipt and verification alerts are sent only after payment state 
   assert.ok(sender.includes("['payment','payment-verified','payment-rejected'].includes(type)"));
   assert.ok(sender.includes('UTR सत्यापन लंबित है'));
   const save=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment');
-  assert.ok(save.includes("if(!safeSetStorage(key,ledger))return"));
+  assert.ok(save.includes("safeSetStorageBatch([[key,ledger],['softwareBookings',rows]])"));
   assert.ok(save.includes("sendWhatsAppMessage(b.id,'payment')"));
   const verify=sourceBetween('async function verifyLedgerPayment', 'function printReturnSlip');
   assert.ok(verify.includes("verified?'payment-verified':'payment-rejected'"));
