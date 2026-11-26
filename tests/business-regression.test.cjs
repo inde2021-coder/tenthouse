@@ -533,11 +533,12 @@ test('CSV stock import rejects invalid quantities and rates instead of inventing
   assert.ok(!code.includes('Number(cols[2]) || 500'));
 });
 
-test('purchase entry rolls back its purchase row when stock persistence fails', () => {
+test('purchase entry saves purchase and stock together through rollback-capable batch storage', () => {
   const code = sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("if(!safeSetStorage('purchaseDatabase',pur))return"));
-  assert.ok(code.includes("if(!safeSetStorage('realStockDatabase',nextStock))"));
-  assert.ok(code.includes("safeSetStorage('purchaseDatabase',previousPurchases)"));
+  assert.ok(code.includes("if(!safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return"));
+  const batch = sourceBetween('function safeSetStorageBatch(entries)', 'function showActionMessage(');
+  assert.ok(batch.includes('const snapshots = new Map()'));
+  assert.ok(batch.includes('for (const [key, previous] of snapshots)'));
 });
 
 test('daily expense form does not clear or claim success when local persistence fails', () => {
