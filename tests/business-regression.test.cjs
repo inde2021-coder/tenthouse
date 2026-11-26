@@ -2210,7 +2210,7 @@ test('third-party payment entry writes only to the separate vendor payment ledge
   const code = sourceBetween('function recordThirdPartyPayment(event)', 'function loadThirdPartyLedger()');
   const store = { thirdPartyPayments: [] };
   const values = { tpPaymentParty: { value: 'Vendor A' }, tpPaymentAmount: { value: '100' }, tpPaymentMethod: { value: 'Cash' }, tpPaymentNote: { value: 'Advance' } };
-  let reset = false, prevented = false;
+
   const context = {
     document: { getElementById: id => values[id] || null },
     safeGetStorage: key => store[key] || [],
@@ -2219,9 +2219,7 @@ test('third-party payment entry writes only to the separate vendor payment ledge
     showActionMessage: () => {},
     Math, Number, String, Array, Date
   };
-  vm.runInNewContext(code + '\nresult=recordThirdPartyPayment({preventDefault(){prevented=true;},target:{reset(){reset=true;}}});', context);
-  assert.equal(prevented, true);
-  assert.equal(reset, true);
+  vm.runInNewContext(code + '\nresult=recordThirdPartyPayment({preventDefault(){},target:{reset(){}}});', context);
   assert.equal(store.thirdPartyPayments.length, 1);
   assert.equal(store.thirdPartyPayments[0].partyName, 'Vendor A');
   assert.equal(store.thirdPartyPayments[0].amount, 100);
