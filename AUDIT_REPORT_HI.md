@@ -173,3 +173,11 @@ Main पर मिले root causes:
 - किसी Vercel deployment को trigger नहीं किया गया।
 - `tenthouse-` और Vercel production project के Git source नाम में पहले से दर्ज अंतर अभी भी अंतिम production promotion से पहले resolve होना बाकी है।
 - सभी अलग-अलग audit PRs को एक-दूसरे में स्वतः merge न करें; पहले base/history, file conflicts, CI और end-to-end dependencies की जाँच करें।
+
+
+## AI गोपनीयता सुधार (26 नवंबर 2026)
+- AI Assistant से भेजे जाने वाले raw booking, customer, stock, expense और vendor-payment records हटाए गए।
+- अब provider को केवल aggregate record counts और last-cloud-sync timestamp भेजे जाते हैं; ग्राहक का नाम, मोबाइल, पता, UTR और payment rows नहीं भेजे जाते।
+- तीनों served HTML shells में एक जैसा privacy boundary लागू किया गया।
+- Regression test जोड़ा गया है जो सभी पाँच local data stores के aggregate count की जाँच करता है और raw snapshot serialization को अस्वीकार करता है।
+- यह बदलाव अभी `audit/final-hardening-2026-11` PR #3 पर है; production में merge/deploy नहीं किया गया।
