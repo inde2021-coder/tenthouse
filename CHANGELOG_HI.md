@@ -73,3 +73,12 @@
 - App icon SVG को Radhe Krishn navy/gold tent-house branding के अनुसार refresh किया और सभी app-shell copies में favicon link जोड़ा।
 - Customer hero / editable upload / existing booking submit handler के लिए regression test जोड़ा।
 - GitHub Actions पर backend syntax, business regression tests और JSON validation सफल।
+
+
+## 26 नवंबर 2026 — Settings Page Premium Refresh
+- Admin Settings पेज के लिए अलग scoped dark-glass visual layer जोड़ी गई; बाकी ERP modules की styling/logic को छुआ नहीं गया।
+- Desktop पर दो-column settings grid, mobile पर single-column layout, बेहतर upload cards, recessed dark inputs, collapsible Backend/Backup sections और स्पष्ट save actions जोड़े गए।
+- Root, `public/` और `backend/public/` की तीनों HTML copies byte-identical रखी गईं।
+- Regression test `tests/settings-ui.test.cjs` जोड़ा गया। GitHub Actions run #945 सफल: backend syntax, business regression और JSON validation सहित **141/141 tests PASS**।
+- Preview deployment का प्रयास Vercel daily API deployment quota (100/day) से रोका गया; कोई नया deployment live होने का दावा नहीं है।
+- बदलाव Draft PR #40 में हैं; production repository अलग है और इस GitHub connection में उपलब्ध नहीं है।
