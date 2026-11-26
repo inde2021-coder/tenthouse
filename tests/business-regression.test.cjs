@@ -1398,7 +1398,7 @@ test('return and missing recovery reject blank or malformed legacy stock quantit
     const store={softwareBookings:[{id:410,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:2,returnedQty:0,source:'admin',missingQty:1}],dispatchEntries:[{itemIndex:0,qty:2,date:'2026-11-01'}]}],missingItemsDatabase:[{id:'m2',bookingId:410,item:'Chair',qty:1,source:'admin'}],realStockDatabase:[{name:'Chair',qty:invalid}],thirdPartyDatabase:[]};
     const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
     const returnContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
-    const returnCode=sourceBetween('async function completeManualReturnProcess()','        let currentDocumentItems = []');
+    const returnCode=sourceBetween('async function completeManualReturnProcess()','        window.onload = function()');
     vm.runInNewContext(returnCode+'\nresult=completeManualReturnProcess();',returnContext);await returnContext.result;
     assert.equal(writes,0,'return must reject '+String(invalid));
     assert.equal(store.softwareBookings[0].items[0].returnedQty,0);
