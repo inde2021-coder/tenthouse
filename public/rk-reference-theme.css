@@ -289,3 +289,50 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
   }
 }
 @media print{#printableSlipArea input,#printableSlipArea select,#printableSlipArea textarea{background:#fff!important;color:#111!important;-webkit-text-fill-color:#111!important;box-shadow:none!important}}
+
+
+/* Royal white-paper print system for slips, bills, quotations and tax invoices. */
+@media print{
+ @page{size:A4;margin:10mm}
+ #printableSlipArea{background:#fff!important;color:#17243a!important;font-family:Arial,"Noto Sans Devanagari",sans-serif!important}
+ #printableSlipArea .rk-slip{
+  box-sizing:border-box!important;width:100%!important;max-width:none!important;
+  padding:9mm!important;margin:0!important;border:1px solid #c7a34b!important;
+  border-radius:0!important;background:#fff!important;color:#17243a!important;
+  box-shadow:none!important;font-family:Arial,"Noto Sans Devanagari",sans-serif!important;
+  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important
+ }
+ #printableSlipArea .rk-slip header,
+ #printableSlipArea .rk-slip>.rk-slip-header,
+ #printableSlipArea .rk-slip>.rk-dispatch-slip,
+ #printableSlipArea .rk-slip>.rk-return-slip{
+  border-bottom:2px solid #102b55!important;padding-bottom:9px!important;
+  margin-bottom:12px!important;color:#102b55!important
+ }
+ #printableSlipArea .rk-slip h1,
+ #printableSlipArea .rk-slip h2,
+ #printableSlipArea .rk-slip h3,
+ #printableSlipArea .rk-slip h4{color:#102b55!important;font-family:Georgia,serif!important}
+ #printableSlipArea .rk-slip header:after{content:"";display:block;height:2px;margin-top:5px;background:linear-gradient(90deg,#9b7422,#f0d98a,#9b7422)!important}
+ #printableSlipArea .rk-slip p,
+ #printableSlipArea .rk-slip li,
+ #printableSlipArea .rk-slip b,
+ #printableSlipArea .rk-slip strong{color:#17243a!important}
+ #printableSlipArea .rk-slip table{width:100%!important;border-collapse:collapse!important;margin-top:10px!important}
+ #printableSlipArea .rk-slip thead{display:table-header-group}
+ #printableSlipArea .rk-slip th{
+  background:#102b55!important;color:#f7df91!important;
+  border:1px solid #b99643!important;font-weight:800!important;
+  padding:7px 6px!important;text-align:left!important
+ }
+ #printableSlipArea .rk-slip td{
+  background:#fff!important;color:#17243a!important;
+  border:1px solid #c9b16e!important;padding:7px 6px!important
+ }
+ #printableSlipArea .rk-slip tr{break-inside:avoid;page-break-inside:avoid}
+ #printableSlipArea .rk-slip img{max-width:100%!important;object-fit:contain!important}
+ #printableSlipArea .rk-slip section{border-color:#c9b16e!important;break-inside:avoid;page-break-inside:avoid}
+ #printableSlipArea .rk-slip .no-print{display:none!important}
+ #printableSlipArea .rk-slip .rk-slip-total,
+ #printableSlipArea .rk-slip .total-row{background:#fff8df!important;color:#102b55!important;border:1px solid #c7a34b!important}
+}
