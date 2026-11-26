@@ -162,7 +162,7 @@ Main पर मिले root causes:
 मुख्य शाखा का निरीक्षित commit: `31a636dca7f60d95658949c998e4104df65e4ca8`। इस snapshot में GitHub की सभी उपलब्ध शाखाओं की तुलना `main` से की गई:
 
 - `audit/final-hardening-2026-11`: `main` से 28 commits आगे, पीछे 0; नवीनतम उपलब्ध CI run #619 सफल।
-- `audit/otp-delivery-order-2026-11`: `main` से 6 commits आगे, पीछे 0; PR #4 खुला है और CI run #632 सफल। इसमें OTP delivery ordering, atomic single-use verification, concurrent OTP regression test और WhatsApp webhook verification/deduplication tests शामिल हैं।
+- `audit/otp-delivery-order-2026-11`: `main` से 8 commits आगे, पीछे 0; PR #4 खुला है और CI run #647 सफल। इसमें OTP delivery ordering, atomic single-use verification, पाँच गलत प्रयासों के बाद lockout, concurrent OTP regression test और WhatsApp webhook verification/signature/deduplication tests शामिल हैं।
 - `audit/tenthouse-ai-chat-2026-11`: `main` से 15 commits पीछे और history diverged; PR #2 अभी पुराने audit base पर है। इसे सीधे production में merge नहीं करना है; पहले सही base पर सुरक्षित rebase/review जरूरी है।
 - `audit/deep-audit-fixes-2026-11`: `main` से 15 commits पीछे और history diverged; इसे production base नहीं मानना है।
 - `render-preview-bartan`, `render-preview-isolated`, `render-preview-test`: तीनों शाखाएँ `main` से 15 commits पीछे और history diverged हैं। उपलब्ध पुराने CI परिणाम क्रमशः सफल, सफल और असफल (85/90 tests) हैं। इन preview branches को production में merge नहीं करना है; feature-by-feature पुनः समीक्षा जरूरी है।
@@ -181,3 +181,10 @@ Main पर मिले root causes:
 - तीनों served HTML shells में एक जैसा privacy boundary लागू किया गया।
 - Regression test जोड़ा गया है जो सभी पाँच local data stores के aggregate count की जाँच करता है और raw snapshot serialization को अस्वीकार करता है।
 - यह बदलाव अभी `audit/final-hardening-2026-11` PR #3 पर है; production में merge/deploy नहीं किया गया।
+
+
+## नवीनतम OTP सुरक्षा सत्यापन (26 नवंबर 2026)
+- OTP सत्यापन अब Firebase RTDB transaction के माध्यम से एक बार ही सफल होता है; गलत प्रयास transactionally गिने जाते हैं और पाँच गलत प्रयासों के बाद OTP lock हो जाता है।
+- सफल OTP को उसी atomic transaction में consume किया जाता है, जिससे parallel requests में duplicate success नहीं मिलता।
+- WhatsApp webhook GET challenge, constant-time verification-token comparison, invalid signature rejection और duplicate message ID handling के automated tests पास हुए।
+- GitHub Actions run #647 सफल; PR #4 अभी अलग खुला है और production `main` में merge नहीं हुआ है।
