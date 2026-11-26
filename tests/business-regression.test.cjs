@@ -1601,3 +1601,19 @@ test('Design Manager exposes all six reference-collage themes without touching E
   }
   assert.match(css,/\.rk-design-options/);
 });
+
+
+test('customer booking tracker looks up status through the mobile-verified public backend endpoint', () => {
+  for (const id of ['rkTrackBookingId','rkTrackMobile','rkBookingTrackResult']) {
+    assert.ok(html.includes('id="'+id+'"'));
+  }
+  const tracker=sourceBetween('async function lookupCustomerBookingStatus()', 'async function saveCustomerBooking(event)');
+  assert.match(tracker,/^\s*const id=/);
+  assert.match(tracker,/^\s*const mobile=/);
+  assert.match(tracker,/api\/customer\/bookings\//);
+  assert.match(tracker,/status\?mobile=/);
+  assert.match(tracker,/escapeHtml\(b\.id\)/);
+  assert.match(tracker,/escapeHtml\(item\.name/);
+  assert.match(tracker,/cache:'no-store'/);
+  assert.match(fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8'),/rk-booking-tracker/);
+});
