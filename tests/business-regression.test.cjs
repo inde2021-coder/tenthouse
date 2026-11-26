@@ -1045,3 +1045,60 @@ test('master ledger online transaction row uses verified amount and explicit UTR
   assert.ok(code.includes('UTR सत्यापन लंबित')===false,'status is supplied by the payment-state helper, not hard-coded as received');
   assert.ok(code.includes('display.status'));
 });
+
+
+test('admin stock entry rejects fractional and invalid quantities without saving', () => {
+  const code=sourceBetween('function saveStockItemReal(event)', 'function mergeDuplicateStockRows');
+  for(const qty of ['1.5','0','-2','abc','']) {
+    let writes=0,reset=false;
+    const values={stockItemName:'Chair',stockItemQty:qty,stockItemSetRent:'10',stockItemSingleRent:'5',stockItemMissing:'100'};
+    const context={
+      Number,Math,String,Array,Map,
+      document:{getElementById:id=>({value:values[id]})},
+      safeGetStorage:()=>[],
+      safeSetStorage:()=>{writes++;return true;},
+      showActionMessage:()=>{},
+      confirm:()=>true,
+      event:null
+    };
+    const event={preventDefault(){},target:{reset(){reset=true;}}};
+    vm.runInNewContext(code+'\nresult=saveStockItemReal(event);',context);
+    assert.equal(writes,0,'invalid admin stock quantity must not be saved');
+    assert.equal(reset,false,'invalid form must retain entered values');
+  }
+});
+
+test('vendor stock entry rejects fractional, negative and malformed quantities without saving', () => {
+  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  for(const qty of ['1.25','0','-4','bad','']) {
+    let writes=0,reset=false;
+    const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:qty,tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
+    const context={
+      Number,Math,String,Array,Date,
+      document:{getElementById:id=>({value:values[id]})},
+      safeGetStorage:()=>[],
+      safeSetStorage:()=>{writes++;return true;},
+      showActionMessage:()=>{},
+      loadThirdPartyLedger:()=>{},loadThirdPartyDropdownsForDispatch:()=>{},
+      event:null
+    };
+    const event={preventDefault(){},target:{reset(){reset=true;}}};
+    vm.runInNewContext(code+'\nresult=saveThirdPartyEntry(event);',context);
+    assert.equal(writes,0,'invalid vendor stock quantity must not be saved');
+    assert.equal(reset,false,'invalid form must retain entered values');
+  }
+});
+
+test('vendor stock entry rejects negative or non-numeric prices without saving', () => {
+  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  for(const field of ['tpItemCost','tpItemCharge','tpVendorMissingCost','tpMissingCharge']) {
+    for(const value of ['-1','abc']) {
+      let writes=0;
+      const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:'3',tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
+      values[field]=value;
+      const context={Number,Math,String,Array,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadThirdPartyLedger:()=>{},loadThirdPartyDropdownsForDispatch:()=>{}};
+      vm.runInNewContext(code+'\nresult=saveThirdPartyEntry({preventDefault(){},target:{reset(){}}});',context);
+      assert.equal(writes,0,field+' must reject '+value);
+    }
+  }
+});
