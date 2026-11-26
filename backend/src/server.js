@@ -18,7 +18,38 @@ app.disable('x-powered-by');
 // Vercel terminates TLS/proxies requests; trust the single platform proxy so rate-limit
 // keys use the client address instead of throwing on X-Forwarded-For.
 app.set('trust proxy', 1);
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+// The legacy ERP currently uses inline scripts and inline event handlers, plus the
+// Firebase and CDN assets listed below. Keep a strict source allowlist and retain
+// the other Helmet protections; remove unsafe-inline after a nonce/hash migration.
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      fontSrc: ["'self'", 'https:', 'data:'],
+      formAction: ["'self'", 'https://wa.me'],
+      frameAncestors: ["'self'"],
+      frameSrc: ["'self'", 'https://*.firebaseapp.com', 'https://accounts.google.com'],
+      imgSrc: ["'self'", 'https:', 'data:', 'blob:'],
+      objectSrc: ["'none'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://www.gstatic.com', 'https://cdn.jsdelivr.net'],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
+      connectSrc: [
+        "'self'",
+        'https://*.firebaseio.com', 'wss://*.firebaseio.com',
+        'https://*.firebasedatabase.app', 'wss://*.firebasedatabase.app',
+        'https://identitytoolkit.googleapis.com', 'https://securetoken.googleapis.com',
+        'https://www.googleapis.com', 'https://*.googleapis.com',
+        'https://firebasestorage.googleapis.com',
+        'https://generativelanguage.googleapis.com', 'https://graph.facebook.com'
+      ],
+      mediaSrc: ["'self'", 'https:', 'blob:'],
+      workerSrc: ["'self'", 'blob:']
+    }
+  }
+}));
 const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(new Error('Origin not allowed')); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization','X-Admin-Token'] }));
 app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { req.rawBody = Buffer.from(buf); } }));
