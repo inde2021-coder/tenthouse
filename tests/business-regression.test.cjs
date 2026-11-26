@@ -96,7 +96,7 @@ function runRentFunction(functionName, booking, missingRows = []) {
   const helperEnd = html.indexOf('        function calculateBookingTotalRent(b)', helperStart);
   const sharedHelpers = helperStart >= 0 && helperEnd >= 0 ? html.slice(helperStart, helperEnd) : '';
   const code = html.slice(start, next);
-  const context = { booking, safeGetStorage: key => key === 'missingItemsDatabase' ? missingRows : [], getApprovedMissingChargeTotal: b => missingRows.filter(row => String(row.bookingId) === String(b.id) && row.chargeApproved === true && !row.resolved && (Number(row.qty)||0)>0).reduce((sum,row)=>sum+Math.max(0,Number(row.penalty)||0),0), calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, Date, result: null };
+  const context = { booking, safeGetStorage: key => key === 'missingItemsDatabase' ? missingRows : [], getMissingChargeTotal: b => missingRows.filter(row => String(row.bookingId) === String(b.id) && !row.resolved && (Number(row.qty)||0)>0).reduce((sum,row)=>sum+Math.max(0,Number(row.penalty)||((Number(row.qty)||0)*Math.max(0,Number(row.unitCharge)||0))),0), calculateRentalDays: () => 2, getEffectiveMissingCharge: item => Math.max(0, Number(item?.missingCharge ?? item?.missingUnitPrice) || 0), Math, Number, Array, Date, result: null };
   vm.runInNewContext(`${sharedHelpers}\n${code}\nresult = ${functionName}(booking);`, context);
   return context.result;
 }
@@ -159,12 +159,20 @@ test('booking total adds rent, other charges and discount but excludes missing i
   assert.equal(total, 425);
 });
 
-test('only explicitly approved missing-item penalties are added to invoice total', () => {
+test('missing-item charge is automatic from stock rate without an approval flag', () => {
   const booking={id:77,date:'2026-11-01',returnDate:'2026-11-03',items:[{name:'Chair',qty:2,rentPrice:100,missingQty:1,missingCharge:500}],otherCharges:50,discountAmount:25};
-  const pending=runRentFunction('calculateBookingTotalRent',booking,[{bookingId:77,qty:1,penalty:500,chargeApproved:false}]);
-  const approved=runRentFunction('calculateBookingTotalRent',booking,[{bookingId:77,qty:1,unitCharge:500,penalty:500,chargeApproved:true,resolved:false}]);
-  assert.equal(pending,425);
-  assert.equal(approved,925);
+  const missing=runRentFunction('calculateBookingTotalRent',booking,[{bookingId:77,qty:1,unitCharge:500,penalty:500,chargeApproved:false,resolved:false}]);
+  const recovered=runRentFunction('calculateBookingTotalRent',booking,[{bookingId:77,qty:0,unitCharge:500,penalty:0,chargeApproved:false,resolved:true}]);
+  assert.equal(missing,925);
+  assert.equal(recovered,425);
+});
+
+test('invoice shows automatic missing charge breakdown without admin approval controls', () => {
+  const invoice=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
+  assert.match(invoice,/approvedMissingRows/);
+  assert.match(invoice,/Missing सामान का लागू शुल्क/);
+  assert.match(invoice,/getMissingChargeTotal\(b\)/);
+  assert.doesNotMatch(invoice,/शुल्क स्वीकृत करें/);
 });
 
 test('invoice exposes approved missing charge rows and separates pending approval', () => {
@@ -539,14 +547,13 @@ test('admin booking list displays UTR and payment verification controls', () => 
   assert.ok(html.includes('/advance'));
 });
 
-test('missing items display charge approval and approved charges flow into invoice totals', () => {
-  assert.ok(html.includes('मिसिंग शुल्क'));
-  assert.ok(html.includes('शुल्क स्वीकृत करें'));
-  assert.ok(html.includes('स्वीकृत Missing Charge'));
-  assert.ok(html.includes('getApprovedMissingChargeTotal(b)'));
-  assert.ok(html.includes('chargeApproved===true'));
-  assert.ok(!html.includes('मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)'));
-  assert.ok(html.includes('Customer status mirrors the invoice: missing items are quantity-only'));
+test('missing items are automatically charged from the stock entry rate', () => {
+  assert.ok(html.includes('मिसिंग शुल्क (स्वतः)'));
+  assert.ok(html.includes('मिसिंग सामान शुल्क विवरण (स्वतः लागू)'));
+  assert.ok(html.includes('getMissingChargeTotal(b)'));
+  assert.ok(html.includes('chargeAppliedAt'));
+  assert.ok(!html.includes('शुल्क स्वीकृत करें'));
+  assert.ok(!html.includes('approveMissingCharge('));
 });
 
 test('admin edits for customer portal bookings are sent to backend', () => {
