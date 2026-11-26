@@ -3041,7 +3041,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(discount<0||other<0){showActionMessage('डिस्काउंट और अन्य चार्ज नकारात्मक नहीं हो सकते','error');return}
             const base=calculateBookingBaseRent(b);if(discount>base+other){showActionMessage('डिस्काउंट मूल किराये से अधिक नहीं हो सकता','error');return}
             b.discountAmount=discount;b.otherCharges=other;
-            safeSetStorage('softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x));
+            if(!safeSetStorage('softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x))){showActionMessage('बिल बदलाव सेव नहीं हुआ; पुरानी बुकिंग राशि सुरक्षित रखी गई।','error');return;}
             if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('बिल बदलाव लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             searchBillingCustomer();if(!quiet)showActionMessage('डिस्काउंट/अन्य चार्ज बिल में लागू हुए','success');
         }
