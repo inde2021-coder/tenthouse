@@ -1775,12 +1775,13 @@ test('missing recovery updates the matching booking, stock and rental timeline b
     document,
     safeGetStorage: key => store[key],
     safeSetStorage: (key, value) => { store[key] = value; return true; },
+    safeSetStorageBatch: entries => { for (const [key, value] of entries) store[key] = value; return true; },
     localStorage: mockStorageForBatch(store), console,
     showActionMessage: () => {}, loadAllFirebaseData: () => {},
     loadReturnBookingForCounting: () => {}
   };
   const code = sourceBetween('async function recoverMissingItem(', 'async function completeManualReturnProcess()');
-  vm.runInNewContext(storageBatchSource() + '\\n' + code + '\\nresult = recoverMissingItem("42-0", 0);', context);
+  vm.runInNewContext(code + '\\nresult = recoverMissingItem("42-0", 0);', context);
   await context.result;
   const booking = store.softwareBookings[0];
   assert.equal(store.realStockDatabase[0].qty, 3);
