@@ -155,3 +155,21 @@ Main पर मिले root causes:
 - Production env inventory (values read नहीं किए): केवल `FIREBASE_DATABASE_URL`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_PROJECT_ID`, `AI_API_KEY`, `ADMIN_API_TOKEN` दिखे। WhatsApp/OTP-HMAC/`PUBLIC_ORIGIN` नाम नहीं दिखे; application requirements से मिलान production source access के बाद ही होगा।
 - पिछले 30 मिनट के production runtime error/fatal log query में कोई matching entry नहीं मिली; इसे zero-error प्रमाण नहीं माना जाए।
 - किसी PR को merge या production deploy नहीं किया गया। नाम बदलने का काम स्थगित है।
+
+
+## Branch audit snapshot (26 नवंबर 2026)
+
+मुख्य शाखा का निरीक्षित commit: `31a636dca7f60d95658949c998e4104df65e4ca8`। इस snapshot में GitHub की सभी उपलब्ध शाखाओं की तुलना `main` से की गई:
+
+- `audit/final-hardening-2026-11`: `main` से 28 commits आगे, पीछे 0; नवीनतम उपलब्ध CI run #619 सफल।
+- `audit/otp-delivery-order-2026-11`: `main` से 6 commits आगे, पीछे 0; PR #4 खुला है और CI run #632 सफल। इसमें OTP delivery ordering, atomic single-use verification, concurrent OTP regression test और WhatsApp webhook verification/deduplication tests शामिल हैं।
+- `audit/tenthouse-ai-chat-2026-11`: `main` से 15 commits पीछे और history diverged; PR #2 अभी पुराने audit base पर है। इसे सीधे production में merge नहीं करना है; पहले सही base पर सुरक्षित rebase/review जरूरी है।
+- `audit/deep-audit-fixes-2026-11`: `main` से 15 commits पीछे और history diverged; इसे production base नहीं मानना है।
+- `render-preview-bartan`, `render-preview-isolated`, `render-preview-test`: तीनों शाखाएँ `main` से 15 commits पीछे और history diverged हैं। उपलब्ध पुराने CI परिणाम क्रमशः सफल, सफल और असफल (85/90 tests) हैं। इन preview branches को production में merge नहीं करना है; feature-by-feature पुनः समीक्षा जरूरी है।
+
+## Merge और deployment रोक
+
+- इस audit snapshot के दौरान किसी branch को `main` में merge नहीं किया गया।
+- किसी Vercel deployment को trigger नहीं किया गया।
+- `tenthouse-` और Vercel production project के Git source नाम में पहले से दर्ज अंतर अभी भी अंतिम production promotion से पहले resolve होना बाकी है।
+- सभी अलग-अलग audit PRs को एक-दूसरे में स्वतः merge न करें; पहले base/history, file conflicts, CI और end-to-end dependencies की जाँच करें।
