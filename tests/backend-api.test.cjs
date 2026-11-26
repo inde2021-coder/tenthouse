@@ -42,6 +42,7 @@ before(async () => {
     env: {
       ...process.env,
       NODE_ENV: 'development',
+      API_RATE_LIMIT_MAX: '500',
       PORT: String(port),
       ADMIN_API_TOKEN: adminToken,
       OTP_HMAC_SECRET: otpSecret,
