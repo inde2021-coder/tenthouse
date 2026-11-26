@@ -102,6 +102,73 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
 @media(prefers-reduced-motion:reduce){#adminPanel *,#customerFirstPortal *{animation:none!important;transition:none!important}}
 @media print{#adminPanel,#customerFirstPortal{background:#fff!important}#printableSlipArea,#printableSlipArea *{color:#111!important}}
 
-#customerFirstPortal .rk-hero-art{display:none!important}
-#customerFirstPortal .rk-customer-hero{grid-template-columns:1fr!important;background-image:linear-gradient(90deg,rgba(3,9,25,.98) 0%,rgba(4,16,43,.84) 40%,rgba(4,16,43,.12) 100%),url('./bartan-hero.svg')!important;background-position:center!important;background-size:cover!important}
-#adminPanel #dashboard:before{background-image:linear-gradient(90deg,#030916 0%,rgba(4,15,39,.94) 32%,rgba(4,15,39,.12) 100%),url('./bartan-hero.svg')!important;background-position:center 58%!important}
+/* Reference alignment refinement: keep the supplied event artwork visible.
+   The original customer-hero.svg is already part of the app and remains the hero image. */
+#customerFirstPortal .rk-customer-hero{
+ grid-template-columns:minmax(0,1.04fr) minmax(260px,.96fr)!important;
+ min-height:clamp(260px,27vw,350px)!important;
+ background:linear-gradient(100deg,rgba(3,9,25,.97) 0%,rgba(4,16,43,.82) 48%,rgba(5,12,29,.16) 100%),url('./bartan-hero.svg') center/cover no-repeat!important;
+}
+#customerFirstPortal .rk-hero-art{
+ display:grid!important;min-height:210px!important;align-content:center!important;
+}
+#customerFirstPortal .rk-hero-image{
+ display:block!important;width:min(100%,480px)!important;max-height:225px!important;
+ aspect-ratio:480/194!important;object-fit:cover!important;opacity:1!important;
+}
+#customerFirstPortal .rk-hero-orbit{display:block!important;opacity:.38!important}
+#customerFirstPortal .rk-hero-float{display:flex!important}
+#customerFirstPortal .rk-customer-brand{
+ order:0!important;min-height:72px!important;padding:10px 18px!important;
+ border-radius:14px!important;gap:14px!important;
+ background:linear-gradient(100deg,#06132c,#102e64 52%,#06132c)!important;
+ border:1px solid #2874e8!important;
+}
+#customerFirstPortal .rk-customer-brand-mark{width:48px!important;height:48px!important;flex-basis:48px!important}
+#customerFirstPortal .rk-customer-brand h1{font-size:clamp(20px,2.6vw,32px)!important}
+#customerFirstPortal .rk-customer-brand-seal{display:flex!important}
+#customerFirstPortal .rk-customer-shell{max-width:1500px!important}
+#customerFirstPortal .rk-customer-form{
+ grid-template-columns:minmax(0,1.1fr) minmax(290px,.9fr)!important;
+ grid-template-areas:"identity payment" "event payment" "items payment" "submit submit"!important;
+ gap:10px!important;
+}
+#customerFirstPortal .rk-customer-identity{grid-area:identity!important}
+#customerFirstPortal .rk-customer-event{grid-area:event!important}
+#customerFirstPortal .rk-customer-items{grid-area:items!important}
+#customerFirstPortal .rk-customer-payment{grid-area:payment!important}
+#customerFirstPortal .rk-customer-submit{grid-area:submit!important}
+#customerFirstPortal .rk-customer-section{
+ border-radius:12px!important;padding:14px 16px!important;
+ background:linear-gradient(145deg,#0b2453,#06132e)!important;
+ border:1px solid #236bd2!important;
+}
+#customerFirstPortal .rk-customer-section-title,
+#customerFirstPortal .rk-customer-identity>div:first-child{
+ color:#ffe06a!important;border-bottom:1px solid #2b5c9f!important;
+}
+#customerFirstPortal .rk-customer-section input:not([type=checkbox]):not([type=radio]),
+#customerFirstPortal .rk-customer-section select,
+#customerFirstPortal .rk-customer-section textarea{
+ background:linear-gradient(180deg,#f7f9ff,#dce8ff)!important;
+ color:#10234b!important;border:1px solid #82afea!important;
+ border-radius:8px!important;min-height:40px!important;
+}
+#customerFirstPortal .rk-customer-submit{
+ background:linear-gradient(180deg,#ffe77e,#efa900)!important;
+ color:#171a27!important;border:1px solid #fff0a8!important;
+}
+#customerFirstPortal .rk-customer-payment #onlinePaymentSection{
+ background:linear-gradient(145deg,#06142e,#030916)!important;
+ border:1px solid #347ce4!important;
+}
+@media(max-width:720px){
+ #customerFirstPortal .rk-customer-hero{grid-template-columns:1fr!important;min-height:0!important}
+ #customerFirstPortal .rk-hero-art{min-height:120px!important}
+ #customerFirstPortal .rk-hero-image{max-height:135px!important;width:min(100%,340px)!important}
+ #customerFirstPortal .rk-customer-brand-seal{display:none!important}
+ #customerFirstPortal .rk-customer-form{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-areas:"identity" "event" "items" "payment" "submit"!important;
+ }
+}
