@@ -333,7 +333,8 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
     body: JSON.stringify(payload)
   });
   assert.equal(saved.status, 201);
-  assert.equal((await saved.json()).payment.status, 'pending-verification');
+  const savedData = await saved.json();
+  assert.equal(savedData.payment.status, 'pending-verification');
 
   const duplicate = await request('/api/payments/record-utr', {
     method: 'POST',
@@ -342,7 +343,7 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
   });
   assert.equal(duplicate.status, 409);
 
-  const payment = (await saved.clone().json()).payment;
+  const payment = savedData.payment;
   const verified = await request('/api/payments/' + payment.id + '/verify', {
     method: 'POST',
     headers: { 'x-admin-token': adminToken },
