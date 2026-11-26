@@ -1346,3 +1346,15 @@ test('business document print keeps the print target visible until afterprint cl
   assert.equal(area.style.display,'block');
   assert.equal(area.innerHTML,'<p>Quotation</p>');
 });
+
+
+test('Firebase Realtime Database rules fail closed and allow only explicitly allowlisted admin UIDs', () => {
+  const rules=JSON.parse(fs.readFileSync(require('node:path').join(__dirname,'..','database.rules.json'),'utf8')).rules;
+  assert.equal(rules['.read'],false);
+  assert.equal(rules['.write'],false);
+  assert.equal(rules.tent_erp_data['.read'],rules.tent_erp_data['.write']);
+  assert.match(rules.tent_erp_data['.read'],/auth\s*!=\s*null/);
+  assert.match(rules.tent_erp_data['.read'],/root\.child\('erp_admins'\)\.child\(auth\.uid\)\.val\(\)\s*===\s*true/);
+  assert.equal(rules.erp_admins['.read'],false);
+  assert.equal(rules.erp_admins['.write'],false);
+});
