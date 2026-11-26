@@ -383,3 +383,29 @@ body{background:radial-gradient(ellipse at 50% -12%,#183c78 0,transparent 46%),l
  #adminPanel .rk-admin-quick-action{flex:1 1 calc(50% - 6px);min-width:0}
 }
 @media(max-width:360px){#adminPanel .rk-admin-kpi{padding:8px;gap:7px}#adminPanel .rk-admin-kpi-icon{width:32px;height:32px;flex-basis:32px}}
+
+
+/* Six selectable presets based on the supplied Royal Admin theme collage. */
+.rk-design-options{display:flex!important;flex-wrap:wrap!important;gap:7px!important}
+.rk-design-swatch.light{background:linear-gradient(135deg,#f8fbff,#79c7f2)}
+.rk-design-swatch.neon{background:linear-gradient(135deg,#18052e,#ff00d4 55%,#00eaff)}
+.rk-design-swatch.ocean{background:linear-gradient(135deg,#eaf7ff,#087bdc)}
+.rk-design-choice{min-height:34px!important;padding:6px 10px!important;border:1px solid #315b91!important;border-radius:9px!important;background:linear-gradient(145deg,#10294f,#07142c)!important;color:#f4f7ff!important;font-size:11px!important;font-weight:800!important}
+.rk-design-choice.selected{border-color:#ffda66!important;box-shadow:0 0 0 1px #ffda66,0 0 16px #e9b83b66!important;color:#ffe58a!important}
+html.rk-theme-light body{background:linear-gradient(145deg,#eaf4ff,#c8e1f6)!important;color:#15345b!important}
+html.rk-theme-light #adminPanel,html.rk-theme-light #customerFirstPortal{color:#17385f!important}
+html.rk-theme-light #adminPanel .sidebar,html.rk-theme-light #adminPanel .header{background:linear-gradient(135deg,#f7fbff,#dceeff)!important;border-color:#9dc8ed!important;color:#14518a!important}
+html.rk-theme-light #adminPanel .glass-card-blue,html.rk-theme-light #adminPanel .glass-card-purple,html.rk-theme-light #adminPanel .glass-card-green,html.rk-theme-light #adminPanel .welcome-card,html.rk-theme-light #adminPanel .stat-card,html.rk-theme-light #adminPanel .dashboard-card,html.rk-theme-light #adminPanel .settings-section{background:linear-gradient(145deg,#ffffffed,#e2f2ffed)!important;border-color:#a8d4f5!important;color:#17385f!important}
+html.rk-theme-light #adminPanel .glass-card-blue h3,html.rk-theme-light #adminPanel .glass-card-purple h3,html.rk-theme-light #adminPanel .glass-card-green h3,html.rk-theme-light #adminPanel label,html.rk-theme-light #adminPanel th,html.rk-theme-light #adminPanel td{color:#174b7c!important}
+html.rk-theme-light #customerFirstPortal .rk-customer-brand,html.rk-theme-light #customerFirstPortal .rk-customer-section{background:linear-gradient(145deg,#f8fcff,#dcefff)!important;border-color:#9bc9ef!important;color:#17385f!important}
+html.rk-theme-light #customerFirstPortal .rk-customer-brand h1,html.rk-theme-light #customerFirstPortal .rk-hero-copy h2{color:#14518a!important}
+html.rk-theme-neon #adminPanel .sidebar,html.rk-theme-neon #adminPanel .header{background:linear-gradient(120deg,#16072c,#31065a)!important;border-color:#d500ff!important}
+html.rk-theme-neon #adminPanel .menu-item.active{background:linear-gradient(110deg,#6c00bd,#e000d8)!important;box-shadow:0 0 16px #e000d877!important}
+html.rk-theme-neon #adminPanel .glass-card-blue,html.rk-theme-neon #adminPanel .glass-card-purple,html.rk-theme-neon #adminPanel .glass-card-green,html.rk-theme-neon #customerFirstPortal .rk-customer-section{border-color:#b500ef!important;box-shadow:0 0 18px #9d00ff35,inset 0 1px #ffffff18!important}
+html.rk-theme-neon #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#17072f,#39075e)!important;border-color:#c000ff!important}
+html.rk-theme-neon #customerFirstPortal .rk-hero-cta{background:linear-gradient(100deg,#00d9ff,#b800ff)!important;color:#fff!important}
+html.rk-theme-ocean #adminPanel .sidebar,html.rk-theme-ocean #adminPanel .header{background:linear-gradient(120deg,#06264a,#0879b8)!important;border-color:#5bc9f4!important}
+html.rk-theme-ocean #adminPanel .menu-item.active{background:linear-gradient(110deg,#0879d8,#20b8e8)!important}
+html.rk-theme-ocean #adminPanel .glass-card-blue,html.rk-theme-ocean #adminPanel .glass-card-purple,html.rk-theme-ocean #adminPanel .glass-card-green,html.rk-theme-ocean #customerFirstPortal .rk-customer-section{border-color:#48b9e9!important}
+html.rk-theme-ocean #customerFirstPortal .rk-customer-brand{background:linear-gradient(100deg,#06264a,#0879b8)!important;border-color:#48b9e9!important}
+@media(max-width:720px){.rk-design-options{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.rk-design-choice{min-width:0!important}}
