@@ -232,11 +232,11 @@ button:focus-visible, input[type="button"]:focus-visible, input[type="submit"]:f
 .calendar-day-cell.has-booking{background:#eff6ff;border-color:#93c5fd;box-shadow:inset 3px 0 #2563eb}
 .calendar-day-number{font-weight:800;color:#1e293b;font-size:13px;margin-bottom:4px}
 .calendar-booking-tag{display:block;max-width:100%;margin:3px 0;padding:3px 4px;border-radius:5px;background:#2563eb;color:#fff;font-size:10px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
-#actionToast{position:fixed!important;z-index:2147483647!important;left:12px!important;right:12px!important;bottom:18px!important;max-width:600px;margin:auto!important;padding:14px 16px!important;border-radius:12px!important;box-shadow:0 12px 36px #0f172a55!important;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .18s,transform .18s}
-#actionToast.show{opacity:1;pointer-events:auto;transform:translateY(0)}
-#actionToast.error{background:#991b1b!important;color:#fff!important;border:2px solid #fecaca!important;font-weight:800}
-#actionToast.success{background:#065f46!important;color:#fff!important;border:2px solid #a7f3d0!important;font-weight:800}
-#welcomeOverlay{z-index:2147483000!important;backdrop-filter:blur(5px)!important}
+#actionToast{position:fixed!important;z-index:2147483647!important;left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;width:max-content!important;max-width:min(90vw,520px)!important;min-width:0!important;box-sizing:border-box!important;margin:0!important;padding:13px 18px!important;border-radius:14px!important;box-shadow:0 12px 36px #0f172a55!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center!important;line-height:1.45!important;opacity:0;pointer-events:none;transform:translate(-50%,calc(-50% + 8px));transition:opacity .18s,transform .18s}
+ #actionToast.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+ #actionToast.error{background:#991b1b!important;color:#fff!important;border:2px solid #fecaca!important;font-weight:800}
+ #actionToast.success{background:#065f46!important;color:#fff!important;border:2px solid #a7f3d0!important;font-weight:800}
+ #welcomeOverlay{z-index:2147483000!important;backdrop-filter:blur(5px)!important}
 @media(max-width:600px){.calendar-grid-header{gap:4px;padding:8px}.calendar-grid-header .action-btn{padding:6px 7px!important;font-size:11px!important;margin:0;min-height:34px}.calendar-grid-header h3{font-size:14px!important}.calendar-weekdays,.calendar-days-grid{gap:3px}.calendar-days-grid{padding:4px}.calendar-day-cell{min-height:62px;padding:4px 3px;border-radius:7px}.calendar-day-number{font-size:12px}.calendar-booking-tag{font-size:9px;padding:2px 3px}.calendar-weekdays>*{font-size:10px;padding:5px 0}}
 
 </style>
