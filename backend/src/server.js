@@ -1196,6 +1196,7 @@ app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStor
   if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid action proposal ID.' });
   const parsed = z.object({ confirmationText: z.string().min(1).max(140) }).strict().safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Exact confirmation text is required.' });
+  const proposalPath = 'erpData/aiActionProposals/' + req.params.id;
 
   try {
     const proposal = await storeGet(proposalPath);
