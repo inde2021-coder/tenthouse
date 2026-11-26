@@ -135,6 +135,13 @@ test('customer cart recalculates bulk tier when the same item is added in separa
   assert.equal(elements.portalItemQty.value,'');
 });
 
+test('invoice rental detail rows follow actual partial-return and recovery dates', () => {
+  const code=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
+  assert.match(code,/getDispatchEntryRentalSlices\(b\)/);
+  assert.match(code,/invoiceRentRows\.map/);
+  assert.match(code,/calculateRentalDays\(e\.date,e\.endDate\)/);
+});
+
 test('missing quantity is recorded but excluded from customer rent total', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
