@@ -1702,6 +1702,7 @@ test('vendor ledger separates customer rent, vendor rent cost, missing liability
   };
   vm.runInNewContext(code+'\nloadThirdPartyLedger()',context);
   const html=elements.partyWiseTablesContainer.innerHTML;
+  assert.ok(elements.thirdPartyPaymentBody.innerHTML.includes('Cash'),'vendor payment history should render separately');
   for(const amount of ['₹120.00','₹50.00','₹170.00','₹240.00','₹70.00','₹30.00','₹140.00']) {
     assert.ok(html.includes(amount),'vendor ledger should display '+amount);
   }
