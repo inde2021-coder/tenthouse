@@ -952,3 +952,65 @@ test('WhatsApp webhook verification secret is never published in setup documenta
   assert.match(guide, /पुरानी Git history/);
   assert.match(guide, /नया random/);
 });
+
+
+test('dashboard stock shortage counts only active un-dispatched reservations and separates vendor stock', () => {
+  const start=html.indexOf('function calculateDashboardStockShortages(');
+  const end=html.indexOf('function renderStockShortages()',start);
+  assert.ok(start>=0&&end>start,'dashboard stock shortage calculator must exist');
+  const context={Map,Set,String,Number,Math,Array,JSON};
+  vm.runInNewContext(html.slice(start,end)+`
+    result=calculateDashboardStockShortages([
+      {id:1,name:'A',status:'Confirmed',items:[{name:'Chair',qty:6,source:'admin'}]},
+      {id:2,name:'B',status:'Pending Approval',items:[{name:'chair',qty:5,source:'admin'}]},
+      {id:3,name:'C',status:'Dispatched',items:[{name:'Chair',qty:100,source:'admin'}]},
+      {id:4,name:'D',status:'Partially Returned',items:[{name:'Chair',qty:100,source:'admin'}]},
+      {id:5,name:'E',status:'Returned',items:[{name:'Chair',qty:100,source:'admin'}]},
+      {id:6,name:'F',status:'Cancelled',items:[{name:'Chair',qty:100,source:'admin'}]},
+      {id:7,name:'Vendor One',status:'Confirmed',items:[{name:'Light',qty:8,source:'third-party',partyName:'Vendor One'}]},
+      {id:8,name:'Vendor Two',status:'Confirmed',items:[{name:'Light',qty:3,source:'third-party',partyName:'Vendor Two'}]}
+    ],[
+      {name:'Chair',qty:4}
+    ],[
+      {item:'Light',partyName:'Vendor One',qty:10},
+      {item:'Light',partyName:'Vendor Two',qty:1}
+    ]);
+  `,context);
+  const rows=JSON.parse(JSON.stringify(context.result));
+  assert.equal(rows.length,2);
+  const admin=rows.find(row=>row.source==='admin');
+  assert.equal(admin.qty,11);
+  assert.equal(admin.available,4);
+  assert.equal(admin.shortage,7);
+  assert.deepEqual(admin.bookingIds,[1,2]);
+  const vendor=rows.find(row=>row.source==='third-party');
+  assert.equal(vendor.partyName,'Vendor Two');
+  assert.equal(vendor.qty,3);
+  assert.equal(vendor.available,1);
+  assert.equal(vendor.shortage,2);
+});
+
+test('dashboard shortage calculation ignores zero, negative, fractional and malformed booking quantities', () => {
+  const start=html.indexOf('function calculateDashboardStockShortages(');
+  const end=html.indexOf('function renderStockShortages()',start);
+  const context={Map,Set,String,Number,Math,Array,JSON};
+  vm.runInNewContext(html.slice(start,end)+`
+    result=calculateDashboardStockShortages([
+      {id:1,status:'Confirmed',items:[
+        {name:'Chair',qty:0},{name:'Chair',qty:-2},{name:'Chair',qty:1.5},
+        {name:'Chair',qty:'bad'},{name:'Chair',qty:'2'}
+      ]}
+    ],[{name:'Chair',qty:1}],[]);
+  `,context);
+  const rows=JSON.parse(JSON.stringify(context.result));
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].qty,2);
+  assert.equal(rows[0].shortage,1);
+});
+
+test('dashboard renderer uses source-aware active reservation calculator', () => {
+  const code=sourceBetween('function renderStockShortages()', 'function addShortageToParty');
+  assert.ok(code.includes('calculateDashboardStockShortages(bookings,adminStock,vendorStock)'));
+  assert.ok(code.includes('x.bookingIds.join'));
+  assert.ok(code.includes('वेंडर: '));
+});

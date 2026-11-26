@@ -2870,12 +2870,36 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             </div>`;
         }
 
+        function calculateDashboardStockShortages(bookings,adminStock,vendorStock){
+          const activeStatuses=new Set(['Pending Approval','Confirmed']),demand=new Map();
+          (Array.isArray(bookings)?bookings:[]).forEach(booking=>{
+            if(!booking||!activeStatuses.has(String(booking.status||'')))return;
+            (Array.isArray(booking.items)?booking.items:[]).forEach(item=>{
+              const name=String(item?.name||item?.item||'').trim(),qty=Number(item?.qty);
+              if(!name||!Number.isSafeInteger(qty)||qty<=0)return;
+              const source=item.source==='third-party'?'third-party':'admin',partyName=source==='third-party'?String(item.partyName||''):'';
+              const key=JSON.stringify([source,partyName,name.toLowerCase()]);
+              const row=demand.get(key)||{name,source,partyName,qty:0,bookingIds:[],customers:[]};
+              row.qty+=qty;
+              if(!row.bookingIds.some(id=>String(id)===String(booking.id)))row.bookingIds.push(booking.id);
+              if(booking.name&&!row.customers.includes(booking.name))row.customers.push(booking.name);
+              demand.set(key,row);
+            });
+          });
+          return [...demand.values()].map(row=>{
+            const sourceRows=row.source==='third-party'?(Array.isArray(vendorStock)?vendorStock:[]):(Array.isArray(adminStock)?adminStock:[]);
+            const stockRow=sourceRows.find(item=>{
+              const itemName=String(item?.name||item?.item||'').trim().toLowerCase();
+              return itemName===row.name.toLowerCase()&&(row.source!=='third-party'||String(item?.partyName||'')===row.partyName);
+            });
+            const available=Math.max(0,Number(stockRow?.qty)||0);
+            return {...row,available,shortage:Math.max(0,row.qty-available)};
+          }).filter(row=>row.shortage>0);
+        }
         function renderStockShortages(){
-          const bookings=safeGetStorage('softwareBookings',[]), stock=safeGetStorage('realStockDatabase',[]), demand={};
-          bookings.filter(b=>!['Rejected','Cancelled'].includes(String(b.status||''))).forEach(b=>(b.items||[]).forEach(it=>{const name=String(it.name||'').trim();if(!name)return;demand[name]=(demand[name]||0)+(Number(it.qty)||0)}));
-          const shortages=Object.entries(demand).map(([name,qty])=>({name,qty,available:Number(stock.find(x=>String(x.name).toLowerCase()===name.toLowerCase())?.qty)||0})).filter(x=>x.qty>x.available);
-          const rows=shortages.map((x,i)=>{const b=bookings.find(b=>(b.items||[]).some(it=>String(it.name||'').toLowerCase()===x.name.toLowerCase()));return {...x,bookingId:b?.id||'-',customer:b?.name||'-',shortage:x.qty-x.available}});
-          const html=rows.map((x,i)=>`<tr><td>${i+1}</td><td>#${escapeHtml(x.bookingId)}</td><td>${escapeHtml(x.customer)}</td><td>${escapeHtml(x.name)}</td><td>${x.qty}</td><td>${x.available}</td><td style="color:#b91c1c;font-weight:800">${x.shortage}</td></tr>`).join('')||'<tr><td colspan="7">कोई कमी नहीं</td></tr>';
+          const bookings=safeGetStorage('softwareBookings',[]),adminStock=safeGetStorage('realStockDatabase',[]),vendorStock=safeGetStorage('thirdPartyDatabase',[]);
+          const rows=calculateDashboardStockShortages(bookings,adminStock,vendorStock);
+          const html=rows.map((x,i)=>`<tr><td>${i+1}</td><td>#${escapeHtml(x.bookingIds.join(', #'))}</td><td>${escapeHtml(x.customers.join(', ')||'-')}</td><td>${escapeHtml(x.name)} <small style="display:block">${x.source==='third-party'?'वेंडर: '+escapeHtml(x.partyName):'Admin Stock'}</small></td><td>${x.qty}</td><td>${x.available}</td><td style="color:#b91c1c;font-weight:800">${x.shortage}</td></tr>`).join('')||'<tr><td colspan="7">कोई कमी नहीं</td></tr>';
           const db=document.getElementById('dashboardShortageBody');if(db)db.innerHTML=html;
         }
         function addShortageToParty(item,qty){const n=document.getElementById('tpItemName'),q=document.getElementById('tpItemQty');if(n)n.value=item;if(q)q.value=qty;switchTab('third-party',document.querySelector('.menu-item[onclick*="third-party"]'));showActionMessage('कम स्टॉक का सामान और मात्रा थर्ड-पार्टी फॉर्म में भर दी गई; पार्टी चुनकर सेव करें।','success');}
