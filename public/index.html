@@ -2158,7 +2158,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         <td>#${escapeHtml(b.id)}</td>
                         <td><b>${escapeHtml(b.name)}</b></td>
                         <td>${phoneCallLink(b.mob)}</td>
-                        <td>${b.items ? b.items.map(i=>escapeHtml(i.name)+' × '+(Number(i.qty)||0)).join(', ') : '-'}</td>
+                        <td>${b.items ? b.items.map((item,index)=>{const sent=(Array.isArray(b.dispatchEntries)?b.dispatchEntries.filter(entry=>Number(entry.itemIndex)===index).reduce((sum,entry)=>sum+Math.max(0,Number(entry.qty)||0),0):0);const returned=Math.max(0,Number(item.returnedQty)||0);const planned=Math.max(0,Number(item.qty)||0);return escapeHtml(item.name)+' · कुल '+planned+' · भेजा '+sent+' · बाकी '+Math.max(0,planned-sent)+' · वापस '+returned;}).join('<br>') : '-'}</td>
                         <td>${b.status}</td>
                         <td>
                             <button type="button" onclick="completeDispatch(${b.id})" class="action-btn" style="color:var(--emerald-neon);">पूर्ण करें</button>
@@ -2233,15 +2233,19 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
             if(!chosen.length){showActionMessage('इस Dispatch में कोई मात्रा दर्ज नहीं हुई','error');return;}
             const stock=adminStock,thirdParty=vendorStock;
-            const requirements=[];
+            const requirementMap=new Map();
             for(const x of chosen){
                 const isThird=String(x.it.source||'').toLowerCase()==='third-party';
                 const list=isThird?thirdParty:stock;
                 const row=isThird?list.find(y=>(y.partyName||'')===(x.it.partyName||'')&&(y.item||y.name)===x.it.name):list.find(y=>y.name===x.it.name);
                 if(!row){showActionMessage('स्टॉक रिकॉर्ड नहीं मिला: '+(x.it.name||'अज्ञात सामान'),'error');return;}
-                const available=Math.max(0,Number(row.qty)||0);
-                if(available<x.qty){showActionMessage('पर्याप्त स्टॉक नहीं: '+x.it.name+' (उपलब्ध '+available+', चाहिए '+x.qty+')','error');return;}
-                requirements.push({row,qty:x.qty});
+                const previous=requirementMap.get(row);
+                if(previous)previous.qty+=x.qty;else requirementMap.set(row,{row,qty:x.qty,name:x.it.name});
+            }
+            const requirements=[...requirementMap.values()];
+            for(const requirement of requirements){
+                const available=Math.max(0,Number(requirement.row.qty)||0);
+                if(available<requirement.qty){showActionMessage('पर्याप्त स्टॉक नहीं: '+requirement.name+' (उपलब्ध '+available+', कुल चाहिए '+requirement.qty+')','error');return;}
             }
             requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty));
             b.items=items;
