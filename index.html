@@ -2171,6 +2171,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         async function completeDispatch(id) {
+            if(window.__rkDispatchInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
+            window.__rkDispatchInProgress=true;
+            try {
             const bookings = safeGetStorage('softwareBookings', []);
             const b = bookings.find(x => String(x.id) === String(id));
             if (!b) { showActionMessage('बुकिंग नहीं मिली', 'error'); return; }
@@ -2251,6 +2254,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
             loadAllFirebaseData();showActionMessage('Dispatch सेव हुआ; बुकिंग Return पूरा होने तक सूची में रहेगी','success');
             if(b.mob&&typeof sendWhatsAppMessage==='function')sendWhatsAppMessage(id,'dispatch');
+        
+            } finally { window.__rkDispatchInProgress=false; }
         }
 
         function printDispatchSlip(id) {
@@ -3278,6 +3283,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             } finally { window.__rkMissingRecoveryInProgress=false; }
         }
         async function completeManualReturnProcess(){
+            if(window.__rkReturnInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
+            window.__rkReturnInProgress=true;
+            try {
             if(activeReturnBookingId==null){showActionMessage('पहले बुकिंग लोड करें','error');return;}
             const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(activeReturnBookingId));
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
@@ -3343,6 +3351,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
             activeReturnBookingId=null;document.getElementById('returnManualCountingSection').style.display='none';loadAllFirebaseData();renderMissingItems();
             showActionMessage(fullyReturned?'Return पूरा हुआ; Missing सामान अलग सूची में दर्ज है, कोई Missing चार्ज बिल में नहीं जुड़ेगा':'Partial Return सेव हुआ; बाकी सामान अभी Missing नहीं माना गया, बाद में Return करें','success');
+        
+            } finally { window.__rkReturnInProgress=false; }
         }
 
         let currentDocumentItems = [];
