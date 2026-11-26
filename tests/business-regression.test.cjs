@@ -1663,3 +1663,30 @@ test('customer booking tracker looks up status through the mobile-verified publi
   assert.match(tracker,/b\.returnEntryCount/);
   assert.match(fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8'),/rk-booking-tracker/);
 });
+
+
+test('customer cart combines repeated item additions before choosing single or bulk rent', () => {
+  const start=html.indexOf('function getItemRentRate(stock, quantity)');
+  const rateEnd=html.indexOf('function addSelectedItemToCart()',start);
+  const cartStart=rateEnd;
+  const cartEnd=html.indexOf('function renderCustomerCart()',cartStart);
+  assert.ok(start>=0&&rateEnd>start&&cartEnd>cartStart);
+  const helper=html.slice(start,rateEnd);
+  const fn=html.slice(cartStart,cartEnd);
+  const stock={name:'Chair',qty:20,singleRent:10,setRent:7,missingCharge:50};
+  const cart=[{name:'Chair',qty:1,rentPrice:10,rateMode:'single',source:'admin'}];
+  const qtyInput={value:'2'};
+  const select={value:'Chair'};
+  const context={
+    Math,Number,String,Array,
+    publicCustomerStockCatalog:[stock],customerCart:cart,
+    document:{getElementById:id=>id==='portalStockSelect'?select:id==='portalItemQty'?qtyInput:null},
+    showActionMessage:()=>{},renderCustomerCart:()=>{}
+  };
+  vm.runInNewContext(helper+'\n'+fn+'\naddSelectedItemToCart();',context);
+  assert.equal(cart.length,1);
+  assert.equal(cart[0].qty,3);
+  assert.equal(cart[0].rentPrice,7);
+  assert.equal(cart[0].rateMode,'set');
+  assert.equal(qtyInput.value,'');
+});
