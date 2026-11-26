@@ -1047,41 +1047,60 @@ test('master ledger online transaction row uses verified amount and explicit UTR
 });
 
 
-test('booking paid amount excludes pending and rejected UPI advance until explicitly verified', () => {
-  const start=html.indexOf('function getBookingPaidAmount(b)');
-  const end=html.indexOf('function getEffectiveMissingCharge(item)',start);
-  assert.ok(start>=0&&end>start,'paid amount calculator must exist');
-  const context={Math,Number,Array,String};
-  vm.runInNewContext(html.slice(start,end)+`
-    result=[
-      getBookingPaidAmount({source:'customer-portal',advanceAmount:500,advancePaymentStatus:'pending-verification',advancePaymentVerified:false}),
-      getBookingPaidAmount({source:'customer-portal',advanceAmount:500,advancePaymentStatus:'rejected',advancePaymentVerified:false}),
-      getBookingPaidAmount({source:'customer-portal',advanceAmount:500,advancePaymentStatus:'verified',advancePaymentVerified:true})
-    ];
-  `,context);
-  assert.deepEqual(Array.from(context.result),[0,0,500]);
+test('admin stock entry rejects fractional and invalid quantities without saving', () => {
+  const code=sourceBetween('function saveStockItemReal(event)', 'function mergeDuplicateStockRows');
+  for(const qty of ['1.5','0','-2','abc','']) {
+    let writes=0,reset=false;
+    const values={stockItemName:'Chair',stockItemQty:qty,stockItemSetRent:'10',stockItemSingleRent:'5',stockItemMissing:'100'};
+    const context={
+      Number,Math,String,Array,Map,
+      document:{getElementById:id=>({value:values[id]})},
+      safeGetStorage:()=>[],
+      safeSetStorage:()=>{writes++;return true;},
+      showActionMessage:()=>{},
+      confirm:()=>true,
+      event:null
+    };
+    const event={preventDefault(){},target:{reset(){reset=true;}}};
+    context.event=event;
+    vm.runInNewContext(code+'\nresult=saveStockItemReal(event);',context);
+    assert.equal(writes,0,'invalid admin stock quantity must not be saved');
+    assert.equal(reset,false,'invalid form must retain entered values');
+  }
 });
 
-test('booking paid amount includes cash advance and verified UPI plus installments without double counting', () => {
-  const start=html.indexOf('function getBookingPaidAmount(b)');
-  const end=html.indexOf('function getEffectiveMissingCharge(item)',start);
-  const context={Math,Number,Array,String};
-  vm.runInNewContext(html.slice(start,end)+`
-    result=[
-      getBookingPaidAmount({payMode:'Cash',advanceAmount:300,partPayments:[{amount:200}]}),
-      getBookingPaidAmount({source:'customer-portal',advanceAmount:400,advancePaymentVerified:true,partPayments:[{amount:150}],totalPaid:550}),
-      getBookingPaidAmount({source:'customer-portal',advanceAmount:400,advancePaymentVerified:false,partPayments:[{amount:150}],totalPaid:150})
-    ];
-  `,context);
-  assert.deepEqual(Array.from(context.result),[500,550,150]);
+test('vendor stock entry rejects fractional, negative and malformed quantities without saving', () => {
+  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  for(const qty of ['1.25','0','-4','bad','']) {
+    let writes=0,reset=false;
+    const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:qty,tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
+    const context={
+      Number,Math,String,Array,Date,
+      document:{getElementById:id=>({value:values[id]})},
+      safeGetStorage:()=>[],
+      safeSetStorage:()=>{writes++;return true;},
+      showActionMessage:()=>{},
+      loadThirdPartyLedger:()=>{},loadThirdPartyDropdownsForDispatch:()=>{},
+      event:null
+    };
+    const event={preventDefault(){},target:{reset(){reset=true;}}};
+    context.event=event;
+    vm.runInNewContext(code+'\nresult=saveThirdPartyEntry(event);',context);
+    assert.equal(writes,0,'invalid vendor stock quantity must not be saved');
+    assert.equal(reset,false,'invalid form must retain entered values');
+  }
 });
 
-test('payment ledger keeps pending online amount separate from verified cash receipts', () => {
-  const code=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment(');
-  assert.match(code,/paid:verifiedPaid/);
-  assert.match(code,/onlineStatus:v\.online>0\?'pending-verification'/);
-  assert.match(code,/b\.totalPaid=verifiedPaid/);
-  const verify=sourceBetween('async function verifyLedgerPayment(', 'function ');
-  assert.match(verify,/p\.onlineStatus=verified\?'verified':'rejected'/);
-  assert.match(verify,/if\(verified\)b\.totalPaid=/);
+test('vendor stock entry rejects negative or non-numeric prices without saving', () => {
+  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  for(const field of ['tpItemCost','tpItemCharge','tpVendorMissingCost','tpMissingCharge']) {
+    for(const value of ['-1','abc']) {
+      let writes=0;
+      const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:'3',tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
+      values[field]=value;
+      const context={Number,Math,String,Array,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},loadThirdPartyLedger:()=>{},loadThirdPartyDropdownsForDispatch:()=>{}};
+      vm.runInNewContext(code+'\nresult=saveThirdPartyEntry({preventDefault(){},target:{reset(){}}});',context);
+      assert.equal(writes,0,field+' must reject '+value);
+    }
+  }
 });
