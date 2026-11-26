@@ -793,7 +793,7 @@ test('OTP verification has a dedicated brute-force rate limit', () => {
 
 test('AI provider receives aggregate counts and only allow-listed action IDs/statuses, never raw customer or payment details', () => {
   const start = html.indexOf('const aiBusinessSummary = {');
-  const end = html.indexOf('const aiUserMessage =', start);
+  const end = html.indexOf('const aiUserMessage=', start);
   assert.ok(start >= 0 && end > start, 'privacy-safe summary must be built before sending the AI request');
   const summary = html.slice(start, end);
   assert.ok(summary.includes('bookingRecordCount:countRecords(allBookings)'));
