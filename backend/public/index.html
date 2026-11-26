@@ -2438,7 +2438,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             let b = bookings.find(x => x.id.toString() === searchId);
             if(b) {
                 if(!b.items) b.items = [];
-                b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),vendorMissingCost:Math.max(0,Number(vendorRow.vendorMissingCost)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
+                b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),vendorMissingCost:Math.max(0,Number(vendorRow.missingCost??vendorRow.vendorMissingCost)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
                 safeSetStorage('softwareBookings', bookings);
                 loadDispatchTable();
                 showActionMessage("थर्ड-पार्टी सामान डिस्पैच में जोड़ा गया", "success");
