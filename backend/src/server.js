@@ -879,15 +879,22 @@ async function buildAiErpReadContext(question) {
   const selected = dashboardQuery ? AI_ERP_DATASETS : AI_ERP_DATASETS.filter(dataset => dataset.pattern.test(q));
   const datasets = selected;
   if (!datasets.length) return 'Live ERP data access उपलब्ध है। किसी module/record का नाम बताने पर उसी module का सीमित read-only रिकॉर्ड खोजा जाएगा।';
-  const tokens = q.split(/[^\p{L}\p{N}]+/u).filter(token => token.length >= 3);
+  const moduleWords = new Set([
+    'booking','bookings','बुकिंग','dispatch','डिस्पैच','return','returns','रिटर्न','stock','स्टॉक',
+    'vendor','वेंडर','third','party','पार्टी','income','expense','खर्च','आय','account','accounts',
+    'हिसाब','payment','भुगतान','balance','बकाया','missing','मिसिंग','report','reports','रिपोर्ट',
+    'dashboard','डैशबोर्ड','invoice','billing','bill','बिल','quotation','purchase','खरीद','barcode','बारकोड'
+  ]);
+  const tokens = q.split(/[^\\p{L}\\p{N}]+/u).filter(token => token.length >= 3 && !moduleWords.has(token));
   const sections = [];
   for (const dataset of datasets) {
     const rows = aiRecordList(root[dataset.key]);
     const projected = rows.map(record => aiProjectRecord(dataset.key, record)).filter(Boolean);
+    // A module-only/dashboard question should return a bounded recent sample, not zero rows.
     const matched = tokens.length
       ? projected.filter(record => tokens.some(token => JSON.stringify(record).toLowerCase().includes(token)))
-      : [];
-    const chosen = matched.slice(0, 12);
+      : projected;
+    const chosen = matched.slice(-12);
     sections.push({
       module: dataset.label,
       totalRecords: rows.length,
