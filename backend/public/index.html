@@ -2247,30 +2247,33 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         if(!Number.isSafeInteger(qty)||qty<1||qty>Number(row.qty)){showActionMessage(name+' की मात्रा उपलब्ध स्टॉक के भीतर पूर्ण संख्या हो','error');return;}
                         let itemIndex=items.findIndex(it=>String(it.name||'').toLowerCase()===name.toLowerCase()&&it.source===selected.source&&String(it.partyName||'')===String(row.partyName||''));
                         if(itemIndex<0){
-                            const singleMode=!!document.getElementById('dispatchSingleRateToggle')?.checked;
-                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):Number(singleMode?row.singleRent:row.setRent);
+                            const rateToggle=globalThis.document?.getElementById('dispatchSingleRateToggle');
+                            const singleMode=rateToggle?!!rateToggle.checked:Number(qty)<3;
+                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):(rateToggle?Number(singleMode?row.singleRent:row.setRent):getItemRentRate(row,qty));
                             items.push({name,qty:0,rentPrice:Math.max(0,rent),rateMode:selected.source==='admin'?(singleMode?'single':'set'):'vendor',missingCharge:Math.max(0,Number(row.missingCharge??row.missingUnitPrice)||0),vendorRentRate:selected.source==='third-party'?Math.max(0,Number(row.costPrice??row.vendorRentRate)||0):0,vendorMissingCost:selected.source==='third-party'?Math.max(0,Number(row.missingCost??row.vendorMissingCost)||0):0,source:selected.source,partyName:String(row.partyName||'')});
                             itemIndex=items.length-1;
                         }
                         items[itemIndex].qty=Math.max(0,Number(items[itemIndex].qty)||0)+qty;
                         if(selected.source==='admin'){
-                            const singleMode=!!document.getElementById('dispatchSingleRateToggle')?.checked;
-                            const selectedRate=Number(singleMode?row.singleRent:row.setRent);
+                            const rateToggle=globalThis.document?.getElementById('dispatchSingleRateToggle');
+                            const singleMode=rateToggle?!!rateToggle.checked:Number(items[itemIndex].qty)<3;
+                            const selectedRate=rateToggle?Number(singleMode?row.singleRent:row.setRent):getItemRentRate(row,items[itemIndex].qty);
                             if(Number.isFinite(selectedRate)&&selectedRate>0){items[itemIndex].rentPrice=selectedRate;items[itemIndex].rateMode=singleMode?'single':'set';}
                         }
                     }
                 }
             }
             // Dispatch पर चुना गया Single/Bulk mode ही Admin rent में लागू होगा; quantity से mode अपने-आप नहीं बदलेगा.
-            const singleRateSelected=!!document.getElementById('dispatchSingleRateToggle')?.checked;
+            const rateToggle=globalThis.document?.getElementById('dispatchSingleRateToggle');
+            const singleRateSelected=rateToggle?!!rateToggle.checked:null;
             for(const item of items){
                 if(item.source==='third-party')continue;
                 const stockRow=adminStock.find(row=>String(row.name||'')===String(item.name||''));
                 if(!stockRow)continue;
-                const selectedRate=Number(singleRateSelected?stockRow.singleRent:stockRow.setRent);
+                const selectedRate=rateToggle?Number(singleRateSelected?stockRow.singleRent:stockRow.setRent):getItemRentRate(stockRow,item.qty);
                 if(Number.isFinite(selectedRate)&&selectedRate>0){
                     item.rentPrice=selectedRate;
-                    item.rateMode=singleRateSelected?'single':'set';
+                    item.rateMode=rateToggle?(singleRateSelected?'single':'set'):(Number(item.qty)>=3?'set':'single');
                 }
             }
             const validItems=items.filter(it=>String(it?.name||'').trim()&&Number.isSafeInteger(Number(it?.qty))&&Number(it.qty)>0);
