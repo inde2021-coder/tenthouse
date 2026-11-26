@@ -824,8 +824,8 @@ app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
   try {
     if (provider === 'gemini' || provider === 'google' || (process.env.AI_BASE_URL || '').includes('generativelanguage.googleapis.com')) {
       const model = process.env.AI_MODEL || 'gemini-2.5-flash';
-      const system = parsed.data.messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
-      const contents = parsed.data.messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+      const system = TENTHOUSE_AI_TRAINING;
+      const contents = conversation.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
       const base = (process.env.AI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta').replace(/\/$/, '');
       const r = await fetch(`${base}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(process.env.AI_API_KEY)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}), contents, generationConfig: { temperature: 0.2, maxOutputTokens: Number(process.env.AI_MAX_TOKENS || 1200) } }) });
       const data = await r.json().catch(() => ({}));
@@ -833,8 +833,8 @@ app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
       return res.json({ reply: (data?.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('\n') });
     }
     if (provider === 'claude' || provider === 'anthropic') {
-      const system = parsed.data.messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
-      const messages = parsed.data.messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }));
+      const system = TENTHOUSE_AI_TRAINING;
+      const messages = conversation.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }));
       const r = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{ 'x-api-key':process.env.AI_API_KEY, 'anthropic-version':process.env.ANTHROPIC_VERSION || '2023-06-01', 'content-type':'application/json' }, body:JSON.stringify({ model:process.env.AI_MODEL || 'claude-3-5-haiku-latest', max_tokens:Number(process.env.AI_MAX_TOKENS || 1200), ...(system ? {system} : {}), messages, temperature:0.2 }) });
       const data = await r.json().catch(()=>({}));
       if(!r.ok) return res.status(502).json({ error:data?.error?.message || 'Claude API error' });
