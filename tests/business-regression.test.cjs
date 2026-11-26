@@ -1535,10 +1535,10 @@ test('Firebase Realtime Database rules fail closed and allow only explicitly all
 
 
 test('all inline JavaScript in the deployable HTML parses successfully', () => {
-  const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi)];
+  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
   const executable = scripts.filter(([, attrs]) => {
-    if (/\\bsrc\\s*=/.test(attrs)) return false;
-    const type = (attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i) || [,''])[1].toLowerCase();
+    if (/\bsrc\s*=/.test(attrs)) return false;
+    const type = (attrs.match(/\btype\s*=\s*["']([^"']+)["']/i) || [,''])[1].toLowerCase();
     return !type || ['text/javascript','application/javascript','module'].includes(type);
   });
   assert.ok(executable.length > 0, 'expected inline application scripts');
