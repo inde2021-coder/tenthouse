@@ -83,6 +83,41 @@ test('rent uses actual dispatch quantities and their saved unit rate', () => {
   assert.equal(total, 720);
 });
 
+test('rental slices stop separately on partial return and later missing-item recovery', () => {
+  const helperStart=html.indexOf('function getDispatchEntryRentalSlices(b)');
+  const helperEnd=html.indexOf('        function calculateBookingTotalRent(b)',helperStart);
+  assert.notEqual(helperStart,-1);assert.notEqual(helperEnd,-1);
+  const helper=html.slice(helperStart,helperEnd);
+  const booking={
+    date:'2026-11-01',returnDate:'2026-11-05',status:'Returned',fullyReturnedAt:'2026-11-04T12:00:00Z',actualReturnDate:'2026-11-04',
+    items:[{name:'Chair',qty:5,returnedQty:3,missingQty:2}],
+    dispatchEntries:[{itemIndex:0,qty:5,date:'2026-11-01',unitRent:100}],
+    returnEntries:[
+      {date:'2026-11-03',mode:'PARTIAL',items:[{itemIndex:0,qty:2}]},
+      {date:'2026-11-04',mode:'MISSING_RECOVERY',items:[{itemIndex:0,qty:1}]}
+    ]
+  };
+  const context={booking,Math,Number,String,Array,Date};
+  const slices=vm.runInNewContext(helper+';getDispatchEntryRentalSlices(booking)',context);
+  assert.deepEqual(Array.from(slices.slice(0,2),x=>({qty:x.qty,endDate:x.endDate})),[
+    {qty:2,endDate:'2026-11-03'},
+    {qty:1,endDate:'2026-11-04'}
+  ]);
+  assert.equal(slices.reduce((n,x)=>n+x.qty,0),5);
+});
+test('rental slices allocate multiple dispatch batches oldest-first without duplicating returned quantity', () => {
+  const helperStart=html.indexOf('function getDispatchEntryRentalSlices(b)');
+  const helperEnd=html.indexOf('        function calculateBookingTotalRent(b)',helperStart);
+  const helper=html.slice(helperStart,helperEnd);
+  const booking={date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Light',qty:6}],dispatchEntries:[
+    {itemIndex:0,qty:3,date:'2026-11-01'},{itemIndex:0,qty:3,date:'2026-11-02'}
+  ],returnEntries:[{date:'2026-11-03',items:[{itemIndex:0,qty:4}]}]};
+  const slices=vm.runInNewContext(helper+';getDispatchEntryRentalSlices(booking)',{booking,Math,Number,String,Array,Date});
+  assert.deepEqual(Array.from(slices.slice(0,2),x=>({qty:x.qty,endDate:x.endDate})),[
+    {qty:3,endDate:'2026-11-03'},{qty:1,endDate:'2026-11-03'}
+  ]);
+  assert.equal(slices.reduce((n,x)=>n+x.qty,0),6);
+});
 test('base rent excludes missing-item fees', () => {
   const total = runRentFunction('calculateBookingBaseRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
