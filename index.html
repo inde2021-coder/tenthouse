@@ -1309,7 +1309,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 dbRef = firebase.database().ref('tent_erp_data');
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
-                    if (!user) return;
+                    if (!user) {
+                        if (dbRef && cloudListenerAttached) dbRef.off('value');
+                        cloudListenerAttached = false;
+                        return;
+                    }
                     flushPendingCloudSync();
                     if (!dbRef || cloudListenerAttached) return;
                     cloudListenerAttached = true;
@@ -1772,6 +1776,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             document.getElementById('welcomeOverlay').style.display='none';
             document.getElementById('customerFirstPortal').style.display='flex';
             window.__rkVerifiedAdminToken='';
+            if(dbRef&&cloudListenerAttached){try{dbRef.off('value');}catch(_){}cloudListenerAttached=false;}
             try{firebase.auth().signOut();}catch(_){}
         }
 
