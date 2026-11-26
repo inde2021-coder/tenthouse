@@ -1329,3 +1329,15 @@ test('barcode camera stops a stream that resolves after the user closes the scan
   assert.equal(video.srcObject,null);
   assert.equal(modal.style.display,'none');
 });
+
+test('business card and document printing wait for images before invoking browser print', () => {
+  const card=sourceBetween('async function printBusinessCard()', 'function businessDocumentTotals()');
+  const doc=sourceBetween('async function printBusinessDocument()', 'window.onload = function()');
+  assert.ok(card.includes("area.dataset.printRestore='card'"));
+  assert.ok(card.includes('await printWithStampImages()'));
+  assert.ok(doc.includes("area.dataset.printRestore='document'"));
+  assert.ok(doc.includes('await printWithStampImages()'));
+  assert.ok(!card.includes('area.style.display=\'none\''));
+  assert.ok(!doc.includes('area.style.display=\'none\''));
+  assert.ok(html.includes("['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)"));
+});
