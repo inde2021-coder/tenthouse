@@ -589,6 +589,19 @@ test('OTP verification has a dedicated brute-force rate limit', () => {
   assert.match(backend, /app\.post\('\/api\/otp\/verify', otpVerifyLimiter, requireDurableStore/);
 });
 
+test('AI provider receives aggregate business counts, never raw customer or payment records', () => {
+  const start = html.indexOf('const aiBusinessSummary = {');
+  const end = html.indexOf('const snapshotText = JSON.stringify(aiBusinessSummary);', start);
+  assert.ok(start >= 0 && end > start, 'privacy-safe summary must be built before sending the AI request');
+  const summary = html.slice(start, end);
+  for (const store of ["softwareBookings", "realStockDatabase", "incomeExpenseDatabase", "thirdPartyDatabase", "thirdPartyPayments"]) {
+    assert.ok(summary.includes("countRecords(safeGetStorage('" + store + "', []))"), 'aggregate count missing for ' + store);
+  }
+  assert.ok(!summary.includes('bookings: safeGetStorage'));
+  assert.ok(!summary.includes('JSON.stringify(aiBusinessSnapshot)'));
+  assert.ok(summary.includes('vendorPaymentRecordCount'));
+});
+
 test('AI chat and TTS endpoints have server-side cost-abuse rate limits', () => {
   assert.match(backend, /const aiLimiter = rateLimit\(\{ windowMs: 60_000, limit: 20/);
   assert.match(backend, /app\.post\('\/api\/ai\/chat', aiLimiter, authAdmin/);
