@@ -1043,22 +1043,44 @@ app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
 // AI actions are two-phase: proposal never mutates ERP data; only an explicit,
 // exact confirmation can execute the narrowly allow-listed transition.
 app.post('/api/ai/actions/propose', aiLimiter, authAdmin, requireDurableStore, async (req, res) => {
-  const parsed = z.object({
-    type: z.literal('customer_booking_status'),
-    bookingId: z.string().regex(/^\\d{10,16}$/),
-    status: z.enum(['Confirmed', 'Rejected']),
-    reason: z.string().trim().min(3).max(300)
-  }).strict().safeParse(req.body);
+  const actionSchema = z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('customer_booking_status'),
+      bookingId: z.string().regex(/^\d{10,16}$/),
+      status: z.enum(['Confirmed', 'Rejected']),
+      reason: z.string().trim().min(3).max(300)
+    }).strict(),
+    z.object({
+      type: z.literal('payment_verification'),
+      paymentId: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),
+      verified: z.boolean(),
+      reason: z.string().trim().min(3).max(300)
+    }).strict()
+  ]);
+  const parsed = actionSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid or unsupported AI action proposal.', details: parsed.error.flatten() });
   try {
-    const booking = await storeGet('erpData/customerBookings/' + parsed.data.bookingId);
-    if (!booking) return res.status(404).json({ error: 'Customer booking not found.' });
-    if (booking.status !== 'Pending Approval') return res.status(409).json({ error: 'Only a booking in Pending Approval can be confirmed or rejected by this action.' });
+    let entityType, entityId, beforeStatus, proposedStatus, confirmationText;
+    if (parsed.data.type === 'customer_booking_status') {
+      const booking = await storeGet('erpData/customerBookings/' + parsed.data.bookingId);
+      if (!booking) return res.status(404).json({ error: 'Customer booking not found.' });
+      if (booking.status !== 'Pending Approval') return res.status(409).json({ error: 'Only a booking in Pending Approval can be confirmed or rejected by this action.' });
+      entityType = 'customer_booking'; entityId = parsed.data.bookingId;
+      beforeStatus = booking.status; proposedStatus = parsed.data.status;
+      confirmationText = 'CONFIRM ' + entityId;
+    } else {
+      const payment = await storeGet('erpData/payments/' + parsed.data.paymentId);
+      if (!payment) return res.status(404).json({ error: 'Payment not found.' });
+      if (payment.status !== 'pending-verification') return res.status(409).json({ error: 'Only pending payments can be verified or rejected by this action.' });
+      entityType = 'payment'; entityId = parsed.data.paymentId;
+      beforeStatus = payment.status; proposedStatus = parsed.data.verified ? 'verified' : 'rejected';
+      confirmationText = 'CONFIRM PAYMENT ' + entityId;
+    }
     const id = crypto.randomUUID(), now = Date.now();
     const proposal = {
-      id, type: parsed.data.type, bookingId: parsed.data.bookingId,
-      beforeStatus: booking.status, proposedStatus: parsed.data.status,
-      reason: parsed.data.reason, status: 'pending',
+      id, type: parsed.data.type, entityType, entityId,
+      ...(parsed.data.type === 'customer_booking_status' ? { bookingId: parsed.data.bookingId } : { paymentId: parsed.data.paymentId, verified: parsed.data.verified }),
+      beforeStatus, proposedStatus, reason: parsed.data.reason, status: 'pending',
       createdAt: new Date(now).toISOString(), expiresAt: now + 10 * 60_000,
       source: 'ai', createdBy: 'admin-api-token'
     };
@@ -1066,18 +1088,19 @@ app.post('/api/ai/actions/propose', aiLimiter, authAdmin, requireDurableStore, a
     if (!created) return res.status(409).json({ error: 'Could not create a unique action proposal.' });
     try {
       await appendAuditEvent({
-        action: 'ai_action_proposed', entityType: 'customer_booking', entityId: parsed.data.bookingId,
-        phase: 'proposed', before: { status: booking.status }, after: { status: parsed.data.status },
-        source: 'ai', note: 'AI proposed a customer booking status transition'
+        action: 'ai_action_proposed', entityType, entityId, phase: 'proposed',
+        before: { status: beforeStatus }, after: { status: proposedStatus },
+        source: 'ai', note: 'AI proposed an allow-listed ERP status transition'
       });
     } catch (auditError) {
       await storeDelete('erpData/aiActionProposals/' + id).catch(() => {});
       throw auditError;
     }
     res.status(201).set('Cache-Control', 'no-store').json({
-      ok: true, proposal: { id, type: proposal.type, bookingId: proposal.bookingId, beforeStatus: proposal.beforeStatus, proposedStatus: proposal.proposedStatus, reason: proposal.reason, expiresAt: proposal.expiresAt },
-      confirmationText: 'CONFIRM ' + parsed.data.bookingId,
-      message: 'यह केवल प्रस्ताव है। Booking में कोई बदलाव नहीं हुआ है। लागू करने के लिए Admin को confirmationText ठीक-ठीक भेजना होगा।'
+      ok: true,
+      proposal: { id, type: proposal.type, entityType, entityId, beforeStatus, proposedStatus, reason: proposal.reason, expiresAt: proposal.expiresAt },
+      confirmationText,
+      message: 'यह केवल प्रस्ताव है। अभी ERP रिकॉर्ड नहीं बदला है। लागू करने के लिए Admin को confirmationText ठीक-ठीक भेजना होगा।'
     });
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
@@ -1087,7 +1110,7 @@ app.get('/api/ai/actions/:id', authAdmin, requireDurableStore, async (req, res) 
     const proposal = await storeGet('erpData/aiActionProposals/' + req.params.id);
     if (!proposal) return res.status(404).json({ error: 'Action proposal not found.' });
     res.set('Cache-Control', 'no-store').json({ proposal: {
-      id: proposal.id, type: proposal.type, bookingId: proposal.bookingId,
+      id: proposal.id, type: proposal.type, entityType: proposal.entityType, entityId: proposal.entityId,
       beforeStatus: proposal.beforeStatus, proposedStatus: proposal.proposedStatus,
       reason: proposal.reason, status: proposal.status, createdAt: proposal.createdAt,
       expiresAt: proposal.expiresAt, completedAt: proposal.completedAt || null
@@ -1096,37 +1119,55 @@ app.get('/api/ai/actions/:id', authAdmin, requireDurableStore, async (req, res) 
 });
 app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStore, async (req, res) => {
   if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: 'Invalid action proposal ID.' });
-  const parsed = z.object({ confirmationText: z.string().min(1).max(40) }).strict().safeParse(req.body);
+  const parsed = z.object({ confirmationText: z.string().min(1).max(140) }).strict().safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Exact confirmation text is required.' });
   const proposalPath = 'erpData/aiActionProposals/' + req.params.id;
   try {
     const proposal = await storeGet(proposalPath);
     if (!proposal) return res.status(404).json({ error: 'Action proposal not found.' });
-    if (parsed.data.confirmationText !== 'CONFIRM ' + proposal.bookingId) return res.status(400).json({ error: 'Confirmation text does not match this booking.' });
+    const expectedConfirmation = proposal.type === 'payment_verification'
+      ? 'CONFIRM PAYMENT ' + proposal.paymentId
+      : 'CONFIRM ' + proposal.bookingId;
+    if (parsed.data.confirmationText !== expectedConfirmation) return res.status(400).json({ error: 'Confirmation text does not match this action.' });
     if (proposal.status !== 'pending' || Number(proposal.expiresAt) <= Date.now()) return res.status(409).json({ error: 'Action proposal is expired or already used.' });
     const claimed = await storeTransitionRecord(proposalPath,
       current => !!current && current.status === 'pending' && Number(current.expiresAt) > Date.now(),
       current => ({ ...current, status: 'executing', executionStartedAt: new Date().toISOString() }));
     if (!claimed) return res.status(409).json({ error: 'Action proposal was already used, expired, or changed.' });
-    const bookingPath = 'erpData/customerBookings/' + proposal.bookingId;
-    const currentBooking = await storeGet(bookingPath);
-    if (!currentBooking || currentBooking.status !== proposal.beforeStatus) {
-      await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Booking changed after proposal.', completedAt: new Date().toISOString() }));
-      await appendAuditEvent({ action: 'ai_action_failed', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'failed', before: { status: proposal.beforeStatus }, after: { status: currentBooking?.status || 'missing' }, source: 'ai', note: 'Proposal ' + proposal.id + ' became stale.' });
-      return res.status(409).json({ error: 'Booking changed after the proposal. No action was applied.' });
+    const intent = await appendAuditEvent({
+      action: 'ai_action_confirmed', entityType: proposal.entityType, entityId: proposal.entityId,
+      phase: 'started', before: { status: proposal.beforeStatus }, after: { status: proposal.proposedStatus },
+      source: 'ai', note: 'Proposal ' + proposal.id
+    });
+    let updated = null, currentStatus = null;
+    if (proposal.type === 'customer_booking_status') {
+      const path = 'erpData/customerBookings/' + proposal.bookingId;
+      const current = await storeGet(path); currentStatus = current?.status || 'missing';
+      if (current && current.status === proposal.beforeStatus) {
+        updated = await storeTransitionRecord(path,
+          value => !!value && value.status === proposal.beforeStatus,
+          value => ({ ...value, status: proposal.proposedStatus, updatedAt: new Date().toISOString(), ...(proposal.proposedStatus === 'Confirmed' ? { confirmedAt: new Date().toISOString() } : {}) }));
+      }
+    } else if (proposal.type === 'payment_verification') {
+      const path = 'erpData/payments/' + proposal.paymentId;
+      const current = await storeGet(path); currentStatus = current?.status || 'missing';
+      if (current && current.status === 'pending-verification') {
+        updated = await storeTransitionPendingPayment(path, value => ({
+          ...value, status: proposal.proposedStatus,
+          note: 'Admin confirmed AI-proposed payment review',
+          verifiedAt: new Date().toISOString()
+        }));
+      }
     }
-    const intent = await appendAuditEvent({ action: 'ai_action_confirmed', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'started', before: { status: currentBooking.status }, after: { status: proposal.proposedStatus }, source: 'ai', note: 'Proposal ' + proposal.id });
-    const updated = await storeTransitionRecord(bookingPath,
-      current => !!current && current.status === proposal.beforeStatus,
-      current => ({ ...current, status: proposal.proposedStatus, updatedAt: new Date().toISOString(), ...(proposal.proposedStatus === 'Confirmed' ? { confirmedAt: new Date().toISOString() } : {}) }));
     if (!updated) {
-      await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Booking changed during confirmation.', completedAt: new Date().toISOString() }));
-      await appendAuditEvent({ action: 'ai_action_failed', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'failed', before: { status: proposal.beforeStatus }, after: null, source: 'ai', note: 'Proposal ' + proposal.id + '; intent ' + intent.id });
-      return res.status(409).json({ error: 'Booking changed during confirmation. No action was applied.' });
+      await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Target record changed during confirmation.', completedAt: new Date().toISOString() }));
+      await appendAuditEvent({ action: 'ai_action_failed', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'failed', before: { status: proposal.beforeStatus }, after: { status: currentStatus }, source: 'ai', note: 'Proposal ' + proposal.id + '; intent ' + intent.id });
+      return res.status(409).json({ error: 'Target record changed during confirmation. No action was applied.' });
     }
-    await appendAuditEvent({ action: 'ai_action_succeeded', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'completed', before: { status: proposal.beforeStatus }, after: { status: updated.status }, source: 'ai', note: 'Proposal ' + proposal.id });
+    const updatedStatus = updated.status;
+    await appendAuditEvent({ action: 'ai_action_succeeded', entityType: proposal.entityType, entityId: proposal.entityId, phase: 'completed', before: { status: proposal.beforeStatus }, after: { status: updatedStatus }, source: 'ai', note: 'Proposal ' + proposal.id });
     await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'completed', completedAt: new Date().toISOString() }));
-    res.set('Cache-Control', 'no-store').json({ ok: true, booking: { id: updated.id, status: updated.status }, auditEventId: intent.id, message: 'Action लागू हुआ और Audit Log में दर्ज किया गया।' });
+    res.set('Cache-Control', 'no-store').json({ ok: true, entityType: proposal.entityType, entityId: proposal.entityId, status: updatedStatus, auditEventId: intent.id, message: 'Action लागू हुआ और Audit Log में दर्ज किया गया।' });
   } catch (error) { res.status(503).json({ error: error.message }); }
 });
 app.get('/api/audit-log', authAdmin, requireDurableStore, async (req, res) => {
