@@ -2854,9 +2854,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(tbody) {
                 tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr>` : bookings.map(b => {
                     let totalRent = calculateBookingTotalRent(b);
-            const invoiceRentRows=(Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length)
-                ?getDispatchEntryRentalSlices(b).map(slice=>{const e=slice.entry,item=b.items?.[Number(e.itemIndex)]||{};return {name:e.itemName||item.name||'सामान',qty:slice.qty,rate:Number(e.unitRent??item.rentPrice??500),date:e.date||b.date,endDate:slice.endDate};})
-                :(b.items||[]).map(item=>({name:item.name,qty:Number(item.qty)||0,rate:Number(item.rentPrice??500),date:b.date,endDate:b.actualReturnDate||b.returnDate}));
                     let paid = getBookingPaidAmount(b);
                     let due = Math.max(0, totalRent - paid);
                     return `<tr>
@@ -2982,6 +2979,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(otherField && document.activeElement!==otherField) otherField.value=Number(b.otherCharges)||0;
 
             let totalRent = calculateBookingTotalRent(b);
+            const invoiceRentRows=(Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length)
+                ?getDispatchEntryRentalSlices(b).map(slice=>{const e=slice.entry,item=b.items?.[Number(e.itemIndex)]||{};return {name:e.itemName||item.name||'सामान',qty:slice.qty,rate:Number(e.unitRent??item.rentPrice??500),date:e.date||b.date,endDate:slice.endDate};})
+                :(b.items||[]).map(item=>({name:item.name,qty:Number(item.qty)||0,rate:Number(item.rentPrice??500),date:b.date,endDate:b.actualReturnDate||b.returnDate}));
             if(document.getElementById('paymentBookingId'))document.getElementById('paymentBookingId').value=b.id;
             if(document.getElementById('paymentTotalAmount'))document.getElementById('paymentTotalAmount').value=totalRent;
             if(document.getElementById('paymentAlreadyPaid'))document.getElementById('paymentAlreadyPaid').value=getBookingPaidAmount(b);
