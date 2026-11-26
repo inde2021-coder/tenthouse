@@ -187,12 +187,25 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   const hmacSecret = process.env.OTP_HMAC_SECRET || '';
   if (hmacSecret.length < 32 || /replace_with|unsafe-dev/i.test(hmacSecret)) return res.status(503).json({ error: 'OTP_HMAC_SECRET सेट नहीं है या बहुत कमजोर है; कम-से-कम 32 अक्षरों का अलग secret सेट करें।' });
   const digest = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
+  const otpPath = 'erpPrivate/otp/' + phoneKey(phone);
+  const otpRecord = { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 };
   try {
+    // Persist the verifier BEFORE sending: otherwise a delivered OTP can arrive
+    // before its digest is stored, causing a legitimate customer to be rejected.
+    await storeSet(otpPath, otpRecord);
     const channels = channel === 'both' ? ['sms','whatsapp'] : [channel];
     const outcomes = await Promise.allSettled(channels.map(ch => sendOtpProvider(phone, otp, ch)));
     const sent = outcomes.map((o, i) => ({ channel: channels[i], ok: o.status === 'fulfilled', error: o.status === 'rejected' ? o.reason?.message : undefined }));
-    if (!sent.some(x => x.ok)) throw new Error(sent.map(x => `${x.channel}: ${x.error || 'failed'}`).join('; '));
-    await storeSet('erpPrivate/otp/' + phoneKey(phone), { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 });
+    if (!sent.some(x => x.ok)) {
+      // Do not leave a code active when every delivery channel failed. Only
+      // remove our own record so a newer concurrent request is not erased.
+      if (adminDb) {
+        await adminDb.ref(otpPath).transaction(current => current?.digest === digest ? null : undefined);
+      } else if (memoryStore.get(otpPath)?.digest === digest) {
+        memoryStore.delete(otpPath);
+      }
+      throw new Error(sent.map(x => `${x.channel}: ${x.error || 'failed'}`).join('; '));
+    }
     const out = { ok: true, sent, message: sent.every(x => x.ok) ? 'OTP भेज दिया गया।' : 'OTP कम-से-कम एक चुने हुए चैनल से भेजा गया; आंशिक विफलता देखें।' };
     if (process.env.OTP_PROVIDER === 'demo' && !isProd) out.demoOtp = otp; // Never enabled in production.
     res.json(out);
