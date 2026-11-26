@@ -1592,6 +1592,7 @@ test('Design Manager exposes all six reference-collage themes without touching E
     assert.ok(html.includes('data-rk-theme="'+name+'"'), 'Missing Design Manager option: '+name);
   }
   assert.match(html,/rkDesignPreset/);
+  assert.match(html,/const allowed=\['royal','light','neon','emerald','purple','ocean'\]/);
   assert.match(html,/localStorage\.setItem\('rkDesignPreset',name\)/);
   assert.match(html,/rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean/);
   const css=fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8');
