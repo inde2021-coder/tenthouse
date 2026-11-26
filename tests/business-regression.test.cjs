@@ -1346,3 +1346,11 @@ test('business document print keeps the print target visible until afterprint cl
   assert.equal(area.style.display,'block');
   assert.equal(area.innerHTML,'<p>Quotation</p>');
 });
+
+test('business card printing waits for images and cleans the shared print target after afterprint', () => {
+  const card=sourceBetween('async function printBusinessCard()', 'function businessDocumentTotals()');
+  assert.ok(card.includes("area.dataset.printRestore='card'"));
+  assert.ok(card.includes('await printWithStampImages()'));
+  assert.ok(!card.includes("area.style.display='none'"));
+  assert.ok(html.includes("['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)"));
+});
