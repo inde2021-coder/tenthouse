@@ -424,6 +424,18 @@ test('customer booking rejects impossible calendar dates instead of accepting re
 });
 
 
+
+
+test('unlisted Origin does not turn a same-origin API request into a server error', async () => {
+  const response = await request('/api/customer/bookings', {
+    method: 'POST',
+    headers: { Origin: baseUrl },
+    body: JSON.stringify({ name: 'Origin Test', items: [] })
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
+});
+
 test('CORS preflight permits the admin CRUD methods used by the frontend', async () => {
   for (const method of ['PUT', 'PATCH', 'DELETE']) {
     const response = await fetch(baseUrl + '/api/customer/bookings/123', {
