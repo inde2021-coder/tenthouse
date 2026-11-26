@@ -626,6 +626,7 @@ app.patch('/api/customer/bookings/:id/advance', authAdmin, requireDurableStore, 
   try{
     const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    const auditBefore = auditBookingSummary(booking);
     if(!(Number(booking.advanceAmount)>0))return res.status(400).json({error:'No advance payment was submitted.'});
     booking.advancePaymentVerified=parsed.data.verified;
     booking.advancePaymentStatus=parsed.data.verified?'verified':'rejected';
@@ -634,6 +635,7 @@ app.patch('/api/customer/bookings/:id/advance', authAdmin, requireDurableStore, 
     await storeSet(path,booking);
     const paymentPath='erpData/payments/advance-'+req.params.id,payment=await storeGet(paymentPath);
     if(payment){payment.status=parsed.data.verified?'verified':'rejected';payment.note=booking.advancePaymentNote;payment.verifiedAt=booking.updatedAt;await storeSet(paymentPath,payment);}
+    await appendAuditEvent({action:'customer_advance_verification',entityType:'customer_booking',entityId:req.params.id,before:auditBefore,after:auditBookingSummary(booking),note:parsed.data.verified?'Advance verified':'Advance rejected'});
     res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
 });
@@ -655,9 +657,12 @@ app.put('/api/customer/bookings/:id', authAdmin, requireDurableStore, async (req
   try{
     const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    const before=auditBookingSummary(booking);
     const next={...booking,...parsed.data,updatedAt:new Date().toISOString()};
     if(next.returnDate<next.date)return res.status(400).json({error:'Return date must not be before dispatch date.'});
-    await storeSet(path,next);res.json({ok:true,booking:next});
+    await storeSet(path,next);
+    await appendAuditEvent({action:'customer_booking_edited',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(next)});
+    res.json({ok:true,booking:next});
   }catch(error){res.status(503).json({error:error.message});}
 });
 
@@ -778,8 +783,11 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
     const workflowError=validateBookingWorkflowConsistency(booking,parsed.data);
     if(workflowError)return res.status(400).json({error:workflowError});
+    const before=auditBookingSummary(booking);
     Object.assign(booking,parsed.data,{updatedAt:new Date().toISOString()});
-    await storeSet(path,booking);res.json({ok:true,booking});
+    await storeSet(path,booking);
+    await appendAuditEvent({action:'customer_booking_workflow_updated',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(booking),note:'Workflow, dispatch, return or payment fields updated'});
+    res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
 });
 
@@ -821,9 +829,12 @@ app.patch('/api/customer/bookings/:id/status', authAdmin, requireDurableStore, a
   try{
     const path='erpData/customerBookings/'+req.params.id,booking=await storeGet(path);
     if(!booking)return res.status(404).json({error:'Customer booking not found.'});
+    const before=auditBookingSummary(booking);
     booking.status=parsed.data.status;booking.updatedAt=new Date().toISOString();
     if(booking.status==='Confirmed')booking.confirmedAt=booking.updatedAt;
-    await storeSet(path,booking);res.json({ok:true,booking});
+    await storeSet(path,booking);
+    await appendAuditEvent({action:'customer_booking_status_changed',entityType:'customer_booking',entityId:req.params.id,before,after:auditBookingSummary(booking)});
+    res.json({ok:true,booking});
   }catch(error){res.status(503).json({error:error.message});}
 });
 
@@ -1166,6 +1177,7 @@ app.post('/api/payments/:id/verify', authAdmin, requireDurableStore, async (req,
   if(!parsed.success)return res.status(400).json({error:'verified boolean required'});
   try {
     const path='erpData/payments/'+req.params.id;
+    const paymentBefore=await storeGet(path);
     const payment=await storeTransitionPendingPayment(path,current=>({
       ...current,
       status:parsed.data.verified?'verified':'rejected',
@@ -1177,6 +1189,7 @@ app.post('/api/payments/:id/verify', authAdmin, requireDurableStore, async (req,
       if(!existing)return res.status(404).json({error:'Payment not found'});
       return res.status(409).json({error:'Payment has already been reviewed and cannot be changed.'});
     }
+    await appendAuditEvent({action:'payment_verification',entityType:'payment',entityId:req.params.id,before:{status:paymentBefore?.status||null,amount:Number(paymentBefore?.amount)||0},after:{status:payment.status,amount:Number(payment.amount)||0},note:parsed.data.verified?'Payment verified':'Payment rejected'});
     res.json({ok:true,payment});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
