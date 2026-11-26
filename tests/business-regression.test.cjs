@@ -1305,6 +1305,18 @@ test('missing item recovery restores stock and reduces missing liability exactly
   assert.equal(store.missingItemsDatabase[0].resolved,false);
   assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
 });
+test('customer portal missing recovery rolls local stock and ledgers back when cloud sync fails', async () => {
+  const store={missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'admin',qty:1,resolved:false}],softwareBookings:[{id:88,source:'customer-portal',items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:4}],thirdPartyDatabase:[]};
+  let reloads=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},syncCustomerBookingWorkflow:async()=>false,loadAllFirebaseData:()=>{reloads++},renderMissingItems:()=>{},showActionMessage:()=>{}};
+  const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
+  vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("b-0");',context);
+  await context.result;
+  assert.equal(store.realStockDatabase[0].qty,4);
+  assert.equal(store.softwareBookings[0].items[0].returnedQty,1);
+  assert.equal(store.softwareBookings[0].items[0].missingQty,1);
+  assert.equal(store.missingItemsDatabase[0].qty,1);
+  assert.equal(reloads,1);
+});
 test('missing item recovery refuses to write if the source stock row is missing', () => {
   const store={missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:88,items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}]}],realStockDatabase:[],thirdPartyDatabase:[]};
   let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:()=>{}};
