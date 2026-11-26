@@ -232,11 +232,11 @@ button:focus-visible, input[type="button"]:focus-visible, input[type="submit"]:f
 .calendar-day-cell.has-booking{background:#eff6ff;border-color:#93c5fd;box-shadow:inset 3px 0 #2563eb}
 .calendar-day-number{font-weight:800;color:#1e293b;font-size:13px;margin-bottom:4px}
 .calendar-booking-tag{display:block;max-width:100%;margin:3px 0;padding:3px 4px;border-radius:5px;background:#2563eb;color:#fff;font-size:10px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
-#actionToast{position:fixed!important;z-index:2147483647!important;left:12px!important;right:12px!important;bottom:18px!important;max-width:600px;margin:auto!important;padding:14px 16px!important;border-radius:12px!important;box-shadow:0 12px 36px #0f172a55!important;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .18s,transform .18s}
-#actionToast.show{opacity:1;pointer-events:auto;transform:translateY(0)}
-#actionToast.error{background:#991b1b!important;color:#fff!important;border:2px solid #fecaca!important;font-weight:800}
-#actionToast.success{background:#065f46!important;color:#fff!important;border:2px solid #a7f3d0!important;font-weight:800}
-#welcomeOverlay{z-index:2147483000!important;backdrop-filter:blur(5px)!important}
+#actionToast{position:fixed!important;z-index:2147483647!important;left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;width:max-content!important;max-width:min(90vw,520px)!important;min-width:0!important;box-sizing:border-box!important;margin:0!important;padding:13px 18px!important;border-radius:14px!important;box-shadow:0 12px 36px #0f172a55!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:center!important;line-height:1.45!important;opacity:0;pointer-events:none;transform:translate(-50%,calc(-50% + 8px));transition:opacity .18s,transform .18s}
+ #actionToast.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+ #actionToast.error{background:#991b1b!important;color:#fff!important;border:2px solid #fecaca!important;font-weight:800}
+ #actionToast.success{background:#065f46!important;color:#fff!important;border:2px solid #a7f3d0!important;font-weight:800}
+ #welcomeOverlay{z-index:2147483000!important;backdrop-filter:blur(5px)!important}
 @media(max-width:600px){.calendar-grid-header{gap:4px;padding:8px}.calendar-grid-header .action-btn{padding:6px 7px!important;font-size:11px!important;margin:0;min-height:34px}.calendar-grid-header h3{font-size:14px!important}.calendar-weekdays,.calendar-days-grid{gap:3px}.calendar-days-grid{padding:4px}.calendar-day-cell{min-height:62px;padding:4px 3px;border-radius:7px}.calendar-day-number{font-size:12px}.calendar-booking-tag{font-size:9px;padding:2px 3px}.calendar-weekdays>*{font-size:10px;padding:5px 0}}
 
 </style>
@@ -2247,16 +2247,30 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         if(!Number.isSafeInteger(qty)||qty<1||qty>Number(row.qty)){showActionMessage(name+' की मात्रा उपलब्ध स्टॉक के भीतर पूर्ण संख्या हो','error');return;}
                         let itemIndex=items.findIndex(it=>String(it.name||'').toLowerCase()===name.toLowerCase()&&it.source===selected.source&&String(it.partyName||'')===String(row.partyName||''));
                         if(itemIndex<0){
-                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):getItemRentRate(row,qty);
-                            items.push({name,qty:0,rentPrice:Math.max(0,rent),missingCharge:Math.max(0,Number(row.missingCharge??row.missingUnitPrice)||0),vendorRentRate:selected.source==='third-party'?Math.max(0,Number(row.costPrice??row.vendorRentRate)||0):0,vendorMissingCost:selected.source==='third-party'?Math.max(0,Number(row.missingCost??row.vendorMissingCost)||0):0,source:selected.source,partyName:String(row.partyName||'')});
+                            const singleMode=!!document.getElementById('dispatchSingleRateToggle')?.checked;
+                            const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):Number(singleMode?row.singleRent:row.setRent);
+                            items.push({name,qty:0,rentPrice:Math.max(0,rent),rateMode:selected.source==='admin'?(singleMode?'single':'set'):'vendor',missingCharge:Math.max(0,Number(row.missingCharge??row.missingUnitPrice)||0),vendorRentRate:selected.source==='third-party'?Math.max(0,Number(row.costPrice??row.vendorRentRate)||0):0,vendorMissingCost:selected.source==='third-party'?Math.max(0,Number(row.missingCost??row.vendorMissingCost)||0):0,source:selected.source,partyName:String(row.partyName||'')});
                             itemIndex=items.length-1;
                         }
                         items[itemIndex].qty=Math.max(0,Number(items[itemIndex].qty)||0)+qty;
                         if(selected.source==='admin'){
-                            items[itemIndex].rentPrice=getItemRentRate(row,items[itemIndex].qty);
-                            items[itemIndex].rateMode=items[itemIndex].qty>=3?'set':'single';
+                            const singleMode=!!document.getElementById('dispatchSingleRateToggle')?.checked;
+                            const selectedRate=Number(singleMode?row.singleRent:row.setRent);
+                            if(Number.isFinite(selectedRate)&&selectedRate>0){items[itemIndex].rentPrice=selectedRate;items[itemIndex].rateMode=singleMode?'single':'set';}
                         }
                     }
+                }
+            }
+            // Dispatch पर चुना गया Single/Bulk mode ही Admin rent में लागू होगा; quantity से mode अपने-आप नहीं बदलेगा.
+            const singleRateSelected=!!document.getElementById('dispatchSingleRateToggle')?.checked;
+            for(const item of items){
+                if(item.source==='third-party')continue;
+                const stockRow=adminStock.find(row=>String(row.name||'')===String(item.name||''));
+                if(!stockRow)continue;
+                const selectedRate=Number(singleRateSelected?stockRow.singleRent:stockRow.setRent);
+                if(Number.isFinite(selectedRate)&&selectedRate>0){
+                    item.rentPrice=selectedRate;
+                    item.rateMode=singleRateSelected?'single':'set';
                 }
             }
             const validItems=items.filter(it=>String(it?.name||'').trim()&&Number.isSafeInteger(Number(it?.qty))&&Number(it.qty)>0);
@@ -3396,7 +3410,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
               return Math.max(0,Number(item.returnedQty)||0)+Math.max(0,Number(item.missingQty)||0)>=sent;
             });
             b.actualReturnDate=returnDate;b.lastReturnDate=returnDate;b.returnEntries=Array.isArray(b.returnEntries)?b.returnEntries:[];
-            b.returnEntries.push({date:returnDate,mode,items:inputs.map(input=>({itemIndex:Number(input.dataset.returnIndex),qty:Number(input.value)})),createdAt:new Date().toISOString()});
+            b.returnEntries.push({date:returnDate,mode,items:inputs.map(input=>{const item=b.items[Number(input.dataset.returnIndex)]||{};return {itemIndex:Number(input.dataset.returnIndex),itemName:item.name||'',source:item.source==='third-party'?'third-party':'admin',partyName:item.partyName||'',qty:Number(input.value)};}),createdAt:new Date().toISOString()});
             if(fullyReturned){b.status='Returned';b.fullyReturnedAt=new Date().toISOString();b.returnProcessedAt=b.fullyReturnedAt;}
             else{b.status='Partially Returned';delete b.fullyReturnedAt;delete b.returnProcessedAt;}
             if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])){
