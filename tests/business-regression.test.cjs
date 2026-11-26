@@ -2229,5 +2229,9 @@ test('calendar excludes cancelled bookings, ends early returns on the actual dat
   assert.ok(!grid.innerHTML.includes('Cancelled Customer'));
   assert.ok(!grid.innerHTML.includes('Rejected Customer'));
   const earlyReturnTagCount = (grid.innerHTML.match(/#3 Early Return/g)||[]).length;
-  assert.equal(earlyReturnTagCount, 1);
+  assert.equal(earlyReturnTagCount, 2, 'early return should occupy only Nov 1 and Nov 2');
+  const day3 = grid.innerHTML.indexOf('<div class="calendar-day-number">3</div>');
+  const day4 = grid.innerHTML.indexOf('<div class="calendar-day-number">4</div>', day3);
+  assert.ok(day3 >= 0 && day4 > day3);
+  assert.ok(!grid.innerHTML.slice(day3,day4).includes('#3 Early Return'));
 });
