@@ -261,3 +261,12 @@ Main पर मिले root causes:
 - PR branch CI run `45751456832`: 117/117 PASS; merge के बाद main CI run `45751552093`: **117/117 PASS, 0 FAIL**।
 - Latest main head: `1942751aac7102d190f671d4fc0e7f0f6412f2c4`।
 - Vercel deployment नहीं किया गया।
+
+
+## Barcode Camera Cleanup — 26 नवंबर 2026, 09:27 IST
+- PR #19 merged: `1311dac45ebad0c153c7c204a391925d7b257de4`। Scanner बंद होने के बाद यदि camera permission prompt देर से resolve होता है, तो नया मिला MediaStream तुरंत stop किया जाता है; background में camera चालू नहीं रहता। तीनों HTML shells समान हैं।
+- Asynchronous regression test scanner बंद करने और बाद में stream मिलने का क्रम simulate करता है; track stop होने की पुष्टि करता है।
+- PR branch CI run `45751999411`: 121/121 PASS; merge के बाद main CI run `45752096710`: **121/121 PASS, 0 FAIL**।
+- पुराने conflicted PR #18 को latest-main PR #19 के merge के बाद बंद किया गया।
+- Latest main head: `1311dac45ebad0c153c7c204a391925d7b257de4`।
+- Production deployment नहीं किया गया।
