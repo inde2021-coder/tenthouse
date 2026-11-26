@@ -2356,8 +2356,18 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!qtyRaw||!Number.isInteger(qty)||qty<1){showActionMessage('सामान की मात्रा 1 या उससे अधिक पूर्ण संख्या में भरें','error');return;}
             const stock=(Array.isArray(publicCustomerStockCatalog)?publicCustomerStockCatalog:safeGetStorage('realStockDatabase',[])).find(x=>String(x.name)===String(sel.value));
             if(!stock){showActionMessage('चुना गया सामान स्टॉक में नहीं मिला; सूची रीफ्रेश करें','error');return;}
-            const rate=getItemRentRate(stock,qty);
-            customerCart.push({name:sel.value,qty,rentPrice:rate,rateMode:qty>=3?'set':'single',missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
+            // Same item added in multiple cart actions must use the combined quantity tier.
+            const existing=customerCart.find(i=>String(i.name)===String(sel.value)&&i.source==='admin');
+            const combinedQty=qty+Math.max(0,Number(existing?.qty)||0);
+            const rate=getItemRentRate(stock,combinedQty);
+            if(existing){
+                existing.qty=combinedQty;
+                existing.rentPrice=rate;
+                existing.rateMode=combinedQty>=3?'set':'single';
+                existing.missingCharge=Math.max(0,Number(stock.missingCharge)||0);
+            }else{
+                customerCart.push({name:sel.value,qty,rentPrice:rate,rateMode:qty>=3?'set':'single',missingCharge:Math.max(0,Number(stock.missingCharge)||0),source:'admin'});
+            }
             renderCustomerCart();document.getElementById('portalItemQty').value='';
         }
 
