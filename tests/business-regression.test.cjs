@@ -1684,6 +1684,29 @@ test('quantity-based item rent uses Single Rent for 1-2 pieces and Set/Bulk Rent
 });
 
 
+test('vendor ledger separates customer rent, vendor rent cost, missing liability, and payments', () => {
+  const code=sourceBetween('function loadThirdPartyLedger()', '        // Removed an orphaned speech-recognition fragment');
+  const entry={itemIndex:0,itemName:'Chair',qty:3,date:'2026-11-01',unitRent:40,vendorRentRate:20,source:'third-party',partyName:'Vendor A'};
+  const booking={id:7,date:'2026-11-01',items:[{name:'Chair',qty:3,missingQty:2,vendorMissingCost:25,source:'third-party',partyName:'Vendor A'}],dispatchEntries:[entry]};
+  const elements={partyWiseTablesContainer:{innerHTML:''},thirdPartyPaymentBody:{innerHTML:''},tpPaymentParty:{value:''}};
+  const context={
+    safeGetStorage:key=>({
+      thirdPartyDatabase:[{partyName:'Vendor A',item:'Chair',qty:4,purchasedQty:6,costPrice:20,chargePrice:40}],
+      thirdPartyPayments:[{id:'p1',partyName:'Vendor A',amount:30,date:'2026-11-03',method:'Cash'}],
+      softwareBookings:[booking]
+    })[key]||[],
+    getDispatchEntryRentalSlices:()=>[{entry,qty:3,endDate:'2026-11-03'}],
+    calculateRentalDays:()=>2,escapeHtml:String,
+    document:{getElementById:id=>elements[id]||null},
+    Number,String,Math,Array,Set,Date
+  };
+  vm.runInNewContext(code+'\nloadThirdPartyLedger()',context);
+  const html=elements.partyWiseTablesContainer.innerHTML;
+  for(const amount of ['₹120.00','₹50.00','₹170.00','₹240.00','₹70.00','₹30.00','₹140.00']) {
+    assert.ok(html.includes(amount),'vendor ledger should display '+amount);
+  }
+});
+
 test('customer booking tracker looks up status through the mobile-verified public backend endpoint', () => {
   for (const id of ['rkTrackBookingId','rkTrackMobile','rkBookingTrackResult']) {
     assert.ok(html.includes('id="'+id+'"'));
