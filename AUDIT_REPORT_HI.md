@@ -254,3 +254,10 @@ Main पर मिले root causes:
 - PR branch CI run `45751199885`: 115/115 PASS; merge के बाद main CI run `45751304784`: **115/115 PASS, 0 FAIL**।
 - Latest main head: `bec77a528b8080b3a5e51d51643363e4826f7edd`।
 - Production deployment नहीं किया गया।
+
+
+## Vendor Dispatch/Return Regression — 26 नवंबर 2026, 09:24 IST
+- PR #15 merged: `1942751aac7102d190f671d4fc0e7f0f6412f2c4`। नए end-to-end regression tests पुष्टि करते हैं कि Vendor Dispatch चुने गए vendor के stock को ही घटाता है, Admin stock को नहीं; dispatch ledger में vendor/party और liability rates सुरक्षित रहते हैं। Vendor Partial Return केवल वास्तव में लौटी मात्रा को उसी vendor stock में जोड़ता है और शेष मात्रा pending रहती है।
+- PR branch CI run `45751456832`: 117/117 PASS; merge के बाद main CI run `45751552093`: **117/117 PASS, 0 FAIL**।
+- Latest main head: `1942751aac7102d190f671d4fc0e7f0f6412f2c4`।
+- Vercel deployment नहीं किया गया।
