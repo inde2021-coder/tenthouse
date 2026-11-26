@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "tent_erp_data": {
+      ".read": "auth != null && root.child('erp_admins').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('erp_admins').child(auth.uid).val() === true"
+    },
+    "erp_admins": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
