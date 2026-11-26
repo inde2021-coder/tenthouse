@@ -101,6 +101,32 @@ function runRentFunction(functionName, booking) {
   return context.result;
 }
 
+test('customer cart recalculates bulk tier when the same item is added in separate steps', () => {
+  const start=html.indexOf('function addSelectedItemToCart()');
+  const end=html.indexOf('function renderCustomerCart()',start);
+  assert.ok(start>=0&&end>start,'customer cart add function should exist');
+  const code=html.slice(start,end);
+  const cart=[{name:'Chair',qty:2,rentPrice:100,rateMode:'single',source:'admin'}];
+  const stock=[{name:'Chair',singleRent:100,setRent:60,missingCharge:500}];
+  const elements={
+    portalStockSelect:{value:'Chair'},
+    portalItemQty:{value:'1'}
+  };
+  const context={
+    customerCart:cart,publicCustomerStockCatalog:stock,
+    safeGetStorage:()=>stock,getItemRentRate:(row,qty)=>qty>=3&&Number(row.setRent)>0?Number(row.setRent):Number(row.singleRent),
+    document:{getElementById:id=>elements[id]},
+    showActionMessage:()=>{},renderCustomerCart:()=>{},
+    Number,String,Math,Array
+  };
+  vm.runInNewContext(code+';addSelectedItemToCart()',context);
+  assert.equal(cart.length,1);
+  assert.equal(cart[0].qty,3);
+  assert.equal(cart[0].rentPrice,60);
+  assert.equal(cart[0].rateMode,'set');
+  assert.equal(elements.portalItemQty.value,'');
+});
+
 test('missing quantity is recorded but excluded from customer rent total', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
