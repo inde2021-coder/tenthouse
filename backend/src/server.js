@@ -77,6 +77,57 @@ async function storeList(path) {
   }
   return [];
 }
+async function acquireOtpSendLock(phone) {
+  const path = 'erpPrivate/otpSendLocks/' + phoneKey(phone);
+  const owner = crypto.randomUUID();
+  const expiresAt = Date.now() + 30000;
+  if (adminDb) {
+    const ref = adminDb.ref(path);
+    const result = await ref.transaction(current => {
+      if (current && Number(current.expiresAt) > Date.now()) return;
+      return { owner, expiresAt };
+    });
+    if (!result.committed) return null;
+    return async () => {
+      await ref.transaction(current => current?.owner === owner ? null : undefined);
+    };
+  }
+  const current = memoryStore.get(path);
+  if (current && Number(current.expiresAt) > Date.now()) return null;
+  memoryStore.set(path, { owner, expiresAt });
+  return async () => {
+    if (memoryStore.get(path)?.owner === owner) memoryStore.delete(path);
+  };
+}
+async function consumeOtpAttempt(path, expectedDigest) {
+  const now = Date.now();
+  const matches = record => {
+    if (!record || typeof record.digest !== 'string' || !/^[a-f0-9]{64}$/i.test(record.digest)) return false;
+    const actual = Buffer.from(record.digest, 'hex');
+    const expected = Buffer.from(expectedDigest, 'hex');
+    return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+  };
+  if (adminDb) {
+    let decision = 'missing';
+    const result = await adminDb.ref(path).transaction(current => {
+      if (!current) { decision = 'missing'; return; }
+      if (Number(current.expires) < now) { decision = 'expired'; return null; }
+      if (Number(current.tries || 0) >= 5) { decision = 'locked'; return null; }
+      if (matches(current)) { decision = 'verified'; return null; }
+      decision = 'invalid';
+      return { ...current, tries: Number(current.tries || 0) + 1 };
+    });
+    if (!result.committed) return { status: result.snapshot?.exists() ? 'conflict' : 'missing' };
+    return { status: decision };
+  }
+  const current = memoryStore.get(path);
+  if (!current) return { status: 'missing' };
+  if (Number(current.expires) < now) { memoryStore.delete(path); return { status: 'expired' }; }
+  if (Number(current.tries || 0) >= 5) { memoryStore.delete(path); return { status: 'locked' }; }
+  if (matches(current)) { memoryStore.delete(path); return { status: 'verified' }; }
+  memoryStore.set(path, { ...current, tries: Number(current.tries || 0) + 1 });
+  return { status: 'invalid' };
+}
 async function storeCreateIfAbsent(path, value) {
   if (adminDb) {
     const result = await adminDb.ref(path).transaction(current => current === null ? value : undefined);
@@ -152,7 +203,7 @@ async function sendWhatsAppText(to, body) {
   if (!token || !phoneId) throw new Error('WhatsApp Cloud API credentials are not configured on the server.');
   const version = process.env.WHATSAPP_API_VERSION || 'v23.0';
   const response = await fetch(`https://graph.facebook.com/${version}/${phoneId}/messages`, {
-    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    method: 'POST', signal: AbortSignal.timeout(20_000), headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: to.replace(/\D/g,''), type: 'text', text: { preview_url: false, body } })
   });
   const data = await response.json().catch(() => ({}));
@@ -167,17 +218,21 @@ async function sendOtpProvider(phone, otp, channel) {
     const sid = process.env.TWILIO_ACCOUNT_SID, token = process.env.TWILIO_AUTH_TOKEN, from = process.env.TWILIO_FROM_NUMBER;
     if (!sid || !token || !from) throw new Error('Twilio SMS credentials are not configured.');
     const form = new URLSearchParams({ To: phone, From: from, Body: msg });
-    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, { method:'POST', headers:{ Authorization:'Basic '+Buffer.from(`${sid}:${token}`).toString('base64'), 'Content-Type':'application/x-www-form-urlencoded' }, body:form });
+    const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, { method:'POST', signal:AbortSignal.timeout(20_000), headers:{ Authorization:'Basic '+Buffer.from(`${sid}:${token}`).toString('base64'), 'Content-Type':'application/x-www-form-urlencoded' }, body:form });
     if (!r.ok) throw new Error('SMS provider rejected the request.'); return r.json();
   }
   if (provider === 'msg91') {
     // MSG91 template/flow setup varies by account; use the provider's approved OTP API template.
     const key = process.env.MSG91_AUTH_KEY, template = process.env.MSG91_TEMPLATE_ID;
     if (!key || !template) throw new Error('MSG91 Auth Key and approved template ID are required.');
-    const r = await fetch('https://control.msg91.com/api/v5/otp', { method:'POST', headers:{ authkey:key, 'Content-Type':'application/json' }, body:JSON.stringify({ template_id:template, mobile:phone.replace('+',''), otp }) });
+    const r = await fetch('https://control.msg91.com/api/v5/otp', { method:'POST', signal:AbortSignal.timeout(20_000), headers:{ authkey:key, 'Content-Type':'application/json' }, body:JSON.stringify({ template_id:template, mobile:phone.replace('+',''), otp }) });
     if (!r.ok) throw new Error('MSG91 rejected the request.'); return r.json();
   }
-  if (provider === 'demo' && !isProd) return { demo: true };
+  if (provider === 'demo' && !isProd) {
+    const testDelay = Math.min(500, Math.max(0, Number(process.env.OTP_DEMO_DELAY_MS) || 0));
+    if (testDelay) await new Promise(resolve => setTimeout(resolve, testDelay));
+    return { demo: true };
+  }
   throw new Error('OTP provider is not configured. Configure an approved SMS/WhatsApp provider in backend .env.');
 }
 app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
@@ -187,40 +242,67 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   const hmacSecret = process.env.OTP_HMAC_SECRET || '';
   if (hmacSecret.length < 32 || /replace_with|unsafe-dev/i.test(hmacSecret)) return res.status(503).json({ error: 'OTP_HMAC_SECRET सेट नहीं है या बहुत कमजोर है; कम-से-कम 32 अक्षरों का अलग secret सेट करें।' });
   const digest = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
+  const otpPath = 'erpPrivate/otp/' + phoneKey(phone);
+  const otpRecord = { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 };
+  let releaseSendLock = null;
   try {
+    releaseSendLock = await acquireOtpSendLock(phone);
+    if (!releaseSendLock) return res.status(409).json({ error: 'इस मोबाइल नंबर पर OTP भेजने का अनुरोध पहले से चल रहा है; कुछ सेकंड बाद पुनः प्रयास करें।' });
+    // Persist the verifier BEFORE sending so a delivered OTP can never arrive
+    // before its matching digest is available for verification.
+    await storeSet(otpPath, otpRecord);
     const channels = channel === 'both' ? ['sms','whatsapp'] : [channel];
     const outcomes = await Promise.allSettled(channels.map(ch => sendOtpProvider(phone, otp, ch)));
     const sent = outcomes.map((o, i) => ({ channel: channels[i], ok: o.status === 'fulfilled', error: o.status === 'rejected' ? o.reason?.message : undefined }));
-    if (!sent.some(x => x.ok)) throw new Error(sent.map(x => `${x.channel}: ${x.error || 'failed'}`).join('; '));
-    await storeSet('erpPrivate/otp/' + phoneKey(phone), { digest, expires: Date.now() + Number(process.env.OTP_TTL_SECONDS || 300) * 1000, tries: 0 });
+    if (!sent.some(x => x.ok)) {
+      // Do not leave a code active when every delivery channel failed. Only
+      // remove our own record so a newer concurrent request is not erased.
+      if (adminDb) {
+        await adminDb.ref(otpPath).transaction(current => current?.digest === digest ? null : undefined);
+      } else if (memoryStore.get(otpPath)?.digest === digest) {
+        memoryStore.delete(otpPath);
+      }
+      throw new Error(sent.map(x => `${x.channel}: ${x.error || 'failed'}`).join('; '));
+    }
     const out = { ok: true, sent, message: sent.every(x => x.ok) ? 'OTP भेज दिया गया।' : 'OTP कम-से-कम एक चुने हुए चैनल से भेजा गया; आंशिक विफलता देखें।' };
     if (process.env.OTP_PROVIDER === 'demo' && !isProd) out.demoOtp = otp; // Never enabled in production.
     res.json(out);
   } catch (e) { res.status(503).json({ error: e.message }); }
+  finally {
+    if (releaseSendLock) {
+      try { await releaseSendLock(); }
+      catch (lockError) { console.error('OTP send lock release failed:', lockError.message); }
+    }
+  }
 });
 app.post('/api/otp/verify', otpVerifyLimiter, requireDurableStore, async (req, res) => {
   const parsed = z.object({ phone: phoneSchema, otp: z.string().regex(/^\d{6}$/) }).safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
+  if (!parsed.success) return res.status(400).json({ verified: false, error: 'फोन और 6 अंकों का OTP आवश्यक है।' });
   const { phone, otp } = parsed.data;
   const path = 'erpPrivate/otp/' + phoneKey(phone);
-  let rec;
-  try { rec = await storeGet(path); } catch (error) { return res.status(503).json({ verified: false, error: error.message }); }
-  if (!rec || rec.expires < Date.now() || rec.tries >= 5) { await storeDelete(path); return res.status(400).json({ verified: false, error: 'OTP समाप्त हो गया या उपलब्ध नहीं है।' }); }
-  rec.tries++;
-  await storeSet(path, rec);
   const hmacSecret = process.env.OTP_HMAC_SECRET || '';
   if (hmacSecret.length < 32 || /replace_with|unsafe-dev/i.test(hmacSecret)) return res.status(503).json({ verified: false, error: 'OTP_HMAC_SECRET सही तरह configured नहीं है।' });
-  const got = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
-  if (!crypto.timingSafeEqual(Buffer.from(got), Buffer.from(rec.digest))) return res.status(400).json({ verified: false, error: 'OTP गलत है।' });
-  await storeDelete(path); res.json({ verified: true });
+  const expectedDigest = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
+  try {
+    const result = await consumeOtpAttempt(path, expectedDigest);
+    if (result.status === 'verified') return res.json({ verified: true });
+    if (result.status === 'invalid') return res.status(400).json({ verified: false, error: 'OTP गलत है।' });
+    if (result.status === 'conflict') return res.status(409).json({ verified: false, error: 'OTP सत्यापन में टकराव हुआ; कृपया पुनः प्रयास करें।' });
+    return res.status(400).json({ verified: false, error: 'OTP समाप्त हो गया या उपलब्ध नहीं है।' });
+  } catch (error) {
+    return res.status(503).json({ verified: false, error: error.message });
+  }
 });
 // Meta WhatsApp Cloud API webhook: configure this HTTPS URL in Meta App Dashboard.
 const verifyWhatsAppWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-  const expected = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-  if (mode === 'subscribe' && expected && token === expected && typeof challenge === 'string') return res.status(200).type('text/plain').send(challenge);
+  const expected = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
+  const supplied = typeof token === 'string' ? Buffer.from(token) : Buffer.alloc(0);
+  const configured = Buffer.from(expected);
+  const tokenMatches = configured.length > 0 && supplied.length === configured.length && crypto.timingSafeEqual(supplied, configured);
+  if (mode === 'subscribe' && tokenMatches && typeof challenge === 'string') return res.status(200).type('text/plain').send(challenge);
   return res.sendStatus(403);
 };
 // Keep both paths available: the already-verified production Meta callback

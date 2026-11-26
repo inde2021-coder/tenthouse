@@ -1,6 +1,7 @@
 const { before, after, test } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
+const crypto = require('node:crypto');
 const net = require('node:net');
 const path = require('node:path');
 
@@ -45,7 +46,9 @@ before(async () => {
       ADMIN_API_TOKEN: adminToken,
       OTP_HMAC_SECRET: otpSecret,
       OTP_PROVIDER: 'demo',
+      OTP_DEMO_DELAY_MS: '100',
       WHATSAPP_WEBHOOK_VERIFY_TOKEN: 'test-webhook-verify-token',
+      WHATSAPP_APP_SECRET: 'test-whatsapp-app-secret',
       PUBLIC_ORIGIN: 'https://erp.example.test'
     },
     stdio: 'ignore'
@@ -201,6 +204,17 @@ test('admin-only booking list rejects missing token and accepts the configured t
   assert.ok(data.bookings.every(booking => booking && typeof booking.id !== 'undefined'));
 });
 
+test('concurrent OTP sends for one phone are serialized and cannot invalidate a delivered code', async () => {
+  const send = () => request('/api/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543213', channel: 'sms' })
+  });
+  const responses = await Promise.all([send(), send()]);
+  assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
+  const delivered = responses.find(response => response.status === 200);
+  assert.match((await delivered.json()).demoOtp, /^\d{6}$/);
+});
+
 test('demo OTP is delivered only in development and verifies once', async () => {
   const sent = await request('/api/otp/send', {
     method: 'POST',
@@ -222,6 +236,72 @@ test('demo OTP is delivered only in development and verifies once', async () => 
     body: JSON.stringify({ phone: '9876543210', otp: sentData.demoOtp })
   });
   assert.equal(replay.status, 400);
+});
+
+test('concurrent OTP verification can succeed only once', async () => {
+  const sent = await request('/api/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543211', channel: 'sms' })
+  });
+  assert.equal(sent.status, 200);
+  const { demoOtp } = await sent.json();
+  const attempts = await Promise.all([
+    request('/api/otp/verify', { method: 'POST', body: JSON.stringify({ phone: '9876543211', otp: demoOtp }) }),
+    request('/api/otp/verify', { method: 'POST', body: JSON.stringify({ phone: '9876543211', otp: demoOtp }) })
+  ]);
+  const statuses = attempts.map(response => response.status).sort();
+  assert.deepEqual(statuses, [200, 400]);
+  const results = await Promise.all(attempts.map(response => response.json()));
+  assert.equal(results.filter(result => result.verified === true).length, 1);
+});
+
+test('OTP locks after five invalid attempts and rejects the correct code afterward', async () => {
+  const sent = await request('/api/otp/send', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543212', channel: 'sms' })
+  });
+  assert.equal(sent.status, 200);
+  const { demoOtp } = await sent.json();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const invalid = await request('/api/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone: '9876543212', otp: '000000' === demoOtp ? '000001' : '000000' })
+    });
+    assert.equal(invalid.status, 400);
+  }
+  const locked = await request('/api/otp/verify', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '9876543212', otp: demoOtp })
+  });
+  assert.equal(locked.status, 400);
+});
+
+test('WhatsApp webhook verifies challenge and authenticates signed, idempotent events', async () => {
+  const challenge = 'test-challenge-123';
+  const verified = await request('/api/webhook?hub.mode=subscribe&hub.verify_token=test-webhook-verify-token&hub.challenge=' + challenge);
+  assert.equal(verified.status, 200);
+  assert.equal(await verified.text(), challenge);
+
+  const denied = await request('/api/webhook?hub.mode=subscribe&hub.verify_token=wrong-token&hub.challenge=' + challenge);
+  assert.equal(denied.status, 403);
+
+  const payload = JSON.stringify({
+    object: 'whatsapp_business_account',
+    entry: [{ changes: [{ field: 'messages', value: {
+      contacts: [{ wa_id: '919876543210', profile: { name: 'Test Customer' } }],
+      messages: [{ id: 'wamid.test-message-001', from: '919876543210', type: 'text', text: { body: 'Booking enquiry' }, timestamp: '1795651200' }]
+    } }] }]
+  });
+  const signature = 'sha256=' + crypto.createHmac('sha256', 'test-whatsapp-app-secret').update(Buffer.from(payload)).digest('hex');
+  const send = () => request('/api/webhook', { method: 'POST', headers: { 'x-hub-signature-256': signature }, body: payload });
+  assert.equal((await request('/api/webhook', { method: 'POST', body: payload })).status, 401);
+  assert.equal((await send()).status, 200);
+  assert.equal((await send()).status, 200);
+
+  const inbox = await request('/api/whatsapp/inbox', { headers: { 'x-admin-token': adminToken } });
+  assert.equal(inbox.status, 200);
+  const data = await inbox.json();
+  assert.equal(data.requests.filter(item => item.whatsappMessageId === 'wamid.test-message-001').length, 1);
 });
 
 test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async () => {
