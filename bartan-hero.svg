@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="520" viewBox="0 0 1500 520">
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#301b43"/><stop offset=".42" stop-color="#101b3b"/><stop offset="1" stop-color="#030817"/></linearGradient>
+ <linearGradient id="steel" x2="0" y2="1"><stop stop-color="#fff"/><stop offset=".18" stop-color="#9baec4"/><stop offset=".38" stop-color="#f9fdff"/><stop offset=".63" stop-color="#657a91"/><stop offset=".82" stop-color="#e6edf4"/><stop offset="1" stop-color="#43546a"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff0a6"/><stop offset=".45" stop-color="#dba33c"/><stop offset="1" stop-color="#75420e"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#ffdc8a" stop-opacity=".95"/><stop offset="1" stop-color="#ffb65b" stop-opacity="0"/></radialGradient>
+ <filter id="shadow"><feGaussianBlur stdDeviation="12"/></filter>
+</defs>
+<rect width="1500" height="520" fill="url(#bg)"/>
+<path d="M0 100 Q250 -20 480 75 T960 55 T1500 35 V0 H0Z" fill="#4d1748" opacity=".45"/>
+<g opacity=".72">
+ <path d="M0 0H1500V90Q1300 40 1120 88T760 68T380 100T0 60Z" fill="#6b2359"/>
+ <path d="M80 0V120M170 0V105M260 0V125M350 0V95M450 0V130M550 0V96M650 0V115M750 0V95M850 0V128M950 0V92M1050 0V120M1150 0V90M1250 0V120M1350 0V92M1450 0V120" stroke="#f6bf72" stroke-width="3" opacity=".7"/>
+</g>
+<g fill="url(#glow)" opacity=".85"><circle cx="260" cy="120" r="100"/><circle cx="680" cy="85" r="95"/><circle cx="1110" cy="105" r="120"/><circle cx="1400" cy="130" r="90"/></g>
+<g fill="#ffe4a0"><circle cx="250" cy="60" r="5"/><circle cx="350" cy="80" r="4"/><circle cx="520" cy="48" r="5"/><circle cx="780" cy="67" r="5"/><circle cx="980" cy="52" r="4"/><circle cx="1190" cy="74" r="5"/><circle cx="1370" cy="54" r="4"/></g>
+<path d="M0 430 Q260 380 480 430 T900 418 T1500 410 V520H0Z" fill="#081327"/>
+<ellipse cx="1040" cy="452" rx="500" ry="40" fill="#000" opacity=".65" filter="url(#shadow)"/>
+<!-- large polished serving platters -->
+<g stroke="#d9e6f4" stroke-width="5" fill="url(#steel)">
+ <ellipse cx="850" cy="390" rx="205" ry="48"/><ellipse cx="850" cy="379" rx="185" ry="36" fill="#f3f7fa"/>
+ <ellipse cx="850" cy="379" rx="158" ry="25" fill="#8fa3b9"/><ellipse cx="850" cy="374" rx="145" ry="19" fill="#e8eef5"/>
+ <ellipse cx="1130" cy="400" rx="175" ry="40"/><ellipse cx="1130" cy="390" rx="155" ry="30" fill="#f4f8fb"/>
+ <ellipse cx="1130" cy="390" rx="125" ry="20" fill="#8196ad"/>
+</g>
+<!-- handi pots -->
+<g stroke="#e7eef7" stroke-width="5" fill="url(#steel)">
+ <path d="M560 250Q565 220 605 216H720Q760 220 765 250L750 390Q740 420 665 425Q590 420 575 390Z"/>
+ <ellipse cx="662" cy="250" rx="103" ry="26"/><ellipse cx="662" cy="246" rx="82" ry="15" fill="#33465d"/>
+ <path d="M590 274Q660 296 735 274" fill="none" stroke="#fff" stroke-width="4" opacity=".75"/>
+ <path d="M1270 270Q1275 240 1310 236H1400Q1435 240 1440 270L1425 390Q1410 416 1355 418Q1300 416 1285 390Z"/>
+ <ellipse cx="1355" cy="270" rx="85" ry="23"/><ellipse cx="1355" cy="266" rx="68" ry="13" fill="#34485f"/>
+</g>
+<!-- stacked bowls -->
+<g stroke="#f5f8fb" stroke-width="4" fill="url(#steel)">
+ <path d="M340 340Q350 410 430 410Q510 410 520 340Z"/><ellipse cx="430" cy="340" rx="90" ry="25"/>
+ <path d="M365 315Q372 372 430 372Q488 372 495 315Z"/><ellipse cx="430" cy="315" rx="65" ry="18"/>
+ <path d="M385 292Q390 337 430 337Q470 337 475 292Z"/><ellipse cx="430" cy="292" rx="45" ry="14"/>
+</g>
+<!-- glass tumblers and serving vessels -->
+<g stroke="#e8f0fa" stroke-width="4" fill="url(#steel)">
+ <path d="M190 280H275L264 405Q232 420 201 405Z"/><ellipse cx="232" cy="280" rx="43" ry="12" fill="#dce6ef"/>
+ <path d="M285 300H355L346 405Q320 416 294 405Z"/><ellipse cx="320" cy="300" rx="35" ry="10"/>
+ <path d="M90 340Q95 305 140 305Q185 305 190 340L180 400Q140 420 100 400Z"/><ellipse cx="140" cy="340" rx="50" ry="16"/>
+</g>
+<!-- handles and gold decorative rim -->
+<g fill="none" stroke="url(#gold)" stroke-width="7">
+ <path d="M565 280Q510 250 520 320Q530 355 578 345"/><path d="M760 280Q815 250 805 320Q795 355 747 345"/>
+ <path d="M1270 290Q1220 260 1225 320Q1230 350 1280 350"/><path d="M1440 290Q1490 260 1485 320Q1480 350 1430 350"/>
+</g>
+<g fill="#ffda65" opacity=".8"><circle cx="660" cy="250" r="4"/><circle cx="1355" cy="270" r="4"/><circle cx="430" cy="315" r="3"/></g>
+<path d="M0 500H1500" stroke="#e6b64c" stroke-width="3" opacity=".8"/>
+</svg>

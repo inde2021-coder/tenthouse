@@ -101,6 +101,47 @@ function runRentFunction(functionName, booking) {
   return context.result;
 }
 
+test('manual vendor dispatch preserves replacement cost from either supported vendor field', () => {
+  const start=html.indexOf('function addThirdPartyItemToDispatch()');
+  const end=html.indexOf('function ',start+20);
+  const code=html.slice(start,end);
+  assert.ok(code.includes('vendorRow.missingCost??vendorRow.vendorMissingCost'));
+  assert.ok(code.includes('vendorMissingCost:Math.max(0,Number(vendorRow.missingCost??vendorRow.vendorMissingCost)||0)'));
+});
+
+test('customer cart recalculates bulk tier when the same item is added in separate steps', () => {
+  const start=html.indexOf('function addSelectedItemToCart()');
+  const end=html.indexOf('function renderCustomerCart()',start);
+  assert.ok(start>=0&&end>start,'customer cart add function should exist');
+  const code=html.slice(start,end);
+  const cart=[{name:'Chair',qty:2,rentPrice:100,rateMode:'single',source:'admin'}];
+  const stock=[{name:'Chair',singleRent:100,setRent:60,missingCharge:500}];
+  const elements={
+    portalStockSelect:{value:'Chair'},
+    portalItemQty:{value:'1'}
+  };
+  const context={
+    customerCart:cart,publicCustomerStockCatalog:stock,
+    safeGetStorage:()=>stock,getItemRentRate:(row,qty)=>qty>=3&&Number(row.setRent)>0?Number(row.setRent):Number(row.singleRent),
+    document:{getElementById:id=>elements[id]},
+    showActionMessage:()=>{},renderCustomerCart:()=>{},
+    Number,String,Math,Array
+  };
+  vm.runInNewContext(code+';addSelectedItemToCart()',context);
+  assert.equal(cart.length,1);
+  assert.equal(cart[0].qty,3);
+  assert.equal(cart[0].rentPrice,60);
+  assert.equal(cart[0].rateMode,'set');
+  assert.equal(elements.portalItemQty.value,'');
+});
+
+test('invoice rental detail rows follow actual partial-return and recovery dates', () => {
+  const code=sourceBetween('function searchBillingCustomer()', 'function currentPaymentBooking()');
+  assert.match(code,/getDispatchEntryRentalSlices\(b\)/);
+  assert.match(code,/invoiceRentRows\.map/);
+  assert.match(code,/calculateRentalDays\(e\.date,e\.endDate\)/);
+});
+
 test('missing quantity is recorded but excluded from customer rent total', () => {
   const total = runRentFunction('calculateBookingTotalRent', {
     date: '2026-11-01', returnDate: '2026-11-03',
@@ -229,6 +270,61 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(html.includes("safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])"));
   assert.ok(html.includes('m.penalty=0;'));
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
+});
+
+test('dispatch order additions report success only after booking storage succeeds', () => {
+  const admin=html.slice(html.indexOf('function addItemToPendingBookingDispatch()'),html.indexOf('function addThirdPartyItemToDispatch()'));
+  const vendor=html.slice(html.indexOf('function addThirdPartyItemToDispatch()'),html.indexOf('function searchDispatchBooking()'));
+  assert.ok(admin.includes("if(!safeSetStorage('softwareBookings', bookings))"),'admin dispatch add must check storage result');
+  assert.ok(vendor.includes("if(!safeSetStorage('softwareBookings', bookings))"),'vendor dispatch add must check storage result');
+  assert.ok(!admin.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'admin add must not announce success after unchecked save');
+  assert.ok(!vendor.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'vendor add must not announce success after unchecked save');
+});
+
+test('payment entry and UTR verification prevent duplicate concurrent submissions', () => {
+  const save=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment');
+  const verify=sourceBetween('async function verifyLedgerPayment', 'function printReturnSlip');
+  assert.ok(save.includes('if(globalThis.__rkPaymentInProgress)'), 'payment submit lock missing');
+  assert.ok(save.includes('finally { globalThis.__rkPaymentInProgress=false; }'), 'payment submit lock must release');
+  assert.ok(verify.includes('if(globalThis.__rkPaymentVerifyInProgress)'), 'UTR verify lock missing');
+  assert.ok(verify.includes('finally { globalThis.__rkPaymentVerifyInProgress=false; }'), 'UTR verify lock must release');
+});
+
+test('payment recording and UTR verification save ledger and booking totals atomically', () => {
+  const save=html.slice(html.indexOf('async function savePaymentEntry()'),html.indexOf('async function verifyLedgerPayment('));
+  const verify=html.slice(html.indexOf('async function verifyLedgerPayment('),html.indexOf('function printReturnSlip('));
+  assert.ok(save.includes("safeSetStorageBatch([[key,ledger],['softwareBookings',rows]])"),'payment ledger and booking must commit together');
+  assert.ok(!save.includes("safeSetStorage(key,ledger)"),'payment must not save ledger separately');
+  assert.ok(verify.includes("paymentWrites=[['rkPaymentLedger',ledger]]"),'verification must stage ledger');
+  assert.ok(verify.includes("paymentWrites.push(['softwareBookings',rows])"),'verification must stage booking');
+  assert.ok(verify.includes('safeSetStorageBatch(paymentWrites)'), 'verification must commit atomically');
+});
+
+test('dispatch aggregates duplicate stock-row requirements before checking and deducting availability', () => {
+  const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
+  assert.ok(dispatch.includes('const requirementMap=new Map()'));
+  assert.ok(dispatch.includes('if(previous)previous.qty+=x.qty'));
+  assert.ok(dispatch.includes('if(available<requirement.qty)'));
+  assert.ok(dispatch.includes('requirements.forEach(x=>x.row.qty=Number(x.row.qty)-x.qty)'));
+  assert.ok(html.includes("· बाकी '+Math.max(0,planned-sent)"));
+});
+
+test('dispatch and return handlers reject duplicate submissions and always release their locks', () => {
+  const dispatch=html.slice(html.indexOf('async function completeDispatch(id)'),html.indexOf('function printDispatchSlip(id)'));
+  const ret=html.slice(html.indexOf('async function completeManualReturnProcess()'),html.indexOf('let currentDocumentItems = []'));
+  for (const [name,fn,flag] of [['dispatch',dispatch,'__rkDispatchInProgress'],['return',ret,'__rkReturnInProgress']]) {
+    assert.ok(fn.includes('if(globalThis.'+flag+')'),name+' duplicate guard missing');
+    assert.ok(fn.includes('globalThis.'+flag+'=true'),name+' lock acquisition missing');
+    assert.ok(fn.includes('finally { globalThis.'+flag+'=false; }'),name+' lock release missing');
+  }
+});
+
+test('missing recovery preserves prior recovery history and blocks duplicate submissions', () => {
+  const recovery=html.slice(html.indexOf('async function recoverMissingItem(recordId,rowIndex)'),html.indexOf('async function completeManualReturnProcess()'));
+  assert.ok(recovery.includes('globalThis.__rkMissingRecoveryInProgress'));
+  assert.ok(recovery.includes('finally { globalThis.__rkMissingRecoveryInProgress=false; }'));
+  assert.ok(html.includes('recoveryEntries:Array.isArray(existing?.recoveryEntries)?existing.recoveryEntries:[]'));
+  assert.ok(recovery.includes('m.recoveryEntries.push({qty,date:recoveryDate,createdAt:recoveredAt})'));
 });
 
 test('dispatch decrements admin stock by the actual dispatched quantity', async () => {
@@ -515,7 +611,9 @@ test('customer front page exposes booking only and keeps admin workspace separat
 });
 
 test('customer item selection uses configured stock rent and safely renders item names', () => {
-  assert.ok(html.includes('Number(stock.setRent)>0?Number(stock.setRent)'));
+  assert.ok(html.includes('function getItemRentRate(stock, quantity)'));
+  assert.ok(html.includes('getItemRentRate(stock,combinedQty)'));
+  assert.ok(html.includes('qty>=3 && bulk>0 ? bulk : (single>0 ? single : bulk)'));
   assert.ok(html.includes('missingCharge:Math.max(0,Number(stock.missingCharge)||0)'));
   assert.ok(!html.includes('rentPrice: 500 });'));
   assert.ok(html.includes('escapeHtml(i.name)'));
@@ -648,7 +746,7 @@ test('payment receipt and verification alerts are sent only after payment state 
   assert.ok(sender.includes("['payment','payment-verified','payment-rejected'].includes(type)"));
   assert.ok(sender.includes('UTR सत्यापन लंबित है'));
   const save=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment');
-  assert.ok(save.includes("if(!safeSetStorage(key,ledger))return"));
+  assert.ok(save.includes("safeSetStorageBatch([[key,ledger],['softwareBookings',rows]])"));
   assert.ok(save.includes("sendWhatsAppMessage(b.id,'payment')"));
   const verify=sourceBetween('async function verifyLedgerPayment', 'function printReturnSlip');
   assert.ok(verify.includes("verified?'payment-verified':'payment-rejected'"));
@@ -1385,6 +1483,32 @@ test('missing item recovery restores stock and reduces missing liability exactly
   assert.equal(store.missingItemsDatabase[0].resolved,false);
   assert.equal(store.softwareBookings[0].returnEntries[0].mode,'MISSING_RECOVERY');
 });
+test('missing recovery uses the exact item index and records the real recovery date for rental accounting', async () => {
+  const store={
+    missingItemsDatabase:[{id:'m-1',bookingId:92,itemIndex:1,item:'Chair',source:'admin',qty:2,resolved:false}],
+    softwareBookings:[{id:92,source:'admin',items:[
+      {name:'Chair',qty:2,returnedQty:2,missingQty:0,source:'admin'},
+      {name:'Chair',qty:2,returnedQty:0,missingQty:2,source:'admin'}
+    ],returnEntries:[]}],
+    realStockDatabase:[{name:'Chair',qty:5}],thirdPartyDatabase:[]
+  };
+  const input={value:'1'};
+  const context={
+    Math,Number,String,Array,Date,JSON,console,activeReturnBookingId:92,
+    document:{getElementById:id=>id==='recoverMissingQty_0'?input:{value:'92'}},
+    safeGetStorage:key=>store[key],
+    safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},
+    loadAllFirebaseData:()=>{},loadReturnBookingForCounting:()=>{},showActionMessage:()=>{}
+  };
+  const code=sourceBetween('async function recoverMissingItem(recordId,rowIndex)', 'async function completeManualReturnProcess');
+  assert.match(code,/const itemIndex=hasItemIndex\?Number\(m\.itemIndex\):matches\[0\]\.index/);
+  assert.match(code,/String\(it\.name\)!==String\(m\.item\)/);
+  assert.match(code,/m\.recoveryEntries\.push\(\{qty,date:recoveryDate,createdAt:recoveredAt\}\)/);
+  assert.match(code,/mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
+  assert.match(code,/row\.qty=currentStockQty\+qty/);
+  assert.match(code,/syncCustomerBookingWorkflow\(b,false\)/);
+});
+
 test('legacy missing recovery refuses ambiguous duplicate item identities', async () => {
   const store={missingItemsDatabase:[{id:'old',bookingId:90,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:90,items:[{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'},{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
   let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
@@ -1533,6 +1657,173 @@ test('Firebase Realtime Database rules fail closed and allow only explicitly all
   assert.equal(rules.erp_admins['$uid']['.write'],false);
 });
 
+
+test('all inline JavaScript in the deployable HTML parses successfully', () => {
+  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
+  const executable = scripts.filter(([, attrs]) => {
+    if (/\bsrc\s*=/.test(attrs)) return false;
+    const type = (attrs.match(/\btype\s*=\s*["']([^"']+)["']/i) || [,''])[1].toLowerCase();
+    return !type || ['text/javascript','application/javascript','module'].includes(type);
+  });
+  assert.ok(executable.length > 0, 'expected inline application scripts');
+  for (const [index, match] of executable.entries()) {
+    assert.doesNotThrow(() => new vm.Script(match[2], { filename: 'inline-script-' + index }), 'inline script ' + index + ' must parse');
+  }
+});
+
+
+test('royal print theme is synchronized and covers customer-facing business documents', () => {
+  const path = require('node:path');
+  const cssFiles = [
+    path.join(__dirname, '..', 'rk-reference-theme.css'),
+    path.join(__dirname, '..', 'public', 'rk-reference-theme.css'),
+    path.join(__dirname, '..', 'backend', 'public', 'rk-reference-theme.css')
+  ];
+  const styles = cssFiles.map(file => fs.readFileSync(file, 'utf8'));
+  assert.equal(styles[0], styles[1]);
+  assert.equal(styles[0], styles[2]);
+  assert.match(styles[0], /Royal white-paper print system/);
+  assert.match(styles[0], /#printableSlipArea \.rk-slip th/);
+  assert.match(styles[0], /#printableSlipArea \.rk-slip td/);
+  const dispatch = sourceBetween('function printDispatchSlip(id)', 'function printReturnSlip');
+  assert.doesNotMatch(dispatch, /remark/i, 'Dispatch Slip must not contain a Remark field');
+  assert.ok(html.includes('<th>मिसिंग मात्रा</th>'), 'Return Slip must retain the Missing Quantity column');
+});
+
+
+test('Royal admin dashboard KPIs are read-only, data-backed and quick actions reuse existing tabs', () => {
+  for (const id of ['rkKpiBookings','rkKpiPending','rkKpiDispatch','rkKpiReturns','rkKpiStock','rkKpiVendor']) {
+    assert.ok(html.includes('id="' + id + '"'));
+  }
+  const metrics=sourceBetween('function renderRoyalDashboardMetrics()', 'function renderDashboardLineGraph()');
+  assert.match(metrics,/safeGetStorage\('softwareBookings'/);
+  assert.match(metrics,/safeGetStorage\('realStockDatabase'/);
+  assert.match(metrics,/safeGetStorage\('thirdPartyDatabase'/);
+  assert.doesNotMatch(metrics,/safeSetStorage|safeSetStorageBatch|\.set\(/);
+  assert.ok(html.includes("window.rkQuickNav=function(tabId)"));
+  assert.ok(html.includes("switchTab(tabId,menu||null)"));
+  assert.ok(html.includes("if(tabId==='dashboard' && typeof renderRoyalDashboardMetrics==='function')"));
+  const path=require('node:path');
+  const css=fs.readFileSync(path.join(__dirname,'..','rk-reference-theme.css'),'utf8');
+  assert.match(css,/\.rk-admin-kpi-grid/);
+  assert.match(css,/\.rk-admin-quick-actions/);
+});
+
+
+test('Design Manager exposes all six reference-collage themes without touching ERP data', () => {
+  const themeNames=['royal','light','neon','emerald','purple','ocean'];
+  for (const name of themeNames) {
+    assert.ok(html.includes('data-rk-theme="'+name+'"'), 'Missing Design Manager option: '+name);
+  }
+  assert.match(html,/rkDesignPreset/);
+  assert.match(html,/const allowed=\['royal','light','neon','emerald','purple','ocean'\]/);
+  assert.match(html,/localStorage\.setItem\('rkDesignPreset',name\)/);
+  assert.match(html,/rk-theme-light','rk-theme-neon','rk-theme-emerald','rk-theme-purple','rk-theme-ocean/);
+  const css=fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8');
+  for (const name of ['light','neon','emerald','purple','ocean']) {
+    assert.ok(css.includes('rk-theme-'+name), 'Missing CSS preset: '+name);
+  }
+  assert.match(css,/\.rk-design-options/);
+});
+
+
+
+test('quantity-based item rent uses Single Rent for 1-2 pieces and Set/Bulk Rent for 3+ pieces', () => {
+  assert.match(html,/function getItemRentRate\(stock, quantity\)/);
+  assert.match(html,/qty>=3 && bulk>0 \? bulk : \(single>0 \? single : bulk\)/);
+  assert.match(html,/getItemRentRate\(stock,combinedQty\)/);
+  assert.match(backend,/qty>=3&&setRent>0\?setRent:\(singleRent>0\?singleRent:setRent\)/);
+  assert.match(html,/rateMode:qty>=3\?'set':'single'/);
+  assert.match(html,/getItemRentRate\(row,qty\)/);
+  assert.match(html,/getItemRentRate\(row,items\[itemIndex\]\.qty\)/);
+});
+
+
+test('vendor ledger separates customer rent, vendor rent cost, missing liability, and payments', () => {
+  const code=sourceBetween('function loadThirdPartyLedger()', '        // Removed an orphaned speech-recognition fragment');
+  const entry={itemIndex:0,itemName:'Chair',qty:3,date:'2026-11-01',unitRent:40,vendorRentRate:20,source:'third-party',partyName:'Vendor A'};
+  const booking={id:7,date:'2026-11-01',items:[{name:'Chair',qty:3,missingQty:2,vendorMissingCost:25,source:'third-party',partyName:'Vendor A'}],dispatchEntries:[entry]};
+  const elements={partyWiseTablesContainer:{innerHTML:''},thirdPartyPaymentBody:{innerHTML:''},tpPaymentParty:{value:''}};
+  const context={
+    safeGetStorage:key=>({
+      thirdPartyDatabase:[{partyName:'Vendor A',item:'Chair',qty:4,purchasedQty:6,costPrice:20,chargePrice:40}],
+      thirdPartyPayments:[{id:'p1',partyName:'Vendor A',amount:30,date:'2026-11-03',method:'Cash'}],
+      softwareBookings:[booking]
+    })[key]||[],
+    getDispatchEntryRentalSlices:()=>[{entry,qty:3,endDate:'2026-11-03'}],
+    calculateRentalDays:()=>2,escapeHtml:String,
+    document:{getElementById:id=>elements[id]||null},
+    Number,String,Math,Array,Set,Date
+  };
+  vm.runInNewContext(code+'\nloadThirdPartyLedger()',context);
+  const html=elements.partyWiseTablesContainer.innerHTML;
+  assert.ok(elements.thirdPartyPaymentBody.innerHTML.includes('Cash'),'vendor payment history should render separately');
+  for(const amount of ['₹120.00','₹50.00','₹170.00','₹240.00','₹70.00','₹30.00','₹140.00']) {
+    assert.ok(html.includes(amount),'vendor ledger should display '+amount);
+  }
+});
+
+test('customer booking tracker looks up status through the mobile-verified public backend endpoint', () => {
+  for (const id of ['rkTrackBookingId','rkTrackMobile','rkBookingTrackResult']) {
+    assert.ok(html.includes('id="'+id+'"'));
+  }
+  const tracker=sourceBetween('async function lookupCustomerBookingStatus()', 'async function saveCustomerBooking(event)');
+  assert.match(tracker,/async function lookupCustomerBookingStatus\(\)\s*\{\s*const id=/);
+  assert.match(tracker,/\n\s*const mobile=/);
+  assert.match(tracker,/api\/customer\/bookings\//);
+  assert.match(tracker,/status\?mobile=/);
+  assert.match(tracker,/escapeHtml\(b\.id\)/);
+  assert.match(tracker,/escapeHtml\(item\.name/);
+  assert.match(tracker,/escapeHtml\(advanceLabel\)/);
+  assert.match(tracker,/cache:'no-store'/);
+  assert.match(tracker,/b\.dispatchEntryCount/);
+  assert.match(tracker,/b\.returnEntryCount/);
+  assert.match(fs.readFileSync(require('node:path').join(__dirname,'..','rk-reference-theme.css'),'utf8'),/rk-booking-tracker/);
+});
+
+
+test('customer cart combines repeated item additions before choosing single or bulk rent', () => {
+  const start=html.indexOf('function getItemRentRate(stock, quantity)');
+  const rateEnd=html.indexOf('function addSelectedItemToCart()',start);
+  const cartStart=rateEnd;
+  const cartEnd=html.indexOf('function renderCustomerCart()',cartStart);
+  assert.ok(start>=0&&rateEnd>start&&cartEnd>cartStart);
+  const helper=html.slice(start,rateEnd);
+  const fn=html.slice(cartStart,cartEnd);
+  const stock={name:'Chair',qty:20,singleRent:10,setRent:7,missingCharge:50};
+  const cart=[{name:'Chair',qty:1,rentPrice:10,rateMode:'single',source:'admin'}];
+  const qtyInput={value:'2'};
+  const select={value:'Chair'};
+  const context={
+    Math,Number,String,Array,
+    publicCustomerStockCatalog:[stock],customerCart:cart,
+    document:{getElementById:id=>id==='portalStockSelect'?select:id==='portalItemQty'?qtyInput:null},
+    showActionMessage:()=>{},renderCustomerCart:()=>{}
+  };
+  vm.runInNewContext(helper+'\n'+fn+'\naddSelectedItemToCart();',context);
+  assert.equal(cart.length,1);
+  assert.equal(cart[0].qty,3);
+  assert.equal(cart[0].rentPrice,7);
+  assert.equal(cart[0].rateMode,'set');
+  assert.equal(qtyInput.value,'');
+});
+
+
+
+test('missing recovery validates the outstanding balance and updates stock plus the rent timeline atomically', () => {
+  const code = sourceBetween('async function recoverMissingItem(', 'async function completeManualReturnProcess()');
+  assert.match(code, /qty<1\|\|qty>remaining/);
+  assert.match(code, /String\(it\.name\)!==String\(m\.item\)/);
+  assert.match(code, /it\.missingQty=Math\.max\(0,\(Number\(it\.missingQty\)\|\|0\)-qty\)/);
+  assert.match(code, /it\.returnedQty=\(Number\(it\.returnedQty\)\|\|0\)\+qty/);
+  assert.match(code, /m\.recoveryEntries\.push\(\{qty,date:recoveryDate/);
+  assert.match(code, /mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
+  assert.match(code, /row\.qty=currentStockQty\+qty/);
+  assert.match(code, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+});
+
+
+
 test('dispatch refuses fractional existing stock without saving', async () => {
   const store={softwareBookings:[{id:401,status:'Confirmed',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:1,rentPrice:100,source:'admin'}],dispatchEntries:[]}],realStockDatabase:[{name:'Chair',qty:1.5}],thirdPartyDatabase:[]};
   let writes=0;
@@ -1592,4 +1883,19 @@ test('dispatch aggregates duplicate vendor booking rows against the same vendor 
   const code=sourceBetween('async function completeDispatch(id)','function printDispatchSlip');
   vm.runInNewContext(code+'\nresult=completeDispatch(405);',context);await context.result;
   assert.equal(writes,0);assert.equal(store.thirdPartyDatabase[0].qty,4);assert.equal(store.softwareBookings[0].dispatchEntries.length,0);
+});
+
+test('legacy missing recovery refuses fractional or malformed source stock without changing ledgers', async () => {
+  for (const invalid of [1.5, '', 'bad', null]) {
+    const store={missingItemsDatabase:[{id:'legacy-'+String(invalid),bookingId:501,itemIndex:0,item:'Chair',source:'admin',qty:1,resolved:false}],softwareBookings:[{id:501,items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}],returnEntries:[]}],realStockDatabase:[{name:'Chair',qty:invalid}],thirdPartyDatabase:[]};
+    let writes=0;
+    const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:()=>{}};
+    const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
+    vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("legacy-'+String(invalid)+'");',context);
+    await context.result;
+    assert.equal(writes,0,'legacy missing recovery must reject '+String(invalid));
+    assert.equal(store.realStockDatabase[0].qty,invalid);
+    assert.equal(store.missingItemsDatabase[0].qty,1);
+    assert.equal(store.softwareBookings[0].items[0].returnedQty,1);
+  }
 });

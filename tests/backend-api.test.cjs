@@ -424,6 +424,18 @@ test('customer booking rejects impossible calendar dates instead of accepting re
 });
 
 
+
+
+test('unlisted Origin does not turn a same-origin API request into a server error', async () => {
+  const response = await request('/api/customer/bookings', {
+    method: 'POST',
+    headers: { Origin: baseUrl },
+    body: JSON.stringify({ name: 'Origin Test', items: [] })
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
+});
+
 test('CORS preflight permits the admin CRUD methods used by the frontend', async () => {
   for (const method of ['PUT', 'PATCH', 'DELETE']) {
     const response = await fetch(baseUrl + '/api/customer/bookings/123', {
@@ -463,4 +475,27 @@ test('frontend Content Security Policy permits only the required inline legacy U
   assert.match(csp, /connect-src[^;]*wss:\/\/\*\.firebaseio\.com/);
   assert.match(csp, /object-src 'none'/);
   assert.match(csp, /frame-ancestors 'self'/);
+});
+
+
+test('customer and admin royal theme assets are served from the production static root', async () => {
+  const html = await request('/');
+  assert.equal(html.status, 200);
+  const markup = await html.text();
+  assert.match(markup, /rk-reference-theme\.css\?v=5/);
+  assert.match(markup, /applyRkDesign/);
+  assert.match(markup, /rkDesignPreset/);
+
+  const theme = await request('/rk-reference-theme.css?v=5');
+  assert.equal(theme.status, 200);
+  assert.match(theme.headers.get('content-type') || '', /text\/css/i);
+  const css = await theme.text();
+  assert.match(css, /#customerFirstPortal/);
+  assert.match(css, /#adminPanel/);
+  assert.match(css, /rk-theme-purple/);
+
+  const hero = await request('/bartan-hero.svg');
+  assert.equal(hero.status, 200);
+  assert.match(hero.headers.get('content-type') || '', /image\/svg\+xml/i);
+  assert.match(await hero.text(), /<svg[\s>]/i);
 });
