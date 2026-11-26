@@ -2854,6 +2854,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(tbody) {
                 tbody.innerHTML = bookings.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई बकाया नहीं</td></tr>` : bookings.map(b => {
                     let totalRent = calculateBookingTotalRent(b);
+            const invoiceRentRows=(Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length)
+                ?getDispatchEntryRentalSlices(b).map(slice=>{const e=slice.entry,item=b.items?.[Number(e.itemIndex)]||{};return {name:e.itemName||item.name||'सामान',qty:slice.qty,rate:Number(e.unitRent??item.rentPrice??500),date:e.date||b.date,endDate:slice.endDate};})
+                :(b.items||[]).map(item=>({name:item.name,qty:Number(item.qty)||0,rate:Number(item.rentPrice??500),date:b.date,endDate:b.actualReturnDate||b.returnDate}));
                     let paid = getBookingPaidAmount(b);
                     let due = Math.max(0, totalRent - paid);
                     return `<tr>
@@ -2993,7 +2996,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     <p><b>इवेंट:</b> ${escapeHtml(b.eventType)} | <b>दिनांक:</b> ${escapeHtml(b.date)} से ${escapeHtml(b.returnDate)}</p>
                     <table style="width:100%; border-collapse:collapse; margin-top:10px;" border="1">
                         <thead><tr style="background:#edf2f7;"><th>सामान</th><th>मात्रा</th><th>Dispatch तारीख → Return तारीख / दिन</th><th>कुल किराया</th></tr></thead>
-                        <tbody>${(Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length?b.dispatchEntries.map(e=>({name:e.itemName||b.items?.[Number(e.itemIndex)]?.name||'सामान',qty:Number(e.qty)||0,rate:Number(e.unitRent??b.items?.[Number(e.itemIndex)]?.rentPrice??500),date:e.date||b.date})):((b.items||[]).map(i=>({name:i.name,qty:Number(i.qty)||0,rate:Number(i.rentPrice??500),date:b.date})))).map(e=>`<tr><td>${escapeHtml(e.name)}</td><td>${e.qty}</td><td>${escapeHtml(e.date)} → ${escapeHtml(b.actualReturnDate||b.returnDate)} (${calculateRentalDays(e.date,b.actualReturnDate||b.returnDate)} दिन)</td><td>₹${e.qty*e.rate*calculateRentalDays(e.date,b.actualReturnDate||b.returnDate)}</td></tr>`).join('')}</tbody>
+                        <tbody>\${invoiceRentRows.map(e=>{const days=calculateRentalDays(e.date,e.endDate);return \`<tr><td>\${escapeHtml(e.name)}</td><td>\${e.qty}</td><td>\${escapeHtml(e.date)} → \${escapeHtml(e.endDate)} (\${days} दिन)</td><td>₹\${e.qty*e.rate*days}</td></tr>\`;}).join('')}</tbody>
                     </table>
                     ${(b.items||[]).some(i=>Math.max(0,Number(i.missingQty)||0)>0)?`<section style="margin-top:12px;border:1px solid #dc2626;border-radius:8px;padding:10px;background:#fff7f7"><h3 style="color:#991b1b;margin:0 0 8px">मिसिंग सामान की अलग सूची (केवल मात्रा)</h3><table style="width:100%;border-collapse:collapse" border="1"><thead><tr><th>सामान</th><th>मिसिंग मात्रा</th></tr></thead><tbody>${(b.items||[]).filter(i=>Math.max(0,Number(i.missingQty)||0)>0).map(i=>`<tr><td>${escapeHtml(i.name)}</td><td>${Math.max(0,Number(i.missingQty)||0)}</td></tr>`).join('')}</tbody></table></section>`:''}
                     <div style="margin-top:10px;text-align:right"><p>किराया: ₹${Math.max(0,totalRent-(Number(b.otherCharges)||0)+(Number(b.discountAmount)||0)).toFixed(2)}</p><p>मिसिंग सामान: केवल मात्रा की सूची (कोई शुल्क नहीं)</p><p>अन्य चार्ज: ₹${(Number(b.otherCharges)||0).toFixed(2)}</p><p>डिस्काउंट: −₹${(Number(b.discountAmount)||0).toFixed(2)}</p><h3 style="color:#2b6cb0">कुल देय राशि: ₹${totalRent.toFixed(2)}</h3><p>पहले जमा: ₹${getBookingPaidAmount(b).toFixed(2)} · बाकी: ₹${Math.max(0,totalRent-getBookingPaidAmount(b)).toFixed(2)}</p></div>
