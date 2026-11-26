@@ -3060,7 +3060,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             updatePaymentTotals();loadPaymentLedgerTable();
             showActionMessage(v.online>0?'Cash जमा हुआ; Online UTR सत्यापन लंबित है':'Cash भुगतान सेव हुआ','success');
             if(b.mob)sendWhatsAppMessage(b.id,'payment');
-        }
             } finally { globalThis.__rkPaymentInProgress=false; }
         }
         async function verifyLedgerPayment(recordId,verified){
@@ -3091,7 +3090,6 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 showActionMessage(verified?'Online भुगतान सत्यापित और जमा राशि में शामिल हुआ':'Online भुगतान अस्वीकार हुआ; जमा राशि में शामिल नहीं है','success');
                 const alertBooking=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(p.bookingId));if(alertBooking?.mob)sendWhatsAppMessage(alertBooking.id,verified?'payment-verified':'payment-rejected');
             }catch(error){showActionMessage('Online भुगतान सत्यापन विफल: '+error.message,'error');}
-        }
             } finally { globalThis.__rkPaymentVerifyInProgress=false; }
         }
         function printReturnSlip(){
