@@ -1275,3 +1275,33 @@ test('vendor partial return adds only received quantity back to the matching ven
   assert.equal(store.softwareBookings[0].items[0].missingQty||0,0);
   assert.equal(store.softwareBookings[0].status,'Partially Returned');
 });
+
+
+test('barcode camera stops a stream that resolves after the user closes the scanner', async () => {
+  const code=sourceBetween('async function startBarcodeCameraScan(targetInputId)', 'async function runOcrScan(event)');
+  let resolveCamera,stopped=0;
+  const permission=new Promise(resolve=>{resolveCamera=resolve;});
+  const modal={style:{display:'none'}};
+  const video={srcObject:null,readyState:0,play:async()=>{}};
+  class MockBarcodeDetector { static async getSupportedFormats(){return ['code_128'];} constructor(){this.detect=async()=>[];} }
+  const context={
+    navigator:{mediaDevices:{getUserMedia:()=>permission}},
+    window:{BarcodeDetector:MockBarcodeDetector},
+    BarcodeDetector:MockBarcodeDetector,
+    document:{getElementById:id=>id==='barcodeCameraModal'?modal:id==='barcodeCameraVideo'?video:null},
+    barcodeCameraStream:null,barcodeCameraFrame:0,barcodeCameraActive:false,barcodeCameraTargetId:null,barcodeDetectorInstance:null,
+    showActionMessage:()=>{},requestAnimationFrame:()=>1,cancelAnimationFrame:()=>{},String,Array,Promise,Error,console
+  };
+  vm.runInNewContext(code+'\nresult=startBarcodeCameraScan("dispatchSearchId");',context);
+  const starting=context.result;
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(context.barcodeCameraActive,true);
+  context.stopBarcodeCameraScan();
+  resolveCamera({getTracks:()=>[{stop(){stopped++;}}]});
+  await starting;
+  assert.equal(stopped,1);
+  assert.equal(context.barcodeCameraActive,false);
+  assert.equal(context.barcodeCameraStream,null);
+  assert.equal(video.srcObject,null);
+  assert.equal(modal.style.display,'none');
+});
