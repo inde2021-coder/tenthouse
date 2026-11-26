@@ -3023,6 +3023,9 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         ['paymentTotalAmount','paymentAlreadyPaid','paymentCashAmount','paymentOnlineAmount'].forEach(id=>document.addEventListener('input',e=>{if(e.target&&e.target.id===id)updatePaymentTotals()}));
         function generatePaymentQr(){const b=currentPaymentBooking(),settings=safeGetStorage('softwareSettings',{}),v=updatePaymentTotals(),amount=v.online;if(!b){showActionMessage('पहले सही Booking ID डालें','error');return}if(amount<=0){showActionMessage('Online amount शून्य से अधिक होना चाहिए','error');return}if(!settings.upiId){showActionMessage('Settings में UPI ID भरें','error');return}if(!window.QRious){showActionMessage('QR लाइब्रेरी लोड नहीं हुई','error');return}const uri='upi://pay?pa='+encodeURIComponent(settings.upiId)+'&pn='+encodeURIComponent(settings.businessName||'Radha Krishna Tent House')+'&am='+amount.toFixed(2)+'&cu=INR&tn='+encodeURIComponent('Booking '+b.id);new QRious({element:document.getElementById('paymentQrCanvas'),value:uri,size:240,level:'H'});document.getElementById('paymentQrCaption').textContent='बुकिंग #'+b.id+' · ₹'+amount.toFixed(2);document.getElementById('paymentQrArea').style.display='block';}
         async function savePaymentEntry(){
+            if(globalThis.__rkPaymentInProgress){showActionMessage('भुगतान पहले से सेव हो रहा है; कृपया प्रतीक्षा करें','warning');return;}
+            globalThis.__rkPaymentInProgress=true;
+            try {
             const b=currentPaymentBooking(),v=updatePaymentTotals(),utr=(document.getElementById('paymentUtr')?.value||'').trim(),settings=safeGetStorage('softwareSettings',{});
             if(!b){showActionMessage('Booking ID सही नहीं है','error');return;}
             if(!v.valid||v.totalP<=0||v.oldP<0||v.cashP<0||v.onlineP<0||v.paidP>v.totalP){showActionMessage('राशि सही भरें; कुल जमा बिल से अधिक नहीं हो सकता','error');return;}
@@ -3058,7 +3061,12 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             showActionMessage(v.online>0?'Cash जमा हुआ; Online UTR सत्यापन लंबित है':'Cash भुगतान सेव हुआ','success');
             if(b.mob)sendWhatsAppMessage(b.id,'payment');
         }
+            } finally { globalThis.__rkPaymentInProgress=false; }
+        }
         async function verifyLedgerPayment(recordId,verified){
+            if(globalThis.__rkPaymentVerifyInProgress){showActionMessage('UTR सत्यापन पहले से चल रहा है; कृपया प्रतीक्षा करें','warning');return;}
+            globalThis.__rkPaymentVerifyInProgress=true;
+            try {
             const ledger=safeGetStorage('rkPaymentLedger',[]),p=ledger.find(x=>String(x.id)===String(recordId));if(!p||p.onlineStatus!=='pending-verification')return;
             if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस Online भुगतान को अस्वीकार करना है?'))return;
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
@@ -3083,6 +3091,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 showActionMessage(verified?'Online भुगतान सत्यापित और जमा राशि में शामिल हुआ':'Online भुगतान अस्वीकार हुआ; जमा राशि में शामिल नहीं है','success');
                 const alertBooking=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(p.bookingId));if(alertBooking?.mob)sendWhatsAppMessage(alertBooking.id,verified?'payment-verified':'payment-rejected');
             }catch(error){showActionMessage('Online भुगतान सत्यापन विफल: '+error.message,'error');}
+        }
+            } finally { globalThis.__rkPaymentVerifyInProgress=false; }
         }
         function printReturnSlip(){
             const id=activeReturnBookingId??(document.getElementById('returnBarcodeInput')?.value||'').trim();
