@@ -236,3 +236,12 @@ Main पर मिले root causes:
 - पुराना divergent duplicate PR #9 बंद किया गया; tested latest-main PR #11 merged है।
 - Latest main head: `d6dc0dfd4afe48f598de1982268d4a641a0f634b`।
 - Vercel deployment अब भी नहीं किया गया।
+
+
+## Purchase / Stock Edit एवं Expense Date Validation — 26 नवंबर 2026, 09:17 IST
+- PR #12 merged: `40e0bccffddf7ffac4e68b18edd73d96d1baa48d`। Admin stock edit, purchase entry और purchase edit अब whole-number quantities enforce करते हैं। Purchase rent/missing rates negative या non-numeric नहीं हो सकतीं।
+- Income/Expense edit अब केवल वास्तविक calendar dates स्वीकार करता है; `2026-02-30` जैसी impossible date reject होती है।
+- तीनों frontend shells byte-identical रखे गए।
+- PR branch CI run `45750931511`: 111/111 PASS; merge के बाद main CI run `45751023708`: **111/111 PASS, 0 FAIL**।
+- Latest main head: `40e0bccffddf7ffac4e68b18edd73d96d1baa48d`।
+- Production deployment नहीं किया गया।
