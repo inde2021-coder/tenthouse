@@ -1228,6 +1228,16 @@ test('purchase deletion atomically removes the record and its full available sto
 });
 
 
+test('vendor ledger shows advance credit when vendor payments exceed recorded liability', () => {
+  const start = html.indexOf('function loadThirdPartyLedger()');
+  const end = html.indexOf('// Removed an orphaned speech-recognition fragment', start);
+  const code = html.slice(start, end);
+  assert.match(code, /vendorAdvance=Math\.max\(0,paid-vendorCost\)/);
+  assert.match(code, /बाकी देय:/);
+  assert.match(code, /वेंडर के पास एडवांस क्रेडिट:/);
+  assert.match(html, /const due=Math\.max\(0,vendorCost-paid\),vendorAdvance=Math\.max\(0,paid-vendorCost\)/);
+});
+
 test('vendor dispatch decrements only the selected vendor stock and records vendor liability rates', async () => {
   const store={
     softwareBookings:[{id:88,status:'Confirmed',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:3,rentPrice:100,source:'third-party',partyName:'Vendor A',vendorRentRate:10,vendorMissingCost:25}],dispatchEntries:[]}],
