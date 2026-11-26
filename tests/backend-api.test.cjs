@@ -500,3 +500,88 @@ test('customer and admin royal theme assets are served from the production stati
   assert.match(hero.headers.get('content-type') || '', /image\/svg\+xml/i);
   assert.match(await hero.text(), /<svg[\s>]/i);
 });
+
+
+test('AI payment actions require exact Admin confirmation and write attributable audit events', async () => {
+  const deniedProposal = await request('/api/ai/actions/propose', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'payment_verification', paymentId: 'no-auth', verified: true, reason: 'Check payment' })
+  });
+  assert.equal(deniedProposal.status, 401);
+
+  const created = await request('/api/payments/record-utr', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({
+      bookingId: 'ai-action-test-booking',
+      amount: 725,
+      utr: 'AIACTIONUTR12345',
+      method: 'upi',
+      phone: '9876543215'
+    })
+  });
+  assert.equal(created.status, 201);
+  const payment = (await created.json()).payment;
+
+  const proposed = await request('/api/ai/actions/propose', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({
+      type: 'payment_verification',
+      paymentId: payment.id,
+      verified: true,
+      reason: 'Admin ने बैंक मिलान की पुष्टि की'
+    })
+  });
+  assert.equal(proposed.status, 201);
+  const proposalData = await proposed.json();
+  assert.equal(proposalData.proposal.proposedStatus, 'verified');
+  assert.equal(proposalData.confirmationText, 'CONFIRM PAYMENT ' + payment.id);
+
+  const stillPending = await request('/api/payments/pending', { headers: { 'x-admin-token': adminToken } });
+  assert.ok((await stillPending.json()).payments.some(item => item.id === payment.id), 'Proposal alone must not mutate payment state.');
+
+  const wrongConfirmation = await request('/api/ai/actions/' + proposalData.proposal.id + '/confirm', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ confirmationText: 'CONFIRM PAYMENT wrong-id' })
+  });
+  assert.equal(wrongConfirmation.status, 400);
+
+  const confirmed = await request('/api/ai/actions/' + proposalData.proposal.id + '/confirm', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ confirmationText: proposalData.confirmationText })
+  });
+  assert.equal(confirmed.status, 200);
+  assert.equal((await confirmed.json()).status, 'verified');
+
+  const replay = await request('/api/ai/actions/' + proposalData.proposal.id + '/confirm', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ confirmationText: proposalData.confirmationText })
+  });
+  assert.equal(replay.status, 409);
+
+  const deniedAudit = await request('/api/audit-log');
+  assert.equal(deniedAudit.status, 401);
+  const audit = await request('/api/audit-log?limit=200', { headers: { 'x-admin-token': adminToken } });
+  assert.equal(audit.status, 200);
+  const events = (await audit.json()).events.filter(event => event.entityId === payment.id);
+  assert.ok(events.some(event => event.action === 'ai_action_proposed' && event.phase === 'proposed'));
+  assert.ok(events.some(event => event.action === 'ai_action_confirmed' && event.phase === 'started'));
+  assert.ok(events.some(event => event.action === 'ai_action_succeeded' && event.phase === 'completed'));
+  const actor = events.find(event => event.action === 'ai_action_succeeded');
+  assert.equal(actor.actorType, 'admin-api-token');
+  assert.match(actor.actorId, /^[a-f0-9]{16}$/);
+  assert.equal(JSON.stringify(events).includes(adminToken), false);
+});
+
+test('AI actions reject unknown mutation types and malformed proposals', async () => {
+  const response = await request('/api/ai/actions/propose', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ type: 'delete_booking', bookingId: '1234567890123', reason: 'Delete this' })
+  });
+  assert.equal(response.status, 400);
+});
