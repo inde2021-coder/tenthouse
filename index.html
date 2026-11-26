@@ -1319,7 +1319,17 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         try {
                             for (const [localKey, cloudKey] of Object.entries(CLOUD_KEY_MAP)) {
                                 if (Object.prototype.hasOwnProperty.call(cloudData, cloudKey) && cloudData[cloudKey] !== null) {
-                                    localStorage.setItem(localKey, JSON.stringify(cloudData[cloudKey]));
+                                    if (localKey === 'softwareSettings') {
+                                        const existingLocal = safeGetStorage('softwareSettings', {});
+                                        const sanitizedRemote = sanitizeCloudSettings(cloudData[cloudKey]);
+                                        for (const secretKey of Object.keys(existingLocal || {})) {
+                                            if (/(token|secret|password|private.?key|api.?key|gateway.?key|access.?key)/i.test(secretKey)) sanitizedRemote[secretKey] = existingLocal[secretKey];
+                                        }
+                                        localStorage.setItem(localKey, JSON.stringify(sanitizedRemote));
+                                        if (JSON.stringify(sanitizedRemote) !== JSON.stringify(cloudData[cloudKey])) {
+                                            dbRef.child(cloudKey).set(sanitizeCloudSettings(cloudData[cloudKey])).catch(error => console.warn('Firebase secret cleanup failed', error));
+                                        }
+                                    } else localStorage.setItem(localKey, JSON.stringify(cloudData[cloudKey]));
                                 }
                             }
                         } finally { applyingCloudSnapshot = false; }
@@ -1328,7 +1338,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         for (const [localKey, cloudKey] of Object.entries(CLOUD_KEY_MAP)) {
                             if (!Object.prototype.hasOwnProperty.call(cloudData, cloudKey)) {
                                 const raw = localStorage.getItem(localKey);
-                                if (raw !== null) { try { missing[cloudKey] = JSON.parse(raw); } catch (_) {} }
+                                if (raw !== null) { try { missing[cloudKey] = sanitizeCloudValue(cloudKey, JSON.parse(raw)); } catch (_) {} }
                             }
                         }
                         if (Object.keys(missing).length) {
@@ -1502,16 +1512,28 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);const signedInUser=firebase.auth().currentUser;if(!signedInUser)throw Error('Google लॉगिन पूरा नहीं हुआ।');const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');if(adminGrant.val()!==true){await firebase.auth().signOut();throw Error('इस Google खाते को व्यवस्थापक अनुमति नहीं है। Firebase erp_admins में इस UID की अनुमति जाँचें।');}document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');return true;}catch(error){window.__rkVerifiedAdminToken='';const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
-        // Keep local writes immediate, then mirror each dataset to Firebase for other devices.
+        // Never send credentials or secret material to the shared Firebase settings node.
+        function sanitizeCloudSettings(settings) {
+            const safe = settings && typeof settings === 'object' && !Array.isArray(settings) ? { ...settings } : {};
+            for (const key of Object.keys(safe)) {
+                if (/(token|secret|password|private.?key|api.?key|gateway.?key|access.?key)/i.test(key)) delete safe[key];
+            }
+            return safe;
+        }
+        function sanitizeCloudValue(cloudKey, value) {
+            return cloudKey === 'settings' ? sanitizeCloudSettings(value) : value;
+        }
+        // Keep local writes immediate, then mirror only non-secret datasets to Firebase.
         function syncToCloud(key, value) {
             if (applyingCloudSnapshot) return Promise.resolve(false);
             const cloudKey = CLOUD_KEY_MAP[key];
             if (!cloudKey) return Promise.resolve(false);
-            // Keep the latest value locally and queue it for upload when internet/auth returns.
-            try { const q = safeGetStorage('rkPendingCloudSync', {}); q[cloudKey] = value; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); } catch (_) {}
+            const safeValue = sanitizeCloudValue(cloudKey, value);
+            // Keep the latest sanitized value queued for upload when internet/auth returns.
+            try { const q = safeGetStorage('rkPendingCloudSync', {}); q[cloudKey] = safeValue; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); } catch (_) {}
             if (!firebaseConfig.databaseURL || !navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return Promise.resolve(false);
             if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
-            return dbRef.child(cloudKey).set(value).then(() => {
+            return dbRef.child(cloudKey).set(safeValue).then(() => {
                 const q = safeGetStorage('rkPendingCloudSync', {}); delete q[cloudKey]; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); return true;
             }).catch((error) => { console.error('Firebase write failed:', key, error); showActionMessage('लोकल सेव सुरक्षित है; इंटरनेट/ Firebase अनुमति मिलने पर दोबारा सिंक होगा।','error'); return false; });
         }
@@ -1520,7 +1542,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
             const q = safeGetStorage('rkPendingCloudSync', {});
             for (const [cloudKey, value] of Object.entries(q)) {
-                try { await dbRef.child(cloudKey).set(value); delete q[cloudKey]; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); }
+                try { await dbRef.child(cloudKey).set(sanitizeCloudValue(cloudKey, value)); delete q[cloudKey]; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); }
                 catch (e) { console.warn('Pending sync remains queued', cloudKey, e); break; }
             }
         }
