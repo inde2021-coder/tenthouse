@@ -185,6 +185,50 @@ async function storeCreateIfAbsent(path, value) {
   if (memoryStore.has(path)) return false;
   memoryStore.set(path, value); return true;
 }
+
+async function storeTransitionRecord(path, predicate, update) {
+  if (adminDb) {
+    const result = await adminDb.ref(path).transaction(current => {
+      if (!predicate(current)) return;
+      return update(current);
+    });
+    return result.committed ? result.snapshot.val() : null;
+  }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  const current = memoryStore.get(path);
+  if (!predicate(current)) return null;
+  const next = update(current);
+  memoryStore.set(path, next);
+  return next;
+}
+function auditBookingSummary(booking) {
+  if (!booking || typeof booking !== 'object') return null;
+  return {
+    status: booking.status || null,
+    advancePaymentStatus: booking.advancePaymentStatus || null,
+    advanceAmount: Number(booking.advanceAmount) || 0,
+    totalPaid: Number(booking.totalPaid ?? booking.paidAmt) || 0,
+    dueAmount: Number(booking.dueAmount) || 0,
+    itemCount: Array.isArray(booking.items) ? booking.items.length : 0,
+    dispatchedQty: Array.isArray(booking.dispatchEntries) ? booking.dispatchEntries.reduce((n, row) => n + Math.max(0, Number(row.qty) || 0), 0) : 0,
+    returnedQty: Array.isArray(booking.items) ? booking.items.reduce((n, row) => n + Math.max(0, Number(row.returnedQty) || 0), 0) : 0,
+    missingQty: Array.isArray(booking.items) ? booking.items.reduce((n, row) => n + Math.max(0, Number(row.missingQty) || 0), 0) : 0
+  };
+}
+async function appendAuditEvent({ action, entityType, entityId, phase = 'completed', before = null, after = null, source = 'admin-api', note = '' }) {
+  const id = crypto.randomUUID();
+  const event = {
+    id, action: String(action).slice(0, 80), entityType: String(entityType).slice(0, 60),
+    entityId: String(entityId).slice(0, 100), phase, source,
+    actorType: 'admin-api-token', actorId: null,
+    before: before && typeof before === 'object' ? before : null,
+    after: after && typeof after === 'object' ? after : null,
+    note: String(note || '').slice(0, 300), createdAt: new Date().toISOString()
+  };
+  const created = await storeCreateIfAbsent('erpData/auditLogs/' + id, event);
+  if (!created) throw new Error('Audit event could not be appended.');
+  return event;
+}
 const requireDurableStore = (_req, res, next) => {
   if (!adminDb && isProd) return res.status(503).json({ error: 'Production database is not configured. Set FIREBASE_DATABASE_URL and either FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY before using data APIs.' });
   next();
@@ -979,6 +1023,102 @@ app.post('/api/ai/chat', aiLimiter, authAdmin, async (req,res) => {
     const data = await r.json().catch(()=>({})); if(!r.ok) return res.status(502).json({ error:data?.error?.message || 'AI provider error' });
     return res.json({ reply:data?.choices?.[0]?.message?.content || '' });
   } catch { return res.status(502).json({ error: 'AI provider is unreachable.' }); }
+
+});
+
+// AI actions are two-phase: proposal never mutates ERP data; only an explicit,
+// exact confirmation can execute the narrowly allow-listed transition.
+app.post('/api/ai/actions/propose', aiLimiter, authAdmin, requireDurableStore, async (req, res) => {
+  const parsed = z.object({
+    type: z.literal('customer_booking_status'),
+    bookingId: z.string().regex(/^\\d{10,16}$/),
+    status: z.enum(['Confirmed', 'Rejected']),
+    reason: z.string().trim().min(3).max(300)
+  }).strict().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Invalid or unsupported AI action proposal.', details: parsed.error.flatten() });
+  try {
+    const booking = await storeGet('erpData/customerBookings/' + parsed.data.bookingId);
+    if (!booking) return res.status(404).json({ error: 'Customer booking not found.' });
+    if (booking.status !== 'Pending Approval') return res.status(409).json({ error: 'Only a booking in Pending Approval can be confirmed or rejected by this action.' });
+    const id = crypto.randomUUID(), now = Date.now();
+    const proposal = {
+      id, type: parsed.data.type, bookingId: parsed.data.bookingId,
+      beforeStatus: booking.status, proposedStatus: parsed.data.status,
+      reason: parsed.data.reason, status: 'pending',
+      createdAt: new Date(now).toISOString(), expiresAt: now + 10 * 60_000,
+      source: 'ai', createdBy: 'admin-api-token'
+    };
+    const created = await storeCreateIfAbsent('erpData/aiActionProposals/' + id, proposal);
+    if (!created) return res.status(409).json({ error: 'Could not create a unique action proposal.' });
+    try {
+      await appendAuditEvent({
+        action: 'ai_action_proposed', entityType: 'customer_booking', entityId: parsed.data.bookingId,
+        phase: 'proposed', before: { status: booking.status }, after: { status: parsed.data.status },
+        source: 'ai', note: 'Proposal ' + id + ': ' + parsed.data.reason
+      });
+    } catch (auditError) {
+      await storeDelete('erpData/aiActionProposals/' + id).catch(() => {});
+      throw auditError;
+    }
+    res.status(201).set('Cache-Control', 'no-store').json({
+      ok: true, proposal: { id, type: proposal.type, bookingId: proposal.bookingId, beforeStatus: proposal.beforeStatus, proposedStatus: proposal.proposedStatus, reason: proposal.reason, expiresAt: proposal.expiresAt },
+      confirmationText: 'CONFIRM ' + parsed.data.bookingId,
+      message: 'यह केवल प्रस्ताव है। Booking में कोई बदलाव नहीं हुआ है। लागू करने के लिए Admin को confirmationText ठीक-ठीक भेजना होगा।'
+    });
+  } catch (error) { res.status(503).json({ error: error.message }); }
+});
+app.get('/api/ai/actions/:id', authAdmin, requireDurableStore, async (req, res) => {
+  try {
+    const proposal = await storeGet('erpData/aiActionProposals/' + req.params.id);
+    if (!proposal) return res.status(404).json({ error: 'Action proposal not found.' });
+    res.set('Cache-Control', 'no-store').json({ proposal: {
+      id: proposal.id, type: proposal.type, bookingId: proposal.bookingId,
+      beforeStatus: proposal.beforeStatus, proposedStatus: proposal.proposedStatus,
+      reason: proposal.reason, status: proposal.status, createdAt: proposal.createdAt,
+      expiresAt: proposal.expiresAt, completedAt: proposal.completedAt || null
+    }});
+  } catch (error) { res.status(503).json({ error: error.message }); }
+});
+app.post('/api/ai/actions/:id/confirm', aiLimiter, authAdmin, requireDurableStore, async (req, res) => {
+  const parsed = z.object({ confirmationText: z.string().min(1).max(40) }).strict().safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Exact confirmation text is required.' });
+  const proposalPath = 'erpData/aiActionProposals/' + req.params.id;
+  try {
+    const proposal = await storeGet(proposalPath);
+    if (!proposal) return res.status(404).json({ error: 'Action proposal not found.' });
+    if (parsed.data.confirmationText !== 'CONFIRM ' + proposal.bookingId) return res.status(400).json({ error: 'Confirmation text does not match this booking.' });
+    if (proposal.status !== 'pending' || Number(proposal.expiresAt) <= Date.now()) return res.status(409).json({ error: 'Action proposal is expired or already used.' });
+    const claimed = await storeTransitionRecord(proposalPath,
+      current => !!current && current.status === 'pending' && Number(current.expiresAt) > Date.now(),
+      current => ({ ...current, status: 'executing', executionStartedAt: new Date().toISOString() }));
+    if (!claimed) return res.status(409).json({ error: 'Action proposal was already used, expired, or changed.' });
+    const bookingPath = 'erpData/customerBookings/' + proposal.bookingId;
+    const currentBooking = await storeGet(bookingPath);
+    if (!currentBooking || currentBooking.status !== proposal.beforeStatus) {
+      await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Booking changed after proposal.', completedAt: new Date().toISOString() }));
+      await appendAuditEvent({ action: 'ai_action_failed', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'failed', before: { status: proposal.beforeStatus }, after: { status: currentBooking?.status || 'missing' }, source: 'ai', note: 'Proposal ' + proposal.id + ' became stale.' });
+      return res.status(409).json({ error: 'Booking changed after the proposal. No action was applied.' });
+    }
+    const intent = await appendAuditEvent({ action: 'ai_action_confirmed', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'started', before: { status: currentBooking.status }, after: { status: proposal.proposedStatus }, source: 'ai', note: 'Proposal ' + proposal.id });
+    const updated = await storeTransitionRecord(bookingPath,
+      current => !!current && current.status === proposal.beforeStatus,
+      current => ({ ...current, status: proposal.proposedStatus, updatedAt: new Date().toISOString(), ...(proposal.proposedStatus === 'Confirmed' ? { confirmedAt: new Date().toISOString() } : {}) }));
+    if (!updated) {
+      await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'failed', failureReason: 'Booking changed during confirmation.', completedAt: new Date().toISOString() }));
+      await appendAuditEvent({ action: 'ai_action_failed', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'failed', before: { status: proposal.beforeStatus }, after: null, source: 'ai', note: 'Proposal ' + proposal.id + '; intent ' + intent.id });
+      return res.status(409).json({ error: 'Booking changed during confirmation. No action was applied.' });
+    }
+    await appendAuditEvent({ action: 'ai_action_succeeded', entityType: 'customer_booking', entityId: proposal.bookingId, phase: 'completed', before: { status: proposal.beforeStatus }, after: { status: updated.status }, source: 'ai', note: 'Proposal ' + proposal.id });
+    await storeTransitionRecord(proposalPath, current => current?.status === 'executing', current => ({ ...current, status: 'completed', completedAt: new Date().toISOString() }));
+    res.set('Cache-Control', 'no-store').json({ ok: true, booking: { id: updated.id, status: updated.status }, auditEventId: intent.id, message: 'Action लागू हुआ और Audit Log में दर्ज किया गया।' });
+  } catch (error) { res.status(503).json({ error: error.message }); }
+});
+app.get('/api/audit-log', authAdmin, requireDurableStore, async (req, res) => {
+  const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit || '100', 10) || 100));
+  try {
+    const events = (await storeList('erpData/auditLogs')).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, limit);
+    res.set('Cache-Control', 'no-store').json({ events });
+  } catch (error) { res.status(503).json({ error: error.message }); }
 });
 // Gemini TTS: API key remains on the server; returns generated WAV audio.
 app.post('/api/ai/tts', aiLimiter, authAdmin, async (req, res) => {
