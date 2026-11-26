@@ -2353,7 +2353,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 barcodeCameraTargetId=targetInputId;barcodeCameraActive=true;
                 const modal=document.getElementById('barcodeCameraModal'),video=document.getElementById('barcodeCameraVideo');
                 modal.style.display='flex';
-                barcodeCameraStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+                const acquiredStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+                // The user may close the camera modal while the browser permission prompt is open.
+                // Stop a late-arriving stream instead of leaking an active camera in the background.
+                if(!barcodeCameraActive){acquiredStream.getTracks().forEach(track=>track.stop());return;}
+                barcodeCameraStream=acquiredStream;
                 video.srcObject=barcodeCameraStream;await video.play();
                 const scan=async()=>{
                     if(!barcodeCameraActive)return;
