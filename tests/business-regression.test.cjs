@@ -1207,3 +1207,40 @@ test('daily expense edit and delete do not claim success when persistence fails'
   const remove=edit.slice(edit.indexOf('function deleteIncomeExpense(index)'));
   assert.ok(remove.includes("if(!safeSetStorage('incomeExpenseDatabase',rows))return"));
 });
+
+
+test('purchase edit applies only the quantity delta to stock for the same item', () => {
+  const code=sourceBetween('function editPurchase(index)', 'function deletePurchase');
+  const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:7}]};
+  const answers=['Chair','4','400','A'];let writes=0;
+  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(code+'\\nresult=editPurchase(0);',context);
+  assert.equal(writes,1);assert.equal(store.realStockDatabase[0].qty,6);assert.equal(store.purchaseDatabase[0].qty,4);
+});
+
+test('purchase rename is blocked when old purchased stock has already been used', () => {
+  const code=sourceBetween('function editPurchase(index)', 'function deletePurchase');
+  const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:3}]};
+  const answers=['Table','5','500','A'];let writes=0;
+  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(code+'\\nresult=editPurchase(0);',context);
+  assert.equal(writes,0);assert.equal(store.purchaseDatabase[0].itemName,'Chair');assert.equal(store.realStockDatabase[0].qty,3);
+});
+
+test('purchase deletion is blocked if the full purchased quantity is no longer in stock', () => {
+  const code=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:2}]};
+  let writes=0;
+  const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(code+'\\nresult=deletePurchase(0);',context);
+  assert.equal(writes,0);assert.equal(store.purchaseDatabase.length,1);assert.equal(store.realStockDatabase[0].qty,2);
+});
+
+test('purchase deletion atomically removes the record and its full available stock quantity', () => {
+  const code=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:8}]};
+  let writes=0;
+  const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  vm.runInNewContext(code+'\\nresult=deletePurchase(0);',context);
+  assert.equal(writes,1);assert.equal(store.purchaseDatabase.length,0);assert.equal(store.realStockDatabase[0].qty,3);
+});
