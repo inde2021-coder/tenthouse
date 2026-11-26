@@ -42,6 +42,14 @@ test('Google admin login verifies the signed-in UID grant before revealing admin
   assert.ok(login.includes('await firebase.auth().signOut()'));
 });
 
+test('full backups and restores exclude private settings credentials', () => {
+  const backup=html.slice(html.indexOf('function exportFullBackup()'),html.indexOf('function restoreFullBackup(event)'));
+  const restore=html.slice(html.indexOf('function restoreFullBackup(event)'),html.indexOf('function resetAllSoftwareData()'));
+  assert.match(backup,/sanitizeCloudSettings\(safeGetStorage\(k,\{\}\)\)/);
+  assert.match(restore,/map\(\(\[k,v\]\)=>\[k,k==='softwareSettings'\?sanitizeCloudSettings\(v\):v\]\)/);
+  assert.match(html,/Backup में API Token, Gateway Key और अन्य secrets शामिल नहीं होंगे/);
+});
+
 test('Vercel backend serves the synced frontend and PWA assets from its project root', () => {
   const path = require('node:path');
   const publicDir = path.join(__dirname, '..', 'backend', 'public');
