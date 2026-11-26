@@ -367,6 +367,41 @@ test('payment UTR is admin-authenticated and duplicate UTRs are rejected', async
   assert.equal((await pending.json()).payments.some(item => item.id === payment.id), false);
 });
 
+test('concurrent UPI review requests allow exactly one terminal decision', async () => {
+  const saved = await request('/api/payments/record-utr', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({
+      bookingId: 'concurrent-payment-review',
+      amount: 375,
+      utr: 'RACEUTR123456',
+      method: 'upi',
+      phone: '9876543214'
+    })
+  });
+  assert.equal(saved.status, 201);
+  const payment = (await saved.json()).payment;
+  const decisions = await Promise.all([
+    request('/api/payments/' + payment.id + '/verify', {
+      method: 'POST',
+      headers: { 'x-admin-token': adminToken },
+      body: JSON.stringify({ verified: true, note: 'Matched' })
+    }),
+    request('/api/payments/' + payment.id + '/verify', {
+      method: 'POST',
+      headers: { 'x-admin-token': adminToken },
+      body: JSON.stringify({ verified: false, note: 'Rejected' })
+    })
+  ]);
+  assert.deepEqual(decisions.map(response => response.status).sort(), [200, 409]);
+  const final = await request('/api/payments/' + payment.id + '/verify', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: JSON.stringify({ verified: false })
+  });
+  assert.equal(final.status, 409);
+});
+
 test('customer booking rejects impossible calendar dates instead of accepting regex-shaped dates', async () => {
   const payload = {
     name: 'Invalid Date Test',
