@@ -2422,7 +2422,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const singleRate=!!document.getElementById('dispatchSingleRateToggle')?.checked;
                 const chosenRate=singleRate?Math.max(0,Number(stockItem.singleRent)||0):getItemRentRate(stockItem,qty);
                 b.items.push({ name:itemName, qty, rentPrice:chosenRate>0?chosenRate:500, missingCharge:Math.max(0,Number(stockItem.missingCharge)||0), rateMode:singleRate?'single':(qty>=3?'set':'single'), source:'admin' });
-                safeSetStorage('softwareBookings', bookings);
+                if(!safeSetStorage('softwareBookings', bookings)){showActionMessage('सामान बुकिंग में सेव नहीं हुआ; Dispatch सूची अपडेट नहीं की गई।','error');return;}
                 loadDispatchTable();
                 showActionMessage("सामान आर्डर में जोड़ा गया", "success");
             } else {
@@ -2448,7 +2448,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(b) {
                 if(!b.items) b.items = [];
                 b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),vendorMissingCost:Math.max(0,Number(vendorRow.missingCost??vendorRow.vendorMissingCost)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
-                safeSetStorage('softwareBookings', bookings);
+                if(!safeSetStorage('softwareBookings', bookings)){showActionMessage('वेंडर सामान बुकिंग में सेव नहीं हुआ; Dispatch सूची अपडेट नहीं की गई।','error');return;}
                 loadDispatchTable();
                 showActionMessage("थर्ड-पार्टी सामान डिस्पैच में जोड़ा गया", "success");
             } else {
