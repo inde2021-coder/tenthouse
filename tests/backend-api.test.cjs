@@ -480,7 +480,7 @@ test('customer and admin royal theme assets are served from the production stati
   const css = await theme.text();
   assert.match(css, /#customerFirstPortal/);
   assert.match(css, /#adminPanel/);
-  assert.match(css, /rk-theme-royal-purple/);
+  assert.match(css, /rk-theme-purple/);
 
   const hero = await request('/bartan-hero.svg');
   assert.equal(hero.status, 200);
