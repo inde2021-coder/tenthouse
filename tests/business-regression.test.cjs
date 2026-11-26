@@ -533,11 +533,12 @@ test('CSV stock import rejects invalid quantities and rates instead of inventing
   assert.ok(!code.includes('Number(cols[2]) || 500'));
 });
 
-test('purchase entry rolls back its purchase row when stock persistence fails', () => {
+test('purchase entry saves purchase and stock together through rollback-capable batch storage', () => {
   const code = sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("if(!safeSetStorage('purchaseDatabase',pur))return"));
-  assert.ok(code.includes("if(!safeSetStorage('realStockDatabase',nextStock))"));
-  assert.ok(code.includes("safeSetStorage('purchaseDatabase',previousPurchases)"));
+  assert.ok(code.includes("if(!safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return"));
+  const batch = sourceBetween('function safeSetStorageBatch(entries)', 'function showActionMessage(');
+  assert.ok(batch.includes('const snapshots = new Map()'));
+  assert.ok(batch.includes('for (const [key, previous] of snapshots)'));
 });
 
 test('daily expense form does not clear or claim success when local persistence fails', () => {
@@ -1274,4 +1275,27 @@ test('vendor partial return adds only received quantity back to the matching ven
   assert.equal(store.softwareBookings[0].items[0].returnedQty,2);
   assert.equal(store.softwareBookings[0].items[0].missingQty||0,0);
   assert.equal(store.softwareBookings[0].status,'Partially Returned');
+});
+
+test('purchase entry rejects invalid quantities and amounts before writing', () => {
+  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  for(const [field,values] of Object.entries({purItemQty:['1.5','0','-2','abc',''],purItemPrice:['','-1','abc'],purSingleRent:['-1','abc'],purSetRent:['-1','abc'],purMissingCharge:['-1','abc']})) {
+    for(const value of values) {
+      let writes=0,reset=false;
+      const fields={purItemName:'Chair',purItemQty:'3',purItemPrice:'100',purSingleRent:'10',purSetRent:'20',purMissingCharge:'50',purDate:'2026-11-26',purSupplier:'Vendor'};
+      fields[field]=value;
+      const context={Number,Math,String,Array,Date,document:{getElementById:id=>({value:fields[id]})},safeGetStorage:()=>[],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},event:null};
+      const event={preventDefault(){},target:{reset(){reset=true;}}};context.event=event;
+      vm.runInNewContext(code+'\nresult=savePurchaseEntry(event);',context);
+      assert.equal(writes,0,field+' must reject '+value);assert.equal(reset,false);
+    }
+  }
+});
+test('purchase and stock are persisted through one rollback-capable batch', () => {
+  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]])"));
+});
+test('daily expense edit and delete stop when storage persistence fails', () => {
+  const code=sourceBetween('function editIncomeExpense(index)', 'function loadCustomerList()');
+  assert.equal((code.match(/if\(!safeSetStorage\('incomeExpenseDatabase',rows\)\)return/g)||[]).length,2);
 });
