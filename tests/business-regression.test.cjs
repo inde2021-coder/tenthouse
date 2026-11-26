@@ -1228,6 +1228,19 @@ test('purchase deletion atomically removes the record and its full available sto
 });
 
 
+test('daily income entry confirms income and expense totals ignore invalid ledger rows', () => {
+  const code=sourceBetween('function calculateIncomeExpenseTotals(rows) {','function loadIncomeExpenseTable()');
+  const context={Array,Number,String};
+  const result=vm.runInNewContext(code+';calculateIncomeExpenseTotals([{type:"Income",amount:100},{type:"Expense",amount:25},{type:"income",amount:10},{type:"Expense",amount:-5},{type:"Other",amount:500},{type:"Income",amount:"bad"}])',context);
+  assert.equal(result.income,110);
+  assert.equal(result.expense,25);
+  assert.equal(result.net,85);
+  assert.equal(result.validRows,3);
+  assert.equal(result.ignoredRows,3);
+  const save=sourceBetween('function saveDailyExpense(event) {','function renderDashboardLineGraph()');
+  assert.match(save,/type==='Income'\?'आमदनी दर्ज हुई':'खर्च दर्ज हुआ'/);
+});
+
 test('daily income and expense form records the selected ledger type', () => {
   assert.match(html, /id="expenseType" required/);
   assert.match(html, /option value="Income">आमदनी/);
