@@ -80,5 +80,14 @@
 - Desktop पर दो-column settings grid, mobile पर single-column layout, बेहतर upload cards, recessed dark inputs, collapsible Backend/Backup sections और स्पष्ट save actions जोड़े गए।
 - Root, `public/` और `backend/public/` की तीनों HTML copies byte-identical रखी गईं।
 - Regression test `tests/settings-ui.test.cjs` जोड़ा गया। GitHub Actions run #945 सफल: backend syntax, business regression और JSON validation सहित **141/141 tests PASS**।
-- Direct Vercel deployment API call daily quota (100/day) से रोकी गई, लेकिन GitHub PR integration ने इसी branch/commit का preview स्वतः deploy किया: deployment READY। Live API endpoints को इस session के web client से पढ़ा नहीं जा सका।
+- GitHub PR integration ने branch का preview deploy किया: deployment READY। Live /api/health HTTP 200 है; /api/ready HTTP 503 (persistentDatabaseReady=false) है, क्योंकि इस branch पर Firebase Admin credentials अधूरी हैं।
 - बदलाव Draft PR #40 में हैं; production repository अलग है और इस GitHub connection में उपलब्ध नहीं है।
+
+
+## Production API outage — 26 नवंबर 2026
+- Read-only live check: https://tenthouse2026.vercel.app/api/health और /api/ready दोनों HTTP 500 लौटाते हैं: API initialization failed।
+- Vercel runtime error aggregation: TypeError: app is not a function at /var/task/api/[...path].js:13:12, deployment dpl_FeLVVHBKuZzgqZ48PkwUih3azJvn, commit 91754c406d151c0ed3fb61e2cb31c8a0317873a6।
+- यह production catch-all adapter और Express app export/import के बीच mismatch की ओर संकेत करता है। वास्तविक production source repository inde2021-coder/tenthouse इस GitHub connection में 404/not exposed है; इसलिए audit repository से production code को बदलना सुरक्षित नहीं है।
+- GitHub issue #41 में root-cause evidence और सुरक्षित repair steps दर्ज हैं: https://github.com/inde2021-coder/tenthouse-/issues/41
+- Production पर कोई code change, environment change, deploy, rollback या data write नहीं किया गया। Production repair के लिए सही repository access आवश्यक है।
+- Preview अलग है: /api/health HTTP 200, /api/ready HTTP 503 जब तक Firebase Admin credentials branch-specific Preview environment में नहीं जोड़ी जातीं।
