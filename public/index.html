@@ -2117,8 +2117,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const adminStock=safeGetStorage('realStockDatabase',[]),vendorStock=safeGetStorage('thirdPartyDatabase',[]);
             const previousState={bookings:JSON.parse(JSON.stringify(bookings)),adminStock:JSON.parse(JSON.stringify(adminStock)),vendorStock:JSON.parse(JSON.stringify(vendorStock))};
             const catalog=[
-                ...adminStock.filter(x=>Math.max(0,Number(x.qty)||0)>0).map(x=>({row:x,source:'admin',label:(x.name||'सामान')+' · Admin · उपलब्ध '+Number(x.qty||0)})),
-                ...vendorStock.filter(x=>Math.max(0,Number(x.qty)||0)>0).map(x=>({row:x,source:'third-party',label:(x.item||x.name||'सामान')+' · Vendor '+(x.partyName||'')+' · उपलब्ध '+Number(x.qty||0)}))
+                ...adminStock.filter(x=>Number.isSafeInteger(Number(x.qty))&&Number(x.qty)>0).map(x=>({row:x,source:'admin',label:(x.name||'सामान')+' · Admin · उपलब्ध '+Number(x.qty||0)})),
+                ...vendorStock.filter(x=>Number.isSafeInteger(Number(x.qty))&&Number(x.qty)>0).map(x=>({row:x,source:'third-party',label:(x.item||x.name||'सामान')+' · Vendor '+(x.partyName||'')+' · उपलब्ध '+Number(x.qty||0)}))
             ];
             const dispatchDate = prompt('इस Dispatch की तारीख (YYYY-MM-DD)', new Date().toLocaleDateString('en-CA'));
             if (dispatchDate === null) return;
@@ -2136,7 +2136,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         const rawQty=prompt(name+' की इस बार Dispatch मात्रा (उपलब्ध '+Number(row.qty||0)+')','1');
                         if(rawQty===null)return;
                         const qty=Number(rawQty);
-                        if(!Number.isInteger(qty)||qty<1||qty>Number(row.qty||0)){showActionMessage(name+' की मात्रा उपलब्ध स्टॉक के भीतर पूर्ण संख्या हो','error');return;}
+                        if(!Number.isSafeInteger(qty)||qty<1||qty>Number(row.qty||0)){showActionMessage(name+' की मात्रा उपलब्ध स्टॉक के भीतर पूर्ण संख्या हो','error');return;}
                         let itemIndex=items.findIndex(it=>String(it.name||'').toLowerCase()===name.toLowerCase()&&it.source===selected.source&&String(it.partyName||'')===String(row.partyName||''));
                         if(itemIndex<0){
                             const rent=selected.source==='third-party'?Number(row.customerRent??row.rentPrice??row.singleRent??0):Number(row.singleRent??row.rentPrice??0);
@@ -2147,7 +2147,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     }
                 }
             }
-            const validItems=items.filter(it=>String(it?.name||'').trim()&&Number.isInteger(Number(it?.qty))&&Number(it.qty)>0);
+            const validItems=items.filter(it=>String(it?.name||'').trim()&&Number.isSafeInteger(Number(it?.qty))&&Number(it.qty)>0);
             if(!validItems.length){showActionMessage('Dispatch से पहले Admin या Vendor स्टॉक से सामान चुनें','error');return;}
             const planned=items.map((it,index)=>{
                 const already=history.filter(e=>Number(e.itemIndex)===index).reduce((sum,e)=>sum+Math.max(0,Number(e.qty)||0),0);
@@ -2159,7 +2159,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const raw=prompt(x.it.name+': इस बार कितनी मात्रा Dispatch करें? अधिकतम '+x.remaining,String(x.remaining));
                 if(raw===null)return;
                 const qty=Number(raw);
-                if(!Number.isInteger(qty)||qty<0||qty>x.remaining){showActionMessage(x.it.name+' की मात्रा 0 से '+x.remaining+' के बीच पूर्ण संख्या हो','error');return;}
+                if(!Number.isSafeInteger(qty)||qty<0||qty>x.remaining){showActionMessage(x.it.name+' की मात्रा 0 से '+x.remaining+' के बीच पूर्ण संख्या हो','error');return;}
                 if(qty)chosen.push({...x,qty});
             }
             if(!chosen.length){showActionMessage('इस Dispatch में कोई मात्रा दर्ज नहीं हुई','error');return;}
@@ -2170,11 +2170,17 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const list=isThird?thirdParty:stock;
                 const row=isThird?list.find(y=>(y.partyName||'')===(x.it.partyName||'')&&(y.item||y.name)===x.it.name):list.find(y=>y.name===x.it.name);
                 if(!row){showActionMessage('स्टॉक रिकॉर्ड नहीं मिला: '+(x.it.name||'अज्ञात सामान'),'error');return;}
-                const available=Math.max(0,Number(row.qty)||0);
-                if(available<x.qty){showActionMessage('पर्याप्त स्टॉक नहीं: '+x.it.name+' (उपलब्ध '+available+', चाहिए '+x.qty+')','error');return;}
-                requirements.push({row,qty:x.qty});
+                let requirement=requirements.find(entry=>entry.row===row);
+                if(!requirement){requirement={row,qty:0,itemName:x.it.name};requirements.push(requirement);}
+                requirement.qty+=x.qty;
+                if(!Number.isSafeInteger(requirement.qty)){showActionMessage('Dispatch की कुल मात्रा सही पूर्ण संख्या नहीं है: '+x.it.name,'error');return;}
             }
-            requirements.forEach(x=>x.row.qty=Math.max(0,(Number(x.row.qty)||0)-x.qty));
+            for(const requirement of requirements){
+                const available=Number(requirement.row.qty);
+                if(String(requirement.row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0){showActionMessage('स्टॉक मात्रा पूर्ण और सही संख्या में नहीं है: '+requirement.itemName,'error');return;}
+                if(available<requirement.qty){showActionMessage('पर्याप्त स्टॉक नहीं: '+requirement.itemName+' (उपलब्ध '+available+', कुल चाहिए '+requirement.qty+')','error');return;}
+            }
+            requirements.forEach(x=>x.row.qty=Number(x.row.qty)-x.qty);
             b.items=items;
             b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,vendorMissingCost:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorMissingCost)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
@@ -3140,8 +3146,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const bId=activeReturnBookingId;if(bId==null)return;
             const missing=safeGetStorage('missingItemsDatabase',[]),m=missing.find(x=>String(x.id)===String(recordId)&&String(x.bookingId)===String(bId));
             if(!m){showActionMessage('मिसिंग रिकॉर्ड नहीं मिला','error');return;}
-            const input=document.getElementById('recoverMissingQty_'+rowIndex),qty=Number(input?.value),remaining=Math.max(0,Number(m.qty)||0);
-            if(!Number.isInteger(qty)||qty<1||qty>remaining){showActionMessage('वापस मिली मात्रा 1 से मिसिंग बाकी मात्रा तक भरें','error');return;}
+            const input=document.getElementById('recoverMissingQty_'+rowIndex),qty=Number(input?.value),remaining=Number(m.qty);
+            if(!Number.isSafeInteger(remaining)||remaining<1||!Number.isSafeInteger(qty)||qty<1||qty>remaining){showActionMessage('वापस मिली मात्रा 1 से मिसिंग बाकी मात्रा तक भरें','error');return;}
             const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(bId));
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
             const it=(b.items||[]).find(x=>String(x.name)===String(m.item)&&String(x.source==='third-party'?'third-party':'admin')===String(m.source||'admin')&&String(x.partyName||'')===String(m.partyName||''));
@@ -3149,11 +3155,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const stockKey=m.source==='third-party'?'thirdPartyDatabase':'realStockDatabase',stock=safeGetStorage(stockKey,[]);
             const row=stock.find(x=>String(x.name||x.item)===String(m.item)&&(m.source!=='third-party'||String(x.partyName||'')===String(m.partyName||'')));
             if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला; Missing Recovery सेव नहीं हुई','error');return;}
+            const currentStockQty=Number(row.qty);
+            if(String(row.qty??'').trim()===''||!Number.isSafeInteger(currentStockQty)||currentStockQty<0||!Number.isSafeInteger(currentStockQty+qty)){showActionMessage('स्टॉक मात्रा पूर्ण और सही संख्या में नहीं है; Missing Recovery सेव नहीं हुई','error');return;}
             const previousState={bookings:JSON.parse(JSON.stringify(bookings)),missing:JSON.parse(JSON.stringify(missing)),stock:JSON.parse(JSON.stringify(stock))};
             it.missingQty=Math.max(0,(Number(it.missingQty)||0)-qty);it.returnedQty=(Number(it.returnedQty)||0)+qty;
             m.qty=remaining-qty;m.penalty=0;m.resolved=m.qty===0;m.recoveryEntries=Array.isArray(m.recoveryEntries)?m.recoveryEntries:[];
             m.recoveryEntries.push({qty,date:new Date().toLocaleDateString('en-CA'),createdAt:new Date().toISOString()});
-            row.qty=Math.max(0,Number(row.qty)||0)+qty;
+            row.qty=currentStockQty+qty;
             if(!safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){showActionMessage('Missing Recovery सेव नहीं हुई; आंशिक अपडेट वापस करने की कोशिश की गई।','error');return;}
             if(b.source==='customer-portal'){
                 const remoteSaved=await syncCustomerBookingWorkflow(b,false);
@@ -3180,7 +3188,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
               if(!item){showActionMessage('Return सूची में गलत सामान संदर्भ मिला','error');return;}
               const sent=Array.isArray(b.dispatchEntries)?b.dispatchEntries.filter(e=>Number(e.itemIndex)===idx).reduce((n,e)=>n+Math.max(0,Number(e.qty)||0),0):Math.max(0,Number(item.qty)||0);
               const previous=Math.max(0,Number(item.returnedQty)||0),remaining=Math.max(0,sent-previous),qty=Number(input.value);
-              if(!Number.isInteger(qty)||qty<0||qty>remaining){showActionMessage('Return मात्रा Dispatch के बचे हुए सामान से अधिक नहीं हो सकती','error');return;}
+              if(!Number.isSafeInteger(qty)||qty<0||qty>remaining){showActionMessage('Return मात्रा Dispatch के बचे हुए सामान से अधिक नहीं हो सकती','error');return;}
             }
             const modeRaw=prompt('Return प्रकार लिखें: FINAL (अंतिम वापसी, बाकी सामान Missing माना जाएगा) या PARTIAL (बाकी सामान बाद में आएगा)','FINAL');
             if(modeRaw===null)return;
@@ -3194,14 +3202,16 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 ?thirdParty.find(x=>x.partyName===item.partyName&&(x.item||x.name)===item.name)
                 :stock.find(x=>x.name===item.name);
               if(!row){showActionMessage('Return stock record नहीं मिला: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
+              const available=Number(row.qty);
+              if(String(row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(available+qty)){showActionMessage('Return stock की मात्रा गलत है: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
             }
             inputs.forEach(input=>{
               const idx=Number(input.dataset.returnIndex),item=b.items[idx];
               const sent=Array.isArray(b.dispatchEntries)?b.dispatchEntries.filter(e=>Number(e.itemIndex)===idx).reduce((n,e)=>n+Math.max(0,Number(e.qty)||0),0):Math.max(0,Number(item.qty)||0);
               const previous=Math.max(0,Number(item.returnedQty)||0),qty=Number(input.value);
               item.returnedQty=previous+qty;item.lastReturnDate=returnDate;
-              if(item.source==='third-party'){const row=thirdParty.find(x=>x.partyName===item.partyName&&(x.item||x.name)===item.name);if(row)row.qty=Math.max(0,Number(row.qty||0)+qty);}
-              else{const row=stock.find(x=>x.name===item.name);if(row)row.qty=Math.max(0,Number(row.qty||0)+qty);}
+              if(item.source==='third-party'){const row=thirdParty.find(x=>x.partyName===item.partyName&&(x.item||x.name)===item.name);if(row)row.qty=Number(row.qty)+qty;}
+              else{const row=stock.find(x=>x.name===item.name);if(row)row.qty=Number(row.qty)+qty;}
               if(mode==='FINAL'){
                 item.missingQty=Math.max(0,sent-item.returnedQty);
                 if(item.missingQty>0){
