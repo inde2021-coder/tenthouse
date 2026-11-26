@@ -130,6 +130,21 @@ async function consumeOtpAttempt(path, expectedDigest) {
   memoryStore.set(path, { ...current, tries: Number(current.tries || 0) + 1 });
   return { status: 'invalid' };
 }
+async function storeTransitionPendingPayment(path, update) {
+  if (adminDb) {
+    const result = await adminDb.ref(path).transaction(current => {
+      if (!current || current.status !== 'pending-verification') return;
+      return update(current);
+    });
+    return result.committed ? result.snapshot.val() : null;
+  }
+  if (isProd) throw new Error('Persistent Firebase database is not configured.');
+  const current = memoryStore.get(path);
+  if (!current || current.status !== 'pending-verification') return null;
+  const next = update(current);
+  memoryStore.set(path, next);
+  return next;
+}
 async function storeCreateIfAbsent(path, value) {
   if (adminDb) {
     const result = await adminDb.ref(path).transaction(current => current === null ? value : undefined);
@@ -807,10 +822,19 @@ app.post('/api/payments/:id/verify', authAdmin, requireDurableStore, async (req,
   const parsed=z.object({verified:z.boolean(),note:z.string().max(300).optional()}).safeParse(req.body);
   if(!parsed.success)return res.status(400).json({error:'verified boolean required'});
   try {
-    const path='erpData/payments/'+req.params.id,p=await storeGet(path);
-    if(!p)return res.status(404).json({error:'Payment not found'});
-    p.status=parsed.data.verified?'verified':'rejected';p.note=parsed.data.note||'';p.verifiedAt=new Date().toISOString();
-    await storeSet(path,p);res.json({ok:true,payment:p});
+    const path='erpData/payments/'+req.params.id;
+    const payment=await storeTransitionPendingPayment(path,current=>({
+      ...current,
+      status:parsed.data.verified?'verified':'rejected',
+      note:parsed.data.note||'',
+      verifiedAt:new Date().toISOString()
+    }));
+    if(!payment){
+      const existing=await storeGet(path);
+      if(!existing)return res.status(404).json({error:'Payment not found'});
+      return res.status(409).json({error:'Payment has already been reviewed and cannot be changed.'});
+    }
+    res.json({ok:true,payment});
   } catch(error) { res.status(503).json({error:error.message}); }
 });
 app.use((err,_req,res,_next) => { console.error(err.message); res.status(500).json({ error: isProd ? 'Internal server error' : err.message }); });
