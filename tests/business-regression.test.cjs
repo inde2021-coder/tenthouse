@@ -2160,3 +2160,27 @@ test('payment and Master Ledgers include cash installments and do not misclassif
   assert.ok(masterBody.innerHTML.includes('Cash किस्त'));
   assert.ok(masterBody.innerHTML.includes('Manual किस्त (method दर्ज नहीं)'));
 });
+
+
+test('bill discount and other-charge changes stop when booking persistence fails', async () => {
+  const original = { id: 91, source: 'admin', discountAmount: 0, otherCharges: 0 };
+  const messages = [];
+  const values = { billSearchInput: { value: '91' }, billDiscountInput: { value: '100' }, billOtherChargesInput: { value: '50' } };
+  const code = sourceBetween('async function applyInvoiceAdjustments(quiet=false)', '// Bill adjustment fields recalculate');
+  const context = {
+    document: { getElementById: id => values[id] || null },
+    safeGetStorage: key => key === 'softwareBookings' ? [JSON.parse(JSON.stringify(original))] : {},
+    calculateBookingBaseRent: () => 1000,
+    safeSetStorage: () => false,
+    syncCustomerBookingWorkflow: async () => true,
+    searchBillingCustomer: () => { throw new Error('must not refresh invoice after failed save'); },
+    showActionMessage: message => messages.push(message),
+    Math, Number, String, Array
+  };
+  vm.runInNewContext(code + '\nresult=applyInvoiceAdjustments();', context);
+  await context.result;
+  assert.equal(original.discountAmount, 0);
+  assert.equal(original.otherCharges, 0);
+  assert.ok(messages.some(message => message.includes('बिल बदलाव सेव नहीं हुआ')));
+  assert.ok(!messages.some(message => message.includes('बिल में लागू हुए')));
+});
