@@ -2257,3 +2257,15 @@ test('dashboard and customer tracker derive dispatch and return counts from save
   assert.ok(html.includes("Array.isArray(b.returnEntries)?b.returnEntries.length:(Number(b.returnEntryCount)||0)"));
   assert.ok(html.includes("Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:Math.max(0,Number(b.dispatchEntryCount)||0)"));
 });
+
+
+test('stock deletion is blocked while admin or vendor dispatch quantities remain unreturned', () => {
+  const helper=sourceBetween('function hasOpenStockReturnReference(', 'function deleteStockItem(index)');
+  assert.match(helper,/entry\.itemIndex\)===index/);
+  assert.match(helper,/dispatched>Math\.max\(0,Number\(item\.returnedQty\)\|\|0\)/);
+  assert.match(helper,/openMissing/);
+  const admin=sourceBetween('function deleteStockItem(index)', 'function loadDispatchTable()');
+  assert.match(admin,/hasOpenStockReturnReference\('admin',item\.name\)/);
+  const vendor=sourceBetween('function editThirdPartyEntry(', 'function deleteThirdPartyPayment(');
+  assert.match(vendor,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
+});
