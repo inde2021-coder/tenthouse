@@ -4238,6 +4238,19 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 })();
 </script>
 
+<script id="rk-firebase-auth-boot">
+(function(){
+  function bootFirebaseAuth(){
+    try{
+      if(typeof initFirebaseConnection==='function')initFirebaseConnection();
+    }catch(error){
+      console.error('Firebase auth initialization failed:',error);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootFirebaseAuth,{once:true});
+  else bootFirebaseAuth();
+})();
+</script>
 </body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
