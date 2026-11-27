@@ -5,7 +5,7 @@
   "description": "Secure backend API for Radha Krishna Tent House ERP",
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "26.x"
   },
   "scripts": {
     "start": "node src/server.js",
