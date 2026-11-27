@@ -1486,7 +1486,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         const firebaseConfig = {
             apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I",
-            authDomain: "radhe-krishna-online-booking.firebaseapp.com",
+            authDomain: "tenthouse2026.vercel.app",
             databaseURL: "https://radhe-krishna-online-booking-default-rtdb.firebaseio.com",
             projectId: "radhe-krishna-online-booking",
             storageBucket: "radhe-krishna-online-booking.firebasestorage.app",
@@ -1590,25 +1590,15 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
-        let rkRedirectResultHandled=false;
-        async function handleGoogleRedirectResult(){
-            if(rkRedirectResultHandled||!window.firebase?.auth)return;
-            rkRedirectResultHandled=true;
-            try{
-                const result=await firebase.auth().getRedirectResult();
-                if(result?.user)await completeGoogleAdminLogin(result.user);
-            }catch(error){
-                const msg=error.code==='auth/unauthorized-domain'?'इस वेबसाइट का domain Firebase Authentication → Authorized domains में जोड़ें।':error.code==='auth/operation-not-allowed'?'Firebase Console में Google Sign-In enable करें।':error.code==='auth/network-request-failed'?'Internet connection जाँचकर फिर प्रयास करें।':error.message;
-                showActionMessage('Gmail लॉगिन विफल: '+msg,'error');
-            }
-        }
+        // Google login uses signInWithPopup only. Do not call getRedirectResult:
+        // this app no longer starts redirect-based authentication, and stale
+        // redirect state can trigger "missing initial state" on page load.
         function initFirebaseConnection() {
             try {
                 if (!window.firebase || !firebase.database || !firebase.auth) throw new Error('Firebase SDK लोड नहीं हुआ');
                 if (!firebase.apps.length) firebaseApp = firebase.initializeApp(firebaseConfig);
                 else firebaseApp = firebase.app();
                 dbRef = firebase.database().ref('tent_erp_data');
-                handleGoogleRedirectResult();
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
                     if (!user) return;
@@ -1855,15 +1845,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
-                // Some browsers/WebViews report a generic internal popup error even
-                // when the popup is blocked by privacy settings. Retry with the
-                // full-page Google redirect flow; handleGoogleRedirectResult()
-                // completes the same Firebase session after returning to this page.
-                if(error.code==='auth/popup-blocked'||error.code==='auth/internal-error'){
-                    console.warn('Google popup failed; retrying with redirect:',error.code);
-                    await firebase.auth().signInWithRedirect(provider);
-                    return false;
-                }
+                // Do not fall back to signInWithRedirect here. Redirect sign-in
+                // depends on sessionStorage state surviving the round trip and
+                // fails in storage-partitioned browsers with "missing initial state".
+                // Keep this flow popup-only and surface the original Firebase error.
+                console.error('Google popup login failed; redirect fallback disabled:',error);
                 throw error;
             }
         }
@@ -1956,12 +1942,25 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             }
         }
 
-        function showActionMessage(message, type = 'success') {
+        function showActionMessage(message, type = 'success', durationMs) {
             const toast = document.getElementById('actionToast');
             if(!toast) return;
+            if (window.rkActionToastTimer) { clearTimeout(window.rkActionToastTimer); window.rkActionToastTimer = null; }
             toast.textContent = message;
-            toast.className = `show ${type}`; toast.setAttribute('role', type==='error'?'alert':'status'); toast.setAttribute('aria-live', type==='error'?'assertive':'polite');
-            setTimeout(() => { toast.className = ''; }, 3000);
+            toast.className = `show ${type}`;
+            const isError = type === 'error';
+            toast.setAttribute('role', isError ? 'alert' : 'status');
+            toast.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+            toast.setAttribute('tabindex', isError ? '0' : '-1');
+            toast.title = isError ? 'त्रुटि बंद करने के लिए क्लिक करें' : '';
+            toast.onclick = isError ? () => { toast.className = ''; toast.onclick = null; } : null;
+            // Keep errors visible until the user dismisses them; success/info messages auto-hide.
+            const hideAfter = Number.isFinite(durationMs) ? durationMs : (isError ? 0 : 3000);
+            if (hideAfter > 0) window.rkActionToastTimer = setTimeout(() => {
+                toast.className = '';
+                toast.onclick = null;
+                window.rkActionToastTimer = null;
+            }, hideAfter);
         }
 
         // Smart Vendor / Admin Section Hide-Show Toggle
@@ -2101,7 +2100,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             try{await loginWithGoogle();}
             catch(error){
                 const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में इस वेबसाइट का domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/invalid-api-key':'Firebase project की Web API key जाँचें।','auth/network-request-failed':'Internet connection जाँचकर फिर प्रयास करें।'};
-                showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');
+                console.error('Google admin login failed:',error);
+                showActionMessage('लॉगिन विफल'+(error.code?' ['+error.code+']':'')+': '+(hints[error.code]||error.message||'अज्ञात त्रुटि'),'error');
             }finally{
                 if(button){button.disabled=false;button.innerHTML='<i class="fa-brands fa-google"></i> Google / Gmail से लॉगिन करें';}
             }
@@ -4854,5 +4854,51 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
 @media(max-width:640px){
  html.rk-ref1 #customerFirstPortal .rk-customer-shell,html.rk-ref2 #customerFirstPortal .rk-customer-shell,html.rk-ref3 #customerFirstPortal .rk-customer-shell,html.rk-ref4 #customerFirstPortal .rk-customer-shell,html.rk-ref5 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* Stable navigation header: keep customer brand/navigation visible while
+   anchor navigation scrolls the booking and tracking content underneath. */
+#customerFirstPortal .customer-scroll-wrap{
+  scroll-padding-top: var(--rk-customer-sticky-height, 104px);
+  overscroll-behavior-y: contain;
+}
+#customerFirstPortal .rk-customer-brand{
+  position:sticky!important;
+  top:env(safe-area-inset-top, 0px)!important;
+  z-index:1200!important;
+  flex:0 0 auto!important;
+  align-self:stretch!important;
+  isolation:isolate;
+  box-shadow:0 12px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+#customerFirstPortal .rk-customer-shell,
+#customerFirstPortal #rkTrackerTitle,
+#customerFirstPortal #portalCustName{
+  scroll-margin-top:calc(var(--rk-customer-sticky-height, 104px) + 14px)!important;
+}
+#adminPanel .main-content>.header{
+  position:sticky!important;
+  top:0!important;
+  z-index:1100!important;
+  flex:0 0 auto!important;
+  min-height:56px;
+  background:rgba(10,17,29,.94)!important;
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+}
+#adminPanel .content-body{min-height:0;overscroll-behavior:contain}
+@media(max-width:700px){
+  #customerFirstPortal .rk-customer-brand{
+    top:env(safe-area-inset-top, 0px)!important;
+    padding:9px 12px!important;
+    gap:9px!important;
+    border-radius:0 0 14px 14px!important;
+  }
+  #customerFirstPortal .rk-reference-nav{
+    position:relative!important;
+    z-index:2!important;
+    width:100%!important;
+  }
+}
+
 </style>
 </body></html>
