@@ -1939,7 +1939,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                         if(take>0){slices.push({entry,qty:take,endDate:ret.date||b.actualReturnDate||b.returnDate||entry.date});allocated[index]+=take;remaining-=take;}
                     });
             });
-            const today=new Date().toLocaleDateString('en-CA');
+            const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
             const scheduled=String(b.returnDate||today);
             const openEnd=scheduled>today?scheduled:today;
             entries.forEach((entry,index)=>{
@@ -1956,7 +1956,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(entries.length){
                 rentalTotal=getDispatchEntryRentalSlices(b).reduce((sum,slice)=>sum+Math.max(0,Number(slice.qty)||0)*Math.max(0,Number(slice.entry.unitRent??items[Number(slice.entry.itemIndex)]?.rentPrice??500))*calculateRentalDays(slice.entry.date||b.date,slice.endDate),0);
             }else{
-                const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate): (scheduled>today?scheduled:today);
+                const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate): (scheduled>today?scheduled:today);
                 rentalTotal=items.reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rentPrice??500))*calculateRentalDays(b.date,endDate),0);
             }
             // All unresolved missing-item charges enter the customer bill automatically at the saved stock rate.
@@ -2081,7 +2081,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 const advanceLabel=advance<=0?'एडवांस नहीं दिया':(b.advancePaymentVerified===true?'एडवांस सत्यापित':(b.advancePaymentStatus==='pending'?'एडवांस सत्यापन बाकी':'एडवांस स्थिति: '+String(b.advancePaymentStatus||'अज्ञात')));
                 const statusLabels={Pending:'अनुमोदन बाकी',Confirmed:'बुकिंग कन्फर्म',Rejected:'बुकिंग अस्वीकृत',Cancelled:'बुकिंग रद्द',Dispatched:'सामान डिस्पैच',Completed:'बुकिंग पूरी'};
                 result.innerHTML='<div class="rk-tracker-summary"><div><small>बुकिंग नंबर</small><strong>#'+escapeHtml(b.id)+'</strong></div><span class="rk-tracker-status">'+escapeHtml(statusLabels[b.status]||b.status||'स्थिति उपलब्ध नहीं')+'</span></div>'+
-                  '<div class="rk-tracker-meta"><span>डिस्पैच: '+escapeHtml(b.date||'-')+'</span><span>वापसी: '+escapeHtml(b.returnDate||'-')+'</span><span>डिस्पैच एंट्री: '+(Number(b.dispatchEntryCount)||0)+'</span><span>रिटर्न एंट्री: '+(Number(b.returnEntryCount)||0)+'</span></div>'+
+                  '<div class="rk-tracker-meta"><span>डिस्पैच: '+escapeHtml(b.date||'-')+'</span><span>वापसी: '+escapeHtml(b.returnDate||'-')+'</span><span>डिस्पैच एंट्री: '+(Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:(Number(b.dispatchEntryCount)||0))+'</span><span>रिटर्न एंट्री: '+(Array.isArray(b.returnEntries)?b.returnEntries.length:(Number(b.returnEntryCount)||0))+'</span></div>'+
                   '<ul class="rk-tracker-items">'+itemRows+'</ul><div class="rk-tracker-payment"><span>'+escapeHtml(advanceLabel)+' · ₹'+advance.toFixed(2)+'</span><span>अतिरिक्त जमा: ₹'+payments.toFixed(2)+'</span></div>';
             }catch(error){result.textContent=error.message||'बुकिंग की जानकारी प्राप्त नहीं हो सकी।';}
         }
@@ -2194,7 +2194,23 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||!Number.isSafeInteger(nums[0])||nums[0]<0||nums.slice(1).some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, पूर्ण संख्या में स्टॉक मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};if(!safeSetStorage('realStockDatabase',rows))return;loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज अपडेट हुए','success');}
-        function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]);if(!rows[index])return;if(!confirm(`स्टॉक आइटम “${rows[index].name}” हटाएँ?`))return;rows.splice(index,1);safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
+        function hasOpenStockReturnReference(source,itemName,partyName=''){
+            const bookings=safeGetStorage('softwareBookings',[]),missing=safeGetStorage('missingItemsDatabase',[]);
+            const sourceKey=source==='third-party'?'third-party':'admin';
+            const referenced=(Array.isArray(bookings)?bookings:[]).some(booking=>(Array.isArray(booking.items)?booking.items:[]).some((item,index)=>{
+                const itemSource=item.source==='third-party'?'third-party':'admin';
+                if(itemSource!==sourceKey||String(item.name||'').trim().toLowerCase()!==String(itemName||'').trim().toLowerCase())return false;
+                if(sourceKey==='third-party'&&String(item.partyName||'').trim().toLowerCase()!==String(partyName||'').trim().toLowerCase())return false;
+                const dispatched=Array.isArray(booking.dispatchEntries)
+                    ?booking.dispatchEntries.filter(entry=>Number(entry.itemIndex)===index).reduce((sum,entry)=>sum+Math.max(0,Number(entry.qty)||0),0)
+                    :(['Dispatched','Partially Returned'].includes(booking.status)?Math.max(0,Number(item.qty)||0):0);
+                return dispatched>Math.max(0,Number(item.returnedQty)||0);
+            }));
+            const openMissing=(Array.isArray(missing)?missing:[]).some(record=>!record.resolved&&(Number(record.qty)||0)>0&&String(record.source||'admin')===sourceKey&&String(record.item||'').trim().toLowerCase()===String(itemName||'').trim().toLowerCase()&&(sourceKey!=='third-party'||String(record.partyName||'').trim().toLowerCase()===String(partyName||'').trim().toLowerCase()));
+            return referenced||openMissing;
+        }
+
+                function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;if(hasOpenStockReturnReference('admin',item.name)){showActionMessage('इस सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। स्टॉक रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm(`स्टॉक आइटम “${item.name}” हटाएँ?`))return;rows.splice(index,1);if(!safeSetStorage('realStockDatabase',rows))return;loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
 
         function loadDispatchTable() {
             let bookings = safeGetStorage('softwareBookings', []);
@@ -2333,9 +2349,15 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const b=safeGetStorage('softwareBookings',[]).find(x=>String(x.id)===String(id));
             const settings=safeGetStorage('softwareSettings',{});
             if(!b){showActionMessage('बुकिंग नहीं मिली','error');return;}
-            const rows=Array.isArray(b.dispatchEntries)&&b.dispatchEntries.length
-              ? b.dispatchEntries.map(e=>({name:e.itemName||b.items?.[Number(e.itemIndex)]?.name||'सामान',source:e.source==='third-party'?'वेंडर: '+(e.partyName||'-'):'एडमिन स्टॉक',qty:Number(e.qty)||0,date:e.date||b.date||'-'}))
-              : (b.items||[]).map(i=>({name:i.name,source:i.source==='third-party'?'वेंडर: '+(i.partyName||'-'):'एडमिन स्टॉक',qty:Number(i.qty)||0,date:b.date||'-'}));
+            // Never label planned booking quantities as actual dispatched quantities.
+            const entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
+            if(!entries.length){showActionMessage('इस पुरानी बुकिंग का वास्तविक Dispatch इतिहास उपलब्ध नहीं है। सही Dispatch दर्ज होने के बाद ही स्लिप प्रिंट करें।','error');return;}
+            const rows=entries.map(e=>{
+              const itemIndex=Number(e.itemIndex),item=Number.isInteger(itemIndex)?b.items?.[itemIndex]:null;
+              const qty=Number(e.qty);
+              return {name:String(e.itemName||item?.name||'सामान'),source:e.source==='third-party'?'वेंडर: '+(e.partyName||'-'):'एडमिन स्टॉक',qty:Number.isSafeInteger(qty)&&qty>0?qty:0,date:e.date||b.date||'-'};
+            });
+            if(rows.some(e=>e.qty<1)){showActionMessage('Dispatch इतिहास में गलत मात्रा मिली। रिकॉर्ड सुधारने तक स्लिप प्रिंट नहीं होगी।','error');return;}
             const area=document.getElementById('printableSlipArea');area.dataset.printRestore='dispatch';area.style.display='block';
             area.innerHTML=`
               <div class="rk-slip rk-dispatch-slip" style="text-align:center;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px">
@@ -2640,7 +2662,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     <td>₹${Number(s.singleRent)||0}</td>
                     <td>₹${Number(s.setRent)||0}</td>
                     <td>₹${Number(s.missingCharge??s.missingUnitPrice)||0}</td>
-                    <td><code>${s.barcode}</code></td>
+                    <td><code>${escapeHtml(s.barcode)}</code></td>
                     <td class="table-actions"><button type="button" onclick="printSingleBarcode('${escapeJs(s.name)}', '${escapeJs(s.barcode)}')" class="action-btn" title="बारकोड प्रिंट"><i class="fa-solid fa-print"></i></button><button type="button" onclick="editStockItem(${i})" class="action-btn">अपडेट</button><button type="button" onclick="deleteStockItem(${i})" class="action-btn danger-action">डिलीट</button></td>
                 </tr>
             `).join('');
@@ -2715,6 +2737,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(tbody) tbody.innerHTML = pur.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई परचेज नहीं</td></tr>` : pur.map((p,i) => `<tr><td>${escapeHtml(p.date)}</td><td>${escapeHtml(p.itemName)}</td><td>${Number(p.qty)||0}</td><td>₹${Number(p.price)||0}</td><td>${escapeHtml(p.supplier||'')}</td><td class="table-actions"><button type="button" class="action-btn" onclick="editPurchase(${i})">अपडेट</button><button type="button" class="action-btn danger-action" onclick="deletePurchase(${i})">डिलीट</button></td></tr>`).join('');
         }
 
+        function localISODate(date=new Date()){
+            const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+            return y+'-'+m+'-'+d;
+        }
         function saveDailyExpense(event) {
             event.preventDefault();
             const desc = document.getElementById('expenseDesc').value.trim();
@@ -2722,7 +2748,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const type = document.getElementById('expenseType')?.value || 'Expense';
             if (!desc || !['Income','Expense'].includes(type) || !Number.isFinite(amount) || amount <= 0) { showActionMessage('प्रकार, विवरण और शून्य से अधिक सही राशि भरें', 'error'); return; }
             const list = safeGetStorage('incomeExpenseDatabase', []);
-            list.push({ date: new Date().toLocaleDateString('en-CA'), desc, type, amount });
+            list.push({ date: localISODate(), desc, type, amount: Math.round(amount*100)/100 });
             if(!safeSetStorage('incomeExpenseDatabase', list))return;
             event.target.reset();
             loadAllFirebaseData();
@@ -2737,7 +2763,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const adminRows=Array.isArray(stock)?stock:[];
             const vendorRows=Array.isArray(vendorStock)?vendorStock:[];
             const pending=rows.filter(b=>String(b.status||'').trim().toLowerCase().includes('pending')).length;
-            const dispatch=rows.reduce((n,b)=>n+(Math.max(0,Number(b.dispatchEntryCount)||0)),0);
+            const dispatch=rows.reduce((n,b)=>n+(Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:Math.max(0,Number(b.dispatchEntryCount)||0)),0);
             const returned=rows.filter(b=>Boolean(b.actualReturnDate)||String(b.status||'').toLowerCase().includes('return')||(Array.isArray(b.items)&&b.items.some(i=>Number(i.returnedQty)>0))).length;
             const stockUnits=adminRows.reduce((n,item)=>{const q=Number(item.qty);return n+(Number.isSafeInteger(q)&&q>0?q:0);},0);
             const values={rkKpiBookings:rows.length,rkKpiPending:pending,rkKpiDispatch:dispatch,rkKpiReturns:returned,rkKpiStock:stockUnits,rkKpiVendor:vendorRows.length};
@@ -2819,8 +2845,25 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         window.addEventListener('resize',()=>{ if(document.getElementById('dashboardLineGraph')) renderDashboardLineGraph(); });
 
+        function purchaseHasDispatchReference(itemName){
+            const key=String(itemName||'').trim().toLowerCase();
+            if(!key)return false;
+            const bookings=safeGetStorage('softwareBookings',[]),missing=safeGetStorage('missingItemsDatabase',[]);
+            const dispatched=(Array.isArray(bookings)?bookings:[]).some(booking=>{
+                const items=Array.isArray(booking.items)?booking.items:[];
+                return items.some((item,index)=>{
+                    if(item.source==='third-party'||String(item.name||'').trim().toLowerCase()!==key)return false;
+                    const entries=Array.isArray(booking.dispatchEntries)?booking.dispatchEntries:[];
+                    if(entries.length)return entries.some(entry=>Number(entry.itemIndex)===index&&Number(entry.qty)>0);
+                    return ['Dispatched','Partially Returned'].includes(String(booking.status||''));
+                });
+            });
+            const unresolved=(Array.isArray(missing)?missing:[]).some(row=>!row.resolved&&(Number(row.qty)||0)>0&&String(row.source||'admin')!=='third-party'&&String(row.item||'').trim().toLowerCase()===key);
+            return dispatched||unresolved;
+        }
         function editPurchase(index){
             const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
+            if(purchaseHasDispatchReference(p.itemName)){showActionMessage('इस सामान का Dispatch या Missing रिकॉर्ड मौजूद है। पुराने Purchase को बदलने से हिसाब बिगड़ सकता है; रिकॉर्ड सुरक्षित रखा गया।','error');return;}
             const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;
             const qty=prompt('मात्रा',p.qty);if(qty===null)return;
             const price=prompt('कुल कीमत ₹',p.price);if(price===null)return;
@@ -2848,6 +2891,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         function deletePurchase(index){
             const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
+            if(purchaseHasDispatchReference(p.itemName)){showActionMessage('इस सामान का Dispatch या Missing रिकॉर्ड मौजूद है। पुराने Purchase को हटाने से हिसाब बिगड़ सकता है; रिकॉर्ड सुरक्षित रखा गया।','error');return;}
             if(!confirm('यह खरीद रिकॉर्ड हटाएँ और उसकी पूरी मात्रा स्टॉक से घटाएँ?'))return;
             const qty=Number(p.qty),stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));
             const item=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===String(p.itemName||'').trim().toLowerCase());
@@ -2857,7 +2901,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!safeSetStorageBatch([['purchaseDatabase',rows],['realStockDatabase',stock]]))return;
             loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड हटाया और स्टॉक सही मात्रा से समायोजित हुआ','success');
         }
-        function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:n};if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
+        function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<=0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और शून्य से अधिक राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:Math.round(n*100)/100};if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
         function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड हटाया गया','success')}
 
         function loadCustomerList() {
@@ -2911,22 +2955,49 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             showActionMessage("डाउनलोड हो गया", "success");
         }
 
-        function exportGstr1Report() {
-            let bookings = safeGetStorage('softwareBookings', []);
-            let csvContent = "data:text/csv;charset=utf-8,BookingID,CustomerName,Mobile,TaxableValue,GSTAmount,TotalAmount\n";
-            bookings.forEach(b => {
-                let subTotal = calculateBookingTotalRent(b);
-                let gstAmt = (subTotal * 18) / 100;
-                csvContent += `${b.id},"${b.name}",${b.mob},${subTotal},${gstAmt.toFixed(2)},${(subTotal+gstAmt).toFixed(2)}\n`;
+        function buildGstr1TaxInvoiceRows(invoices){
+            const rows=[],source=Array.isArray(invoices)?invoices:[];
+            let skipped=0;
+            source.forEach(invoice=>{
+                const items=Array.isArray(invoice?.items)?invoice.items:[];
+                const discount=Number(invoice?.discount??0),other=Number(invoice?.otherCharges??0),taxType=String(invoice?.taxType||'');
+                if(!items.length||!Number.isFinite(discount)||discount<0||!Number.isFinite(other)||other<0||!['intra','inter'].includes(taxType)){skipped++;return;}
+                const lines=items.map(item=>{
+                    const qty=Number(item?.qty),rate=Number(item?.rate),gstRate=item?.gstRate==null?Number(invoice?.gstRate):Number(item.gstRate);
+                    return {qty,rate,gstRate,base:qty*rate};
+                });
+                if(lines.some(line=>!Number.isSafeInteger(line.qty)||line.qty<1||!Number.isFinite(line.rate)||line.rate<0||!Number.isFinite(line.gstRate)||line.gstRate<0||line.gstRate>28)){skipped++;return;}
+                const subtotal=lines.reduce((sum,line)=>sum+line.base,0);
+                if(!Number.isFinite(subtotal)||discount>subtotal+other){skipped++;return;}
+                const taxable=Math.max(0,subtotal-discount+other);
+                const rawGst=lines.reduce((sum,line)=>{
+                    const share=subtotal>0?line.base/subtotal:0;
+                    const lineTaxable=Math.max(0,line.base-discount*share+other*share);
+                    return sum+lineTaxable*line.gstRate/100;
+                },0);
+                const gst=Math.round(rawGst*100)/100,cgst=taxType==='intra'?Math.round(gst*50)/100:0,sgst=taxType==='intra'?Math.round((gst-cgst)*100)/100:0,igst=taxType==='inter'?gst:0;
+                rows.push({
+                    invoiceDate:String(invoice.date||''),invoiceNumber:String(invoice.documentNumber||invoice.id||''),
+                    customerName:String(invoice.customerName||''),customerGstin:String(invoice.customerGstin||''),
+                    taxable:Math.round(taxable*100)/100,cgst,sgst,igst,gst,
+                    invoiceValue:Math.round((taxable+gst)*100)/100
+                });
             });
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "GSTR1_Sales_Report.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showActionMessage("GSTR-1 रिपोर्ट डाउनलोड हो गई", "success");
+            return {rows,skipped};
+        }
+        function csvSafeCell(value){
+            const raw=String(value??''),safe=/^[\s]*[=+\-@]/.test(raw)?"'"+raw:raw;
+            return '"'+safe.replace(/"/g,'""')+'"';
+        }
+        function exportGstr1Report() {
+            const result=buildGstr1TaxInvoiceRows(safeGetStorage('taxInvoiceDatabase',[]));
+            if(!result.rows.length){showActionMessage('GSTR-1 Working Register के लिए पहले Tax Invoice सेव करें। कोई Booking स्वतः GST में नहीं जोड़ी जाएगी।','error');return;}
+            const header=['Invoice Date','Invoice Number','Customer Name','Customer GSTIN','Taxable Value','CGST','SGST','IGST','Total GST','Invoice Value'];
+            const lines=[header,...result.rows.map(row=>[row.invoiceDate,row.invoiceNumber,row.customerName,row.customerGstin,row.taxable.toFixed(2),row.cgst.toFixed(2),row.sgst.toFixed(2),row.igst.toFixed(2),row.gst.toFixed(2),row.invoiceValue.toFixed(2)])];
+            const csv='\uFEFF'+lines.map(line=>line.map(csvSafeCell).join(',')).join('\r\n');
+            const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),link=document.createElement('a');
+            link.href=url;link.download='GSTR1_Tax_Invoice_Working_Register.csv';document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);
+            showActionMessage('Tax Invoice आधारित GSTR-1 Working Register डाउनलोड हुई।'+(result.skipped?' '+result.skipped+' अमान्य रिकॉर्ड छोड़े गए।':''),'success');
         }
 
         function loadInstallmentsTable() {
@@ -3051,7 +3122,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
             const items=Array.isArray(b.items)?b.items:[];
             if(entries.length)return getDispatchEntryRentalSlices(b).reduce((sum,slice)=>sum+Math.max(0,Number(slice.qty)||0)*Math.max(0,Number(slice.entry.unitRent??items[Number(slice.entry.itemIndex)]?.rentPrice??500))*calculateRentalDays(slice.entry.date||b.date,slice.endDate),0);
-            const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate):(scheduled>today?scheduled:today);
+            const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate):(scheduled>today?scheduled:today);
             return items.reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rentPrice??500))*calculateRentalDays(b.date,endDate),0);
         }
         function searchBillingCustomer() {
@@ -3226,12 +3297,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         function editThirdPartyEntry(partyName,itemName){
             const rows=safeGetStorage('thirdPartyDatabase',[]),r=rows.find(x=>String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName);if(!r){showActionMessage('थर्ड-पार्टी रिकॉर्ड नहीं मिला','error');return;}
+            if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/Return अभी खुला है। हिसाब सुरक्षित रखने के लिए मात्रा/दर में बदलाव Return पूरा होने के बाद करें।','error');return;}
             const qty=prompt('मौजूदा स्टॉक मात्रा',String(Number(r.qty)||0));if(qty===null)return;const q=Number(qty);if(!Number.isInteger(q)||q<0){showActionMessage('मात्रा 0 या उससे अधिक पूर्ण संख्या होनी चाहिए','error');return;}
             const cost=prompt('प्रति पीस लागत (₹)',String(Number(r.costPrice)||0));if(cost===null)return;const c=Number(cost);if(!Number.isFinite(c)||c<0){showActionMessage('लागत सही भरें','error');return;}
             const charge=prompt('कस्टमर किराया (₹)',String(Number(r.chargePrice)||0));if(charge===null)return;const ch=Number(charge);if(!Number.isFinite(ch)||ch<0){showActionMessage('किराया सही भरें','error');return;}
             r.qty=q;r.costPrice=c;r.chargePrice=ch;r.updatedAt=new Date().toISOString();if(safeSetStorage('thirdPartyDatabase',rows)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('थर्ड-पार्टी रिकॉर्ड अपडेट हुआ','success');}
         }
-        function deleteThirdPartyEntry(partyName,itemName){if(!confirm('यह वेंडर-सामान रिकॉर्ड हटाएँ? पुराने बुकिंग रिकॉर्ड नहीं हटेंगे।'))return;const rows=safeGetStorage('thirdPartyDatabase',[]),next=rows.filter(x=>!(String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName));if(next.length===rows.length){showActionMessage('रिकॉर्ड नहीं मिला','error');return;}if(safeSetStorage('thirdPartyDatabase',next)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('रिकॉर्ड हटाया गया','success');}}
+        function deleteThirdPartyEntry(partyName,itemName){if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm('यह वेंडर-सामान रिकॉर्ड हटाएँ? पुराने बुकिंग रिकॉर्ड नहीं हटेंगे।'))return;const rows=safeGetStorage('thirdPartyDatabase',[]),next=rows.filter(x=>!(String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName));if(next.length===rows.length){showActionMessage('रिकॉर्ड नहीं मिला','error');return;}if(safeSetStorage('thirdPartyDatabase',next)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('रिकॉर्ड हटाया गया','success');}}
         function deleteThirdPartyPayment(id){if(!confirm('यह भुगतान एंट्री हटाएँ?'))return;const rows=safeGetStorage('thirdPartyPayments',[]),next=rows.filter(x=>String(x.id)!==id);if(next.length===rows.length){showActionMessage('भुगतान नहीं मिला','error');return;}if(safeSetStorage('thirdPartyPayments',next)){loadThirdPartyLedger();showActionMessage('भुगतान एंट्री हटाई गई','success');}}
 
         function saveThirdPartyEntry(event) {
@@ -3242,7 +3314,17 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const costPrice=optionalAmount('tpItemCost'),chargePrice=optionalAmount('tpItemCharge'),vendorMissingCost=optionalAmount('tpVendorMissingCost'),missingCharge=optionalAmount('tpMissingCharge');
             if(!partyName||!itemName||!Number.isSafeInteger(qty)||qty<1||![costPrice,chargePrice,vendorMissingCost,missingCharge].every(Number.isFinite)||[costPrice,chargePrice,vendorMissingCost,missingCharge].some(value=>value<0)){showActionMessage('वेंडर, सामान, पूर्ण संख्या में मात्रा और शून्य या उससे अधिक सही दरें भरें','error');return;}
             const existing=tpList.find(x=>String(x.partyName||'').toLowerCase()===partyName.toLowerCase()&&String(x.item||'').toLowerCase()===itemName.toLowerCase());
-            if(existing){existing.qty=(Number(existing.qty)||0)+qty;existing.purchasedQty=(Number(existing.purchasedQty ?? existing.qty-qty)||0)+qty;existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.vendorMissingCost=vendorMissingCost;existing.missingCharge=missingCharge;existing.source='third-party';}
+            if(existing){
+                const currentQty=Number(existing.qty),currentPurchased=Number(existing.purchasedQty??existing.qty);
+                if(!Number.isSafeInteger(currentQty)||currentQty<0||!Number.isSafeInteger(currentPurchased)||currentPurchased<0||!Number.isSafeInteger(currentQty+qty)||!Number.isSafeInteger(currentPurchased+qty)){showActionMessage('मौजूदा Vendor मात्रा सही नहीं है या कुल मात्रा सीमा से बाहर है; रिकॉर्ड नहीं बदला गया।','error');return;}
+                if(hasOpenStockReturnReference('third-party',itemName,partyName)){
+                    const sameRates=Number(existing.costPrice||0)===costPrice&&Number(existing.chargePrice||0)===chargePrice&&Number(existing.vendorMissingCost||0)===vendorMissingCost&&Number(existing.missingCharge||0)===missingCharge;
+                    if(!sameRates){showActionMessage('इस Vendor सामान का पुराना Dispatch/Return खुला है। नई खरीद जोड़ सकते हैं, लेकिन पुराने रिकॉर्ड की दरें बदल नहीं सकते। पहले Return/Missing Recovery पूरी करें।','error');return;}
+                }else{
+                    existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.vendorMissingCost=vendorMissingCost;existing.missingCharge=missingCharge;
+                }
+                existing.qty=currentQty+qty;existing.purchasedQty=currentPurchased+qty;existing.source='third-party';
+            }
             else tpList.push({partyName,item:itemName,qty,purchasedQty:qty,costPrice,chargePrice,vendorMissingCost,missingCharge,source:'third-party',updatedAt:new Date().toISOString()});
             if(!safeSetStorage('thirdPartyDatabase', tpList)) return;
             event.target.reset(); loadThirdPartyLedger(); loadThirdPartyDropdownsForDispatch();
@@ -3256,6 +3338,20 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!safeSetStorage('thirdPartyPayments',rows))return;event.target.reset();loadThirdPartyLedger();showActionMessage('वेंडर भुगतान अलग लेजर में सेव हुआ','success');
         }
 
+        function getVendorLedgerRate(entry,item,rows,kind){
+            const name=String(entry?.itemName||item?.name||'').trim().toLowerCase();
+            const party=String(entry?.partyName||item?.partyName||'').trim().toLowerCase();
+            const vendor=(Array.isArray(rows)?rows:[]).find(row=>String(row.partyName||'').trim().toLowerCase()===party&&String(row.item||row.name||'').trim().toLowerCase()===name);
+            const candidates=kind==='missing'
+                ?[entry?.vendorMissingCost,item?.vendorMissingCost,vendor?.vendorMissingCost,vendor?.missingCost]
+                :[entry?.vendorRentRate,item?.vendorRentRate,vendor?.costPrice];
+            for(const value of candidates){
+                if(value===null||value===undefined||String(value).trim()==='')continue;
+                const amount=Number(value);
+                if(Number.isFinite(amount)&&amount>0)return amount;
+            }
+            return 0;
+        }
         function loadThirdPartyLedger() {
             const tpList=safeGetStorage('thirdPartyDatabase',[]),payments=safeGetStorage('thirdPartyPayments',[]),bookings=safeGetStorage('softwareBookings',[]);
             const today=new Date().toLocaleDateString('en-CA');
@@ -3267,8 +3363,8 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             container.innerHTML=parties.length===0?'<p>कोई वेंडर डेटा नहीं</p>':parties.map(party=>{
                 const items=tpList.filter(x=>x.partyName===party);
                 const vendorEntries=bookings.flatMap(booking=>getDispatchEntryRentalSlices(booking).filter(slice=>slice.entry.source==='third-party'&&String(slice.entry.partyName||'')===String(party)).map(slice=>({booking,e:slice.entry,qty:slice.qty,endDate:slice.endDate})));
-                const vendorRentCost=vendorEntries.reduce((sum,{booking,e,qty,endDate})=>{const item=booking.items?.[Number(e.itemIndex)]||{};const rate=Number(e.vendorRentRate??item.vendorRentRate??tpList.find(x=>x.partyName===party&&(x.item||x.name)===e.itemName)?.costPrice)||0;const days=calculateRentalDays(e.date||booking.date,endDate);return sum+Math.max(0,Number(qty)||0)*Math.max(0,rate)*days;},0);
-                const vendorMissingLiability=bookings.reduce((sum,booking)=>sum+(booking.items||[]).filter(item=>item.source==='third-party'&&String(item.partyName||'')===String(party)).reduce((part,item)=>part+Math.max(0,Number(item.missingQty)||0)*Math.max(0,Number(item.vendorMissingCost)||0),0),0);
+                const vendorRentCost=vendorEntries.reduce((sum,{booking,e,qty,endDate})=>{const item=booking.items?.[Number(e.itemIndex)]||{};const rate=getVendorLedgerRate(e,item,tpList,'rent');const days=calculateRentalDays(e.date||booking.date,endDate);return sum+Math.max(0,Number(qty)||0)*rate*days;},0);
+                const vendorMissingLiability=bookings.reduce((sum,booking)=>sum+(booking.items||[]).filter(item=>item.source==='third-party'&&String(item.partyName||'')===String(party)).reduce((part,item)=>part+Math.max(0,Number(item.missingQty)||0)*getVendorLedgerRate(null,item,tpList,'missing'),0),0);
                 const vendorCost=vendorRentCost+vendorMissingLiability;
                 const customerRent=vendorEntries.reduce((sum,{booking,e,qty,endDate})=>{const days=calculateRentalDays(e.date||booking.date,endDate);return sum+Math.max(0,Number(qty)||0)*Math.max(0,Number(e.unitRent)||0)*days;},0);
                 const paid=payments.filter(x=>x.partyName===party).reduce((sum,x)=>sum+Math.max(0,Number(x.amount)||0),0);
@@ -3434,14 +3530,21 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(modeRaw===null)return;
             const mode=String(modeRaw).trim().toUpperCase();
             if(!['FINAL','PARTIAL'].includes(mode)){showActionMessage('कृपया FINAL या PARTIAL लिखें','error');return;}
-            // Never mark returned quantities complete unless their source stock row can receive them.
+            // Validate aggregate return quantities per physical stock row before changing any row.
+            const returnRequirements=new Map();
             for(const input of inputs){
               const idx=Number(input.dataset.returnIndex),item=b.items[idx],qty=Number(input.value);
               if(qty<=0)continue;
               const row=item.source==='third-party'
                 ?thirdParty.find(x=>x.partyName===item.partyName&&(x.item||x.name)===item.name)
                 :stock.find(x=>x.name===item.name);
-              if(!row){showActionMessage('Return stock record नहीं मिला: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}const available=Number(row.qty);if(String(row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(available+qty)){showActionMessage('Return stock की मात्रा गलत है: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
+              if(!row){showActionMessage('Return stock record नहीं मिला: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
+              const previous=returnRequirements.get(row);
+              if(previous)previous.qty+=qty;else returnRequirements.set(row,{row,qty,name:item.name});
+            }
+            for(const requirement of returnRequirements.values()){
+              const available=Number(requirement.row.qty),total=available+requirement.qty;
+              if(String(requirement.row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(requirement.qty)||!Number.isSafeInteger(total)){showActionMessage('Return stock की कुल मात्रा गलत या सीमा से बाहर है: '+requirement.name+'; मात्रा सेव नहीं हुई','error');return;}
             }
             inputs.forEach(input=>{
               const idx=Number(input.dataset.returnIndex),item=b.items[idx];
@@ -3504,6 +3607,19 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             loadSettingsToUI();renderBusinessCard();showActionMessage('Business Card सेव हो गया','success');
         }
         async function printBusinessCard(){const preview=document.getElementById('businessCardPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले Business Card तैयार करें','error');return;}area.dataset.printRestore='card';area.innerHTML=preview.innerHTML;area.style.display='block';await printWithStampImages();}
+        function isBusinessDocumentNumberTaken(type,number,rows,editingId){
+            const normalized=String(number||'').trim().toLocaleUpperCase();
+            if(!normalized)return false;
+            return (Array.isArray(rows)?rows:[]).some(row=>String(row.id)!==String(editingId||'')&&String(row.documentNumber||'').trim().toLocaleUpperCase()===normalized);
+        }
+        function createUniqueBusinessDocumentNumber(type,rows,now=Date.now()){
+            const prefix=type==='tax-invoice'?'INV-':'QTN-';
+            const date=new Date(now).toLocaleDateString('en-CA').replace(/-/g,'');
+            const base=prefix+date+'-'+String(now);
+            let candidate=base,suffix=1;
+            while(isBusinessDocumentNumberTaken(type,candidate,rows,null)){suffix++;candidate=base+'-'+suffix;}
+            return candidate;
+        }
         function businessDocumentTotals(){
             const lineBases=currentDocumentItems.map(item=>Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rate)||0));
             const subtotal=lineBases.reduce((sum,value)=>sum+value,0);
@@ -3539,7 +3655,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const preview=document.getElementById('businessDocumentPreview');if(!preview)return;
             renderBusinessDocumentItems();
             const s=safeGetStorage('softwareSettings',{}),type=document.getElementById('docType')?.value||'quotation',tax=businessDocumentTotals();
-            const numberInput=document.getElementById('docNumber');let number=(numberInput?.value||'').trim();if(!number){number=(type==='quotation'?'QTN-':'INV-')+new Date().toLocaleDateString('en-CA').replace(/-/g,'')+'-'+String(Date.now()).slice(-5);if(numberInput)numberInput.value=number;}
+            const numberInput=document.getElementById('docNumber'),numberKey=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',numberRows=safeGetStorage(numberKey,[]);let number=(numberInput?.value||'').trim();if(!number){number=createUniqueBusinessDocumentNumber(type,numberRows);if(numberInput)numberInput.value=number;}
             const title=type==='quotation'?'QUOTATION / कोटेशन':'TAX INVOICE / टैक्स इनवॉइस';
             const rows=currentDocumentItems.map(item=>`<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.hsn||'-')}</td><td>${Number(item.qty)||0}</td><td>₹${(Number(item.rate)||0).toFixed(2)}</td><td>${type==='tax-invoice'?Number((item.gstRate??tax.rate)||0)+'%':'-'}</td><td>₹${((Number(item.qty)||0)*(Number(item.rate)||0)).toFixed(2)}</td></tr>`).join('');
             const taxRows=type==='tax-invoice'?(tax.taxType==='intra'?`<tr><td colspan="5">CGST</td><td>₹${tax.cgst.toFixed(2)}</td></tr><tr><td colspan="5">SGST</td><td>₹${tax.sgst.toFixed(2)}</td></tr>`:`<tr><td colspan="5">IGST</td><td>₹${tax.igst.toFixed(2)}</td></tr>`):'';
@@ -3548,10 +3664,18 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         function saveBusinessDocument(){
             const type=document.getElementById('docType')?.value||'quotation',name=(document.getElementById('docCustomerName')?.value||'').trim(),date=document.getElementById('docDate')?.value||'';
             if(!name||!date||!currentDocumentItems.length){showActionMessage('ग्राहक का नाम, तारीख और कम-से-कम एक सामान आवश्यक है','error');return;}
+            const rawDiscount=Number(document.getElementById('docDiscount')?.value),rawOther=Number(document.getElementById('docOtherCharges')?.value),rawGst=Number(document.getElementById('docGstRate')?.value);
+            if(!Number.isFinite(rawDiscount)||rawDiscount<0||!Number.isFinite(rawOther)||rawOther<0||!Number.isFinite(rawGst)||rawGst<0||rawGst>28){showActionMessage('Discount, Other Charges और GST दर सही भरें (GST 0 से 28% तक)','error');return;}
+            const itemDataValid=currentDocumentItems.every(item=>String(item.name||'').trim()&&Number.isSafeInteger(Number(item.qty))&&Number(item.qty)>0&&Number.isFinite(Number(item.rate))&&Number(item.rate)>=0&&(item.gstRate==null||(Number.isFinite(Number(item.gstRate))&&Number(item.gstRate)>=0&&Number(item.gstRate)<=28)));
+            const subtotalCheck=currentDocumentItems.reduce((sum,item)=>sum+Number(item.qty)*Number(item.rate),0);
+            if(!itemDataValid||!Number.isFinite(subtotalCheck)||rawDiscount>subtotalCheck+rawOther){showActionMessage('सामान की मात्रा/दर या Discount की राशि सही नहीं है','error');return;}
             const settings=safeGetStorage('softwareSettings',{});
             if(type==='tax-invoice'&&!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(String(settings.businessGstin||'').toUpperCase())){showActionMessage('Tax Invoice से पहले Business Card में सही 15-अक्षर GSTIN सेव करें','error');return;}
-            const totals=businessDocumentTotals(),key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',rows=safeGetStorage(key,[]);
-            const number=(document.getElementById('docNumber')?.value||'').trim()||(type==='quotation'?'QTN-':'INV-')+new Date().toLocaleDateString('en-CA').replace(/-/g,'')+'-'+String(Date.now()).slice(-5);
+            const key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',rows=safeGetStorage(key,[]);
+            let number=(document.getElementById('docNumber')?.value||'').trim();
+            if(!number){number=createUniqueBusinessDocumentNumber(type,rows);document.getElementById('docNumber').value=number;}
+            if(isBusinessDocumentNumberTaken(type,number,rows,editingBusinessDocumentId)){showActionMessage('यह Document Number पहले से उपयोग में है। कृपया अलग नंबर डालें।','error');return;}
+            const totals=businessDocumentTotals();
             const record={id:editingBusinessDocumentId||'DOC-'+Date.now(),documentNumber:number,type,date,validUntil:document.getElementById('docValidUntil')?.value||'',customerName:name,customerPhone:(document.getElementById('docCustomerPhone')?.value||'').trim(),customerAddress:(document.getElementById('docCustomerAddress')?.value||'').trim(),customerGstin:(document.getElementById('docCustomerGstin')?.value||'').trim().toUpperCase(),items:currentDocumentItems.map(item=>({...item})),discount:totals.discount,otherCharges:totals.other,gstRate:totals.rate,taxType:totals.taxType,subtotal:totals.subtotal,total:totals.total,createdAt:new Date().toISOString(),businessName:settings.businessName||''};
             const index=rows.findIndex(item=>String(item.id)===String(record.id));if(index>=0)rows[index]=record;else rows.push(record);
             if(!safeSetStorage(key,rows))return;editingBusinessDocumentId=record.id;document.getElementById('docNumber').value=number;renderDocumentRecentList();renderBusinessDocumentPreview();showActionMessage(type==='quotation'?'Quotation सेव हो गया':'Tax Invoice सेव हो गया','success');
@@ -3985,13 +4109,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       const b=data.booking;if(!b)throw new Error('बुकिंग विवरण उपलब्ध नहीं है');
       const items=Array.isArray(b.items)?b.items:[],entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
       const days=(start,end)=>{const a=new Date(String(start||'').slice(0,10)+'T12:00:00'),z=new Date(String(end||'').slice(0,10)+'T12:00:00');if(Number.isNaN(a.getTime())||Number.isNaN(z.getTime())||z<a)return 1;return Math.max(1,Math.round((z-a)/86400000));};
-      const endDate=b.actualReturnDate||b.returnDate||new Date().toLocaleDateString('en-CA');
+      const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'),endDate=b.actualReturnDate||b.returnDate||today;
       let rental=0;
       if(entries.length){
         const allocated=entries.map(()=>0),slices=[];
         const returns=(Array.isArray(b.returnEntries)?b.returnEntries:[]).flatMap(r=>(r.items||[]).map(item=>({date:r.date,itemIndex:Number(item.itemIndex),qty:Math.max(0,Number(item.qty)||0)}))).sort((a,z)=>String(a.date).localeCompare(String(z.date)));
         returns.forEach(ret=>{let remaining=ret.qty;entries.map((entry,index)=>({entry,index})).filter(x=>Number(x.entry.itemIndex)===ret.itemIndex).sort((a,z)=>String(a.entry.date||'').localeCompare(String(z.entry.date||''))).forEach(({entry,index})=>{if(remaining<=0)return;const available=Math.max(0,(Number(entry.qty)||0)-allocated[index]),take=Math.min(available,remaining);if(take>0){slices.push({entry,qty:take,endDate:ret.date});allocated[index]+=take;remaining-=take;}});});
-        const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),openEnd=scheduled>today?scheduled:today;
+        const current=new Date(),today=current.getFullYear()+'-'+String(current.getMonth()+1).padStart(2,'0')+'-'+String(current.getDate()).padStart(2,'0'),scheduled=String(b.returnDate||today),openEnd=scheduled>today?scheduled:today;
         entries.forEach((entry,index)=>{const remaining=Math.max(0,(Number(entry.qty)||0)-allocated[index]);if(remaining>0)slices.push({entry,qty:remaining,endDate:b.fullyReturnedAt?(b.actualReturnDate||b.returnDate||entry.date):openEnd});});
         rental=slices.reduce((sum,slice)=>sum+slice.qty*Math.max(0,Number(slice.entry.unitRent)||0)*days(slice.entry.date||b.date,slice.endDate),0);
       }else rental=items.reduce((sum,i)=>sum+Math.max(0,Number(i.qty)||0)*Math.max(0,Number(i.rentPrice??500))*days(b.date,endDate),0);
