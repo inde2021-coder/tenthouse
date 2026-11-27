@@ -1419,7 +1419,7 @@ test('purchase rename is blocked when old purchased stock has already been used'
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:3}]};
   const answers=['Table','5','500','A'];
   let writes=0;
-  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,hasOpenStockReturnReference:()=>false,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
   vm.runInNewContext(code+'\nresult=editPurchase(0);',context);
   assert.equal(writes,0);
   assert.equal(store.purchaseDatabase[0].itemName,'Chair');
