@@ -52,7 +52,7 @@ app.use(helmet({
   }
 }));
 const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(null, false); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization','X-Admin-Token'] }));
+app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(null, false); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
 app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { req.rawBody = Buffer.from(buf); } }));
 const configuredApiLimit = Number.parseInt(process.env.API_RATE_LIMIT_MAX || '60', 10);
 const apiRateLimitMax = Number.isSafeInteger(configuredApiLimit) && configuredApiLimit > 0 ? configuredApiLimit : 60;
