@@ -2348,3 +2348,18 @@ test('GSTR-1 CSV includes a UTF-8 BOM and Windows-compatible row endings', () =>
   assert.match(exportCode,/join\('\\r\\n'\)/);
   assert.match(exportCode,/text\/csv;charset=utf-8/);
 });
+
+
+test('daily expense entries use timezone-local ISO dates and consistent positive rounded amounts', () => {
+  const dateCode=sourceBetween('function localISODate(', 'function saveDailyExpense(event)');
+  const result=vm.runInNewContext(dateCode+`
+    localISODate(new Date(2026,10,27,23,59,59))
+  `,{Date,String});
+  assert.equal(result,'2026-11-27');
+  const save=sourceBetween('function saveDailyExpense(event)', 'function renderRoyalDashboardMetrics()');
+  assert.match(save,/date: localISODate\(\)/);
+  assert.match(save,/Math\.round\(amount\*100\)\/100/);
+  const edit=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense(index)');
+  assert.match(edit,/n<=0/);
+  assert.match(edit,/Math\.round\(n\*100\)\/100/);
+});
