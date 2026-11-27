@@ -1841,7 +1841,9 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             provider.setCustomParameters({prompt:'select_account'});
             provider.addScope('email');
             try{
-                await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                // Open the OAuth popup immediately inside the user's click gesture.
+                // Awaiting setPersistence first can consume transient user activation
+                // and cause browsers to block or mis-handle the Firebase popup.
                 const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
