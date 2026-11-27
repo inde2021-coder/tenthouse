@@ -697,6 +697,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
           <input type="password" id="rkAdminAccessToken" name="rk-admin-access-token" placeholder="सुरक्षित एक्सेस टोकन" autocomplete="new-password" autocapitalize="off" spellcheck="false" required>
           <button type="submit" class="glass-btn-green"><i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें</button>
         </form>
+        <div id="rkGoogleLoginStep" style="margin:14px 0 8px;padding:14px;border:1px solid rgba(125,170,255,.28);border-radius:16px;background:rgba(35,52,78,.28);text-align:left">
+          <div style="font-weight:800;margin-bottom:6px"><i class="fa-brands fa-google" style="margin-right:8px"></i>Google / Gmail लॉगिन</div>
+          <p id="rkGoogleLoginHint" style="font-size:12px;line-height:1.5;color:#b9c8df;margin:0 0 10px">पहले Access Token सत्यापित करें। उसके बाद Gmail से लॉगिन का बटन सक्रिय होगा।</p>
+          <button id="rkGoogleLoginBtn" type="button" onclick="handleGoogleAdminLogin(event)" disabled style="width:100%;min-height:48px;border:1px solid rgba(130,175,255,.5);border-radius:12px;background:linear-gradient(135deg,#315b9c,#19365f);color:#fff;font-weight:800;opacity:.55;cursor:not-allowed">
+            <i class="fa-brands fa-google" style="margin-right:8px"></i> Google से लॉगिन करें
+          </button>
+        </div>
         <button type="button" onclick="closeWelcomeOverlay()" class="action-btn rk-admin-cancel">बंद करें</button>
         <p class="rk-admin-gate-note">सत्यापन के बाद Google खाते से दूसरा लॉगिन चरण आवश्यक होगा।</p>
       </div>
@@ -1623,7 +1630,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             }
         }
 
-        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);const signedInUser=firebase.auth().currentUser;if(!signedInUser)throw Error('Google लॉगिन पूरा नहीं हुआ।');const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');if(adminGrant.val()!==true){await firebase.auth().signOut();throw Error('इस Google खाते को व्यवस्थापक अनुमति नहीं है। Firebase erp_admins में इस UID की अनुमति जाँचें।');}document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');return true;}catch(error){window.__rkVerifiedAdminToken='';const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
+        async function loginWithGoogle(adminToken){try{if(!adminToken||adminToken!==window.__rkVerifiedAdminToken)throw Error('पहले सुरक्षित व्यवस्थापक सत्यापन पूरा करें।');if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);const signedInUser=firebase.auth().currentUser;if(!signedInUser)throw Error('Google लॉगिन पूरा नहीं हुआ।');const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');if(adminGrant.val()!==true){await firebase.auth().signOut();throw Error('इस Google खाते को व्यवस्थापक अनुमति नहीं है। Firebase erp_admins में इस UID की अनुमति जाँचें।');}document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('व्यवस्थापक सत्यापन और Google लॉगिन सफल।','success');return true;}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
         // Never send credentials or secret material to the shared Firebase settings node.
         function sanitizeCloudSettings(settings) {
             const safe = settings && typeof settings === 'object' && !Array.isArray(settings) ? { ...settings } : {};
@@ -1859,6 +1866,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(gate)gate.style.display='none';
             const field=document.getElementById('rkAdminAccessToken');
             if(field)field.value='';
+            window.__rkVerifiedAdminToken='';
+            const googleButton=document.getElementById('rkGoogleLoginBtn');
+            const googleHint=document.getElementById('rkGoogleLoginHint');
+            if(googleButton){googleButton.disabled=true;googleButton.style.opacity='.55';googleButton.style.cursor='not-allowed';}
+            if(googleHint)googleHint.textContent='पहले Access Token सत्यापित करें। उसके बाद Gmail से लॉगिन करें।';
             document.getElementById('customerFirstPortal').style.display='flex';
         }
         async function handleDirectAdminLogin(event) {
@@ -1887,8 +1899,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                 if(result.ok!==true)throw new Error('Server ने Admin Access की पुष्टि नहीं की।');
                 window.__rkVerifiedAdminToken=token;
                 if(field)field.value='';
-                const googleLoginOk=await loginWithGoogle(token);
-                if(googleLoginOk!==true)window.__rkVerifiedAdminToken='';
+                const googleButton=document.getElementById('rkGoogleLoginBtn');
+                const googleHint=document.getElementById('rkGoogleLoginHint');
+                if(googleButton){googleButton.disabled=false;googleButton.style.opacity='1';googleButton.style.cursor='pointer';}
+                if(googleHint)googleHint.textContent='Access Token सत्यापित है। अब अपना अधिकृत Gmail खाता चुनें।';
             }catch(error){
                 window.__rkVerifiedAdminToken='';
                 const message=error?.message||'व्यवस्थापक लॉगिन विफल।';
@@ -1897,6 +1911,22 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     : message,'error');
             }finally{
                 if(submit){submit.disabled=false;submit.innerHTML=original||'<i class="fa-solid fa-lock-open"></i> सत्यापित करें और आगे बढ़ें';}
+            }
+            return false;
+        }
+        async function handleGoogleAdminLogin(event) {
+            if(event){event.preventDefault();event.stopPropagation();}
+            const button=document.getElementById('rkGoogleLoginBtn');
+            if(!window.__rkVerifiedAdminToken){showActionMessage('पहले Access Token सत्यापित करें।','error');return false;}
+            if(button){button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Google लॉगिन जारी…';}
+            try { await loginWithGoogle(window.__rkVerifiedAdminToken); }
+            finally {
+                if(button){
+                    button.disabled=!window.__rkVerifiedAdminToken;
+                    button.style.opacity=button.disabled?'.55':'1';
+                    button.style.cursor=button.disabled?'not-allowed':'pointer';
+                    button.innerHTML='<i class="fa-brands fa-google" style="margin-right:8px"></i> Google से लॉगिन करें';
+                }
             }
             return false;
         }
