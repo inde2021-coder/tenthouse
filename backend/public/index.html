@@ -1590,27 +1590,15 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
-        let rkRedirectResultHandled=false;
-        async function handleGoogleRedirectResult(){
-            if(rkRedirectResultHandled||!window.firebase?.auth)return;
-            rkRedirectResultHandled=true;
-            try{
-                const result=await firebase.auth().getRedirectResult();
-                if(result?.user)await completeGoogleAdminLogin(result.user);
-            }catch(error){
-                const msg=error.code==='auth/unauthorized-domain'?'इस वेबसाइट का domain Firebase Authentication → Authorized domains में जोड़ें।':error.code==='auth/operation-not-allowed'?'Firebase Console में Google Sign-In enable करें।':error.code==='auth/network-request-failed'?'Internet connection जाँचकर फिर प्रयास करें।':(error.message||'अज्ञात Firebase त्रुटि');
-                const code=error.code?' ['+error.code+']':'';
-                console.error('Google redirect login failed:',error);
-                showActionMessage('Gmail लॉगिन विफल'+code+': '+msg,'error');
-            }
-        }
+        // Google login uses signInWithPopup only. Do not call getRedirectResult:
+        // this app no longer starts redirect-based authentication, and stale
+        // redirect state can trigger "missing initial state" on page load.
         function initFirebaseConnection() {
             try {
                 if (!window.firebase || !firebase.database || !firebase.auth) throw new Error('Firebase SDK लोड नहीं हुआ');
                 if (!firebase.apps.length) firebaseApp = firebase.initializeApp(firebaseConfig);
                 else firebaseApp = firebase.app();
                 dbRef = firebase.database().ref('tent_erp_data');
-                handleGoogleRedirectResult();
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
                     if (!user) return;
