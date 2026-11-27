@@ -392,6 +392,14 @@ test('return slip prints missing quantities only and never a missing charge', ()
   assert.ok(!code.includes('मिसिंग चार्ज'));
 });
 
+test('dispatch slip refuses to print planned quantities when legacy dispatch history is absent', () => {
+  const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
+  assert.match(code, /if\(!entries\.length\)/);
+  assert.match(code, /वास्तविक Dispatch इतिहास उपलब्ध नहीं है/);
+  assert.match(code, /Number\.isSafeInteger\(qty\)&&qty>0/);
+  assert.doesNotMatch(code, /:\s*\(b\.items\|\|\[\]\)\.map/);
+});
+
 test('dispatch slip uses actual dispatch entries, not full booking quantities', () => {
   const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
   assert.match(code, /b\.dispatchEntries/);
