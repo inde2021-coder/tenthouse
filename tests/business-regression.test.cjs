@@ -2414,3 +2414,13 @@ test('adding vendor stock during open dispatch cannot rewrite historical vendor 
   assert.match(save,/existing\.costPrice=costPrice/);
   assert.match(save,/existing\.qty=currentQty\+qty/);
 });
+
+
+test('rental calculations construct ISO dates from local calendar fields, not locale formatting', () => {
+  const slices=sourceBetween('function getDispatchEntryRentalSlices(b)', 'function calculateBookingTotalRent(b)');
+  const total=sourceBetween('function calculateBookingTotalRent(b)', 'function loadAllFirebaseData()');
+  assert.match(slices,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
+  assert.match(total,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
+  assert.doesNotMatch(slices,/toLocaleDateString\('en-CA'\)/);
+  assert.doesNotMatch(total,/toLocaleDateString\('en-CA'\)/);
+});
