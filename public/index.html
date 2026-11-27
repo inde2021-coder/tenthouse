@@ -3453,7 +3453,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
               if(mode==='FINAL'){
                 item.missingQty=Math.max(0,sent-item.returnedQty);
                 if(item.missingQty>0){
-                  const existing=missing.find(m=>String(m.bookingId)===String(b.id)&&String(m.item)===String(item.name)&&String(m.source)===(item.source==='third-party'?'third-party':'admin')&&String(m.partyName||'')===String(item.partyName||''));
+                  const existing=missing.find(m=>String(m.bookingId)===String(b.id)&&String(m.item)===String(item.name)&&String(m.source)===(item.source==='third-party'?'third-party':'admin')&&String(m.partyName||'')===String(item.partyName||'')&&m.itemIndex!==undefined&&m.itemIndex!==null&&Number(m.itemIndex)===idx);
                   const unitCharge=Math.max(0,Number(existing?.unitCharge)||getEffectiveMissingCharge(item));const record={id:existing?.id||(`${b.id}-${idx}`),bookingId:b.id,itemIndex:idx,customer:b.name,item:item.name,source:item.source==='third-party'?'third-party':'admin',partyName:item.partyName||'',qty:item.missingQty,unitCharge,penalty:Math.round(unitCharge*item.missingQty*100)/100,chargeAppliedAt:existing?.chargeAppliedAt||new Date().toISOString(),resolved:false,recoveryEntries:Array.isArray(existing?.recoveryEntries)?existing.recoveryEntries:[],createdAt:existing?.createdAt||new Date().toISOString()};
                   if(existing)Object.assign(existing,record);else missing.push(record);
                 }
