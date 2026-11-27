@@ -2363,3 +2363,16 @@ test('daily expense entries use timezone-local ISO dates and consistent positive
   assert.match(edit,/n<=0/);
   assert.match(edit,/Math\.round\(n\*100\)\/100/);
 });
+
+
+test('purchase history cannot be edited or deleted after related dispatch or unresolved missing records', () => {
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  assert.match(helper,/booking\.dispatchEntries/);
+  assert.match(helper,/itemIndex\)===index/);
+  assert.match(helper,/Partially Returned/);
+  assert.match(helper,/missingItemsDatabase/);
+  const edit=sourceBetween('function editPurchase(index)', 'function deletePurchase(index)');
+  const del=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  assert.match(edit,/purchaseHasDispatchReference\(p\.itemName\)/);
+  assert.match(del,/purchaseHasDispatchReference\(p\.itemName\)/);
+});
