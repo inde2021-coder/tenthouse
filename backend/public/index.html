@@ -2194,7 +2194,23 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
 
         function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||!Number.isSafeInteger(nums[0])||nums[0]<0||nums.slice(1).some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, पूर्ण संख्या में स्टॉक मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};if(!safeSetStorage('realStockDatabase',rows))return;loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज अपडेट हुए','success');}
-        function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]);if(!rows[index])return;if(!confirm(`स्टॉक आइटम “${rows[index].name}” हटाएँ?`))return;rows.splice(index,1);safeSetStorage('realStockDatabase',rows);loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
+        function hasOpenStockReturnReference(source,itemName,partyName=''){
+            const bookings=safeGetStorage('softwareBookings',[]),missing=safeGetStorage('missingItemsDatabase',[]);
+            const sourceKey=source==='third-party'?'third-party':'admin';
+            const referenced=(Array.isArray(bookings)?bookings:[]).some(booking=>(Array.isArray(booking.items)?booking.items:[]).some((item,index)=>{
+                const itemSource=item.source==='third-party'?'third-party':'admin';
+                if(itemSource!==sourceKey||String(item.name||'').trim().toLowerCase()!==String(itemName||'').trim().toLowerCase())return false;
+                if(sourceKey==='third-party'&&String(item.partyName||'').trim().toLowerCase()!==String(partyName||'').trim().toLowerCase())return false;
+                const dispatched=Array.isArray(booking.dispatchEntries)
+                    ?booking.dispatchEntries.filter(entry=>Number(entry.itemIndex)===index).reduce((sum,entry)=>sum+Math.max(0,Number(entry.qty)||0),0)
+                    :(['Dispatched','Partially Returned'].includes(booking.status)?Math.max(0,Number(item.qty)||0):0);
+                return dispatched>Math.max(0,Number(item.returnedQty)||0);
+            }));
+            const openMissing=(Array.isArray(missing)?missing:[]).some(record=>!record.resolved&&(Number(record.qty)||0)>0&&String(record.source||'admin')===sourceKey&&String(record.item||'').trim().toLowerCase()===String(itemName||'').trim().toLowerCase()&&(sourceKey!=='third-party'||String(record.partyName||'').trim().toLowerCase()===String(partyName||'').trim().toLowerCase()));
+            return referenced||openMissing;
+        }
+
+                function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;if(hasOpenStockReturnReference('admin',item.name)){showActionMessage('इस सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। स्टॉक रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm(`स्टॉक आइटम “${item.name}” हटाएँ?`))return;rows.splice(index,1);if(!safeSetStorage('realStockDatabase',rows))return;loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
 
         function loadDispatchTable() {
             let bookings = safeGetStorage('softwareBookings', []);
@@ -3237,7 +3253,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const charge=prompt('कस्टमर किराया (₹)',String(Number(r.chargePrice)||0));if(charge===null)return;const ch=Number(charge);if(!Number.isFinite(ch)||ch<0){showActionMessage('किराया सही भरें','error');return;}
             r.qty=q;r.costPrice=c;r.chargePrice=ch;r.updatedAt=new Date().toISOString();if(safeSetStorage('thirdPartyDatabase',rows)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('थर्ड-पार्टी रिकॉर्ड अपडेट हुआ','success');}
         }
-        function deleteThirdPartyEntry(partyName,itemName){if(!confirm('यह वेंडर-सामान रिकॉर्ड हटाएँ? पुराने बुकिंग रिकॉर्ड नहीं हटेंगे।'))return;const rows=safeGetStorage('thirdPartyDatabase',[]),next=rows.filter(x=>!(String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName));if(next.length===rows.length){showActionMessage('रिकॉर्ड नहीं मिला','error');return;}if(safeSetStorage('thirdPartyDatabase',next)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('रिकॉर्ड हटाया गया','success');}}
+        function deleteThirdPartyEntry(partyName,itemName){if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm('यह वेंडर-सामान रिकॉर्ड हटाएँ? पुराने बुकिंग रिकॉर्ड नहीं हटेंगे।'))return;const rows=safeGetStorage('thirdPartyDatabase',[]),next=rows.filter(x=>!(String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName));if(next.length===rows.length){showActionMessage('रिकॉर्ड नहीं मिला','error');return;}if(safeSetStorage('thirdPartyDatabase',next)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('रिकॉर्ड हटाया गया','success');}}
         function deleteThirdPartyPayment(id){if(!confirm('यह भुगतान एंट्री हटाएँ?'))return;const rows=safeGetStorage('thirdPartyPayments',[]),next=rows.filter(x=>String(x.id)!==id);if(next.length===rows.length){showActionMessage('भुगतान नहीं मिला','error');return;}if(safeSetStorage('thirdPartyPayments',next)){loadThirdPartyLedger();showActionMessage('भुगतान एंट्री हटाई गई','success');}}
 
         function saveThirdPartyEntry(event) {
