@@ -2933,22 +2933,49 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             showActionMessage("डाउनलोड हो गया", "success");
         }
 
-        function exportGstr1Report() {
-            let bookings = safeGetStorage('softwareBookings', []);
-            let csvContent = "data:text/csv;charset=utf-8,BookingID,CustomerName,Mobile,TaxableValue,GSTAmount,TotalAmount\n";
-            bookings.forEach(b => {
-                let subTotal = calculateBookingTotalRent(b);
-                let gstAmt = (subTotal * 18) / 100;
-                csvContent += `${b.id},"${b.name}",${b.mob},${subTotal},${gstAmt.toFixed(2)},${(subTotal+gstAmt).toFixed(2)}\n`;
+        function buildGstr1TaxInvoiceRows(invoices){
+            const rows=[],source=Array.isArray(invoices)?invoices:[];
+            let skipped=0;
+            source.forEach(invoice=>{
+                const items=Array.isArray(invoice?.items)?invoice.items:[];
+                const discount=Number(invoice?.discount??0),other=Number(invoice?.otherCharges??0),taxType=String(invoice?.taxType||'');
+                if(!items.length||!Number.isFinite(discount)||discount<0||!Number.isFinite(other)||other<0||!['intra','inter'].includes(taxType)){skipped++;return;}
+                const lines=items.map(item=>{
+                    const qty=Number(item?.qty),rate=Number(item?.rate),gstRate=item?.gstRate==null?Number(invoice?.gstRate):Number(item.gstRate);
+                    return {qty,rate,gstRate,base:qty*rate};
+                });
+                if(lines.some(line=>!Number.isSafeInteger(line.qty)||line.qty<1||!Number.isFinite(line.rate)||line.rate<0||!Number.isFinite(line.gstRate)||line.gstRate<0||line.gstRate>28)){skipped++;return;}
+                const subtotal=lines.reduce((sum,line)=>sum+line.base,0);
+                if(!Number.isFinite(subtotal)||discount>subtotal+other){skipped++;return;}
+                const taxable=Math.max(0,subtotal-discount+other);
+                const rawGst=lines.reduce((sum,line)=>{
+                    const share=subtotal>0?line.base/subtotal:0;
+                    const lineTaxable=Math.max(0,line.base-discount*share+other*share);
+                    return sum+lineTaxable*line.gstRate/100;
+                },0);
+                const gst=Math.round(rawGst*100)/100,cgst=taxType==='intra'?Math.round(gst*50)/100:0,sgst=taxType==='intra'?Math.round((gst-cgst)*100)/100:0,igst=taxType==='inter'?gst:0;
+                rows.push({
+                    invoiceDate:String(invoice.date||''),invoiceNumber:String(invoice.documentNumber||invoice.id||''),
+                    customerName:String(invoice.customerName||''),customerGstin:String(invoice.customerGstin||''),
+                    taxable:Math.round(taxable*100)/100,cgst,sgst,igst,gst,
+                    invoiceValue:Math.round((taxable+gst)*100)/100
+                });
             });
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "GSTR1_Sales_Report.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showActionMessage("GSTR-1 रिपोर्ट डाउनलोड हो गई", "success");
+            return {rows,skipped};
+        }
+        function csvSafeCell(value){
+            const raw=String(value??''),safe=/^[\\s]*[=+\\-@]/.test(raw)?"'"+raw:raw;
+            return '"'+safe.replace(/"/g,'""')+'"';
+        }
+        function exportGstr1Report() {
+            const result=buildGstr1TaxInvoiceRows(safeGetStorage('taxInvoiceDatabase',[]));
+            if(!result.rows.length){showActionMessage('GSTR-1 Working Register के लिए पहले Tax Invoice सेव करें। कोई Booking स्वतः GST में नहीं जोड़ी जाएगी।','error');return;}
+            const header=['Invoice Date','Invoice Number','Customer Name','Customer GSTIN','Taxable Value','CGST','SGST','IGST','Total GST','Invoice Value'];
+            const lines=[header,...result.rows.map(row=>[row.invoiceDate,row.invoiceNumber,row.customerName,row.customerGstin,row.taxable.toFixed(2),row.cgst.toFixed(2),row.sgst.toFixed(2),row.igst.toFixed(2),row.gst.toFixed(2),row.invoiceValue.toFixed(2)])];
+            const csv='\\uFEFF'+lines.map(line=>line.map(csvSafeCell).join(',')).join('\\r\\n');
+            const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),link=document.createElement('a');
+            link.href=url;link.download='GSTR1_Tax_Invoice_Working_Register.csv';document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);
+            showActionMessage('Tax Invoice आधारित GSTR-1 Working Register डाउनलोड हुई।'+(result.skipped?' '+result.skipped+' अमान्य रिकॉर्ड छोड़े गए।':''),'success');
         }
 
         function loadInstallmentsTable() {
