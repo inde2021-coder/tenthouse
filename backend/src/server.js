@@ -327,7 +327,7 @@ const authAdmin = async (req, res, next) => {
     if (!isProd && localToken && configuredLocalToken) {
       const supplied = Buffer.from(localToken), configured = Buffer.from(configuredLocalToken);
       if (supplied.length === configured.length && crypto.timingSafeEqual(supplied, configured)) {
-        req.actor = { type: 'local-development-admin', id: 'local-development' };
+        req.actor = { type: 'admin-api-token', id: crypto.createHash('sha256').update(localToken).digest('hex').slice(0, 16) };
         return next();
       }
     }
