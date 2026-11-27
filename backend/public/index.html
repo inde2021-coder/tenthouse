@@ -606,6 +606,37 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
     <link rel="stylesheet" href="./rk-reference-theme.css?v=7">
+<script id="rk-reference-design-activation-v1">
+/* Activate the supplied reference layout without touching ERP data or business handlers. */
+(function(){
+  'use strict';
+  var allowed=['ref1','ref2','ref3','ref4','ref5'];
+  function applyRkDesign(theme){
+    if(allowed.indexOf(theme)<0) theme='ref1';
+    var root=document.documentElement;
+    allowed.forEach(function(name){root.classList.remove('rk-'+name);});
+    root.classList.add('rk-'+theme);
+    try{localStorage.setItem('rk-reference-design',theme);}catch(e){}
+    document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(function(button){
+      var active=button.getAttribute('data-rk-theme')===theme;
+      button.classList.toggle('active',active);button.classList.toggle('selected',active);
+      button.setAttribute('aria-pressed',active?'true':'false');
+    });
+    var status=document.getElementById('rkDesignStatus');
+    if(status) status.textContent='सक्रिय डिजाइन: '+theme.toUpperCase()+' — Reference layout लागू है।';
+    return theme;
+  }
+  window.applyRkDesign=applyRkDesign;
+  function activateSavedDesign(){
+    var saved='ref1';
+    try{var value=localStorage.getItem('rk-reference-design');if(allowed.indexOf(value)>=0)saved=value;}catch(e){}
+    applyRkDesign(saved);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',activateSavedDesign,{once:true});
+  else activateSavedDesign();
+})();
+</script>
+
 <style id="rk-settings-premium-refresh-2026-11">
 /* Settings-only visual refresh: premium dark glass, compact hierarchy, and mobile-safe controls. */
 #setting{width:min(100%,1180px);margin:0 auto;padding:clamp(8px,2vw,22px);color:#eaf1ff}
