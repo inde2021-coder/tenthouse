@@ -2964,7 +2964,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             return {rows,skipped};
         }
         function csvSafeCell(value){
-            const raw=String(value??''),safe=/^[\\s]*[=+\\-@]/.test(raw)?"'"+raw:raw;
+            const raw=String(value??''),safe=/^[\s]*[=+\-@]/.test(raw)?"'"+raw:raw;
             return '"'+safe.replace(/"/g,'""')+'"';
         }
         function exportGstr1Report() {
@@ -2972,7 +2972,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!result.rows.length){showActionMessage('GSTR-1 Working Register के लिए पहले Tax Invoice सेव करें। कोई Booking स्वतः GST में नहीं जोड़ी जाएगी।','error');return;}
             const header=['Invoice Date','Invoice Number','Customer Name','Customer GSTIN','Taxable Value','CGST','SGST','IGST','Total GST','Invoice Value'];
             const lines=[header,...result.rows.map(row=>[row.invoiceDate,row.invoiceNumber,row.customerName,row.customerGstin,row.taxable.toFixed(2),row.cgst.toFixed(2),row.sgst.toFixed(2),row.igst.toFixed(2),row.gst.toFixed(2),row.invoiceValue.toFixed(2)])];
-            const csv='\\uFEFF'+lines.map(line=>line.map(csvSafeCell).join(',')).join('\\r\\n');
+            const csv='\uFEFF'+lines.map(line=>line.map(csvSafeCell).join(',')).join('\r\n');
             const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),link=document.createElement('a');
             link.href=url;link.download='GSTR1_Tax_Invoice_Working_Register.csv';document.body.appendChild(link);link.click();document.body.removeChild(link);URL.revokeObjectURL(url);
             showActionMessage('Tax Invoice आधारित GSTR-1 Working Register डाउनलोड हुई।'+(result.skipped?' '+result.skipped+' अमान्य रिकॉर्ड छोड़े गए।':''),'success');
