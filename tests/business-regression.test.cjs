@@ -2363,3 +2363,10 @@ test('daily expense entries use timezone-local ISO dates and consistent positive
   assert.match(edit,/n<=0/);
   assert.match(edit,/Math\.round\(n\*100\)\/100/);
 });
+
+
+test('purchase item rename is blocked while dispatched stock still needs return or missing recovery', () => {
+  const edit=sourceBetween('function editPurchase(index)', 'function deletePurchase(index)');
+  assert.match(edit,/oldName\.toLowerCase\(\)!==newName\.toLowerCase\(\)&&hasOpenStockReturnReference\('admin',oldName\)/);
+  assert.match(edit,/Return पूरा होने तक Purchase में सामान का नाम नहीं बदल सकते/);
+});
