@@ -2269,3 +2269,32 @@ test('stock deletion is blocked while admin or vendor dispatch quantities remain
   const vendor=sourceBetween('function editThirdPartyEntry(', 'function deleteThirdPartyPayment(');
   assert.match(vendor,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
 });
+
+
+test('Quotation and Tax Invoice document numbers are unique within their document series', () => {
+  const code=sourceBetween('function isBusinessDocumentNumberTaken(', 'function businessDocumentTotals()');
+  const context={String,Array,Date};
+  const result=vm.runInNewContext(code+`
+    ({
+      taken:isBusinessDocumentNumberTaken('quotation','QTN-100',[{id:'a',documentNumber:'qtn-100'}],null),
+      availableForEdit:isBusinessDocumentNumberTaken('quotation','QTN-100',[{id:'a',documentNumber:'QTN-100'}],'a'),
+      generated:createUniqueBusinessDocumentNumber('quotation',[{id:'a',documentNumber:'QTN-20261127-123456789'}],123456789)
+    })`,context);
+  assert.equal(result.taken,true);
+  assert.equal(result.availableForEdit,false);
+  assert.notEqual(result.generated,'QTN-20261127-123456789');
+  assert.ok(result.generated.startsWith('QTN-'));
+});
+test('business document save rejects duplicate numbers and invalid stored item/tax values', () => {
+  const save=sourceBetween('function saveBusinessDocument()', 'function loadBusinessDocument(type,id)');
+  assert.match(save,/isBusinessDocumentNumberTaken\(type,number,rows,editingBusinessDocumentId\)/);
+  assert.match(save,/Number\.isSafeInteger\(Number\(item\.qty\)\)/);
+  assert.match(save,/rawGst>28/);
+  assert.match(save,/rawDiscount>subtotalCheck\+rawOther/);
+  assert.match(save,/यह Document Number पहले से उपयोग में है/);
+});
+test('business document preview generates a collision-resistant full timestamp number', () => {
+  const preview=sourceBetween('function renderBusinessDocumentPreview()', 'function saveBusinessDocument()');
+  assert.match(preview,/createUniqueBusinessDocumentNumber\(type,numberRows\)/);
+  assert.doesNotMatch(preview,/String\(Date\.now\(\)\)\.slice\(-5\)/);
+});
