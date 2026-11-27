@@ -1722,7 +1722,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             return {...extra,Authorization:'Bearer '+await getFirebaseAdminIdToken()};
         }
         async function syncCustomerBookingsFromBackend(){
-            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
+            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
             if(!api||!navigator.onLine)return;
             try{
                 const response=await fetch(api+'/api/customer/bookings',{headers:{Authorization:'Bearer '+await getFirebaseAdminIdToken()}});
@@ -1739,7 +1739,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             }catch(error){showActionMessage('ग्राहक बुकिंग सिंक नहीं हुआ: '+error.message,'error');}
         }
         async function updateRemoteCustomerBookingStatus(id,status){
-            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
+            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
             if(!api||!navigator.onLine)return false;
             try{
                 const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/status',{method:'PATCH',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({status})});
@@ -1759,7 +1759,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         async function syncCustomerBookingWorkflow(booking,queueOnFailure=true){
             if(!booking||booking.source!=='customer-portal')return true;
-            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
+            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
             if(!api){
                 if(queueOnFailure)savePendingCustomerWorkflow(booking);
                 showActionMessage('Customer Portal अपडेट के लिए Backend API URL सेट करें।','error');return false;
@@ -2336,7 +2336,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(!name.trim()||!/^\+?[1-9]\d{9,14}$/.test(mob.trim())||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{4}-\d{2}-\d{2}$/.test(ret)||ret<date){showActionMessage('नाम, मोबाइल और तारीखें सही भरें','error');return;}
             const patch={name:name.trim(),mob:mob.trim(),address:address.trim(),date,returnDate:ret};
             if(b.source==='customer-portal'){
-                const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
+                const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
                 if(!api){showActionMessage('Customer Booking edit के लिए Backend API URL सेट करें','error');return;}
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id)),{method:'PUT',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify(patch)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend update failed');Object.assign(b,data.booking||patch);}
                 catch(error){showActionMessage('बुकिंग Backend में अपडेट नहीं हुई: '+error.message,'error');return;}
@@ -2347,7 +2347,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b||!(Number(b.advanceAmount)>0))return;
             if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस UTR भुगतान को अस्वीकार करना है?'))return;
             if(b.source==='customer-portal'){
-                const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
+                const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
                 if(!api){showActionMessage('UTR सत्यापन के लिए Backend API URL जरूरी है','error');return;}
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/advance',{method:'PATCH',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({verified})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');Object.assign(b,data.booking||{});}
                 catch(error){showActionMessage('UTR सत्यापन विफल: '+error.message,'error');return;}
@@ -3352,7 +3352,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             let backendPaymentId=null;
             if(v.online>0){
                 const api=getBackendApiUrl(settings);
-                const token=String(settings.aiAccessToken||'').trim();
+                
                 if(!api){showActionMessage('Online भुगतान सत्यापन के लिए Backend API URL सेट करें','error');return;}
                 try{
                     const response=await fetch(api+'/api/payments/record-utr',{method:'POST',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});
@@ -3381,7 +3381,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             try {
             const ledger=safeGetStorage('rkPaymentLedger',[]),p=ledger.find(x=>String(x.id)===String(recordId));if(!p||p.onlineStatus!=='pending-verification')return;
             if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस Online भुगतान को अस्वीकार करना है?'))return;
-            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
+            const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings);
             if(!api||!p.backendPaymentId){showActionMessage('Backend payment reference नहीं मिला; सत्यापन नहीं किया जा सकता','error');return;}
             try{
                 const response=await fetch(api+'/api/payments/'+encodeURIComponent(String(p.backendPaymentId))+'/verify',{method:'POST',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({verified,note:verified?'Admin ने UTR सत्यापित किया':'Admin ने UTR अस्वीकार किया'})});
@@ -3605,7 +3605,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
               }catch(e){console.warn('AI backend unavailable',e);aiStatus('AI सर्वर से उत्तर नहीं मिला: '+e.message+'। नीचे उपलब्ध लोकल जानकारी दे रही हूँ।',true);}
             }
             const q=question.toLowerCase(),bookings=safeGetStorage('softwareBookings',[]),stock=safeGetStorage('realStockDatabase',[]),expenses=safeGetStorage('incomeExpenseDatabase',[]);
-            let answer='ऑनलाइन AI चालू करने के लिए Settings में Backend API URL और सुरक्षित Admin API Token भरें। अभी मैं स्थानीय डेटा से सीमित उत्तर दे सकती हूँ।';
+            let answer='ऑनलाइन AI चालू करने के लिए Settings में Backend API URL सेट करें और Gmail से लॉगिन करें। अभी मैं स्थानीय डेटा से सीमित उत्तर दे सकती हूँ।';
             if(/बुकिंग|booking|ग्राहक|customer/.test(q))answer='स्थानीय रिकॉर्ड में कुल '+bookings.length+' बुकिंग हैं। क्लाउड सिंक के लिए इंटरनेट और Firebase login आवश्यक है।';
             else if(/स्टॉक|stock|सामान|inventory/.test(q))answer='स्थानीय स्टॉक रिकॉर्ड में '+(Array.isArray(stock)?stock.length:Object.keys(stock||{}).length)+' रिकॉर्ड हैं।';
             else if(/खर्च|आय|income|expense|लेखा/.test(q))answer='आय/खर्च के स्थानीय रिकॉर्ड: '+(Array.isArray(expenses)?expenses.length:Object.keys(expenses||{}).length)+'।';
