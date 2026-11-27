@@ -319,9 +319,20 @@ const authAdmin = async (req, res, next) => {
   try {
     const authorization = String(req.header('authorization') || '');
     const match = authorization.match(/^Bearer\s+(.+)$/i);
+    // Local-only compatibility for API integration tests and local development.
+    // This path is unreachable in production, where Gmail ID-token verification
+    // and the erp_admins/{uid} grant remain mandatory.
+    const localToken = String(req.header('x-admin-token') || '');
+    const configuredLocalToken = String(process.env.ADMIN_API_TOKEN || '');
+    if (!isProd && localToken && configuredLocalToken) {
+      const supplied = Buffer.from(localToken), configured = Buffer.from(configuredLocalToken);
+      if (supplied.length === configured.length && crypto.timingSafeEqual(supplied, configured)) {
+        req.actor = { type: 'local-development-admin', id: 'local-development' };
+        return next();
+      }
+    }
     // Reject an absent credential as unauthorized even when Firebase Admin is
-    // temporarily misconfigured. This avoids leaking infrastructure state and
-    // keeps the correct 401 contract for unauthenticated requests.
+    // temporarily misconfigured. This avoids leaking infrastructure state.
     if (!match) return res.status(401).json({ error: 'Gmail sign-in required.' });
     if (!adminAuth || !adminDb) return res.status(503).json({ error: 'Firebase Admin Auth/Database is not configured.' });
     const decoded = await adminAuth.verifyIdToken(match[1], true);
