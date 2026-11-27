@@ -66,7 +66,11 @@ test('Vercel backend serves the synced frontend and PWA assets from its project 
 });
 
 test('production readiness requires a successful bounded Firebase RTDB read', async () => {
-  const code = sourceBetween('const readinessCheck =', "app.get('/ready'");
+  const start = backend.indexOf('const readinessCheck =');
+  const end = backend.indexOf("app.get('/ready'", start);
+  assert.notEqual(start, -1, 'missing readiness handler in backend source');
+  assert.notEqual(end, -1, 'missing readiness route in backend source');
+  const code = backend.slice(start, end);
   const makeResponse = () => ({
     code: null, headers: {}, body: null,
     status(value) { this.code=value; return this; },
