@@ -889,7 +889,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 <div class="rk-hero-art"><div class="rk-hero-orbit"></div><img class="rk-hero-image" src="./customer-hero.svg" alt="राधे कृष्ण टेंट हाउस की भव्य सजावट और मंडप" width="480" height="194" fetchpriority="high"><div class="rk-hero-float f1"><i class="fa-solid fa-champagne-glasses"></i> Special Events</div><div class="rk-hero-float f2"><i class="fa-solid fa-couch"></i> Complete Setup</div></div>
 <div class="rk-hero-bottomline"><span>RADHE KRISHN TENT HOUSE</span><span>CELEBRATE BEAUTIFULLY · BOOK EASILY</span></div></section>
             <header class="rk-customer-brand">
-                <div class="rk-customer-brand-mark" aria-hidden="true"><i class="fa-solid fa-crown"></i></div>
+                <button type="button" class="rk-customer-brand-mark" aria-label="व्यवस्थापक Gmail लॉगिन खोलें" onclick="openCustomerLogin(event)"><i class="fa-solid fa-crown"></i></button>
                 <div class="rk-customer-brand-copy">
                     <div class="rk-customer-eyebrow">RADHE KRISHN · TENT HOUSE</div>
                     <h1 id="portalShopTitle"><span id="displayShopName">राधा कृष्णा टेंट हाउस</span></h1>
@@ -1453,8 +1453,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 <details class="settings-section"><summary>🔌 Backend / AI / OTP</summary><div class="settings-section-body backend-settings-clean">
 <label for="backendApiUrlInput">Backend API URL</label><input type="url" id="backendApiUrlInput" placeholder="https://your-backend-domain" inputmode="url" autocomplete="url">
 <small>AI और लाइव OTP/payment verification जैसी backend सुविधाओं के लिए HTTPS API address आवश्यक है।</small>
-<label for="aiAccessTokenInput">AI Access Token (ADMIN_API_TOKEN)</label><input type="password" id="aiAccessTokenInput" placeholder="Backend admin token" autocomplete="new-password">
-<small>यह token इस डिवाइस के local storage में सेव होता है। साझा मोबाइल पर सेव न करें। AI_API_KEY और WhatsApp provider token केवल server environment variables में रखें—HTML/GitHub में नहीं।</small>
+<small>Admin और सुरक्षित API कार्यों के लिए अधिकृत Gmail session अपने आप उपयोग होगा। AI और WhatsApp provider credentials केवल server environment variables में रखें।</small>
 <label for="otpChannelSetting">Customer OTP तरीका</label><select id="otpChannelSetting"><option value="off">OTP बंद</option><option value="demo">Demo OTP (केवल testing)</option><option value="sms">SMS Gateway</option><option value="whatsapp">WhatsApp OTP</option><option value="both">SMS + WhatsApp</option></select>
 <small>SMS/WhatsApp OTP तभी चलेगा जब backend पर provider credentials और संबंधित endpoint सही तरह configure हों। Public/production में Demo OTP का उपयोग न करें।</small>
 <div class="settings-actions"><button type="button" class="glass-btn-green" onclick="saveSettingsSection('backend')">Backend सेटिंग सेव करें</button><button type="button" class="action-btn" onclick="resetSettingsSection('backend')">Backend सेटिंग रीसेट</button></div>
@@ -1660,7 +1659,6 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const extra = {
                 hostingUrlInput: s.hostingUrl || location.href,
                 backendApiUrlInput: s.backendApiUrl || '',
-                aiAccessTokenInput: s.aiAccessToken || '',
                 otpChannelSetting: s.otpChannel || 'off'
             };
             Object.entries(extra).forEach(([id, value]) => { const el=document.getElementById(id); if(el) el.value=value; });
@@ -1692,11 +1690,9 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if (section !== 'backend') { showActionMessage('सेटिंग सेक्शन पहचाना नहीं गया।','error'); return false; }
             const s = safeGetStorage('softwareSettings', {});
             const urlEl=document.getElementById('backendApiUrlInput');
-            const tokenEl=document.getElementById('aiAccessTokenInput');
             const channelEl=document.getElementById('otpChannelSetting');
             const hostingEl=document.getElementById('hostingUrlInput');
             s.backendApiUrl = urlEl ? urlEl.value.trim().replace(/\/$/,'') : (s.backendApiUrl||'');
-            s.aiAccessToken = tokenEl ? tokenEl.value.trim() : (s.aiAccessToken||'');
             s.otpChannel = channelEl ? channelEl.value : (s.otpChannel||'off');
             s.hostingUrl = hostingEl ? hostingEl.value.trim() : (s.hostingUrl||'');
             const req=document.getElementById('requireItemSelectionSetting'); if(req) s.requireItemSelection=req.checked;
@@ -1710,7 +1706,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(section !== 'backend') return;
             if(!confirm('Backend, AI Token और OTP की लोकल सेटिंग रीसेट करें?')) return;
             const s=safeGetStorage('softwareSettings',{});
-            ['backendApiUrl','aiAccessToken','otpChannel','hostingUrl','requireItemSelection','enableOffline'].forEach(k=>delete s[k]);
+            ['backendApiUrl','otpChannel','hostingUrl','requireItemSelection','enableOffline'].forEach(k=>delete s[k]);
             if(safeSetStorage('softwareSettings',s)){loadSettingsToUI();showActionMessage('Backend सेटिंग रीसेट हुई।','success');}
         }
 
@@ -1727,7 +1723,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         async function syncCustomerBookingsFromBackend(){
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-            if(!api||!token||!navigator.onLine)return;
+            if(!api||!navigator.onLine)return;
             try{
                 const response=await fetch(api+'/api/customer/bookings',{headers:{Authorization:'Bearer '+await getFirebaseAdminIdToken()}});
                 const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Customer bookings sync failed');
@@ -1744,7 +1740,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         async function updateRemoteCustomerBookingStatus(id,status){
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-            if(!api||!token||!navigator.onLine)return false;
+            if(!api||!navigator.onLine)return false;
             try{
                 const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/status',{method:'PATCH',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({status})});
                 const data=await response.json().catch(()=>({}));
@@ -1764,9 +1760,9 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         async function syncCustomerBookingWorkflow(booking,queueOnFailure=true){
             if(!booking||booking.source!=='customer-portal')return true;
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-            if(!api||!token){
+            if(!api){
                 if(queueOnFailure)savePendingCustomerWorkflow(booking);
-                showActionMessage('Customer Portal अपडेट के लिए Backend URL और Admin API Token आवश्यक हैं।','error');return false;
+                showActionMessage('Customer Portal अपडेट के लिए Backend API URL सेट करें।','error');return false;
             }
             const payload={
                 status:booking.status,
@@ -2341,7 +2337,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const patch={name:name.trim(),mob:mob.trim(),address:address.trim(),date,returnDate:ret};
             if(b.source==='customer-portal'){
                 const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-                if(!api||!token){showActionMessage('Customer Booking edit के लिए Backend URL और Admin API Token सेट करें','error');return;}
+                if(!api){showActionMessage('Customer Booking edit के लिए Backend API URL सेट करें','error');return;}
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id)),{method:'PUT',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify(patch)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend update failed');Object.assign(b,data.booking||patch);}
                 catch(error){showActionMessage('बुकिंग Backend में अपडेट नहीं हुई: '+error.message,'error');return;}
             }else Object.assign(b,patch);
@@ -2352,7 +2348,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस UTR भुगतान को अस्वीकार करना है?'))return;
             if(b.source==='customer-portal'){
                 const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-                if(!api||!token){showActionMessage('UTR सत्यापन के लिए Backend URL और Admin API Token जरूरी है','error');return;}
+                if(!api){showActionMessage('UTR सत्यापन के लिए Backend API URL जरूरी है','error');return;}
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/advance',{method:'PATCH',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({verified})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');Object.assign(b,data.booking||{});}
                 catch(error){showActionMessage('UTR सत्यापन विफल: '+error.message,'error');return;}
             }else{b.advancePaymentVerified=verified;b.advancePaymentStatus=verified?'verified':'rejected';}
@@ -2566,8 +2562,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
               }
             }
             const api=getBackendApiUrl(settings);
-            const token=String(settings.aiAccessToken||'').trim();
-            if(api&&token&&navigator.onLine){
+            
+            if(api&&navigator.onLine){
               try{
                 const response=await fetch(api+'/api/whatsapp/send',{method:'POST',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({to:String(b.mob||'').startsWith('+')?String(b.mob):'+91'+String(b.mob||'').replace(/\D/g,''),message})});
                 const data=await response.json().catch(()=>({}));
@@ -3357,7 +3353,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(v.online>0){
                 const api=getBackendApiUrl(settings);
                 const token=String(settings.aiAccessToken||'').trim();
-                if(!api||!token){showActionMessage('Online भुगतान सत्यापन के लिए Backend URL और Admin API Token सेट करें','error');return;}
+                if(!api){showActionMessage('Online भुगतान सत्यापन के लिए Backend API URL सेट करें','error');return;}
                 try{
                     const response=await fetch(api+'/api/payments/record-utr',{method:'POST',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({bookingId:String(b.id),amount:v.online,utr,method:'upi',phone:(b.mob||'').startsWith('+')?b.mob:'+91'+String(b.mob||'').replace(/\D/g,'')})});
                     const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend payment record failed');backendPaymentId=data.payment?.id||null;
@@ -3386,7 +3382,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const ledger=safeGetStorage('rkPaymentLedger',[]),p=ledger.find(x=>String(x.id)===String(recordId));if(!p||p.onlineStatus!=='pending-verification')return;
             if(!confirm(verified?'क्या UTR और राशि UPI/बैंक ऐप में मिलान करके सत्यापित कर ली है?':'क्या इस Online भुगतान को अस्वीकार करना है?'))return;
             const settings=safeGetStorage('softwareSettings',{}),api=getBackendApiUrl(settings),token=String(settings.aiAccessToken||'').trim();
-            if(!api||!token||!p.backendPaymentId){showActionMessage('Backend payment reference नहीं मिला; सत्यापन नहीं किया जा सकता','error');return;}
+            if(!api||!p.backendPaymentId){showActionMessage('Backend payment reference नहीं मिला; सत्यापन नहीं किया जा सकता','error');return;}
             try{
                 const response=await fetch(api+'/api/payments/'+encodeURIComponent(String(p.backendPaymentId))+'/verify',{method:'POST',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({verified,note:verified?'Admin ने UTR सत्यापित किया':'Admin ने UTR अस्वीकार किया'})});
                 const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');
@@ -3579,8 +3575,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         async function executeAiCommand(){
             const input=document.getElementById('aiCommandInput');const question=(input?.value||'').trim();if(!question){aiStatus('कृपया प्रश्न लिखें या माइक्रोफ़ोन से बोलें।',true);return;}
             const settings=safeGetStorage('softwareSettings',{});aiStatus('श्रद्धा सोच रही है…');
-            const api=getBackendApiUrl(settings),token=(settings.aiAccessToken||'').trim();
-            if(api&&token&&navigator.onLine){
+            const api=getBackendApiUrl(settings);
+            if(api&&navigator.onLine){
               try{
                 const countRecords=value=>Array.isArray(value)?value.length:(value&&typeof value==='object'?Object.keys(value).length:0);
                 const allBookings=safeGetStorage('softwareBookings',[]),paymentRows=safeGetStorage('rkPaymentLedger',[]);
@@ -4146,7 +4142,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
  function settings(){try{return JSON.parse(localStorage.getItem('softwareSettings')||'{}')}catch(_){return {}}}
  function saveAdvancedSettings(){
    const s=settings();
-   ['hostingUrlInput','backendApiUrlInput','aiAccessTokenInput','otpChannelSetting'].forEach(id=>{const el=$(id);if(el)s[id==='hostingUrlInput'?'hostingUrl':id==='backendApiUrlInput'?'backendApiUrl':id==='aiAccessTokenInput'?'aiAccessToken':'otpChannel']=el.value});
+   ['hostingUrlInput','backendApiUrlInput','otpChannelSetting'].forEach(id=>{const el=$(id);if(el)s[id==='hostingUrlInput'?'hostingUrl':id==='backendApiUrlInput'?'backendApiUrl':'otpChannel']=el.value});
    const req=$('requireItemSelectionSetting'),off=$('enableOfflineSetting');if(req)s.requireItemSelection=req.checked;if(off)s.enableOffline=off.checked;
    try{localStorage.setItem('softwareSettings',JSON.stringify(s));if(typeof window.safeSetStorage==='function')window.safeSetStorage('softwareSettings',s);return true}catch(e){console.error(e);return false}
  }
@@ -4196,7 +4192,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 </body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
- document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#aiAccessTokenInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
+ document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
  if(typeof window.loadSettingsToUI==='function')window.loadSettingsToUI();
 })();
 </script>
@@ -4261,7 +4257,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 </script>
 </body></html>');w.document.close();w.onload=()=>setTimeout(()=>{w.focus();w.print()},250)};
 
- function init(){const s=settings();if($('hostingUrlInput')&&!$('hostingUrlInput').value)$('hostingUrlInput').value=s.hostingUrl||location.href;if($('backendApiUrlInput'))$('backendApiUrlInput').value=s.backendApiUrl||getBackendApiUrl(s);if($('aiAccessTokenInput'))$('aiAccessTokenInput').value=s.aiAccessToken||'';if($('otpChannelSetting'))$('otpChannelSetting').value=s.otpChannel||'off';if($('requireItemSelectionSetting'))$('requireItemSelectionSetting').checked=s.requireItemSelection!==false;if($('enableOfflineSetting'))$('enableOfflineSetting').checked=s.enableOffline!==false;['hostingUrlInput','backendApiUrlInput','aiAccessTokenInput','otpChannelSetting','requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>$(id)?.addEventListener('change',saveAdvancedSettings));if(typeof window.loadSettingsToUI==='function')window.loadSettingsToUI()}
+ function init(){const s=settings();if($('hostingUrlInput')&&!$('hostingUrlInput').value)$('hostingUrlInput').value=s.hostingUrl||location.href;if($('backendApiUrlInput'))$('backendApiUrlInput').value=s.backendApiUrl||getBackendApiUrl(s);if($('otpChannelSetting'))$('otpChannelSetting').value=s.otpChannel||'off';if($('requireItemSelectionSetting'))$('requireItemSelectionSetting').checked=s.requireItemSelection!==false;if($('enableOfflineSetting'))$('enableOfflineSetting').checked=s.enableOffline!==false;['hostingUrlInput','backendApiUrlInput','otpChannelSetting','requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>$(id)?.addEventListener('change',saveAdvancedSettings));if(typeof window.loadSettingsToUI==='function')window.loadSettingsToUI()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
  if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
  const tick=()=>{const d=new Date();if($('rkClockTime'))$('rkClockTime').textContent=d.toLocaleTimeString('en-IN',{hour12:true});if($('rkClockDate'))$('rkClockDate').textContent=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};tick();setInterval(tick,1000);
