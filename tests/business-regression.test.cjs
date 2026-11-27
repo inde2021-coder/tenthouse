@@ -2340,3 +2340,11 @@ test('GSTR-1 CSV function no longer calculates GST from every booking at a flat 
   assert.doesNotMatch(exportCode,/safeGetStorage\('softwareBookings'/);
   assert.doesNotMatch(exportCode,/\*\s*18\s*\)\s*\/\s*100/);
 });
+
+
+test('GSTR-1 CSV includes a UTF-8 BOM and Windows-compatible row endings', () => {
+  const exportCode=sourceBetween('function exportGstr1Report()', 'function loadInstallmentsTable()');
+  assert.match(exportCode,/const csv='\\uFEFF'/);
+  assert.match(exportCode,/join\('\\r\\n'\)/);
+  assert.match(exportCode,/text\/csv;charset=utf-8/);
+});
