@@ -4251,30 +4251,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
    if(!canvas||!url){alert('पहले QR बनाएं।');return}
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p>
-
-<style id="rk-customer-header-fixed-order-2026-11">
-/* Keep the customer portal masthead and navigation pinned while portal content scrolls. */
-#customerFirstPortal .customer-scroll-wrap{position:relative!important;overflow-y:auto!important;overflow-x:hidden!important;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
-#customerFirstPortal .rk-customer-brand{position:sticky!important;top:env(safe-area-inset-top,0px)!important;z-index:5000!important;flex:0 0 auto!important;align-self:stretch!important;width:100%!important;overflow:visible!important;}
-#customerFirstPortal .rk-customer-hero,#customerFirstPortal .rk-customer-shell{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
-#customerFirstPortal .rk-reference-nav{position:relative!important;z-index:2!important;}
-@media(max-width:700px){#customerFirstPortal .rk-customer-brand{top:env(safe-area-inset-top,0px)!important;}}
-</style>
-
-<style id="rk-customer-hero-centered-copy-2026">
-#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important;position:relative!important;}
-#customerFirstPortal .rk-hero-copy{width:100%!important;max-width:900px!important;margin:0 auto!important;text-align:center!important;z-index:4!important;}
-#customerFirstPortal .rk-hero-kicker{margin-left:auto!important;margin-right:auto!important;}
-#customerFirstPortal .rk-hero-eyebrow{margin-top:18px!important;}
-#customerFirstPortal .rk-hero-description{max-width:760px!important;margin:18px auto 22px!important;}
-#customerFirstPortal .rk-hero-trust{justify-content:center!important;}
-#customerFirstPortal .rk-hero-art{position:absolute!important;right:2%!important;top:50%!important;transform:translateY(-50%)!important;width:34%!important;max-width:420px!important;opacity:.16!important;z-index:1!important;pointer-events:none!important;}
-#customerFirstPortal .rk-hero-art .rk-hero-float{display:none!important;}
-#customerFirstPortal .rk-hero-bottomline{position:relative!important;z-index:4!important;}
-@media(max-width:640px){#customerFirstPortal .rk-hero-art{display:none!important;}#customerFirstPortal .rk-hero-copy{max-width:100%!important;}#customerFirstPortal .rk-hero-description{font-size:13px!important;}}
-</style>
-</body></html>';
+   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
  document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
@@ -4902,5 +4879,25 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
   }
 }
 
+</style>
+<style id="rk-customer-header-fixed-order-2026-11">
+/* Keep the customer portal masthead and navigation pinned while portal content scrolls. */
+#customerFirstPortal .customer-scroll-wrap{position:relative!important;overflow-y:auto!important;overflow-x:hidden!important;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
+#customerFirstPortal .rk-customer-brand{position:sticky!important;top:env(safe-area-inset-top,0px)!important;z-index:5000!important;flex:0 0 auto!important;align-self:stretch!important;width:100%!important;overflow:visible!important;}
+#customerFirstPortal .rk-customer-hero,#customerFirstPortal .rk-customer-shell{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
+#customerFirstPortal .rk-reference-nav{position:relative!important;z-index:2!important;}
+@media(max-width:700px){#customerFirstPortal .rk-customer-brand{top:env(safe-area-inset-top,0px)!important;}}
+</style>
+<style id="rk-customer-hero-centered-copy-2026">
+#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important;position:relative!important;}
+#customerFirstPortal .rk-hero-copy{width:100%!important;max-width:900px!important;margin:0 auto!important;text-align:center!important;z-index:4!important;}
+#customerFirstPortal .rk-hero-kicker{margin-left:auto!important;margin-right:auto!important;}
+#customerFirstPortal .rk-hero-eyebrow{margin-top:18px!important;}
+#customerFirstPortal .rk-hero-description{max-width:760px!important;margin:18px auto 22px!important;}
+#customerFirstPortal .rk-hero-trust{justify-content:center!important;}
+#customerFirstPortal .rk-hero-art{position:absolute!important;right:2%!important;top:50%!important;transform:translateY(-50%)!important;width:34%!important;max-width:420px!important;opacity:.16!important;z-index:1!important;pointer-events:none!important;}
+#customerFirstPortal .rk-hero-art .rk-hero-float{display:none!important;}
+#customerFirstPortal .rk-hero-bottomline{position:relative!important;z-index:4!important;}
+@media(max-width:640px){#customerFirstPortal .rk-hero-art{display:none!important;}#customerFirstPortal .rk-hero-copy{max-width:100%!important;}#customerFirstPortal .rk-hero-description{font-size:13px!important;}}
 </style>
 </body></html>
