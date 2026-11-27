@@ -2236,3 +2236,9 @@ test('calendar excludes cancelled bookings, ends early returns on the actual dat
   assert.ok(day3 >= 0 && day4 > day3);
   assert.ok(!grid.innerHTML.slice(day3,day4).includes('#3 Early Return'));
 });
+
+test('dashboard and customer tracker derive dispatch and return counts from saved history arrays', () => {
+  assert.ok(html.includes("Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:(Number(b.dispatchEntryCount)||0)"));
+  assert.ok(html.includes("Array.isArray(b.returnEntries)?b.returnEntries.length:(Number(b.returnEntryCount)||0)"));
+  assert.ok(html.includes("Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:Math.max(0,Number(b.dispatchEntryCount)||0)"));
+});
