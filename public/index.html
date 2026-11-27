@@ -2845,8 +2845,25 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         window.addEventListener('resize',()=>{ if(document.getElementById('dashboardLineGraph')) renderDashboardLineGraph(); });
 
+        function purchaseHasDispatchReference(itemName){
+            const key=String(itemName||'').trim().toLowerCase();
+            if(!key)return false;
+            const bookings=safeGetStorage('softwareBookings',[]),missing=safeGetStorage('missingItemsDatabase',[]);
+            const dispatched=(Array.isArray(bookings)?bookings:[]).some(booking=>{
+                const items=Array.isArray(booking.items)?booking.items:[];
+                return items.some((item,index)=>{
+                    if(item.source==='third-party'||String(item.name||'').trim().toLowerCase()!==key)return false;
+                    const entries=Array.isArray(booking.dispatchEntries)?booking.dispatchEntries:[];
+                    if(entries.length)return entries.some(entry=>Number(entry.itemIndex)===index&&Number(entry.qty)>0);
+                    return ['Dispatched','Partially Returned'].includes(String(booking.status||''));
+                });
+            });
+            const unresolved=(Array.isArray(missing)?missing:[]).some(row=>!row.resolved&&(Number(row.qty)||0)>0&&String(row.source||'admin')!=='third-party'&&String(row.item||'').trim().toLowerCase()===key);
+            return dispatched||unresolved;
+        }
         function editPurchase(index){
             const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
+            if(purchaseHasDispatchReference(p.itemName)){showActionMessage('इस सामान का Dispatch या Missing रिकॉर्ड मौजूद है। पुराने Purchase को बदलने से हिसाब बिगड़ सकता है; रिकॉर्ड सुरक्षित रखा गया।','error');return;}
             const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;
             const qty=prompt('मात्रा',p.qty);if(qty===null)return;
             const price=prompt('कुल कीमत ₹',p.price);if(price===null)return;
@@ -2874,6 +2891,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         }
         function deletePurchase(index){
             const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
+            if(purchaseHasDispatchReference(p.itemName)){showActionMessage('इस सामान का Dispatch या Missing रिकॉर्ड मौजूद है। पुराने Purchase को हटाने से हिसाब बिगड़ सकता है; रिकॉर्ड सुरक्षित रखा गया।','error');return;}
             if(!confirm('यह खरीद रिकॉर्ड हटाएँ और उसकी पूरी मात्रा स्टॉक से घटाएँ?'))return;
             const qty=Number(p.qty),stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));
             const item=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===String(p.itemName||'').trim().toLowerCase());
