@@ -1849,9 +1849,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(!window.firebase)throw new Error('Firebase SDK लोड नहीं हुआ');
             if(!firebase.apps.length)initFirebaseConnection();
             const provider=new firebase.auth.GoogleAuthProvider();
-            provider.setCustomParameters({prompt:'select_account'});\n            provider.addScope('email');
+            provider.setCustomParameters({prompt:'select_account'});
+            provider.addScope('email');
             try{
-                const credential=await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);\n                const credential=await firebase.auth().signInWithPopup(provider);
+                await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
                 if(error.code==='auth/popup-blocked'){
