@@ -65,6 +65,45 @@ test('Vercel backend serves the synced frontend and PWA assets from its project 
   }
 });
 
+test('production readiness requires a successful bounded Firebase RTDB read', async () => {
+  const start = backend.indexOf('const readinessCheck =');
+  const end = backend.indexOf("app.get('/ready'", start);
+  assert.notEqual(start, -1, 'missing readiness handler in backend source');
+  assert.notEqual(end, -1, 'missing readiness route in backend source');
+  const code = backend.slice(start, end);
+  const makeResponse = () => ({
+    code: null, headers: {}, body: null,
+    status(value) { this.code=value; return this; },
+    set(key,value) { this.headers[key]=value; return this; },
+    json(value) { this.body=value; return this; }
+  });
+  const makeHandler = adminDb => vm.runInNewContext(code + '; readinessCheck', {
+    adminDb, isProd:true, deploymentEnvironment:'production', console,
+    Promise, Error, setTimeout, clearTimeout
+  });
+  let probePath = '';
+  const successResponse = makeResponse();
+  const successHandler = makeHandler({
+    ref(path) { probePath=path; return { orderByKey(){return this;}, limitToFirst(){return this;}, get:async()=>({exists:()=>true}) }; }
+  });
+  await successHandler({}, successResponse);
+  assert.equal(probePath,'tent_erp_data');
+  assert.equal(successResponse.code,200);
+  assert.equal(successResponse.body.databaseProbe,'passed');
+  const failedResponse = makeResponse();
+  const failedHandler = makeHandler({
+    ref() { return { orderByKey(){return this;}, limitToFirst(){return this;}, get:async()=>{throw new Error('permission denied');} }; }
+  });
+  await failedHandler({}, failedResponse);
+  assert.equal(failedResponse.code,503);
+  assert.equal(failedResponse.body.persistentDatabaseReady,false);
+  assert.equal(failedResponse.body.databaseProbe,'failed');
+  const missingResponse = makeResponse();
+  await makeHandler(null)({}, missingResponse);
+  assert.equal(missingResponse.code,503);
+  assert.equal(missingResponse.body.databaseProbe,'not_configured');
+});
+
 function sourceBetween(startMarker, endMarker) {
   const start = html.indexOf(startMarker);
   const end = html.indexOf(endMarker, start + startMarker.length);

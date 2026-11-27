@@ -327,13 +327,40 @@ const authAdmin = (req, res, next) => {
 const healthCheck = (_req, res) => res.json({ ok: true, service: 'rk-tent-house-erp-api', time: new Date().toISOString() });
 app.get('/health', healthCheck);
 app.get('/api/health', healthCheck);
-const readinessCheck = (_req, res) => {
-  const persistentDatabaseReady = !!adminDb;
+const readinessCheck = async (_req, res) => {
+  // In production, verify a real read against RTDB. An initialized Admin
+  // Database handle alone does not prove that service-account credentials work.
+  let persistentDatabaseReady = false;
+  let databaseProbe = 'not_configured';
+  if (adminDb) {
+    if (!isProd) {
+      persistentDatabaseReady = true;
+      databaseProbe = 'skipped_non_production';
+    } else {
+      let timeoutId;
+      try {
+        await Promise.race([
+          adminDb.ref('tent_erp_data').orderByKey().limitToFirst(1).get(),
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Firebase readiness probe timed out')), 8000);
+          })
+        ]);
+        persistentDatabaseReady = true;
+        databaseProbe = 'passed';
+      } catch (error) {
+        databaseProbe = 'failed';
+        console.error('Firebase readiness probe failed:', error.message);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    }
+  }
   const ready = !isProd || persistentDatabaseReady;
   res.status(ready ? 200 : 503).set('Cache-Control', 'no-store').json({
     ok: ready,
     service: 'rk-tent-house-erp-api',
     persistentDatabaseReady,
+    databaseProbe,
     environment: deploymentEnvironment
   });
 };
