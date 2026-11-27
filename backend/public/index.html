@@ -4832,5 +4832,51 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
 @media(max-width:640px){
  html.rk-ref1 #customerFirstPortal .rk-customer-shell,html.rk-ref2 #customerFirstPortal .rk-customer-shell,html.rk-ref3 #customerFirstPortal .rk-customer-shell,html.rk-ref4 #customerFirstPortal .rk-customer-shell,html.rk-ref5 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* Stable navigation header: keep customer brand/navigation visible while
+   anchor navigation scrolls the booking and tracking content underneath. */
+#customerFirstPortal .customer-scroll-wrap{
+  scroll-padding-top: var(--rk-customer-sticky-height, 104px);
+  overscroll-behavior-y: contain;
+}
+#customerFirstPortal .rk-customer-brand{
+  position:sticky!important;
+  top:env(safe-area-inset-top, 0px)!important;
+  z-index:1200!important;
+  flex:0 0 auto!important;
+  align-self:stretch!important;
+  isolation:isolate;
+  box-shadow:0 12px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12)!important;
+}
+#customerFirstPortal .rk-customer-shell,
+#customerFirstPortal #rkTrackerTitle,
+#customerFirstPortal #portalCustName{
+  scroll-margin-top:calc(var(--rk-customer-sticky-height, 104px) + 14px)!important;
+}
+#adminPanel .main-content>.header{
+  position:sticky!important;
+  top:0!important;
+  z-index:1100!important;
+  flex:0 0 auto!important;
+  min-height:56px;
+  background:rgba(10,17,29,.94)!important;
+  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(18px);
+}
+#adminPanel .content-body{min-height:0;overscroll-behavior:contain}
+@media(max-width:700px){
+  #customerFirstPortal .rk-customer-brand{
+    top:env(safe-area-inset-top, 0px)!important;
+    padding:9px 12px!important;
+    gap:9px!important;
+    border-radius:0 0 14px 14px!important;
+  }
+  #customerFirstPortal .rk-reference-nav{
+    position:relative!important;
+    z-index:2!important;
+    width:100%!important;
+  }
+}
+
 </style>
 </body></html>
