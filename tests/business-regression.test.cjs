@@ -2404,3 +2404,13 @@ test('adding vendor stock rejects invalid existing quantities and safe-integer o
   assert.match(save,/Number\.isSafeInteger\(currentPurchased\+qty\)/);
   assert.match(save,/मौजूदा Vendor मात्रा सही नहीं है/);
 });
+
+
+test('barcode camera scanner is async because it awaits supported formats, camera permission and video playback', () => {
+  const scanner=sourceBetween('async function startBarcodeCameraScan(targetInputId)', 'function stopBarcodeCameraScan()');
+  assert.match(scanner,/await BarcodeDetector\.getSupportedFormats\(\)/);
+  assert.match(scanner,/await navigator\.mediaDevices\.getUserMedia/);
+  assert.match(scanner,/await video\.play\(\)/);
+  assert.match(scanner,/if\(!barcodeCameraActive\).*getTracks\(\).*stop\(\)/s);
+  assert.match(scanner,/requestAnimationFrame\(scan\)/);
+});
