@@ -83,7 +83,7 @@ try {
   if (serviceAccount && databaseURL) {
     adminApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert(serviceAccount), databaseURL });
     adminCredential = adminApp.options.credential;
-    firebaseDatabaseURL = databaseURL.replace(/\\/+$/, '');
+    firebaseDatabaseURL = databaseURL.replace(/\/+$/, '');
     adminDb = getDatabase(adminApp);
     adminAuth = getAuth(adminApp);
   }
