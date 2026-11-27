@@ -742,6 +742,13 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     <div class="rk-customer-subtitle">कस्टमर बुकिंग पोर्टल</div>
                 </div>
                 <div class="rk-customer-brand-seal"><i class="fa-solid fa-shield-check" aria-hidden="true"></i><span>Direct Booking</span></div>
+                <nav class="rk-reference-nav" aria-label="मुख्य नेविगेशन">
+                  <a href="#rkPortalHome" onclick="document.querySelector('.rk-customer-hero').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-house"></i> Home</a>
+                  <a href="#portalCustName" onclick="document.getElementById('portalCustName').focus()"><i class="fa-solid fa-calendar-check"></i> Book Now</a>
+                  <a href="#rkTrackerTitle" onclick="document.getElementById('rkTrackerTitle').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-magnifying-glass"></i> Track Booking</a>
+                  <a href="tel:+918120727987"><i class="fa-solid fa-phone"></i> Contact</a>
+                  <span class="rk-reference-online"><i></i> Online <small>24×7 Support</small></span>
+                </nav>
             </header>
             <div class="rk-customer-shell">
                 <form class="rk-customer-form" onsubmit="saveCustomerBooking(event)">
@@ -4492,4 +4499,79 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 }
 </style>
 
+
+<style id="rk-five-reference-layout-final-2026">
+/* Reference-only customer portal composition. Existing IDs, forms and handlers are preserved. */
+#customerFirstPortal{background:#030713!important;color:#f5f7ff!important}
+#customerFirstPortal .customer-scroll-wrap{width:100%!important;max-width:1536px!important;padding:10px 14px 14px!important;gap:12px!important;background:radial-gradient(ellipse at 50% 0%,#17234a 0,transparent 48%),#030713!important}
+#customerFirstPortal .rk-customer-brand{order:1!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:12px!important;width:100%!important;max-width:none!important;min-height:88px!important;margin:0!important;padding:10px 18px!important;border:1px solid #253a70!important;border-radius:15px!important;background:linear-gradient(100deg,#030916,#10172d 55%,#030916)!important;box-shadow:0 8px 24px #0009,inset 0 1px #ffffff22!important}
+#customerFirstPortal .rk-customer-brand-mark{border-radius:50%!important;background:linear-gradient(145deg,#ffdc62,#a66b09)!important;color:#10101a!important}
+#customerFirstPortal .rk-customer-brand h1{font-family:Georgia,serif!important;color:#ffd45b!important;text-shadow:0 2px 8px #ffcf5140!important}
+#customerFirstPortal .rk-customer-eyebrow{color:#f2ce59!important}
+#customerFirstPortal .rk-customer-subtitle{color:#fff!important}
+#customerFirstPortal .rk-customer-brand-seal{display:none!important}
+#customerFirstPortal .rk-reference-nav{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:1;flex-wrap:wrap}
+#customerFirstPortal .rk-reference-nav a{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 14px;border:1px solid #39415f;border-radius:24px;background:linear-gradient(180deg,#1a2340,#080e1d);color:#fff;text-decoration:none;font-size:13px;font-weight:800;box-shadow:0 4px 12px #0008,inset 0 1px #ffffff22}
+#customerFirstPortal .rk-reference-nav a:first-child{background:linear-gradient(180deg,#ffe66b,#e6a900);color:#151515;border-color:#ffdf5c}
+#customerFirstPortal .rk-reference-online{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 12px;border:1px solid #30466c;border-radius:14px;color:#1bff74;font-weight:900;background:#071327}
+#customerFirstPortal .rk-reference-online i{width:9px;height:9px;border-radius:50%;background:#13e66b;box-shadow:0 0 10px #13e66b}
+#customerFirstPortal .rk-reference-online small{color:#fff;font-size:10px}
+#customerFirstPortal .rk-customer-hero{order:2!important;max-width:none!important;width:100%!important;min-height:230px!important;margin:0!important;padding:24px 28px!important;border:1px solid #a67c30!important;border-radius:16px!important;background-image:linear-gradient(90deg,#030817 0%,#07152bde 38%,#07152b22 100%),url('./bartan-hero.svg')!important;background-size:cover!important;background-position:center!important;box-shadow:0 12px 30px #0009,inset 0 1px #ffffff33!important}
+#customerFirstPortal .rk-hero-copy h2{font-size:clamp(30px,4vw,52px)!important;color:#fff!important;text-shadow:0 2px 10px #000!important}
+#customerFirstPortal .rk-hero-copy h2 em{color:#ffcf45!important}
+#customerFirstPortal .rk-hero-kicker,#customerFirstPortal .rk-hero-eyebrow,#customerFirstPortal .rk-hero-description{color:#fff!important}
+#customerFirstPortal .rk-hero-cta{background:linear-gradient(180deg,#ffe66a,#e6a600)!important;color:#151515!important}
+#customerFirstPortal .rk-hero-art{max-width:48%!important}
+#customerFirstPortal .rk-customer-shell{order:3!important;display:grid!important;width:100%!important;max-width:none!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important}
+#customerFirstPortal .rk-customer-form{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;padding:15px!important;border:1px solid #5d69a8!important;border-radius:17px!important;background:linear-gradient(145deg,#0d1730,#030a18 78%)!important;box-shadow:0 12px 28px #0009,inset 0 1px #ffffff22!important}
+#customerFirstPortal .rk-customer-section,#customerFirstPortal .rk-booking-tracker{border:1px solid #5365a9!important;border-radius:14px!important;background:linear-gradient(145deg,#101d3a,#050b19 80%)!important;box-shadow:0 8px 22px #0008,inset 0 1px #ffffff1c!important;color:#fff!important}
+#customerFirstPortal .rk-customer-section-title,#customerFirstPortal .rk-customer-identity>div:first-child{color:#fff!important}
+#customerFirstPortal .rk-customer-section-title i{background:linear-gradient(145deg,#7025c7,#25105b)!important;color:#f4caff!important;border-color:#b76aff!important}
+#customerFirstPortal .rk-customer-form label{color:#fff!important}
+#customerFirstPortal .rk-customer-form input,#customerFirstPortal .rk-customer-form select,#customerFirstPortal .rk-customer-form textarea,#customerFirstPortal .rk-tracker-fields input{background:linear-gradient(180deg,#f7f7ff,#d8d9eb)!important;color:#10182a!important;border:1px solid #9ba9d7!important;border-radius:10px!important}
+#customerFirstPortal .rk-customer-submit{background:linear-gradient(180deg,#16e75b,#00a53b)!important;color:#fff!important;border:1px solid #36ff7c!important;box-shadow:0 5px 0 #075c2a,0 8px 18px #00d34a44!important}
+#customerFirstPortal .rk-tracker-submit{background:linear-gradient(180deg,#326bff,#4c12cb)!important;color:#fff!important;border:1px solid #8b7cff!important}
+#customerFirstPortal .rk-booking-tracker{margin:0!important;padding:18px!important}
+#customerFirstPortal .rk-tracker-hint,#customerFirstPortal .rk-tracker-result{color:#fff!important}
+#customerFirstPortal .rk-developer-footer{order:4!important;max-width:none!important;width:100%!important;border:1px solid #a47a37!important;border-radius:14px!important;background:linear-gradient(90deg,#030916,#17102f,#030916)!important;color:#fff!important;padding:12px!important}
+#customerFirstPortal .rk-dev-title,#customerFirstPortal .rk-dev-rights{color:#e5d6a0!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-hero,html.rk-ref3 #customerFirstPortal .rk-customer-hero{min-height:240px!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1.03fr) minmax(0,1fr)!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-form{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-identity,html.rk-ref1 #customerFirstPortal .rk-customer-event,html.rk-ref1 #customerFirstPortal .rk-customer-items,html.rk-ref1 #customerFirstPortal .rk-customer-payment,html.rk-ref1 #customerFirstPortal .rk-customer-submit{grid-column:1/-1!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,.9fr) minmax(0,1.15fr)!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-form{grid-template-columns:minmax(0,1fr)!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-section{border-color:#2b75ed!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-section-title i{background:linear-gradient(145deg,#075bdf,#091c59)!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1.03fr) minmax(0,1fr)!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-form{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-section,html.rk-ref3 #customerFirstPortal .rk-booking-tracker{border-color:#148bd7!important;background:linear-gradient(145deg,#07315a,#031329 82%)!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-submit{background:linear-gradient(180deg,#ffe77b,#e8a900)!important;color:#171717!important}
+html.rk-ref4 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+html.rk-ref4 #customerFirstPortal .rk-customer-form{grid-template-columns:repeat(2,minmax(0,1fr))!important;border-color:#6b42d7!important}
+html.rk-ref4 #customerFirstPortal .rk-customer-section,html.rk-ref4 #customerFirstPortal .rk-booking-tracker{border-color:#8459ed!important;background:linear-gradient(145deg,#171044,#06091e 80%)!important}
+html.rk-ref4 #customerFirstPortal .rk-customer-section-title i{background:linear-gradient(145deg,#6c35dd,#25105e)!important}
+html.rk-ref5 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr)!important}
+html.rk-ref5 #customerFirstPortal .rk-customer-form{grid-template-columns:repeat(2,minmax(0,1fr))!important;border-color:#197bd0!important}
+html.rk-ref5 #customerFirstPortal .rk-customer-section,html.rk-ref5 #customerFirstPortal .rk-booking-tracker{border-color:#1476d0!important;background:linear-gradient(145deg,#071e48,#030b20 80%)!important}
+html.rk-ref5 #customerFirstPortal .rk-customer-submit{background:linear-gradient(180deg,#ffd85b,#d99700)!important;color:#141414!important}
+@media(max-width:900px){
+ #customerFirstPortal .rk-reference-nav{width:100%;justify-content:center}
+ #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important}
+ #customerFirstPortal .rk-customer-form{grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:640px){
+ #customerFirstPortal .customer-scroll-wrap{padding:7px!important;gap:8px!important}
+ #customerFirstPortal .rk-customer-brand{padding:9px!important;justify-content:center!important}
+ #customerFirstPortal .rk-customer-brand-copy{text-align:center}
+ #customerFirstPortal .rk-reference-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ #customerFirstPortal .rk-reference-nav a{justify-content:center;padding:8px 5px;font-size:11px}
+ #customerFirstPortal .rk-reference-online{grid-column:1/-1}
+ #customerFirstPortal .rk-customer-hero{min-height:210px!important;padding:16px!important}
+ #customerFirstPortal .rk-hero-copy h2{font-size:28px!important}
+ #customerFirstPortal .rk-hero-art{display:none!important}
+ #customerFirstPortal .rk-customer-form{padding:10px!important}
+ #customerFirstPortal .rk-customer-section{padding:12px!important}
+}
+</style>
 </body></html>
