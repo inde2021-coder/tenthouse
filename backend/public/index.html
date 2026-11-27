@@ -1856,7 +1856,12 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
-                if(error.code==='auth/popup-blocked'){
+                // Some browsers/WebViews report a generic internal popup error even
+                // when the popup is blocked by privacy settings. Retry with the
+                // full-page Google redirect flow; handleGoogleRedirectResult()
+                // completes the same Firebase session after returning to this page.
+                if(error.code==='auth/popup-blocked'||error.code==='auth/internal-error'){
+                    console.warn('Google popup failed; retrying with redirect:',error.code);
                     await firebase.auth().signInWithRedirect(provider);
                     return false;
                 }
