@@ -2424,3 +2424,13 @@ test('rental calculations construct ISO dates from local calendar fields, not lo
   assert.doesNotMatch(slices,/toLocaleDateString\('en-CA'\)/);
   assert.doesNotMatch(total,/toLocaleDateString\('en-CA'\)/);
 });
+
+
+test('return stock prevalidation aggregates quantities by physical row before updating balances', () => {
+  const code=sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems = []');
+  assert.match(code,/const returnRequirements=new Map\(\)/);
+  assert.match(code,/previous\.qty\+=qty/);
+  assert.match(code,/const total=available\+requirement\.qty/);
+  assert.match(code,/Number\.isSafeInteger\(total\)/);
+  assert.ok(code.indexOf('for(const requirement of returnRequirements.values())')<code.indexOf('inputs.forEach(input=>'));
+});
