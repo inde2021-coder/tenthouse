@@ -797,7 +797,7 @@ test('date-only daily and purchase records use the device local calendar date, n
   assert.ok(!html.includes("new Date().toISOString().slice(0,10)"));
   assert.ok(html.includes("new Date().toLocaleDateString('en-CA')"));
   const expense=sourceBetween('function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
-  assert.ok(expense.includes("date: new Date().toLocaleDateString('en-CA')"));
+  assert.ok(expense.includes("date: localISODate()"));
 });
 
 
