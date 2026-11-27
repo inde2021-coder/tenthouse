@@ -2370,3 +2370,26 @@ test('purchase item rename is blocked while dispatched stock still needs return 
   assert.match(edit,/oldName\.toLowerCase\(\)!==newName\.toLowerCase\(\)&&hasOpenStockReturnReference\('admin',oldName\)/);
   assert.match(edit,/Return पूरा होने तक Purchase में सामान का नाम नहीं बदल सकते/);
 });
+
+
+test('open stock guard detects outstanding dispatch and unresolved missing quantities by source', () => {
+  const helper=sourceBetween('function hasOpenStockReturnReference(', 'function deleteStockItem(index)');
+  const store={
+    softwareBookings:[{status:'Dispatched',items:[{name:'Chair',qty:4,returnedQty:2,source:'admin'},{name:'Tent',qty:3,returnedQty:0,source:'third-party',partyName:'Vendor A'}],dispatchEntries:[{itemIndex:0,qty:4},{itemIndex:1,qty:3}]}],
+    missingItemsDatabase:[{source:'admin',item:'Lost Chair',qty:1,resolved:false}]
+  };
+  const result=vm.runInNewContext(helper+`
+    ({
+      adminOpen:hasOpenStockReturnReference('admin','Chair'),
+      vendorOpen:hasOpenStockReturnReference('third-party','Tent','Vendor A'),
+      wrongVendor:hasOpenStockReturnReference('third-party','Tent','Vendor B'),
+      missingOpen:hasOpenStockReturnReference('admin','Lost Chair'),
+      noOpen:hasOpenStockReturnReference('admin','No Item')
+    })
+  `,{Array,Number,String,safeGetStorage:key=>store[key]||[]});
+  assert.equal(result.adminOpen,true);
+  assert.equal(result.vendorOpen,true);
+  assert.equal(result.wrongVendor,false);
+  assert.equal(result.missingOpen,true);
+  assert.equal(result.noOpen,false);
+});
