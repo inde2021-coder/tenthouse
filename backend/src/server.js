@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
+import { getAuth } from 'firebase-admin/auth';
 
 const app = express();
 const port = Number(process.env.PORT || 8080);
@@ -61,6 +62,7 @@ const backendDir = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(backendDir, '../public'), { index: 'index.html', maxAge: 0 }));
 const memoryStore = new Map();
 let adminDb = null;
+let adminAuth = null;
 try {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -78,6 +80,7 @@ try {
   if (serviceAccount && databaseURL) {
     const adminApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert(serviceAccount), databaseURL });
     adminDb = getDatabase(adminApp);
+    adminAuth = getAuth(adminApp);
   }
 } catch (error) {
   console.error('Firebase Admin initialization failed:', error.message);
@@ -312,17 +315,23 @@ const whatsappSendLimiter = rateLimit({ windowMs: 60_000, limit: 20, standardHea
 const adminLoginLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 5, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'बहुत अधिक व्यवस्थापक लॉगिन प्रयास; 15 मिनट बाद पुनः प्रयास करें।' } });
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
-const authAdmin = (req, res, next) => {
-  const expected = process.env.ADMIN_API_TOKEN;
-  if (!expected || expected.length < 32) return res.status(503).json({ error: 'Server admin token is not configured securely.' });
-  const got = String(req.header('x-admin-token') || '').trim();
-  // Require an exact length before constant-time comparison; never accept padded/truncated tokens.
-  if (got.length !== expected.length) return res.status(401).json({ error: 'Unauthorized' });
-  if (!crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))) return res.status(401).json({ error: 'Unauthorized' });
-  // A shared admin credential cannot identify a human; record a non-reversible
-  // fingerprint so audit entries can distinguish credential rotations.
-  req.actor = { type: 'admin-api-token', id: crypto.createHash('sha256').update(expected).digest('hex').slice(0, 16) };
-  next();
+const authAdmin = async (req, res, next) => {
+  try {
+    if (!adminAuth || !adminDb) return res.status(503).json({ error: 'Firebase Admin Auth/Database is not configured.' });
+    const authorization = String(req.header('authorization') || '');
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    if (!match) return res.status(401).json({ error: 'Gmail sign-in required.' });
+    const decoded = await adminAuth.verifyIdToken(match[1], true);
+    const grant = await adminDb.ref('erp_admins/' + decoded.uid).get();
+    if (grant.val() !== true) return res.status(403).json({ error: 'This Google account is not authorized as an ERP administrator.' });
+    req.actor = { type: 'firebase-admin', id: decoded.uid, email: decoded.email || null };
+    return next();
+  } catch (error) {
+    const code = String(error?.code || '');
+    const status = code.startsWith('auth/') ? 401 : 500;
+    if (status === 500) console.error('Admin authentication failed:', error.message);
+    return res.status(status).json({ error: status === 401 ? 'Invalid or expired Gmail session.' : 'Admin authentication failed.' });
+  }
 };
 const healthCheck = (_req, res) => res.json({ ok: true, service: 'rk-tent-house-erp-api', time: new Date().toISOString() });
 app.get('/health', healthCheck);
@@ -366,7 +375,7 @@ const readinessCheck = async (_req, res) => {
 };
 app.get('/ready', readinessCheck);
 app.get('/api/ready', readinessCheck);
-// Secret admin gate: validate the server-held token without ever returning it.
+// Admin API access requires a verified Firebase ID token and erp_admins/{uid} grant.
 app.get('/api/admin/session', adminLoginLimiter, authAdmin, (_req, res) => res.set('Cache-Control', 'no-store').json({ ok: true, scope: 'admin' }));
 // Reports presence/configuration only; never returns secret values.
 app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
@@ -379,7 +388,7 @@ app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
       ? !!(process.env.MSG91_AUTH_KEY && process.env.MSG91_TEMPLATE_ID && secretOk)
       : provider === 'demo' ? !isProd : false;
   res.json({ ok: true, environment: deploymentEnvironment, checks: {
-    adminToken: (process.env.ADMIN_API_TOKEN || '').length >= 32,
+    firebaseAdminAuthReady: !!(adminAuth && adminDb),
     otpHmacSecret: secretOk,
     otpProvider: provider,
     smsOtpReady: otpReady,
