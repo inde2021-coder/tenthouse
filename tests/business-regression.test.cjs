@@ -392,6 +392,21 @@ test('return slip prints missing quantities only and never a missing charge', ()
   assert.ok(!code.includes('मिसिंग चार्ज'));
 });
 
+test('dispatch slip refuses to print planned quantities when legacy dispatch history is absent', () => {
+  const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
+  assert.match(code, /if\(!entries\.length\)/);
+  assert.match(code, /वास्तविक Dispatch इतिहास उपलब्ध नहीं है/);
+  assert.match(code, /Number\.isSafeInteger\(qty\)&&qty>0/);
+  assert.doesNotMatch(code, /:\s*\(b\.items\|\|\[\]\)\.map/);
+});
+
+test('stock table escapes imported barcode values before rendering', () => {
+  const start = html.indexOf('function loadRealStockList()');
+  const end = html.indexOf('function printSingleBarcode', start);
+  const code = html.slice(start, end);
+  assert.match(code, /<code>\$\{escapeHtml\(s\.barcode\)\}<\/code>/);
+});
+
 test('dispatch slip uses actual dispatch entries, not full booking quantities', () => {
   const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
   assert.match(code, /b\.dispatchEntries/);
@@ -782,7 +797,7 @@ test('date-only daily and purchase records use the device local calendar date, n
   assert.ok(!html.includes("new Date().toISOString().slice(0,10)"));
   assert.ok(html.includes("new Date().toLocaleDateString('en-CA')"));
   const expense=sourceBetween('function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
-  assert.ok(expense.includes("date: new Date().toLocaleDateString('en-CA')"));
+  assert.ok(expense.includes("date: localISODate()"));
 });
 
 
@@ -2235,4 +2250,220 @@ test('calendar excludes cancelled bookings, ends early returns on the actual dat
   const day4 = grid.innerHTML.indexOf('<div class="calendar-day-number">4</div>', day3);
   assert.ok(day3 >= 0 && day4 > day3);
   assert.ok(!grid.innerHTML.slice(day3,day4).includes('#3 Early Return'));
+});
+
+test('dashboard and customer tracker derive dispatch and return counts from saved history arrays', () => {
+  assert.ok(html.includes("Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:(Number(b.dispatchEntryCount)||0)"));
+  assert.ok(html.includes("Array.isArray(b.returnEntries)?b.returnEntries.length:(Number(b.returnEntryCount)||0)"));
+  assert.ok(html.includes("Array.isArray(b.dispatchEntries)?b.dispatchEntries.length:Math.max(0,Number(b.dispatchEntryCount)||0)"));
+});
+
+
+test('stock deletion is blocked while admin or vendor dispatch quantities remain unreturned', () => {
+  const helper=sourceBetween('function hasOpenStockReturnReference(', 'function deleteStockItem(index)');
+  assert.match(helper,/entry\.itemIndex\)===index/);
+  assert.match(helper,/dispatched>Math\.max\(0,Number\(item\.returnedQty\)\|\|0\)/);
+  assert.match(helper,/openMissing/);
+  const admin=sourceBetween('function deleteStockItem(index)', 'function loadDispatchTable()');
+  assert.match(admin,/hasOpenStockReturnReference\('admin',item\.name\)/);
+  const vendor=sourceBetween('function editThirdPartyEntry(', 'function deleteThirdPartyPayment(');
+  assert.match(vendor,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
+});
+
+
+test('Quotation and Tax Invoice document numbers are unique within their document series', () => {
+  const code=sourceBetween('function isBusinessDocumentNumberTaken(', 'function businessDocumentTotals()');
+  const context={String,Array,Date};
+  const result=vm.runInNewContext(code+`
+    ({
+      taken:isBusinessDocumentNumberTaken('quotation','QTN-100',[{id:'a',documentNumber:'qtn-100'}],null),
+      availableForEdit:isBusinessDocumentNumberTaken('quotation','QTN-100',[{id:'a',documentNumber:'QTN-100'}],'a'),
+      generated:createUniqueBusinessDocumentNumber('quotation',[{id:'a',documentNumber:'QTN-'+new Date(123456789).toLocaleDateString('en-CA').replace(/-/g,'')+'-123456789'}],123456789)
+    })`,context);
+  assert.equal(result.taken,true);
+  assert.equal(result.availableForEdit,false);
+  assert.ok(result.generated.endsWith('-2'),'collision should receive a numeric suffix');
+  assert.ok(result.generated.startsWith('QTN-'));
+});
+test('business document save rejects duplicate numbers and invalid stored item/tax values', () => {
+  const save=sourceBetween('function saveBusinessDocument()', 'function loadBusinessDocument(type,id)');
+  assert.match(save,/isBusinessDocumentNumberTaken\(type,number,rows,editingBusinessDocumentId\)/);
+  assert.match(save,/Number\.isSafeInteger\(Number\(item\.qty\)\)/);
+  assert.match(save,/rawGst>28/);
+  assert.match(save,/rawDiscount>subtotalCheck\+rawOther/);
+  assert.match(save,/यह Document Number पहले से उपयोग में है/);
+});
+test('business document preview generates a collision-resistant full timestamp number', () => {
+  const preview=sourceBetween('function renderBusinessDocumentPreview()', 'function saveBusinessDocument()');
+  assert.match(preview,/createUniqueBusinessDocumentNumber\(type,numberRows\)/);
+  assert.doesNotMatch(preview,/String\(Date\.now\(\)\)\.slice\(-5\)/);
+});
+
+
+test('GSTR-1 working export uses saved tax invoices and their item GST rates, not bookings or a flat 18%', () => {
+  const code=sourceBetween('function buildGstr1TaxInvoiceRows(', 'function exportGstr1Report()');
+  const context={Array,Number,String,Math};
+  const result=vm.runInNewContext(code+`
+    buildGstr1TaxInvoiceRows([{
+      id:'doc-1',date:'2026-11-27',documentNumber:'INV-1',customerName:'Buyer',customerGstin:'22ABCDE1234F1Z5',
+      discount:100,otherCharges:100,taxType:'intra',gstRate:18,
+      items:[{name:'Chair',qty:1,rate:1000,gstRate:5},{name:'Stage',qty:1,rate:1000,gstRate:18}]
+    },{documentNumber:'INV-BAD',items:[],taxType:'intra'}])
+  `,context);
+  assert.equal(result.rows.length,1);
+  assert.equal(result.skipped,1);
+  assert.equal(result.rows[0].taxable,2000);
+  assert.equal(result.rows[0].gst,230);
+  assert.equal(result.rows[0].cgst,115);
+  assert.equal(result.rows[0].sgst,115);
+  assert.equal(result.rows[0].igst,0);
+  assert.equal(result.rows[0].invoiceValue,2230);
+});
+test('GSTR-1 export escapes CSV formula injection and exports interstate IGST from saved invoices', () => {
+  const code=sourceBetween('function buildGstr1TaxInvoiceRows(', 'function exportGstr1Report()');
+  const context={Array,Number,String,Math};
+  const result=vm.runInNewContext(code+`
+    ({invoice:buildGstr1TaxInvoiceRows([{
+      id:'doc-2',documentNumber:'=HYPERLINK("x")',customerName:'@Buyer',discount:0,otherCharges:0,taxType:'inter',gstRate:12,
+      items:[{name:'Table',qty:2,rate:500,gstRate:null}]
+    }]).rows[0],cell:csvSafeCell('=HYPERLINK("x")')})
+  `,context);
+  assert.equal(result.invoice.igst,120);
+  assert.equal(result.invoice.cgst,0);
+  assert.ok(result.cell.startsWith('"\'=HYPERLINK'));
+  assert.ok(result.cell.includes('""x""'));
+});
+test('GSTR-1 CSV function no longer calculates GST from every booking at a flat 18 percent', () => {
+  const exportCode=sourceBetween('function exportGstr1Report()', 'function loadInstallmentsTable()');
+  assert.match(exportCode,/safeGetStorage\('taxInvoiceDatabase',\[\]\)/);
+  assert.match(exportCode,/GSTR1_Tax_Invoice_Working_Register\.csv/);
+  assert.doesNotMatch(exportCode,/safeGetStorage\('softwareBookings'/);
+  assert.doesNotMatch(exportCode,/\*\s*18\s*\)\s*\/\s*100/);
+});
+
+
+test('GSTR-1 CSV includes a UTF-8 BOM and Windows-compatible row endings', () => {
+  const exportCode=sourceBetween('function exportGstr1Report()', 'function loadInstallmentsTable()');
+  assert.match(exportCode,/const csv='\\uFEFF'/);
+  assert.match(exportCode,/join\('\\r\\n'\)/);
+  assert.match(exportCode,/text\/csv;charset=utf-8/);
+});
+
+
+test('daily expense entries use timezone-local ISO dates and consistent positive rounded amounts', () => {
+  const dateCode=sourceBetween('function localISODate(', 'function saveDailyExpense(event)');
+  const result=vm.runInNewContext(dateCode+`
+    localISODate(new Date(2026,10,27,23,59,59))
+  `,{Date,String});
+  assert.equal(result,'2026-11-27');
+  const save=sourceBetween('function saveDailyExpense(event)', 'function renderRoyalDashboardMetrics()');
+  assert.match(save,/date: localISODate\(\)/);
+  assert.match(save,/Math\.round\(amount\*100\)\/100/);
+  const edit=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense(index)');
+  assert.match(edit,/n<=0/);
+  assert.match(edit,/Math\.round\(n\*100\)\/100/);
+});
+
+
+test('purchase history cannot be edited or deleted after related dispatch or unresolved missing records', () => {
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  assert.match(helper,/booking\.dispatchEntries/);
+  assert.match(helper,/itemIndex\)===index/);
+  assert.match(helper,/Partially Returned/);
+  assert.match(helper,/missingItemsDatabase/);
+  const edit=sourceBetween('function editPurchase(index)', 'function deletePurchase(index)');
+  const del=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  assert.match(edit,/purchaseHasDispatchReference\(p\.itemName\)/);
+  assert.match(del,/purchaseHasDispatchReference\(p\.itemName\)/);
+});
+
+
+test('purchase dispatch guard blocks only matching admin stock references and unresolved missing rows', () => {
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  const context={String,Array,Number,safeGetStorage:(key)=>key==='softwareBookings'?[{
+    status:'Partially Returned',items:[{name:'Chair',source:'admin'},{name:'Tent',source:'third-party'}],
+    dispatchEntries:[{itemIndex:0,qty:4}]
+  }]:key==='missingItemsDatabase'?[{item:'Table',qty:1,source:'admin',resolved:false}]:[]};
+  const result=vm.runInNewContext(helper+`
+    ({chair:purchaseHasDispatchReference('chair'),tent:purchaseHasDispatchReference('tent'),table:purchaseHasDispatchReference('table'),other:purchaseHasDispatchReference('Other')})
+  `,context);
+  assert.deepEqual({...result},{chair:true,tent:false,table:true,other:false});
+});
+
+
+test('vendor stock edit is blocked while dispatch or return is still open', () => {
+  const edit=sourceBetween('function editThirdPartyEntry(partyName,itemName)', 'function deleteThirdPartyEntry(');
+  assert.match(edit,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
+  assert.match(edit,/Dispatch\/Return अभी खुला है/);
+});
+test('adding vendor stock rejects invalid existing quantities and safe-integer overflow', () => {
+  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  assert.match(save,/Number\.isSafeInteger\(currentQty\)/);
+  assert.match(save,/Number\.isSafeInteger\(currentPurchased\)/);
+  assert.match(save,/Number\.isSafeInteger\(currentQty\+qty\)/);
+  assert.match(save,/Number\.isSafeInteger\(currentPurchased\+qty\)/);
+  assert.match(save,/मौजूदा Vendor मात्रा सही नहीं है/);
+});
+
+
+test('adding vendor stock during open dispatch cannot rewrite historical vendor rates', () => {
+  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  assert.match(save,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
+  assert.match(save,/const sameRates=/);
+  assert.match(save,/नई खरीद जोड़ सकते हैं, लेकिन पुराने रिकॉर्ड की दरें बदल नहीं सकते/);
+  assert.match(save,/existing\.costPrice=costPrice/);
+  assert.match(save,/existing\.qty=currentQty\+qty/);
+});
+
+
+test('rental calculations construct ISO dates from local calendar fields, not locale formatting', () => {
+  const slices=sourceBetween('function getDispatchEntryRentalSlices(b)', 'function calculateBookingTotalRent(b)');
+  const total=sourceBetween('function calculateBookingTotalRent(b)', 'function loadAllFirebaseData()');
+  assert.match(slices,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
+  assert.match(total,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
+  assert.doesNotMatch(slices,/toLocaleDateString\('en-CA'\)/);
+  assert.doesNotMatch(total,/toLocaleDateString\('en-CA'\)/);
+});
+
+
+test('return stock prevalidation aggregates quantities by physical row before updating balances', () => {
+  const code=sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems = []');
+  assert.match(code,/const returnRequirements=new Map\(\)/);
+  assert.match(code,/previous\.qty\+=qty/);
+  assert.match(code,/const total=available\+requirement\.qty/);
+  assert.match(code,/Number\.isSafeInteger\(total\)/);
+  assert.ok(code.indexOf('for(const requirement of returnRequirements.values())')<code.indexOf('inputs.forEach(input=>'));
+});
+
+
+test('vendor ledger falls back to item and matching vendor rates for legacy zero snapshots', () => {
+  const helper=sourceBetween('function getVendorLedgerRate(', 'function loadThirdPartyLedger()');
+  const context={String,Array,Number};
+  const result=vm.runInNewContext(helper+`
+    ({
+      rentFromItem:getVendorLedgerRate({vendorRentRate:0,itemName:'Chair',partyName:'Vendor A'},{name:'Chair',partyName:'Vendor A',vendorRentRate:12},[], 'rent'),
+      rentFromVendor:getVendorLedgerRate({vendorRentRate:0,itemName:'Chair',partyName:'Vendor A'},{name:'Chair',partyName:'Vendor A',vendorRentRate:0},[{item:'Chair',partyName:'Vendor A',costPrice:15}],'rent'),
+      missingFromVendor:getVendorLedgerRate(null,{name:'Chair',partyName:'Vendor A',vendorMissingCost:0},[{item:'Chair',partyName:'Vendor A',missingCost:700}],'missing'),
+      noCrossVendor:getVendorLedgerRate(null,{name:'Chair',partyName:'Vendor A'},[{item:'Chair',partyName:'Vendor B',costPrice:99}],'rent')
+    })
+  `,context);
+  assert.deepEqual({...result},{rentFromItem:12,rentFromVendor:15,missingFromVendor:700,noCrossVendor:0});
+});
+test('vendor ledger uses rate fallback for both rent expense and missing replacement liability', () => {
+  const ledger=sourceBetween('function loadThirdPartyLedger()', '// Removed an orphaned speech-recognition fragment');
+  assert.match(ledger,/getVendorLedgerRate\(e,item,tpList,'rent'\)/);
+  assert.match(ledger,/getVendorLedgerRate\(null,item,tpList,'missing'\)/);
+  assert.doesNotMatch(ledger,/Number\(item\.vendorMissingCost\)\|\|0/);
+});
+
+
+test('invoice base rent and customer booking tracker use stable local ISO dates', () => {
+  const baseRent=sourceBetween('function calculateBookingBaseRent(b)', 'function searchBillingCustomer()');
+  const trackerStart=html.indexOf('const days=(start,end)=>');
+  const trackerEnd=html.indexOf('let rental=0;',trackerStart);
+  const tracker=html.slice(trackerStart,trackerEnd);
+  assert.match(baseRent,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
+  assert.doesNotMatch(baseRent,/toLocaleDateString\('en-CA'\)/);
+  assert.match(tracker,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
+  assert.doesNotMatch(tracker,/toLocaleDateString\('en-CA'\)/);
 });
