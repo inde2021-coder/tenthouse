@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/__/auth/(.*)",
-      "destination": "https://radhe-krishna-online-booking.firebaseapp.com/__/auth/$1"
+      "source": "/__/auth/:path*",
+      "destination": "https://radhe-krishna-online-booking.firebaseapp.com/__/auth/:path*"
     }
   ]
 }
