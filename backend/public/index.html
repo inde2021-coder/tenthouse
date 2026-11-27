@@ -3122,7 +3122,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
             const items=Array.isArray(b.items)?b.items:[];
             if(entries.length)return getDispatchEntryRentalSlices(b).reduce((sum,slice)=>sum+Math.max(0,Number(slice.qty)||0)*Math.max(0,Number(slice.entry.unitRent??items[Number(slice.entry.itemIndex)]?.rentPrice??500))*calculateRentalDays(slice.entry.date||b.date,slice.endDate),0);
-            const today=new Date().toLocaleDateString('en-CA'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate):(scheduled>today?scheduled:today);
+            const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'),scheduled=String(b.returnDate||today),endDate=b.fullyReturnedAt?(b.actualReturnDate||b.returnDate):(scheduled>today?scheduled:today);
             return items.reduce((sum,item)=>sum+Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rentPrice??500))*calculateRentalDays(b.date,endDate),0);
         }
         function searchBillingCustomer() {
@@ -4109,7 +4109,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
       const b=data.booking;if(!b)throw new Error('बुकिंग विवरण उपलब्ध नहीं है');
       const items=Array.isArray(b.items)?b.items:[],entries=Array.isArray(b.dispatchEntries)?b.dispatchEntries:[];
       const days=(start,end)=>{const a=new Date(String(start||'').slice(0,10)+'T12:00:00'),z=new Date(String(end||'').slice(0,10)+'T12:00:00');if(Number.isNaN(a.getTime())||Number.isNaN(z.getTime())||z<a)return 1;return Math.max(1,Math.round((z-a)/86400000));};
-      const endDate=b.actualReturnDate||b.returnDate||new Date().toLocaleDateString('en-CA');
+      const now=new Date(),today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0'),endDate=b.actualReturnDate||b.returnDate||today;
       let rental=0;
       if(entries.length){
         const allocated=entries.map(()=>0),slices=[];
