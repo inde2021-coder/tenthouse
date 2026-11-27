@@ -2298,3 +2298,45 @@ test('business document preview generates a collision-resistant full timestamp n
   assert.match(preview,/createUniqueBusinessDocumentNumber\(type,numberRows\)/);
   assert.doesNotMatch(preview,/String\(Date\.now\(\)\)\.slice\(-5\)/);
 });
+
+
+test('GSTR-1 working export uses saved tax invoices and their item GST rates, not bookings or a flat 18%', () => {
+  const code=sourceBetween('function buildGstr1TaxInvoiceRows(', 'function exportGstr1Report()');
+  const context={Array,Number,String,Math};
+  const result=vm.runInNewContext(code+`
+    buildGstr1TaxInvoiceRows([{
+      id:'doc-1',date:'2026-11-27',documentNumber:'INV-1',customerName:'Buyer',customerGstin:'22ABCDE1234F1Z5',
+      discount:100,otherCharges:100,taxType:'intra',gstRate:18,
+      items:[{name:'Chair',qty:1,rate:1000,gstRate:5},{name:'Stage',qty:1,rate:1000,gstRate:18}]
+    },{documentNumber:'INV-BAD',items:[],taxType:'intra'}])
+  `,context);
+  assert.equal(result.rows.length,1);
+  assert.equal(result.skipped,1);
+  assert.equal(result.rows[0].taxable,2000);
+  assert.equal(result.rows[0].gst,230);
+  assert.equal(result.rows[0].cgst,115);
+  assert.equal(result.rows[0].sgst,115);
+  assert.equal(result.rows[0].igst,0);
+  assert.equal(result.rows[0].invoiceValue,2230);
+});
+test('GSTR-1 export escapes CSV formula injection and exports interstate IGST from saved invoices', () => {
+  const code=sourceBetween('function buildGstr1TaxInvoiceRows(', 'function exportGstr1Report()');
+  const context={Array,Number,String,Math};
+  const result=vm.runInNewContext(code+`
+    ({invoice:buildGstr1TaxInvoiceRows([{
+      id:'doc-2',documentNumber:'=HYPERLINK("x")',customerName:'@Buyer',discount:0,otherCharges:0,taxType:'inter',gstRate:12,
+      items:[{name:'Table',qty:2,rate:500,gstRate:null}]
+    }]).rows[0],cell:csvSafeCell('=HYPERLINK("x")')})
+  `,context);
+  assert.equal(result.invoice.igst,120);
+  assert.equal(result.invoice.cgst,0);
+  assert.ok(result.cell.startsWith('"\'=HYPERLINK'));
+  assert.ok(result.cell.includes('""x""'));
+});
+test('GSTR-1 CSV function no longer calculates GST from every booking at a flat 18 percent', () => {
+  const exportCode=sourceBetween('function exportGstr1Report()', 'function loadInstallmentsTable()');
+  assert.match(exportCode,/safeGetStorage\('taxInvoiceDatabase',\[\]\)/);
+  assert.match(exportCode,/GSTR1_Tax_Invoice_Working_Register\.csv/);
+  assert.doesNotMatch(exportCode,/safeGetStorage\('softwareBookings'/);
+  assert.doesNotMatch(exportCode,/\*\s*18\s*\)\s*\/\s*100/);
+});
