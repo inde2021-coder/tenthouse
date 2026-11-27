@@ -400,6 +400,13 @@ test('dispatch slip refuses to print planned quantities when legacy dispatch his
   assert.doesNotMatch(code, /:\s*\(b\.items\|\|\[\]\)\.map/);
 });
 
+test('stock table escapes imported barcode values before rendering', () => {
+  const start = html.indexOf('function loadRealStockList()');
+  const end = html.indexOf('function printSingleBarcode', start);
+  const code = html.slice(start, end);
+  assert.match(code, /<code>\$\{escapeHtml\(s\.barcode\)\}<\/code>/);
+});
+
 test('dispatch slip uses actual dispatch entries, not full booking quantities', () => {
   const code = sourceBetween('function printDispatchSlip(id) {', 'function sendWhatsAppMessage');
   assert.match(code, /b\.dispatchEntries/);
