@@ -2459,9 +2459,11 @@ test('vendor ledger uses rate fallback for both rent expense and missing replace
 
 test('invoice base rent and customer booking tracker use stable local ISO dates', () => {
   const baseRent=sourceBetween('function calculateBookingBaseRent(b)', 'function searchBillingCustomer()');
-  const tracker=sourceBetween('async function loadCustomerBookingTracker()', 'function ');
+  const trackerStart=html.indexOf('const days=(start,end)=>');
+  const trackerEnd=html.indexOf('let rental=0;',trackerStart);
+  const tracker=html.slice(trackerStart,trackerEnd);
   assert.match(baseRent,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
   assert.doesNotMatch(baseRent,/toLocaleDateString\('en-CA'\)/);
   assert.match(tracker,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
-  assert.doesNotMatch(tracker,/new Date\(\)\.toLocaleDateString\('en-CA'\)/);
+  assert.doesNotMatch(tracker,/toLocaleDateString\('en-CA'\)/);
 });
