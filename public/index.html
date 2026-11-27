@@ -2646,7 +2646,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
                     <td>₹${Number(s.singleRent)||0}</td>
                     <td>₹${Number(s.setRent)||0}</td>
                     <td>₹${Number(s.missingCharge??s.missingUnitPrice)||0}</td>
-                    <td><code>${s.barcode}</code></td>
+                    <td><code>${escapeHtml(s.barcode)}</code></td>
                     <td class="table-actions"><button type="button" onclick="printSingleBarcode('${escapeJs(s.name)}', '${escapeJs(s.barcode)}')" class="action-btn" title="बारकोड प्रिंट"><i class="fa-solid fa-print"></i></button><button type="button" onclick="editStockItem(${i})" class="action-btn">अपडेट</button><button type="button" onclick="deleteStockItem(${i})" class="action-btn danger-action">डिलीट</button></td>
                 </tr>
             `).join('');
