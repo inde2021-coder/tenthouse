@@ -719,3 +719,21 @@ html.rk-ref5 #customerFirstPortal .rk-customer-submit{background:linear-gradient
  #customerFirstPortal .rk-customer-payment #onlinePaymentSection{height:auto!important;min-height:0!important}
  #customerFirstPortal .rk-customer-section{padding:11px!important}
 }
+
+
+/* Brand/hero correction: use the Radhe-Krishna emblem in the masthead and show only one hero artwork. */
+#customerFirstPortal .rk-customer-brand-mark{display:grid!important;place-items:center!important;padding:0!important;overflow:hidden!important;border:1px solid #f3d06c!important;border-radius:50%!important;background:linear-gradient(145deg,#07142c,#142c54)!important;}
+#customerFirstPortal .rk-customer-brand-mark img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;padding:2px!important;border-radius:50%!important;}
+#customerFirstPortal .rk-customer-hero{background-image:linear-gradient(105deg,rgba(3,9,25,.97) 0%,rgba(4,16,43,.88) 48%,rgba(5,12,29,.36) 100%)!important;background-color:#06132c!important;background-position:center!important;background-size:cover!important;}
+
+
+/* Customer hero: center the complete Hindi message and remove the decorative mandap artwork. */
+#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important;text-align:center!important;justify-items:center!important;}
+#customerFirstPortal .rk-hero-copy{width:100%!important;max-width:900px!important;margin-inline:auto!important;text-align:center!important;}
+#customerFirstPortal .rk-hero-kicker{margin-inline:auto!important;justify-content:center!important;}
+#customerFirstPortal .rk-hero-eyebrow,#customerFirstPortal .rk-hero-copy h2,#customerFirstPortal .rk-hero-description{margin-left:auto!important;margin-right:auto!important;text-align:center!important;}
+#customerFirstPortal .rk-hero-description{max-width:760px!important;}
+#customerFirstPortal .rk-hero-cta{margin-inline:auto!important;}
+#customerFirstPortal .rk-hero-trust{justify-content:center!important;text-align:center!important;}
+#customerFirstPortal .rk-hero-art{display:none!important;}
+#customerFirstPortal .rk-hero-bottomline{left:0!important;right:0!important;justify-content:center!important;text-align:center!important;}

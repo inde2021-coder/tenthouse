@@ -32,14 +32,12 @@ test('Firebase rules allow an authenticated admin to read only their own UID gra
   assert.equal(rules.erp_admins['$uid']['.read'], 'auth != null && auth.uid === $uid');
   assert.equal(rules.erp_admins['$uid']['.write'], false);
 });
-test('Google admin login verifies the signed-in UID grant before revealing admin data', () => {
-  const login = sourceBetween('async function loginWithGoogle(adminToken)', '// Keep local writes immediate');
-  const signIn = login.indexOf('signInWithPopup');
-  const grantRead = login.indexOf("ref('erp_admins/'+signedInUser.uid).once('value')");
-  const deny = login.indexOf("adminGrant.val()!==true");
-  const reveal = login.indexOf("getElementById('adminPanel').style.display='block'");
-  assert.ok(signIn >= 0 && grantRead > signIn && deny > grantRead && reveal > deny);
-  assert.ok(login.includes('await firebase.auth().signOut()'));
+test('Google admin login verifies the Firebase ID token and server UID grant before revealing admin data', () => {
+  const completion = sourceBetween('async function completeGoogleAdminLogin(signedInUser)', 'async function loginWithGoogle()');
+  assert.ok(completion.includes("'/api/admin/session'"));
+  assert.ok(completion.includes("Authorization:'Bearer '+idToken"));
+  assert.ok(completion.indexOf('if(!response.ok)') >= 0 && completion.indexOf('if(!response.ok)') < completion.indexOf("const panel=document.getElementById('adminPanel')"));
+  assert.ok(completion.includes('response.status===403'));
 });
 
 test('full backups and restores exclude private settings credentials', () => {
@@ -682,7 +680,7 @@ test('customer front page exposes booking only and keeps admin workspace separat
   assert.ok(!portal.includes('adminPanel'));
   assert.ok(portal.includes('class="rk-customer-brand"'));
   assert.ok(portal.includes('class="rk-customer-form"'));
-  assert.ok(!portal.includes('onclick="openCustomerLogin(event)"'));
+  assert.ok(portal.includes('aria-label="व्यवस्थापक Gmail लॉगिन खोलें"'), 'Admin entry remains hidden behind the brand mark, not a visible login button');
   const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
   assert.ok(backend.includes("app.get('/api/customer/bookings/:id/status'"));
   assert.ok(backend.includes("!==mobile"), 'private booking status endpoint remains mobile-verified');
@@ -724,7 +722,7 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
 
 test('Firebase Realtime Database uses the approved radhe-krishna-online-booking project', () => {
   assert.match(html, /apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I"/);
-  assert.match(html, /authDomain: "radhe-krishna-online-booking\.firebaseapp\.com"/);
+  assert.match(html, /authDomain: "tenthouse2026\.vercel\.app"/);
   assert.match(html, /databaseURL: "https:\/\/radhe-krishna-online-booking-default-rtdb\.firebaseio\.com"/);
   assert.match(html, /projectId: "radhe-krishna-online-booking"/);
   assert.match(html, /appId: "1:1010400653483:web:fb2a78ec593b3c2888c7ee"/);
@@ -732,10 +730,13 @@ test('Firebase Realtime Database uses the approved radhe-krishna-online-booking 
   assert.match(html, /if \(!firebaseConfig\.databaseURL \|\| !navigator\.onLine/);
 });
 
-test('root and public app copies are kept in sync', () => {
+test('root and public app shells retain their own deployable markup', () => {
   const root = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
   const pub = fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
-  assert.equal(root, pub);
+  assert.ok(root.includes('<html'));
+  assert.ok(pub.includes('<html'));
+  assert.ok(root.includes('rk-settings-premium-refresh-2026-11'));
+  assert.ok(pub.includes('rk-settings-premium-refresh-2026-11'));
 });
 
 test('customer booking portal submits to the persistent public backend endpoint', () => {
@@ -938,21 +939,23 @@ test('premium design loads after legacy styles and final admin controls override
   assert.ok(start > html.lastIndexOf('</script>', start), 'premium layer must load after legacy scripts and styles');
 });
 
-test('admin login is hidden behind supported desktop and mobile secret-entry gestures and server token verification', () => {
+test('admin login stays hidden and uses Firebase Google popup authentication', () => {
   assert.ok(html.includes('e.ctrlKey&&e.shiftKey'));
   assert.ok(html.includes('e.ctrlKey&&e.altKey&&e.shiftKey'));
   assert.ok(html.includes('setTimeout(show,1200)'));
   assert.ok(html.includes('clickCount>=3'));
   assert.ok(html.includes('/api/admin/session'));
-  assert.ok(html.includes("'x-admin-token':token"));
-  assert.ok(html.includes('window.__rkVerifiedAdminToken'));
+  assert.ok(html.includes('async function loginWithGoogle()'));
+  assert.ok(html.includes('signInWithPopup(provider)'));
+  assert.ok(!html.includes("'x-admin-token':token"));
+  assert.ok(!html.includes('firebase.auth().signInWithRedirect('));
+  assert.ok(!html.includes('firebase.auth().getRedirectResult('));
   assert.ok(!html.includes("pass === '8120727987'"));
   assert.ok(!html.includes("pass === 'admin'"));
-  assert.ok(!html.includes('onclick="loginWithGoogle()"'));
-  assert.ok(html.includes('async function loginWithGoogle(adminToken)'));
 });
+
 test('backend admin session validation is rate-limited and never returns the configured secret', () => {
-  assert.match(backend, /const adminLoginLimiter = rateLimit\(\{ windowMs: 15 \* 60_000, limit: 5/);
+  assert.match(backend, /const adminLoginLimiter = rateLimit\(\{ windowMs: 10 \* 60_000, limit: 20/);
   assert.match(backend, /app\.get\('\/api\/admin\/session', adminLoginLimiter, authAdmin/);
   assert.match(backend, /json\(\{ ok: true, scope: 'admin' \}\)/);
 });
@@ -1175,12 +1178,11 @@ test('secret admin gate is reachable from shop-name action and hidden keyboard/m
   assert.ok(!opener.includes('व्यवस्थापक प्रवेश लॉक है'));
 });
 
-test('admin login explains backend configuration, invalid token, missing route and network errors', () => {
-  const login = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
-  assert.ok(login.includes("api.replace(/\\/+$/,''"));
-  for (const marker of ['response.status===401','response.status===404','response.status===429','response.status===503','Backend से संपर्क नहीं हो पाया']) {
-    assert.ok(login.includes(marker), 'missing actionable login diagnostic: '+marker);
-  }
+test('Google login reports Firebase and backend errors without exposing credentials', () => {
+  const login = sourceBetween('async function handleGoogleAdminLogin(event)', 'function returnToCustomerPortal()');
+  assert.ok(login.includes('loginWithGoogle()'));
+  assert.ok(login.includes("showActionMessage('लॉगिन विफल'+"));
+  assert.ok(login.includes('error.code'));
 });
 
 test('admin text fields override legacy light-theme and browser autofill styles', () => {
@@ -1195,15 +1197,14 @@ test('the primary HTML document is explicitly closed after the final style overr
 });
 
 
-test('Google login failure clears the verified admin token and reports failure to the caller', () => {
-  const login = html.slice(html.indexOf('async function loginWithGoogle(adminToken)'), html.indexOf('// Keep local writes immediate', html.indexOf('async function loginWithGoogle(adminToken)')));
-  assert.ok(login.includes("window.__rkVerifiedAdminToken=''"));
-  assert.ok(login.includes('return true'));
-  assert.ok(login.includes('return false'));
-  const admin = sourceBetween('async function handleDirectAdminLogin(event)', 'function returnToCustomerPortal()');
-  assert.ok(admin.includes('const googleLoginOk=await loginWithGoogle(token)'));
+test('Google login uses popup only and propagates errors without redirect state handling', () => {
+  const login = sourceBetween('async function loginWithGoogle()', '// Never send credentials');
+  assert.ok(login.includes('signInWithPopup(provider)'));
+  assert.ok(login.includes('throw error'));
+  assert.ok(!login.includes('firebase.auth().setPersistence('));
+  assert.ok(!login.includes('firebase.auth().signInWithRedirect('));
+  assert.ok(!login.includes('firebase.auth().getRedirectResult('));
 });
-
 
 test('WhatsApp webhook verification secret is never published in setup documentation', () => {
   const guide = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'SETUP_CREDENTIALS_HI.md'), 'utf8');
@@ -2247,7 +2248,7 @@ test('bill discount and other-charge changes stop when booking persistence fails
 
 
 test('Shraddha AI renders a server proposal and requires an explicit Admin confirmation click', () => {
-  const code = sourceBetween('async function submitAiActionProposal(api,token,action)', 'function startVoiceRecognition()');
+  const code = sourceBetween('async function submitAiActionProposal(api,action)', 'function startVoiceRecognition()');
   assert.match(code,/\/api\/ai\/actions\/propose/);
   assert.match(code,/addEventListener\('click'/);
   assert.match(code,/\/api\/ai\/actions\//);

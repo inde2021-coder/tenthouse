@@ -914,6 +914,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             </header>
 <section class="rk-customer-hero" aria-label="Radhe Krishn Tent House">
 <div class="rk-hero-copy"><div class="rk-hero-kicker"><i class="fa-solid fa-sparkles"></i> YOUR CELEBRATION, OUR ARRANGEMENT</div><p class="rk-hero-eyebrow">हर खुशी के मौके पर</p><h2>यादगार समारोह की<br><em>शानदार शुरुआत</em></h2><p class="rk-hero-description">शादी, जन्मदिन और हर खास अवसर के लिए टेंट सामान की आसान बुकिंग करें।</p><button type="button" class="rk-hero-cta" onclick="document.getElementById('portalCustName').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName').focus();">बुकिंग शुरू करें <i class="fa-solid fa-arrow-down"></i></button><div class="rk-hero-trust"><span><i class="fa-solid fa-shield-heart"></i> भरोसेमंद सेवा</span><span><i class="fa-solid fa-calendar-check"></i> आसान बुकिंग</span></div></div>
+<div class="rk-hero-art"><img class="rk-hero-image" src="./customer-hero.svg" alt="Radhe Krishn Tent House celebration arrangement artwork" width="480" height="194" loading="eager"></div>
 <div class="rk-hero-bottomline"><span>RADHE KRISHN TENT HOUSE</span><span>CELEBRATE BEAUTIFULLY · BOOK EASILY</span></div></section>
             <div class="rk-customer-shell">
                 <form class="rk-customer-form" onsubmit="saveCustomerBooking(event)">
@@ -1486,7 +1487,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         const firebaseConfig = {
             apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I",
-            authDomain: "radhe-krishna-online-booking.firebaseapp.com",
+            authDomain: "tenthouse2026.vercel.app",
             databaseURL: "https://radhe-krishna-online-booking-default-rtdb.firebaseio.com",
             projectId: "radhe-krishna-online-booking",
             storageBucket: "radhe-krishna-online-booking.firebasestorage.app",
@@ -1590,27 +1591,15 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
-        let rkRedirectResultHandled=false;
-        async function handleGoogleRedirectResult(){
-            if(rkRedirectResultHandled||!window.firebase?.auth)return;
-            rkRedirectResultHandled=true;
-            try{
-                const result=await firebase.auth().getRedirectResult();
-                if(result?.user)await completeGoogleAdminLogin(result.user);
-            }catch(error){
-                const msg=error.code==='auth/unauthorized-domain'?'इस वेबसाइट का domain Firebase Authentication → Authorized domains में जोड़ें।':error.code==='auth/operation-not-allowed'?'Firebase Console में Google Sign-In enable करें।':error.code==='auth/network-request-failed'?'Internet connection जाँचकर फिर प्रयास करें।':(error.message||'अज्ञात Firebase त्रुटि');
-                const code=error.code?' ['+error.code+']':'';
-                console.error('Google redirect login failed:',error);
-                showActionMessage('Gmail लॉगिन विफल'+code+': '+msg,'error');
-            }
-        }
+        // Google login uses signInWithPopup only. Do not call getRedirectResult:
+        // this app no longer starts redirect-based authentication, and stale
+        // redirect state can trigger "missing initial state" on page load.
         function initFirebaseConnection() {
             try {
                 if (!window.firebase || !firebase.database || !firebase.auth) throw new Error('Firebase SDK लोड नहीं हुआ');
                 if (!firebase.apps.length) firebaseApp = firebase.initializeApp(firebaseConfig);
                 else firebaseApp = firebase.app();
                 dbRef = firebase.database().ref('tent_erp_data');
-                handleGoogleRedirectResult();
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
                     if (!user) return;
@@ -1853,19 +1842,17 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             provider.setCustomParameters({prompt:'select_account'});
             provider.addScope('email');
             try{
-                await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                // Open the OAuth popup immediately inside the user's click gesture.
+                // Awaiting setPersistence first can consume transient user activation
+                // and cause browsers to block or mis-handle the Firebase popup.
                 const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
-                // Some browsers/WebViews report a generic internal popup error even
-                // when the popup is blocked by privacy settings. Retry with the
-                // full-page Google redirect flow; handleGoogleRedirectResult()
-                // completes the same Firebase session after returning to this page.
-                if(error.code==='auth/popup-blocked'||error.code==='auth/internal-error'){
-                    console.warn('Google popup failed; retrying with redirect:',error.code);
-                    await firebase.auth().signInWithRedirect(provider);
-                    return false;
-                }
+                // Do not fall back to signInWithRedirect here. Redirect sign-in
+                // depends on sessionStorage state surviving the round trip and
+                // fails in storage-partitioned browsers with "missing initial state".
+                // Keep this flow popup-only and surface the original Firebase error.
+                console.error('Google popup login failed; redirect fallback disabled:',error);
                 throw error;
             }
         }
@@ -4265,30 +4252,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
    if(!canvas||!url){alert('पहले QR बनाएं।');return}
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p>
-
-<style id="rk-customer-header-fixed-order-2026-11">
-/* Keep the customer portal masthead and navigation pinned while portal content scrolls. */
-#customerFirstPortal .customer-scroll-wrap{position:relative!important;overflow-y:auto!important;overflow-x:hidden!important;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
-#customerFirstPortal .rk-customer-brand{position:sticky!important;top:env(safe-area-inset-top,0px)!important;z-index:5000!important;flex:0 0 auto!important;align-self:stretch!important;width:100%!important;overflow:visible!important;}
-#customerFirstPortal .rk-customer-hero,#customerFirstPortal .rk-customer-shell{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
-#customerFirstPortal .rk-reference-nav{position:relative!important;z-index:2!important;}
-@media(max-width:700px){#customerFirstPortal .rk-customer-brand{top:env(safe-area-inset-top,0px)!important;}}
-</style>
-
-<style id="rk-customer-hero-centered-copy-2026">
-#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important;position:relative!important;}
-#customerFirstPortal .rk-hero-copy{width:100%!important;max-width:900px!important;margin:0 auto!important;text-align:center!important;z-index:4!important;}
-#customerFirstPortal .rk-hero-kicker{margin-left:auto!important;margin-right:auto!important;}
-#customerFirstPortal .rk-hero-eyebrow{margin-top:18px!important;}
-#customerFirstPortal .rk-hero-description{max-width:760px!important;margin:18px auto 22px!important;}
-#customerFirstPortal .rk-hero-trust{justify-content:center!important;}
-#customerFirstPortal .rk-hero-art{position:absolute!important;right:2%!important;top:50%!important;transform:translateY(-50%)!important;width:34%!important;max-width:420px!important;opacity:.16!important;z-index:1!important;pointer-events:none!important;}
-#customerFirstPortal .rk-hero-art .rk-hero-float{display:none!important;}
-#customerFirstPortal .rk-hero-bottomline{position:relative!important;z-index:4!important;}
-@media(max-width:640px){#customerFirstPortal .rk-hero-art{display:none!important;}#customerFirstPortal .rk-hero-copy{max-width:100%!important;}#customerFirstPortal .rk-hero-description{font-size:13px!important;}}
-</style>
-</body></html>';
+   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
  document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
@@ -4707,39 +4671,27 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});else restore();
 })();
 </script>
-<style id="rk-admin-dark-controls-final">
-/* Final admin control theme: defeat legacy light-theme and browser autofill rules. */
-#adminPanel,#welcomeOverlay,[role="dialog"],.modal-content{color-scheme:dark}
-#adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
-#adminPanel select,#adminPanel textarea,
-#welcomeOverlay input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
-#welcomeOverlay select,#welcomeOverlay textarea,
-[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
-[role="dialog"] select,[role="dialog"] textarea,
-.modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
-.modal-content select,.modal-content textarea{
-  background:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important;
-  background-color:#0d1929!important;color:#edf5ff!important;-webkit-text-fill-color:#edf5ff!important;
-  border:1px solid rgba(126,174,220,.34)!important;border-radius:12px!important;
-  box-shadow:inset 4px 4px 9px rgba(0,0,0,.46),inset -1px -1px 3px rgba(140,184,226,.06),0 4px 12px rgba(0,0,0,.12)!important;
-  caret-color:#83d9f0!important;min-width:0;outline:none
-}
-#adminPanel input::placeholder,#adminPanel textarea::placeholder,
-#welcomeOverlay input::placeholder,#welcomeOverlay textarea::placeholder,
-[role="dialog"] input::placeholder,[role="dialog"] textarea::placeholder,
-.modal-content input::placeholder,.modal-content textarea::placeholder{color:#8fa8c4!important;opacity:1!important;-webkit-text-fill-color:#8fa8c4!important}
-#adminPanel input:focus,#adminPanel select:focus,#adminPanel textarea:focus,
-#welcomeOverlay input:focus,#welcomeOverlay select:focus,#welcomeOverlay textarea:focus,
-[role="dialog"] input:focus,[role="dialog"] select:focus,[role="dialog"] textarea:focus,
-.modal-content input:focus,.modal-content select:focus,.modal-content textarea:focus{
-  border-color:#62c5df!important;box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.16)!important;outline:none!important
-}
-#adminPanel select option,#welcomeOverlay select option,[role="dialog"] select option,.modal-content select option{background:#101d2e!important;color:#edf5ff!important}
-#adminPanel input:-webkit-autofill,#adminPanel input:-webkit-autofill:hover,#adminPanel input:-webkit-autofill:focus,
-#welcomeOverlay input:-webkit-autofill,[role="dialog"] input:-webkit-autofill,.modal-content input:-webkit-autofill{
-  -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;transition:background-color 99999s ease-out 0s!important
-}
+<style id="rk-customer-header-fixed-order-2026-11">
+/* Keep the customer portal masthead and navigation pinned while portal content scrolls. */
+#customerFirstPortal .customer-scroll-wrap{position:relative!important;overflow-y:auto!important;overflow-x:hidden!important;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
+#customerFirstPortal .rk-customer-brand{position:sticky!important;top:env(safe-area-inset-top,0px)!important;z-index:5000!important;flex:0 0 auto!important;align-self:stretch!important;width:100%!important;overflow:visible!important;}
+#customerFirstPortal .rk-customer-hero,#customerFirstPortal .rk-customer-shell{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
+#customerFirstPortal .rk-reference-nav{position:relative!important;z-index:2!important;}
+@media(max-width:700px){#customerFirstPortal .rk-customer-brand{top:env(safe-area-inset-top,0px)!important;}}
 </style>
+<style id="rk-customer-hero-centered-copy-2026">
+#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important;position:relative!important;}
+#customerFirstPortal .rk-hero-copy{width:100%!important;max-width:900px!important;margin:0 auto!important;text-align:center!important;z-index:4!important;}
+#customerFirstPortal .rk-hero-kicker{margin-left:auto!important;margin-right:auto!important;}
+#customerFirstPortal .rk-hero-eyebrow{margin-top:18px!important;}
+#customerFirstPortal .rk-hero-description{max-width:760px!important;margin:18px auto 22px!important;}
+#customerFirstPortal .rk-hero-trust{justify-content:center!important;}
+#customerFirstPortal .rk-hero-art{position:absolute!important;right:2%!important;top:50%!important;transform:translateY(-50%)!important;width:34%!important;max-width:420px!important;opacity:.16!important;z-index:1!important;pointer-events:none!important;}
+#customerFirstPortal .rk-hero-art .rk-hero-float{display:none!important;}
+#customerFirstPortal .rk-hero-bottomline{position:relative!important;z-index:4!important;}
+@media(max-width:640px){#customerFirstPortal .rk-hero-art{display:none!important;}#customerFirstPortal .rk-hero-copy{max-width:100%!important;}#customerFirstPortal .rk-hero-description{font-size:13px!important;}}
+</style>
+
 
 
 <style id="rk-five-reference-layout-final-2026">
@@ -4916,5 +4868,40 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
   }
 }
 
+</style>
+
+
+<style id="rk-admin-dark-controls-final">
+/* Final admin control theme: defeat legacy light-theme and browser autofill rules. */
+#adminPanel,#welcomeOverlay,[role="dialog"],.modal-content{color-scheme:dark}
+#adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+#adminPanel select,#adminPanel textarea,
+#welcomeOverlay input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+#welcomeOverlay select,#welcomeOverlay textarea,
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+[role="dialog"] select,[role="dialog"] textarea,
+.modal-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+.modal-content select,.modal-content textarea{
+  background:linear-gradient(145deg,#0b1523 0%,#14243a 100%)!important;
+  background-color:#0d1929!important;color:#edf5ff!important;-webkit-text-fill-color:#edf5ff!important;
+  border:1px solid rgba(126,174,220,.34)!important;border-radius:12px!important;
+  box-shadow:inset 4px 4px 9px rgba(0,0,0,.46),inset -1px -1px 3px rgba(140,184,226,.06),0 4px 12px rgba(0,0,0,.12)!important;
+  caret-color:#83d9f0!important;min-width:0;outline:none
+}
+#adminPanel input::placeholder,#adminPanel textarea::placeholder,
+#welcomeOverlay input::placeholder,#welcomeOverlay textarea::placeholder,
+[role="dialog"] input::placeholder,[role="dialog"] textarea::placeholder,
+.modal-content input::placeholder,.modal-content textarea::placeholder{color:#8fa8c4!important;opacity:1!important;-webkit-text-fill-color:#8fa8c4!important}
+#adminPanel input:focus,#adminPanel select:focus,#adminPanel textarea:focus,
+#welcomeOverlay input:focus,#welcomeOverlay select:focus,#welcomeOverlay textarea:focus,
+[role="dialog"] input:focus,[role="dialog"] select:focus,[role="dialog"] textarea:focus,
+.modal-content input:focus,.modal-content select:focus,.modal-content textarea:focus{
+  border-color:#62c5df!important;box-shadow:inset 3px 3px 8px rgba(0,0,0,.42),0 0 0 3px rgba(98,197,223,.16)!important;outline:none!important
+}
+#adminPanel select option,#welcomeOverlay select option,[role="dialog"] select option,.modal-content select option{background:#101d2e!important;color:#edf5ff!important}
+#adminPanel input:-webkit-autofill,#adminPanel input:-webkit-autofill:hover,#adminPanel input:-webkit-autofill:focus,
+#welcomeOverlay input:-webkit-autofill,[role="dialog"] input:-webkit-autofill,.modal-content input:-webkit-autofill{
+  -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;transition:background-color 99999s ease-out 0s!important
+}
 </style>
 </body></html>
