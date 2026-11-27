@@ -365,7 +365,7 @@ const readinessCheck = async (_req, res) => {
         await Promise.race([
           adminDb.ref('tent_erp_data').orderByKey().limitToFirst(1).get(),
           new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Firebase readiness probe timed out')), 8000);
+            timeoutId = setTimeout(() => reject(new Error('Firebase readiness probe timed out')), 20000);
           })
         ]);
         persistentDatabaseReady = true;
