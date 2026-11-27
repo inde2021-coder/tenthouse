@@ -1825,7 +1825,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));
             if(!api)throw new Error('ERP Backend उपलब्ध नहीं है। कृपया कुछ देर बाद पुनः प्रयास करें।');
             const idToken=await signedInUser.getIdToken(true);
-            const response=await fetch(api.replace(/\\/+$/,'')+'/api/admin/session',{
+            const response=await fetch(api.replace(/\/+$/, '')+'/api/admin/session',{
                 method:'GET',
                 headers:{Authorization:'Bearer '+idToken,Accept:'application/json'},
                 cache:'no-store',
