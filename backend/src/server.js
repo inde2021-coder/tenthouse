@@ -317,10 +317,13 @@ const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/);
 const moneySchema = z.number().finite().positive().max(10_000_000);
 const authAdmin = async (req, res, next) => {
   try {
-    if (!adminAuth || !adminDb) return res.status(503).json({ error: 'Firebase Admin Auth/Database is not configured.' });
     const authorization = String(req.header('authorization') || '');
     const match = authorization.match(/^Bearer\s+(.+)$/i);
+    // Reject an absent credential as unauthorized even when Firebase Admin is
+    // temporarily misconfigured. This avoids leaking infrastructure state and
+    // keeps the correct 401 contract for unauthenticated requests.
     if (!match) return res.status(401).json({ error: 'Gmail sign-in required.' });
+    if (!adminAuth || !adminDb) return res.status(503).json({ error: 'Firebase Admin Auth/Database is not configured.' });
     const decoded = await adminAuth.verifyIdToken(match[1], true);
     const grant = await adminDb.ref('erp_admins/' + decoded.uid).get();
     if (grant.val() !== true) return res.status(403).json({ error: 'This Google account is not authorized as an ERP administrator.' });
