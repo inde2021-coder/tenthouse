@@ -2376,3 +2376,16 @@ test('purchase history cannot be edited or deleted after related dispatch or unr
   assert.match(edit,/purchaseHasDispatchReference\(p\.itemName\)/);
   assert.match(del,/purchaseHasDispatchReference\(p\.itemName\)/);
 });
+
+
+test('purchase dispatch guard blocks only matching admin stock references and unresolved missing rows', () => {
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  const context={String,Array,Number,safeGetStorage:(key)=>key==='softwareBookings'?[{
+    status:'Partially Returned',items:[{name:'Chair',source:'admin'},{name:'Tent',source:'third-party'}],
+    dispatchEntries:[{itemIndex:0,qty:4}]
+  }]:key==='missingItemsDatabase'?[{item:'Table',qty:1,source:'admin',resolved:false}]:[]};
+  const result=vm.runInNewContext(helper+`
+    ({chair:purchaseHasDispatchReference('chair'),tent:purchaseHasDispatchReference('tent'),table:purchaseHasDispatchReference('table'),other:purchaseHasDispatchReference('Other')})
+  `,context);
+  assert.deepEqual({...result},{chair:true,tent:false,table:true,other:false});
+});
