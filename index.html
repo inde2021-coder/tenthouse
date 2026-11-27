@@ -2853,6 +2853,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const supplier=prompt('सप्लायर',p.supplier||'');if(supplier===null)return;
             const nQty=Number(qty),nPrice=Number(price),newName=itemName.trim(),oldName=String(p.itemName||'').trim();
             if(!newName||!Number.isSafeInteger(nQty)||nQty<=0||!Number.isFinite(nPrice)||nPrice<0){showActionMessage('सामान, पूर्ण संख्या में मात्रा और सही कीमत भरें','error');return;}
+            if(oldName.toLowerCase()!==newName.toLowerCase()&&hasOpenStockReturnReference('admin',oldName)){showActionMessage('इस सामान का Dispatch या Missing Recovery अभी खुला है; Return पूरा होने तक Purchase में सामान का नाम नहीं बदल सकते।','error');return;}
             const stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));
             const oldStock=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===oldName.toLowerCase());
             const oldQty=Number(p.qty),currentQty=Number(oldStock?.qty);
