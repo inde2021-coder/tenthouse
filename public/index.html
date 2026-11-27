@@ -844,7 +844,19 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 #customerFirstPortal .rk-hero-art{width:100%!important;justify-items:center!important;align-items:center!important}
 @media(max-width:700px){#customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important}#customerFirstPortal .rk-hero-copy{text-align:center!important;padding:0!important}#customerFirstPortal .rk-hero-description{margin-inline:auto!important}}
 </style>
-</head>
+<style id="rk-functional-navigation-and-gmail-fix">
+#customerFirstPortal .rk-reference-nav{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:clamp(6px,.8vw,12px)!important;flex:1 1 620px!important;min-width:0!important}
+#customerFirstPortal .rk-reference-nav a{position:relative!important;min-height:46px!important;padding:10px clamp(10px,1.25vw,18px)!important;border-radius:15px!important;border:1px solid rgba(142,177,238,.36)!important;background:linear-gradient(180deg,rgba(30,48,78,.98),rgba(5,13,29,.98))!important;color:#f5f8ff!important;box-shadow:0 7px 18px #0008,inset 0 1px #ffffff22!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease!important;letter-spacing:.01em!important}
+#customerFirstPortal .rk-reference-nav a span{white-space:nowrap!important}
+#customerFirstPortal .rk-reference-nav a i{font-size:16px!important}
+#customerFirstPortal .rk-reference-nav a:hover,#customerFirstPortal .rk-reference-nav a:focus-visible{transform:translateY(-2px)!important;border-color:#ffd85d!important;box-shadow:0 0 0 2px #ffd85d33,0 10px 24px #000b,0 0 18px #e8b52e55!important;outline:none!important}
+#customerFirstPortal .rk-reference-nav .rk-nav-home{background:linear-gradient(180deg,#ffe987,#e8a900)!important;color:#211400!important;border-color:#fff0a5!important}
+#customerFirstPortal .rk-reference-nav .rk-nav-book{border-color:#13a86d!important}
+#customerFirstPortal .rk-reference-nav .rk-nav-track{border-color:#447eff!important}
+#customerFirstPortal .rk-reference-nav .rk-nav-contact{border-color:#18b979!important;background:linear-gradient(145deg,#087e58,#042d2a)!important}
+#customerFirstPortal .rk-reference-nav .rk-nav-contact i{color:#54ffad!important}
+@media(max-width:760px){#customerFirstPortal .rk-reference-nav{order:4!important;flex:1 0 100%!important;justify-content:center!important;flex-wrap:wrap!important}#customerFirstPortal .rk-reference-nav a{flex:1 1 calc(50% - 8px)!important;min-width:132px!important}}
+</style>\n</head>
 <body>
 
 
@@ -898,10 +910,10 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 </div>
                 <div class="rk-customer-brand-seal"><i class="fa-solid fa-shield-check" aria-hidden="true"></i><span>Direct Booking</span></div>
                 <nav class="rk-reference-nav" aria-label="मुख्य नेविगेशन">
-                  <a href="#rkPortalHome" onclick="document.querySelector('.rk-customer-hero')?.scrollIntoView({behavior:'smooth',block:'start'});return false;"><i class="fa-solid fa-house"></i> Home</a>
-                  <a href="#portalCustName" onclick="document.getElementById('portalCustName')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName')?.focus({preventScroll:true});return false;"><i class="fa-solid fa-calendar-check"></i> Book Now</a>
-                  <a href="#rkTrackerTitle" onclick="document.getElementById('rkTrackerTitle')?.scrollIntoView({behavior:'smooth',block:'center'});return false;"><i class="fa-solid fa-magnifying-glass"></i> Track Booking</a>
-                  <a href="https://wa.me/918120727987" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp"></i> Contact</a>
+                  <a class="rk-nav-home" href="#rkPortalHome" onclick="document.querySelector('.rk-customer-hero')?.scrollIntoView({behavior:'smooth',block:'start'});return false;" aria-label="होम पर जाएँ"><i class="fa-solid fa-house"></i><span>Home</span></a>
+                  <a class="rk-nav-book" href="#portalCustName" onclick="document.getElementById('portalCustName')?.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>document.getElementById('portalCustName')?.focus({preventScroll:true}),350);return false;" aria-label="नई बुकिंग शुरू करें"><i class="fa-solid fa-calendar-plus"></i><span>नई बुकिंग</span></a>
+                  <a class="rk-nav-track" href="#rkTrackerTitle" onclick="document.getElementById('rkTrackerTitle')?.scrollIntoView({behavior:'smooth',block:'center'});return false;" aria-label="बुकिंग की स्थिति देखें"><i class="fa-solid fa-magnifying-glass-chart"></i><span>बुकिंग ट्रैक करें</span></a>
+                  <a class="rk-nav-contact" href="https://wa.me/918120727987?text=Namaste%20Radhe%20Krishn%20Tent%20House%2C%20mujhe%20booking%20ki%20jankari%20chahiye." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp पर संपर्क करें"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp संपर्क</span></a>
                 </nav>
             </header>
             <div class="rk-customer-shell">
@@ -1587,7 +1599,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 const result=await firebase.auth().getRedirectResult();
                 if(result?.user)await completeGoogleAdminLogin(result.user);
             }catch(error){
-                const msg=error.code==='auth/unauthorized-domain'?'इस वेबसाइट का domain Firebase Authentication → Authorized domains में जोड़ें।':error.code==='auth/operation-not-allowed'?'Firebase Console में Google Sign-In enable करें।':error.message;
+                const msg=error.code==='auth/unauthorized-domain'?'इस वेबसाइट का domain Firebase Authentication → Authorized domains में जोड़ें।':error.code==='auth/operation-not-allowed'?'Firebase Console में Google Sign-In enable करें।':error.code==='auth/network-request-failed'?'Internet connection जाँचकर फिर प्रयास करें।':error.message;
                 showActionMessage('Gmail लॉगिन विफल: '+msg,'error');
             }
         }
@@ -1810,13 +1822,22 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 
         async function completeGoogleAdminLogin(signedInUser){
             if(!signedInUser)throw new Error('Google लॉगिन पूरा नहीं हुआ।');
-            const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');
-            if(adminGrant.val()!==true){await firebase.auth().signOut();throw new Error('इस Gmail खाते को व्यवस्थापक अनुमति नहीं है।');}
             const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));
-            if(api){
-                const idToken=await signedInUser.getIdToken(true);
-                const response=await fetch(api.replace(/\\/+$/,'')+'/api/admin/session',{headers:{Authorization:'Bearer '+idToken,Accept:'application/json'},cache:'no-store'});
-                if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||'Backend ने Gmail व्यवस्थापक अनुमति सत्यापित नहीं की।');}
+            if(!api)throw new Error('ERP Backend उपलब्ध नहीं है। कृपया कुछ देर बाद पुनः प्रयास करें।');
+            const idToken=await signedInUser.getIdToken(true);
+            const response=await fetch(api.replace(/\\/+$/,'')+'/api/admin/session',{
+                method:'GET',
+                headers:{Authorization:'Bearer '+idToken,Accept:'application/json'},
+                cache:'no-store',
+                credentials:'same-origin'
+            });
+            if(!response.ok){
+                const detail=await response.json().catch(()=>({}));
+                if(response.status===401)throw new Error('Gmail session सत्यापित नहीं हुआ। कृपया दोबारा Gmail चुनें।');
+                if(response.status===403)throw new Error('यह Gmail खाता ERP Admin सूची में अधिकृत नहीं है।');
+                if(response.status===429)throw new Error('बहुत अधिक लॉगिन प्रयास हुए हैं। 15 मिनट बाद पुनः प्रयास करें।');
+                if(response.status===503)throw new Error('Server पर Firebase Admin Authentication सेटअप अधूरा है।');
+                throw new Error(detail.error||'Backend ने Gmail व्यवस्थापक अनुमति सत्यापित नहीं की।');
             }
             const gate=document.getElementById('welcomeOverlay');if(gate)gate.style.display='none';
             const portal=document.getElementById('customerFirstPortal');if(portal)portal.style.display='none';
@@ -1829,11 +1850,13 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(!firebase.apps.length)initFirebaseConnection();
             const provider=new firebase.auth.GoogleAuthProvider();
             provider.setCustomParameters({prompt:'select_account'});
+            provider.addScope('email');
             try{
+                await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
-                if(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(error.code)){
+                if(error.code==='auth/popup-blocked'){
                     await firebase.auth().signInWithRedirect(provider);
                     return false;
                 }
