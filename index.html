@@ -856,7 +856,15 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 #customerFirstPortal .rk-reference-nav .rk-nav-contact{border-color:#18b979!important;background:linear-gradient(145deg,#087e58,#042d2a)!important}
 #customerFirstPortal .rk-reference-nav .rk-nav-contact i{color:#54ffad!important}
 @media(max-width:760px){#customerFirstPortal .rk-reference-nav{order:4!important;flex:1 0 100%!important;justify-content:center!important;flex-wrap:wrap!important}#customerFirstPortal .rk-reference-nav a{flex:1 1 calc(50% - 8px)!important;min-width:132px!important}}
-</style>\n</head>
+</style>\n
+<style id="rk-customer-sticky-header-fix">
+/* Keep the customer brand and navigation visible while portal sections scroll. */
+#customerFirstPortal .customer-scroll-wrap{scroll-padding-top:150px!important}
+#customerFirstPortal .rk-customer-brand{position:sticky!important;top:0!important;z-index:1000!important;align-self:stretch!important;flex-shrink:0!important;width:100%!important;box-sizing:border-box!important;background:linear-gradient(180deg,rgba(7,13,27,.98),rgba(10,17,34,.96))!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;box-shadow:0 10px 24px rgba(0,0,0,.22)!important}
+#customerFirstPortal .rk-customer-hero,#customerFirstPortal [id="portalCustName"],#customerFirstPortal [id="rkTrackerTitle"]{scroll-margin-top:160px!important}
+@media(max-width:760px){#customerFirstPortal .rk-customer-brand{top:0!important}}
+</style>
+</head>
 <body>
 
 
@@ -4253,13 +4261,6 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
    const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style>
-<style id="rk-customer-sticky-header-fix">
-/* Keep the customer brand and navigation visible while portal sections scroll. */
-#customerFirstPortal .customer-scroll-wrap{scroll-padding-top:150px!important}
-#customerFirstPortal .rk-customer-brand{position:sticky!important;top:0!important;z-index:1000!important;align-self:stretch!important;flex-shrink:0!important;width:100%!important;box-sizing:border-box!important;background:linear-gradient(180deg,rgba(7,13,27,.98),rgba(10,17,34,.96))!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;box-shadow:0 10px 24px rgba(0,0,0,.22)!important}
-#customerFirstPortal .rk-customer-hero,#customerFirstPortal [id="portalCustName"],#customerFirstPortal [id="rkTrackerTitle"]{scroll-margin-top:160px!important}
-@media(max-width:760px){#customerFirstPortal .rk-customer-brand{top:0!important}}
-</style>
 </head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
