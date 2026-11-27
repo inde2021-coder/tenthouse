@@ -3516,14 +3516,21 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(modeRaw===null)return;
             const mode=String(modeRaw).trim().toUpperCase();
             if(!['FINAL','PARTIAL'].includes(mode)){showActionMessage('कृपया FINAL या PARTIAL लिखें','error');return;}
-            // Never mark returned quantities complete unless their source stock row can receive them.
+            // Validate aggregate return quantities per physical stock row before changing any row.
+            const returnRequirements=new Map();
             for(const input of inputs){
               const idx=Number(input.dataset.returnIndex),item=b.items[idx],qty=Number(input.value);
               if(qty<=0)continue;
               const row=item.source==='third-party'
                 ?thirdParty.find(x=>x.partyName===item.partyName&&(x.item||x.name)===item.name)
                 :stock.find(x=>x.name===item.name);
-              if(!row){showActionMessage('Return stock record नहीं मिला: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}const available=Number(row.qty);if(String(row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(available+qty)){showActionMessage('Return stock की मात्रा गलत है: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
+              if(!row){showActionMessage('Return stock record नहीं मिला: '+item.name+'; मात्रा सेव नहीं हुई','error');return;}
+              const previous=returnRequirements.get(row);
+              if(previous)previous.qty+=qty;else returnRequirements.set(row,{row,qty,name:item.name});
+            }
+            for(const requirement of returnRequirements.values()){
+              const available=Number(requirement.row.qty),total=available+requirement.qty;
+              if(String(requirement.row.qty??'').trim()===''||!Number.isSafeInteger(available)||available<0||!Number.isSafeInteger(requirement.qty)||!Number.isSafeInteger(total)){showActionMessage('Return stock की कुल मात्रा गलत या सीमा से बाहर है: '+requirement.name+'; मात्रा सेव नहीं हुई','error');return;}
             }
             inputs.forEach(input=>{
               const idx=Number(input.dataset.returnIndex),item=b.items[idx];
