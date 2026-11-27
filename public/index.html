@@ -898,11 +898,10 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 </div>
                 <div class="rk-customer-brand-seal"><i class="fa-solid fa-shield-check" aria-hidden="true"></i><span>Direct Booking</span></div>
                 <nav class="rk-reference-nav" aria-label="मुख्य नेविगेशन">
-                  <a href="#rkPortalHome" onclick="document.querySelector('.rk-customer-hero').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-house"></i> Home</a>
-                  <a href="#portalCustName" onclick="document.getElementById('portalCustName').focus()"><i class="fa-solid fa-calendar-check"></i> Book Now</a>
-                  <a href="#rkTrackerTitle" onclick="document.getElementById('rkTrackerTitle').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-magnifying-glass"></i> Track Booking</a>
-                  <a href="tel:+918120727987"><i class="fa-solid fa-phone"></i> Contact</a>
-                  <span class="rk-reference-online"><i></i> Online <small>24×7 Support</small></span>
+                  <a href="#rkPortalHome" onclick="document.querySelector('.rk-customer-hero')?.scrollIntoView({behavior:'smooth',block:'start'});return false;"><i class="fa-solid fa-house"></i> Home</a>
+                  <a href="#portalCustName" onclick="document.getElementById('portalCustName')?.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('portalCustName')?.focus({preventScroll:true});return false;"><i class="fa-solid fa-calendar-check"></i> Book Now</a>
+                  <a href="#rkTrackerTitle" onclick="document.getElementById('rkTrackerTitle')?.scrollIntoView({behavior:'smooth',block:'center'});return false;"><i class="fa-solid fa-magnifying-glass"></i> Track Booking</a>
+                  <a href="https://wa.me/918120727987" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp"></i> Contact</a>
                 </nav>
             </header>
             <div class="rk-customer-shell">
@@ -1580,12 +1579,25 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         window.addEventListener('afterprint',()=>{const area=document.getElementById('printableSlipArea');if(area){area.classList.remove('print-area-active');if(['invoice','return','dispatch','document','card'].includes(area.dataset.printRestore)){area.innerHTML='';area.style.display='none';delete area.dataset.printRestore;}}const barcode=document.getElementById('barcodePrintModal');if(barcode?.classList.contains('barcode-print-active')){barcode.classList.remove('barcode-print-active');barcode.style.display='none';}});
 
+        let rkRedirectResultHandled=false;
+        async function handleGoogleRedirectResult(){
+            if(rkRedirectResultHandled||!window.firebase?.auth)return;
+            rkRedirectResultHandled=true;
+            try{
+                const result=await firebase.auth().getRedirectResult();
+                if(result?.user)await completeGoogleAdminLogin(result.user);
+            }catch(error){
+                const msg=error.code==='auth/unauthorized-domain'?'इस वेबसाइट का domain Firebase Authentication → Authorized domains में जोड़ें।':error.code==='auth/operation-not-allowed'?'Firebase Console में Google Sign-In enable करें।':error.message;
+                showActionMessage('Gmail लॉगिन विफल: '+msg,'error');
+            }
+        }
         function initFirebaseConnection() {
             try {
                 if (!window.firebase || !firebase.database || !firebase.auth) throw new Error('Firebase SDK लोड नहीं हुआ');
                 if (!firebase.apps.length) firebaseApp = firebase.initializeApp(firebaseConfig);
                 else firebaseApp = firebase.app();
                 dbRef = firebase.database().ref('tent_erp_data');
+                handleGoogleRedirectResult();
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
                     if (!user) return;
@@ -1796,7 +1808,38 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             }
         }
 
-        async function loginWithGoogle(){try{if(!window.firebase)throw Error('Firebase SDK लोड नहीं हुआ');if(!firebase.apps.length)initFirebaseConnection();const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(provider);const signedInUser=firebase.auth().currentUser;if(!signedInUser)throw Error('Google लॉगिन पूरा नहीं हुआ।');const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');if(adminGrant.val()!==true){await firebase.auth().signOut();throw Error('इस Google खाते को व्यवस्थापक अनुमति नहीं है। Firebase erp_admins में इस UID की अनुमति जाँचें।');}const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));if(api){const idToken=await signedInUser.getIdToken(true);const response=await fetch(api.replace(/\//+$/,'')+'/api/admin/session',{headers:{Authorization:'Bearer '+idToken,Accept:'application/json'},cache:'no-store'});if(!response.ok){const detail=await response.json().catch(()=>({}));throw Error(detail.error||'Backend ने Gmail व्यवस्थापक अनुमति सत्यापित नहीं की।');}}document.getElementById('welcomeOverlay').style.display='none';document.getElementById('customerFirstPortal').style.display='none';document.getElementById('adminPanel').style.display='block';loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();showActionMessage('Gmail व्यवस्थापक लॉगिन सफल।','success');return true;}catch(error){const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में वेबसाइट domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/popup-blocked':'ब्राउज़र में pop-up अनुमति दें।','auth/invalid-api-key':'Firebase apiKey जाँचें।'};showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');return false;}}
+        async function completeGoogleAdminLogin(signedInUser){
+            if(!signedInUser)throw new Error('Google लॉगिन पूरा नहीं हुआ।');
+            const adminGrant=await firebase.database().ref('erp_admins/'+signedInUser.uid).once('value');
+            if(adminGrant.val()!==true){await firebase.auth().signOut();throw new Error('इस Gmail खाते को व्यवस्थापक अनुमति नहीं है।');}
+            const api=getBackendApiUrl(safeGetStorage('softwareSettings',{}));
+            if(api){
+                const idToken=await signedInUser.getIdToken(true);
+                const response=await fetch(api.replace(/\\/+$/,'')+'/api/admin/session',{headers:{Authorization:'Bearer '+idToken,Accept:'application/json'},cache:'no-store'});
+                if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.error||'Backend ने Gmail व्यवस्थापक अनुमति सत्यापित नहीं की।');}
+            }
+            const gate=document.getElementById('welcomeOverlay');if(gate)gate.style.display='none';
+            const portal=document.getElementById('customerFirstPortal');if(portal)portal.style.display='none';
+            const panel=document.getElementById('adminPanel');if(panel)panel.style.display='block';
+            loadAllFirebaseData();await flushPendingCustomerWorkflowSync();await syncCustomerBookingsFromBackend();
+            showActionMessage('Gmail व्यवस्थापक लॉगिन सफल।','success');return true;
+        }
+        async function loginWithGoogle(){
+            if(!window.firebase)throw new Error('Firebase SDK लोड नहीं हुआ');
+            if(!firebase.apps.length)initFirebaseConnection();
+            const provider=new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({prompt:'select_account'});
+            try{
+                const credential=await firebase.auth().signInWithPopup(provider);
+                return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
+            }catch(error){
+                if(['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(error.code)){
+                    await firebase.auth().signInWithRedirect(provider);
+                    return false;
+                }
+                throw error;
+            }
+        }
         // Never send credentials or secret material to the shared Firebase settings node.
         function sanitizeCloudSettings(settings) {
             const safe = settings && typeof settings === 'object' && !Array.isArray(settings) ? { ...settings } : {};
@@ -2029,7 +2072,12 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const button=document.getElementById('rkGoogleLoginBtn');
             if(button){button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Gmail लॉगिन जारी…';}
             try{await loginWithGoogle();}
-            finally{if(button){button.disabled=false;button.innerHTML='<i class="fa-brands fa-google"></i> Google / Gmail से लॉगिन करें';}}
+            catch(error){
+                const hints={'auth/unauthorized-domain':'Firebase Console → Authentication → Settings → Authorized domains में इस वेबसाइट का domain जोड़ें।','auth/operation-not-allowed':'Firebase Console → Authentication → Sign-in method में Google Enable करें।','auth/invalid-api-key':'Firebase project की Web API key जाँचें।','auth/network-request-failed':'Internet connection जाँचकर फिर प्रयास करें।'};
+                showActionMessage('लॉगिन विफल: '+(hints[error.code]||error.message),'error');
+            }finally{
+                if(button){button.disabled=false;button.innerHTML='<i class="fa-brands fa-google"></i> Google / Gmail से लॉगिन करें';}
+            }
             return false;
         }
         function returnToCustomerPortal() {
