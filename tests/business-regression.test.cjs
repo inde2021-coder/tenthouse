@@ -2236,3 +2236,12 @@ test('calendar excludes cancelled bookings, ends early returns on the actual dat
   assert.ok(day3 >= 0 && day4 > day3);
   assert.ok(!grid.innerHTML.slice(day3,day4).includes('#3 Early Return'));
 });
+
+test('final-return missing records remain isolated by booking item index', () => {
+  const start=html.indexOf('async function completeManualReturnProcess()');
+  const end=html.indexOf('        let currentDocumentItems',start);
+  assert.notEqual(start,-1);
+  assert.notEqual(end,-1);
+  const code=html.slice(start,end);
+  assert.ok(code.includes("m.itemIndex!==undefined&&m.itemIndex!==null&&Number(m.itemIndex)===idx"));
+});
