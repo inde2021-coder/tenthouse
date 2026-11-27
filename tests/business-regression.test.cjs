@@ -2278,11 +2278,11 @@ test('Quotation and Tax Invoice document numbers are unique within their documen
     ({
       taken:isBusinessDocumentNumberTaken('quotation','QTN-100',[{id:'a',documentNumber:'qtn-100'}],null),
       availableForEdit:isBusinessDocumentNumberTaken('quotation','QTN-100',[{id:'a',documentNumber:'QTN-100'}],'a'),
-      generated:createUniqueBusinessDocumentNumber('quotation',[{id:'a',documentNumber:'QTN-20261127-123456789'}],123456789)
+      generated:createUniqueBusinessDocumentNumber('quotation',[{id:'a',documentNumber:'QTN-'+new Date(123456789).toLocaleDateString('en-CA').replace(/-/g,'')+'-123456789'}],123456789)
     })`,context);
   assert.equal(result.taken,true);
   assert.equal(result.availableForEdit,false);
-  assert.notEqual(result.generated,'QTN-20261127-123456789');
+  assert.ok(result.generated.endsWith('-2'),'collision should receive a numeric suffix');
   assert.ok(result.generated.startsWith('QTN-'));
 });
 test('business document save rejects duplicate numbers and invalid stored item/tax values', () => {
