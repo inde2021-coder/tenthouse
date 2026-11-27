@@ -2434,3 +2434,24 @@ test('return stock prevalidation aggregates quantities by physical row before up
   assert.match(code,/Number\.isSafeInteger\(total\)/);
   assert.ok(code.indexOf('for(const requirement of returnRequirements.values())')<code.indexOf('inputs.forEach(input=>'));
 });
+
+
+test('vendor ledger falls back to item and matching vendor rates for legacy zero snapshots', () => {
+  const helper=sourceBetween('function getVendorLedgerRate(', 'function loadThirdPartyLedger()');
+  const context={String,Array,Number};
+  const result=vm.runInNewContext(helper+`
+    ({
+      rentFromItem:getVendorLedgerRate({vendorRentRate:0,itemName:'Chair',partyName:'Vendor A'},{name:'Chair',partyName:'Vendor A',vendorRentRate:12},[], 'rent'),
+      rentFromVendor:getVendorLedgerRate({vendorRentRate:0,itemName:'Chair',partyName:'Vendor A'},{name:'Chair',partyName:'Vendor A',vendorRentRate:0},[{item:'Chair',partyName:'Vendor A',costPrice:15}],'rent'),
+      missingFromVendor:getVendorLedgerRate(null,{name:'Chair',partyName:'Vendor A',vendorMissingCost:0},[{item:'Chair',partyName:'Vendor A',missingCost:700}],'missing'),
+      noCrossVendor:getVendorLedgerRate(null,{name:'Chair',partyName:'Vendor A'},[{item:'Chair',partyName:'Vendor B',costPrice:99}],'rent')
+    })
+  `,context);
+  assert.deepEqual({...result},{rentFromItem:12,rentFromVendor:15,missingFromVendor:700,noCrossVendor:0});
+});
+test('vendor ledger uses rate fallback for both rent expense and missing replacement liability', () => {
+  const ledger=sourceBetween('function loadThirdPartyLedger()', '// Removed an orphaned speech-recognition fragment');
+  assert.match(ledger,/getVendorLedgerRate\(e,item,tpList,'rent'\)/);
+  assert.match(ledger,/getVendorLedgerRate\(null,item,tpList,'missing'\)/);
+  assert.doesNotMatch(ledger,/Number\(item\.vendorMissingCost\)\|\|0/);
+});
