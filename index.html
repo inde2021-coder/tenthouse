@@ -2737,6 +2737,10 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(tbody) tbody.innerHTML = pur.length === 0 ? `<tr><td colspan="6" style="text-align:center;">कोई परचेज नहीं</td></tr>` : pur.map((p,i) => `<tr><td>${escapeHtml(p.date)}</td><td>${escapeHtml(p.itemName)}</td><td>${Number(p.qty)||0}</td><td>₹${Number(p.price)||0}</td><td>${escapeHtml(p.supplier||'')}</td><td class="table-actions"><button type="button" class="action-btn" onclick="editPurchase(${i})">अपडेट</button><button type="button" class="action-btn danger-action" onclick="deletePurchase(${i})">डिलीट</button></td></tr>`).join('');
         }
 
+        function localISODate(date=new Date()){
+            const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+            return y+'-'+m+'-'+d;
+        }
         function saveDailyExpense(event) {
             event.preventDefault();
             const desc = document.getElementById('expenseDesc').value.trim();
@@ -2744,7 +2748,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const type = document.getElementById('expenseType')?.value || 'Expense';
             if (!desc || !['Income','Expense'].includes(type) || !Number.isFinite(amount) || amount <= 0) { showActionMessage('प्रकार, विवरण और शून्य से अधिक सही राशि भरें', 'error'); return; }
             const list = safeGetStorage('incomeExpenseDatabase', []);
-            list.push({ date: new Date().toLocaleDateString('en-CA'), desc, type, amount });
+            list.push({ date: localISODate(), desc, type, amount: Math.round(amount*100)/100 });
             if(!safeSetStorage('incomeExpenseDatabase', list))return;
             event.target.reset();
             loadAllFirebaseData();
@@ -2879,7 +2883,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             if(!safeSetStorageBatch([['purchaseDatabase',rows],['realStockDatabase',stock]]))return;
             loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड हटाया और स्टॉक सही मात्रा से समायोजित हुआ','success');
         }
-        function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:n};if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
+        function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<=0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और शून्य से अधिक राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:Math.round(n*100)/100};if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
         function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड हटाया गया','success')}
 
         function loadCustomerList() {
