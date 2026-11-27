@@ -61,8 +61,11 @@ app.use('/api/', rateLimit({ windowMs: 60_000, limit: apiRateLimitMax, standardH
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.resolve(backendDir, '../public'), { index: 'index.html', maxAge: 0 }));
 const memoryStore = new Map();
+let adminApp = null;
 let adminDb = null;
 let adminAuth = null;
+let adminCredential = null;
+let firebaseDatabaseURL = '';
 try {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const databaseURL = process.env.FIREBASE_DATABASE_URL;
@@ -78,12 +81,44 @@ try {
         }
       : null);
   if (serviceAccount && databaseURL) {
-    const adminApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert(serviceAccount), databaseURL });
+    adminApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert(serviceAccount), databaseURL });
+    adminCredential = adminApp.options.credential;
+    firebaseDatabaseURL = databaseURL.replace(/\\/+$/, '');
     adminDb = getDatabase(adminApp);
     adminAuth = getAuth(adminApp);
   }
 } catch (error) {
   console.error('Firebase Admin initialization failed:', error.message);
+}
+
+// Use the authenticated HTTPS REST endpoint for small serverless reads. The
+// Admin SDK's realtime transport can remain pending for minutes on cold Vercel
+// instances; a bounded one-shot request avoids tying up customer requests.
+async function firebaseRestGet(path, { timeoutMs = 12000, query = {} } = {}) {
+  if (!adminCredential || !firebaseDatabaseURL) throw new Error('Firebase database is not configured.');
+  const tokenResult = await adminCredential.getAccessToken();
+  const accessToken = tokenResult?.access_token;
+  if (!accessToken) throw new Error('Firebase service-account access token is unavailable.');
+  const safePath = String(path).split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  const url = new URL(`${firebaseDatabaseURL}/${safePath}.json`);
+  for (const [key, value] of Object.entries(query)) url.searchParams.set(key, String(value));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`Firebase database read failed (HTTP ${response.status}).`);
+    return await response.json();
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error(`Firebase database read timed out after ${timeoutMs}ms.`);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 const phoneKey = value => crypto.createHash('sha256').update(String(value)).digest('hex');
 async function storeGet(path) {
@@ -362,12 +397,7 @@ const readinessCheck = async (_req, res) => {
     } else {
       let timeoutId;
       try {
-        await Promise.race([
-          adminDb.ref('tent_erp_data').orderByKey().limitToFirst(1).get(),
-          new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Firebase readiness probe timed out')), 20000);
-          })
-        ]);
+        await firebaseRestGet('tent_erp_data/stock', { timeoutMs: 12000 });
         persistentDatabaseReady = true;
         databaseProbe = 'passed';
       } catch (error) {
@@ -728,7 +758,7 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
 });
 app.get('/api/customer/stock', requireDurableStore, async (_req,res) => {
   try {
-    const value=await storeGet('tent_erp_data/stock');
+    const value=await firebaseRestGet('tent_erp_data/stock', { timeoutMs: 12000 });
     const rows=Array.isArray(value)?value:Object.values(value||{});
     const items=rows.filter(row=>row&&typeof row==='object'&&String(row.name||row.item||'').trim()&&Math.max(0,Number(row.qty)||0)>0)
       .map(row=>({
