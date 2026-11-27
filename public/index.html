@@ -3526,6 +3526,19 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             loadSettingsToUI();renderBusinessCard();showActionMessage('Business Card सेव हो गया','success');
         }
         async function printBusinessCard(){const preview=document.getElementById('businessCardPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले Business Card तैयार करें','error');return;}area.dataset.printRestore='card';area.innerHTML=preview.innerHTML;area.style.display='block';await printWithStampImages();}
+        function isBusinessDocumentNumberTaken(type,number,rows,editingId){
+            const normalized=String(number||'').trim().toLocaleUpperCase();
+            if(!normalized)return false;
+            return (Array.isArray(rows)?rows:[]).some(row=>String(row.id)!==String(editingId||'')&&String(row.documentNumber||'').trim().toLocaleUpperCase()===normalized);
+        }
+        function createUniqueBusinessDocumentNumber(type,rows,now=Date.now()){
+            const prefix=type==='tax-invoice'?'INV-':'QTN-';
+            const date=new Date(now).toLocaleDateString('en-CA').replace(/-/g,'');
+            const base=prefix+date+'-'+String(now);
+            let candidate=base,suffix=1;
+            while(isBusinessDocumentNumberTaken(type,candidate,rows,null)){suffix++;candidate=base+'-'+suffix;}
+            return candidate;
+        }
         function businessDocumentTotals(){
             const lineBases=currentDocumentItems.map(item=>Math.max(0,Number(item.qty)||0)*Math.max(0,Number(item.rate)||0));
             const subtotal=lineBases.reduce((sum,value)=>sum+value,0);
@@ -3561,7 +3574,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const preview=document.getElementById('businessDocumentPreview');if(!preview)return;
             renderBusinessDocumentItems();
             const s=safeGetStorage('softwareSettings',{}),type=document.getElementById('docType')?.value||'quotation',tax=businessDocumentTotals();
-            const numberInput=document.getElementById('docNumber');let number=(numberInput?.value||'').trim();if(!number){number=(type==='quotation'?'QTN-':'INV-')+new Date().toLocaleDateString('en-CA').replace(/-/g,'')+'-'+String(Date.now()).slice(-5);if(numberInput)numberInput.value=number;}
+            const numberInput=document.getElementById('docNumber'),numberKey=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',numberRows=safeGetStorage(numberKey,[]);let number=(numberInput?.value||'').trim();if(!number){number=createUniqueBusinessDocumentNumber(type,numberRows);if(numberInput)numberInput.value=number;}
             const title=type==='quotation'?'QUOTATION / कोटेशन':'TAX INVOICE / टैक्स इनवॉइस';
             const rows=currentDocumentItems.map(item=>`<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.hsn||'-')}</td><td>${Number(item.qty)||0}</td><td>₹${(Number(item.rate)||0).toFixed(2)}</td><td>${type==='tax-invoice'?Number((item.gstRate??tax.rate)||0)+'%':'-'}</td><td>₹${((Number(item.qty)||0)*(Number(item.rate)||0)).toFixed(2)}</td></tr>`).join('');
             const taxRows=type==='tax-invoice'?(tax.taxType==='intra'?`<tr><td colspan="5">CGST</td><td>₹${tax.cgst.toFixed(2)}</td></tr><tr><td colspan="5">SGST</td><td>₹${tax.sgst.toFixed(2)}</td></tr>`:`<tr><td colspan="5">IGST</td><td>₹${tax.igst.toFixed(2)}</td></tr>`):'';
@@ -3570,10 +3583,18 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
         function saveBusinessDocument(){
             const type=document.getElementById('docType')?.value||'quotation',name=(document.getElementById('docCustomerName')?.value||'').trim(),date=document.getElementById('docDate')?.value||'';
             if(!name||!date||!currentDocumentItems.length){showActionMessage('ग्राहक का नाम, तारीख और कम-से-कम एक सामान आवश्यक है','error');return;}
+            const rawDiscount=Number(document.getElementById('docDiscount')?.value),rawOther=Number(document.getElementById('docOtherCharges')?.value),rawGst=Number(document.getElementById('docGstRate')?.value);
+            if(!Number.isFinite(rawDiscount)||rawDiscount<0||!Number.isFinite(rawOther)||rawOther<0||!Number.isFinite(rawGst)||rawGst<0||rawGst>28){showActionMessage('Discount, Other Charges और GST दर सही भरें (GST 0 से 28% तक)','error');return;}
+            const itemDataValid=currentDocumentItems.every(item=>String(item.name||'').trim()&&Number.isSafeInteger(Number(item.qty))&&Number(item.qty)>0&&Number.isFinite(Number(item.rate))&&Number(item.rate)>=0&&(item.gstRate==null||(Number.isFinite(Number(item.gstRate))&&Number(item.gstRate)>=0&&Number(item.gstRate)<=28)));
+            const subtotalCheck=currentDocumentItems.reduce((sum,item)=>sum+Number(item.qty)*Number(item.rate),0);
+            if(!itemDataValid||!Number.isFinite(subtotalCheck)||rawDiscount>subtotalCheck+rawOther){showActionMessage('सामान की मात्रा/दर या Discount की राशि सही नहीं है','error');return;}
             const settings=safeGetStorage('softwareSettings',{});
             if(type==='tax-invoice'&&!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(String(settings.businessGstin||'').toUpperCase())){showActionMessage('Tax Invoice से पहले Business Card में सही 15-अक्षर GSTIN सेव करें','error');return;}
-            const totals=businessDocumentTotals(),key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',rows=safeGetStorage(key,[]);
-            const number=(document.getElementById('docNumber')?.value||'').trim()||(type==='quotation'?'QTN-':'INV-')+new Date().toLocaleDateString('en-CA').replace(/-/g,'')+'-'+String(Date.now()).slice(-5);
+            const key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',rows=safeGetStorage(key,[]);
+            let number=(document.getElementById('docNumber')?.value||'').trim();
+            if(!number){number=createUniqueBusinessDocumentNumber(type,rows);document.getElementById('docNumber').value=number;}
+            if(isBusinessDocumentNumberTaken(type,number,rows,editingBusinessDocumentId)){showActionMessage('यह Document Number पहले से उपयोग में है। कृपया अलग नंबर डालें।','error');return;}
+            const totals=businessDocumentTotals();
             const record={id:editingBusinessDocumentId||'DOC-'+Date.now(),documentNumber:number,type,date,validUntil:document.getElementById('docValidUntil')?.value||'',customerName:name,customerPhone:(document.getElementById('docCustomerPhone')?.value||'').trim(),customerAddress:(document.getElementById('docCustomerAddress')?.value||'').trim(),customerGstin:(document.getElementById('docCustomerGstin')?.value||'').trim().toUpperCase(),items:currentDocumentItems.map(item=>({...item})),discount:totals.discount,otherCharges:totals.other,gstRate:totals.rate,taxType:totals.taxType,subtotal:totals.subtotal,total:totals.total,createdAt:new Date().toISOString(),businessName:settings.businessName||''};
             const index=rows.findIndex(item=>String(item.id)===String(record.id));if(index>=0)rows[index]=record;else rows.push(record);
             if(!safeSetStorage(key,rows))return;editingBusinessDocumentId=record.id;document.getElementById('docNumber').value=number;renderDocumentRecentList();renderBusinessDocumentPreview();showActionMessage(type==='quotation'?'Quotation सेव हो गया':'Tax Invoice सेव हो गया','success');
