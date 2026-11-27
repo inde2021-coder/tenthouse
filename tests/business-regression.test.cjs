@@ -2389,3 +2389,18 @@ test('purchase dispatch guard blocks only matching admin stock references and un
   `,context);
   assert.deepEqual({...result},{chair:true,tent:false,table:true,other:false});
 });
+
+
+test('vendor stock edit is blocked while dispatch or return is still open', () => {
+  const edit=sourceBetween('function editThirdPartyEntry(partyName,itemName)', 'function deleteThirdPartyEntry(');
+  assert.match(edit,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
+  assert.match(edit,/Dispatch\/Return अभी खुला है/);
+});
+test('adding vendor stock rejects invalid existing quantities and safe-integer overflow', () => {
+  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  assert.match(save,/Number\.isSafeInteger\(currentQty\)/);
+  assert.match(save,/Number\.isSafeInteger\(currentPurchased\)/);
+  assert.match(save,/Number\.isSafeInteger\(currentQty\+qty\)/);
+  assert.match(save,/Number\.isSafeInteger\(currentPurchased\+qty\)/);
+  assert.match(save,/मौजूदा Vendor मात्रा सही नहीं है/);
+});
