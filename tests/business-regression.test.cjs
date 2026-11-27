@@ -2370,3 +2370,27 @@ test('purchase item rename is blocked while dispatched stock still needs return 
   assert.match(edit,/oldName\.toLowerCase\(\)!==newName\.toLowerCase\(\)&&hasOpenStockReturnReference\('admin',oldName\)/);
   assert.match(edit,/Return पूरा होने तक Purchase में सामान का नाम नहीं बदल सकते/);
 });
+
+
+test('open return stock guard detects outstanding dispatch quantities and unresolved missing items', () => {
+  const helper=sourceBetween('function hasOpenStockReturnReference(', 'function deleteStockItem(index)');
+  const context={
+    Array,Number,String,
+    safeGetStorage:(key)=>({
+      softwareBookings:[{id:'B1',status:'Dispatched',items:[{name:'Chair',qty:4,returnedQty:2,source:'admin'},{name:'Tent',qty:3,returnedQty:0,source:'third-party',partyName:'Vendor A'}],dispatchEntries:[{itemIndex:0,qty:4},{itemIndex:1,qty:3}]}],
+      missingItemsDatabase:[]
+    }[key]||[])
+  };
+  const result=vm.runInNewContext(helper+`
+    ({
+      adminOpen:hasOpenStockReturnReference('admin','Chair'),
+      vendorOpen:hasOpenStockReturnReference('third-party','Tent','Vendor A'),
+      wrongVendor:hasOpenStockReturnReference('third-party','Tent','Vendor B'),
+      returned:hasOpenStockReturnReference('admin','Tent')
+    })
+  `,context);
+  assert.equal(result.adminOpen,true);
+  assert.equal(result.vendorOpen,true);
+  assert.equal(result.wrongVendor,false);
+  assert.equal(result.returned,false);
+});
