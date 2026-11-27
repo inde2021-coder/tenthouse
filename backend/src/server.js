@@ -395,7 +395,6 @@ const readinessCheck = async (_req, res) => {
       persistentDatabaseReady = true;
       databaseProbe = 'skipped_non_production';
     } else {
-      let timeoutId;
       try {
         await firebaseRestGet('tent_erp_data/stock', { timeoutMs: 12000 });
         persistentDatabaseReady = true;
@@ -403,8 +402,6 @@ const readinessCheck = async (_req, res) => {
       } catch (error) {
         databaseProbe = 'failed';
         console.error('Firebase readiness probe failed:', error.message);
-      } finally {
-        if (timeoutId) clearTimeout(timeoutId);
       }
     }
   }
