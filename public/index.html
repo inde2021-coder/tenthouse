@@ -812,6 +812,25 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important}
  html.rk-ref2 #customerFirstPortal .rk-reference-benefits{display:block!important}
 }
 </style>
+<style id="rk-reference-final-corrections-2026-11">
+/* Ref 3 is the same source artwork as Ref 1, so its composition must also match. */
+html.rk-ref3 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"booking" "tracking" "footer"!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-form{grid-area:booking!important;grid-template-columns:minmax(0,1fr) minmax(280px,.95fr)!important;grid-template-areas:"identity payment" "event payment" "items payment" "submit submit"!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-identity{grid-area:identity!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-event{grid-area:event!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-items{grid-area:items!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-payment{grid-area:payment!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-submit{grid-area:submit!important}
+html.rk-ref3 #customerFirstPortal .rk-booking-tracker{grid-area:tracking!important}
+html.rk-ref3 #customerFirstPortal .rk-customer-payment #onlinePaymentSection{display:block!important;min-height:240px!important}
+html.rk-ref2 #customerFirstPortal .rk-reference-benefits{display:block!important;grid-area:benefits!important;padding:14px!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-shell:after,html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:none!important;display:none!important}
+html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;grid-area:quick!important}
+@media(max-width:900px){
+ html.rk-ref3 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"booking" "tracking" "footer"!important}
+ html.rk-ref3 #customerFirstPortal .rk-customer-form{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"identity" "event" "items" "payment" "submit"!important}
+}
+</style>
 </head>
 <body>
 
