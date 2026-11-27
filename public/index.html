@@ -3297,6 +3297,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 
         function editThirdPartyEntry(partyName,itemName){
             const rows=safeGetStorage('thirdPartyDatabase',[]),r=rows.find(x=>String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName);if(!r){showActionMessage('थर्ड-पार्टी रिकॉर्ड नहीं मिला','error');return;}
+            if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/Return अभी खुला है। हिसाब सुरक्षित रखने के लिए मात्रा/दर में बदलाव Return पूरा होने के बाद करें।','error');return;}
             const qty=prompt('मौजूदा स्टॉक मात्रा',String(Number(r.qty)||0));if(qty===null)return;const q=Number(qty);if(!Number.isInteger(q)||q<0){showActionMessage('मात्रा 0 या उससे अधिक पूर्ण संख्या होनी चाहिए','error');return;}
             const cost=prompt('प्रति पीस लागत (₹)',String(Number(r.costPrice)||0));if(cost===null)return;const c=Number(cost);if(!Number.isFinite(c)||c<0){showActionMessage('लागत सही भरें','error');return;}
             const charge=prompt('कस्टमर किराया (₹)',String(Number(r.chargePrice)||0));if(charge===null)return;const ch=Number(charge);if(!Number.isFinite(ch)||ch<0){showActionMessage('किराया सही भरें','error');return;}
@@ -3313,7 +3314,11 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
             const costPrice=optionalAmount('tpItemCost'),chargePrice=optionalAmount('tpItemCharge'),vendorMissingCost=optionalAmount('tpVendorMissingCost'),missingCharge=optionalAmount('tpMissingCharge');
             if(!partyName||!itemName||!Number.isSafeInteger(qty)||qty<1||![costPrice,chargePrice,vendorMissingCost,missingCharge].every(Number.isFinite)||[costPrice,chargePrice,vendorMissingCost,missingCharge].some(value=>value<0)){showActionMessage('वेंडर, सामान, पूर्ण संख्या में मात्रा और शून्य या उससे अधिक सही दरें भरें','error');return;}
             const existing=tpList.find(x=>String(x.partyName||'').toLowerCase()===partyName.toLowerCase()&&String(x.item||'').toLowerCase()===itemName.toLowerCase());
-            if(existing){existing.qty=(Number(existing.qty)||0)+qty;existing.purchasedQty=(Number(existing.purchasedQty ?? existing.qty-qty)||0)+qty;existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.vendorMissingCost=vendorMissingCost;existing.missingCharge=missingCharge;existing.source='third-party';}
+            if(existing){
+                const currentQty=Number(existing.qty),currentPurchased=Number(existing.purchasedQty??existing.qty);
+                if(!Number.isSafeInteger(currentQty)||currentQty<0||!Number.isSafeInteger(currentPurchased)||currentPurchased<0||!Number.isSafeInteger(currentQty+qty)||!Number.isSafeInteger(currentPurchased+qty)){showActionMessage('मौजूदा Vendor मात्रा सही नहीं है या कुल मात्रा सीमा से बाहर है; रिकॉर्ड नहीं बदला गया।','error');return;}
+                existing.qty=currentQty+qty;existing.purchasedQty=currentPurchased+qty;existing.costPrice=costPrice;existing.chargePrice=chargePrice;existing.vendorMissingCost=vendorMissingCost;existing.missingCharge=missingCharge;existing.source='third-party';
+            }
             else tpList.push({partyName,item:itemName,qty,purchasedQty:qty,costPrice,chargePrice,vendorMissingCost,missingCharge,source:'third-party',updatedAt:new Date().toISOString()});
             if(!safeSetStorage('thirdPartyDatabase', tpList)) return;
             event.target.reset(); loadThirdPartyLedger(); loadThirdPartyDropdownsForDispatch();
