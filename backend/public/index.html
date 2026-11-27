@@ -1857,15 +1857,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 const credential=await firebase.auth().signInWithPopup(provider);
                 return await completeGoogleAdminLogin(credential.user||firebase.auth().currentUser);
             }catch(error){
-                // Some browsers/WebViews report a generic internal popup error even
-                // when the popup is blocked by privacy settings. Retry with the
-                // full-page Google redirect flow; handleGoogleRedirectResult()
-                // completes the same Firebase session after returning to this page.
-                if(error.code==='auth/popup-blocked'||error.code==='auth/internal-error'){
-                    console.warn('Google popup failed; retrying with redirect:',error.code);
-                    await firebase.auth().signInWithRedirect(provider);
-                    return false;
-                }
+                // Do not fall back to signInWithRedirect here. Redirect sign-in
+                // depends on sessionStorage state surviving the round trip and
+                // fails in storage-partitioned browsers with "missing initial state".
+                // Keep this flow popup-only and surface the original Firebase error.
+                console.error('Google popup login failed; redirect fallback disabled:',error);
                 throw error;
             }
         }
