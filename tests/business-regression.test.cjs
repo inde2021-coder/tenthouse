@@ -1378,7 +1378,7 @@ test('purchase entry rejects fractional quantities before changing purchase or s
 });
 
 test('purchase edit rejects fractional quantities before changing purchase or stock ledgers', () => {
-  const code=sourceBetween('function editPurchase(index)', 'function deletePurchase');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
   const row={itemName:'Chair',qty:10,price:100};
   const answers=['Chair','2.5','100','Supplier'];
   let writes=0;
@@ -1403,7 +1403,7 @@ test('income and expense edit rejects impossible calendar dates', () => {
 
 
 test('purchase edit applies only the quantity delta to stock for the same item', () => {
-  const code=sourceBetween('function editPurchase(index)', 'function deletePurchase');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:7}]};
   const answers=['Chair','4','400','A'];
   let writes=0;
@@ -1415,7 +1415,7 @@ test('purchase edit applies only the quantity delta to stock for the same item',
 });
 
 test('purchase rename is blocked when old purchased stock has already been used', () => {
-  const code=sourceBetween('function editPurchase(index)', 'function deletePurchase');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:3}]};
   const answers=['Table','5','500','A'];
   let writes=0;
@@ -1427,7 +1427,7 @@ test('purchase rename is blocked when old purchased stock has already been used'
 });
 
 test('purchase deletion is blocked if the full purchased quantity is no longer in stock', () => {
-  const code=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:2}]};
   let writes=0;
   const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
@@ -1438,7 +1438,7 @@ test('purchase deletion is blocked if the full purchased quantity is no longer i
 });
 
 test('purchase deletion atomically removes the record and its full available stock quantity', () => {
-  const code=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:8}]};
   let writes=0;
   const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
@@ -1786,7 +1786,7 @@ test('quantity-based item rent uses Single Rent for 1-2 pieces and Set/Bulk Rent
 
 
 test('vendor ledger separates customer rent, vendor rent cost, missing liability, and payments', () => {
-  const code=sourceBetween('function loadThirdPartyLedger()', '        // Removed an orphaned speech-recognition fragment');
+  const code=sourceBetween('function getVendorLedgerRate(', '        // Removed an orphaned speech-recognition fragment');
   const entry={itemIndex:0,itemName:'Chair',qty:3,date:'2026-11-01',unitRent:40,vendorRentRate:20,source:'third-party',partyName:'Vendor A'};
   const booking={id:7,date:'2026-11-01',items:[{name:'Chair',qty:3,missingQty:2,vendorMissingCost:25,source:'third-party',partyName:'Vendor A'}],dispatchEntries:[entry]};
   const elements={partyWiseTablesContainer:{innerHTML:''},thirdPartyPaymentBody:{innerHTML:''},tpPaymentParty:{value:''}};
@@ -2430,7 +2430,7 @@ test('return stock prevalidation aggregates quantities by physical row before up
   const code=sourceBetween('async function completeManualReturnProcess()', 'let currentDocumentItems = []');
   assert.match(code,/const returnRequirements=new Map\(\)/);
   assert.match(code,/previous\.qty\+=qty/);
-  assert.match(code,/const total=available\+requirement\.qty/);
+  assert.match(code,/total=available\+requirement\.qty/);
   assert.match(code,/Number\.isSafeInteger\(total\)/);
   assert.ok(code.indexOf('for(const requirement of returnRequirements.values())')<code.indexOf('inputs.forEach(input=>'));
 });
