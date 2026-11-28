@@ -2704,7 +2704,7 @@ test('Shraddha AI chat keeps bounded multi-turn context and resets on new chat',
 });
 
 test('local ADMIN login uses one masked field and keeps the enrolled six-digit prefix fixed', () => {
-  const gate=sourceBetween('function refreshLocalAdminGate()', '        // Settings persistence:');
+  const gate=sourceBetween('function refreshLocalAdminGate()', '                async function handleGoogleAdminLogin(event){');
   const panel=html.slice(html.indexOf('id="rkLocalPrefixWrap"')-300,html.indexOf('id="rkLocalPrefixWrap"')+1300);
   assert.match(panel,/id="rkLocalPasswordInput" type="password"/);
   assert.equal((html.match(/id="rkLocalPasswordInput"/g)||[]).length,1);
