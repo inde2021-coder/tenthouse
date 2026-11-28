@@ -51,8 +51,11 @@ app.use(helmet({
     }
   }
 }));
-const allowedOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
-app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); return cb(null, false); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
+const configuredOrigins = (process.env.PUBLIC_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+// Android WebViewAssetLoader serves the packaged app from this HTTPS origin.
+// Firebase ID-token requests still require the server-verified admin UID grant.
+const allowedOrigins = new Set([...configuredOrigins, 'https://appassets.androidplatform.net']);
+app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.has(origin)) return cb(null, true); return cb(null, false); }, methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }));
 app.use(express.json({ limit: '1mb', verify: (req, _res, buf) => { req.rawBody = Buffer.from(buf); } }));
 const configuredApiLimit = Number.parseInt(process.env.API_RATE_LIMIT_MAX || '60', 10);
 const apiRateLimitMax = Number.isSafeInteger(configuredApiLimit) && configuredApiLimit > 0 ? configuredApiLimit : 60;

@@ -620,3 +620,35 @@ test('concurrent AI action confirmations commit the target and audit events exac
   assert.equal(events.filter(event => event.action === 'ai_action_succeeded').length, 1);
   assert.equal(events.filter(event => event.action === 'ai_action_confirmed').length, 1);
 });
+
+test('Android WebViewAssetLoader origin can call the API with Firebase bearer authorization', async () => {
+  const origin = 'https://appassets.androidplatform.net';
+  const response = await fetch(baseUrl + '/api/health', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: origin,
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type'
+    }
+  });
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('access-control-allow-origin'), origin);
+  const allowedHeaders = String(response.headers.get('access-control-allow-headers') || '').toLowerCase();
+  assert.match(allowedHeaders, /authorization/);
+  assert.match(allowedHeaders, /content-type/);
+});
+
+test('untrusted cross-origin browser origins are not granted API access', async () => {
+  const response = await fetch(baseUrl + '/api/health', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://untrusted.example',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type'
+    }
+  });
+  // Express automatically answers unsupported OPTIONS requests with 200;
+  // the security assertion is that no Access-Control-Allow-Origin is emitted.
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
+});

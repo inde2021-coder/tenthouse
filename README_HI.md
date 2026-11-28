@@ -55,7 +55,7 @@
 
 ## 6. महत्वपूर्ण सुरक्षा/गुणवत्ता सीमाएँ
 
-- Customer Booking Requests अब public backend endpoint से durable database में जाती हैं; Admin Login के बाद backend से नई bookings merge होती हैं। Backend URL default `https://tenthouse.vercel.app` है; यदि hosting बदलती है तो Settings में सही URL रखें।
+- Customer Booking Requests अब public backend endpoint से durable database में जाती हैं; Admin Login के बाद backend से नई bookings merge होती हैं। Backend URL default `https://tenthouse2026.vercel.app` है; यदि hosting बदलती है तो Settings में सही URL रखें।
 - Admin का Google Login अभी Firebase client auth है। Shared Firebase business data का listener login के बाद ही जुड़ता है; guest users को सीधे पूरे ERP database का read/write access नहीं दिया गया है।
 - Firebase Realtime Database security rules इस Repository में शामिल नहीं हैं। उन्हें अलग से configure और test करना होगा; Admin SDK backend rules bypass करता है और केवल server secret से चलता है।
 - OCR अब Tesseract.js (English + Hindi) से text extract करता है; पहचान/मात्रा का अनुमान user को सेव करने से पहले सत्यापित करना है। पहली बार OCR चलाने पर CDN और language data डाउनलोड होंगे।
