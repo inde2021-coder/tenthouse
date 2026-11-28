@@ -83,3 +83,30 @@ test('reference compositions target the shipped portal artwork and real layout n
   assert.doesNotMatch(css, /bartan-hero\.svg/);
   assert.match(css, /html\.rk-ref2 #customerFirstPortal \.rk-customer-shell\{grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
 });
+
+test('customer task navigation isolates Home, Booking and Tracking and auto-hides its menu', () => {
+  for (const file of ['index.html', 'public/index.html', 'backend/public/index.html']) {
+    const html = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    assert.match(html, /rk-customer-task-layout-fixes-2026-11/);
+    assert.match(html, /rk-view-home/);
+    assert.match(html, /rk-view-booking/);
+    assert.match(html, /rk-view-track/);
+    assert.match(html, /rk-nav-hidden/);
+    assert.match(html, /setView\('booking'\)/);
+  }
+});
+
+test('Dispatch controls and quotation tables are constrained to mobile scroll containers', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'backend/public/index.html'), 'utf8');
+  assert.match(html, /#dispatch #adminStockDispatchSection \.form-grid/);
+  assert.match(html, /#dispatch \.table-responsive\{display:block!important;width:100%/);
+  assert.match(html, /#documents \.table-responsive table\{width:max-content!important;min-width:720px/);
+  assert.match(html, /#documents #businessDocumentPreview\{overflow-x:auto/);
+});
+
+test('first three Settings groups are converted to accessible collapsible details', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'backend/public/index.html'), 'utf8');
+  assert.match(html, /makeSettingsGroupsCollapsible/);
+  assert.match(html, /rk-settings-collapsible/);
+  assert.match(html, /aria-expanded/);
+});
