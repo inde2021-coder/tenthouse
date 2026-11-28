@@ -2609,3 +2609,53 @@ test('backup restore and uploaded settings images wait for confirmed Firebase pe
 test('final-return missing records remain isolated by booking item index', () => {
   assert.ok(html.includes("m.itemIndex!==undefined&&m.itemIndex!==null&&Number(m.itemIndex)===idx"));
 });
+
+test('third-party payment entry writes only to the separate vendor payment ledger', () => {
+  const code = sourceBetween('function recordThirdPartyPayment(event)', 'function loadThirdPartyLedger()');
+  const store = { thirdPartyPayments: [] };
+  const values = { tpPaymentParty: { value: 'Vendor A' }, tpPaymentAmount: { value: '100' }, tpPaymentMethod: { value: 'Cash' }, tpPaymentNote: { value: 'Advance' } };
+  const context = {
+    document: { getElementById: id => values[id] || null },
+    safeGetStorage: key => store[key] || [],
+    safeSetStorage: (key,value) => { store[key] = value; return true; },
+    loadThirdPartyLedger: () => {},
+    showActionMessage: () => {},
+    Math, Number, String, Array, Date
+  };
+  vm.runInNewContext(code + '\\nresult=recordThirdPartyPayment({preventDefault(){},target:{reset(){}}});', context);
+  assert.equal(store.thirdPartyPayments.length, 1);
+  assert.equal(store.thirdPartyPayments[0].partyName, 'Vendor A');
+  assert.equal(store.thirdPartyPayments[0].amount, 100);
+  assert.equal(store.thirdPartyPayments[0].type, 'vendor-payment');
+  assert.equal(store.thirdPartyPayments[0].method, 'Cash');
+  assert.equal(store.thirdPartyPayments[0].note, 'Advance');
+  assert.equal(store.softwareBookings, undefined);
+  assert.equal(store.rkPaymentLedger, undefined);
+});
+
+test('third-party ledger derives vendor costs, payment due and margin from actual dispatch data', () => {
+  const ledgerStart = html.indexOf('function loadThirdPartyLedger()');
+  const ledgerEnd = html.indexOf('// Removed an orphaned speech-recognition fragment', ledgerStart);
+  assert.notEqual(ledgerStart, -1);
+  assert.ok(ledgerEnd > ledgerStart);
+  const code = html.slice(ledgerStart, ledgerEnd);
+  assert.match(code, /getDispatchEntryRentalSlices\\(booking\\)/);
+  assert.match(code, /vendorRentRate\\?\\?item\\.vendorRentRate/);
+  assert.match(code, /vendorMissingLiability/);
+  assert.match(code, /const vendorCost=vendorRentCost\\+vendorMissingLiability/);
+  assert.match(code, /const due=Math\\.max\\(0,vendorCost-paid\\)/);
+  assert.match(code, /const margin=customerRent-vendorCost/);
+  assert.match(code, /वेंडर को कुल देय/);
+  assert.match(code, /बाकी देय/);
+  const vendorRentCost = 2 * 60 * 2;
+  const vendorMissingLiability = 1 * 50;
+  const vendorCost = vendorRentCost + vendorMissingLiability;
+  const customerRent = 2 * 100 * 2;
+  const paid = 100;
+  assert.equal(vendorRentCost, 240);
+  assert.equal(vendorMissingLiability, 50);
+  assert.equal(vendorCost, 290);
+  assert.equal(customerRent, 400);
+  assert.equal(Math.max(0, vendorCost - paid), 190);
+  assert.equal(customerRent - vendorCost, 110);
+});
