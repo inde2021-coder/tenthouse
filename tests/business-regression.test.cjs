@@ -2662,3 +2662,42 @@ test('backend Node engine matches the Node version used by CI and Docker', () =>
   assert.match(docker, /FROM node:22-alpine/);
   assert.match(workflow, /node-version: 22/);
 });
+
+test('Shraddha AI is presented as a responsive chat interface with voice and quick prompts', () => {
+  assert.ok(html.includes('class="rk-ai-shell"'));
+  assert.ok(html.includes('id="aiAssistantResponse"'));
+  assert.ok(html.includes('id="aiCommandInput"'));
+  assert.ok(html.includes('id="aiVoiceButton"'));
+  assert.ok(html.includes('function askAiSuggestion(question)'));
+  assert.ok(html.includes('function clearAiChat()'));
+  assert.ok(html.includes('rk-ai-suggestions'));
+  assert.ok(html.includes('rk-ai-chat-styles'));
+});
+
+test('Shraddha AI chat preserves Firebase bearer authentication and backend chat/TTS routes', () => {
+  assert.ok(html.includes("fetch(api+'/api/ai/chat'"));
+  assert.ok(html.includes("fetch(api+'/api/ai/tts'"));
+  assert.ok(html.includes("headers:await firebaseAdminHeaders"));
+  assert.ok(!html.includes("headers:{'Content-Type':'application/json','x-admin-token':token}"));
+});
+
+test('Shraddha AI action proposals remain explicit and require Admin confirmation', () => {
+  assert.ok(html.includes('function submitAiActionProposal(api,action)'));
+  assert.ok(html.includes("fetch(api+'/api/ai/actions/propose'"));
+  assert.ok(html.includes("'/confirm'"));
+  assert.ok(html.includes('Admin पुष्टि करें'));
+  assert.ok(html.includes('RK_ACTION'));
+});
+
+test('Shraddha AI chat keeps bounded multi-turn context and resets on new chat', () => {
+  assert.ok(html.includes('let rkAiConversation=[];'));
+  assert.ok(html.includes('...rkAiConversation.slice(-20)'));
+  assert.ok(html.includes('rkAiConversation=[];'));
+  assert.ok(html.includes('rkAiConversation.length>20'));
+});
+
+test('all deployable HTML shells remain byte-identical after the AI chat integration', () => {
+  assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8'), html);
+  assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'public', 'index.html'), 'utf8'), html);
+  assert.ok(!html.includes('#7fac e738'), 'AI chat CSS must not contain the malformed hex color token.');
+});
