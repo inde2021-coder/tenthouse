@@ -2701,3 +2701,17 @@ test('all deployable HTML shells remain byte-identical after the AI chat integra
   assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'public', 'index.html'), 'utf8'), html);
   assert.ok(!html.includes('#7fac e738'), 'AI chat CSS must not contain the malformed hex color token.');
 });
+
+test('SMS settings expose only providers implemented by the backend and persist the selected OTP channel', () => {
+  const settingsStart = html.indexOf('<section class="rk-settings-card rk-settings-sms">');
+  const settingsEnd = html.indexOf('</section>', settingsStart);
+  assert.notEqual(settingsStart, -1);
+  const settings = html.slice(settingsStart, settingsEnd);
+  assert.match(settings, /value="msg91"/);
+  assert.match(settings, /value="twilio"/);
+  assert.doesNotMatch(settings, /value="(?:2factor|fast2sms|custom)"/);
+  assert.match(backend, /const hasSavedProvider = Object\.prototype\.hasOwnProperty\.call\(settings, 'smsGatewayProvider'\)/);
+  assert.match(backend, /otpSettings\.smsGatewayEnabled !== true/);
+  assert.match(backend, /otpSettings\.otpChannel/);
+  assert.match(backend, /settings\.smsTemplateId \|\| process\.env\.MSG91_TEMPLATE_ID/);
+});
