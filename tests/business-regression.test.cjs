@@ -326,7 +326,7 @@ test('return and missing recovery fail when the source stock row is absent', () 
   assert.ok(code.includes('if(!row){showActionMessage(\'Return stock record नहीं मिला: \'+item.name'));
   assert.ok(html.includes("if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला"));
   assert.ok(code.includes("persistInventoryBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])"));
-  assert.ok(html.includes("safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])"));
+  assert.ok(html.includes("persistInventoryBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])"));
   assert.ok(html.includes('m.penalty=0;'));
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
@@ -913,9 +913,9 @@ test('customer booking stock validation includes admin and portal reservations w
 
 test('dispatch, return and missing recovery use rollback-capable multi-key persistence', () => {
   assert.match(html, /function safeSetStorageBatch\(entries\)/);
-  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
-  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
-  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
   assert.match(html, /Storage rollback failed/);
 });
 
