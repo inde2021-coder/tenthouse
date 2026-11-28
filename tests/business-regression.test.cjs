@@ -2515,3 +2515,37 @@ test('invoice base rent and customer booking tracker use stable local ISO dates'
   assert.match(tracker,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
   assert.doesNotMatch(tracker,/toLocaleDateString\('en-CA'\)/);
 });
+\n
+test('critical stock, booking, expense and payment writes wait for Firebase confirmation', () => {
+  const expense = sourceBetween('async function saveDailyExpense(event)', '        function renderRoyalDashboardMetrics()');
+  const stock = sourceBetween('async function saveStockItemReal(event)', '        function mergeDuplicateStockRows');
+  const booking = sourceBetween('async function approveBooking(id)', '        async function editBooking(id)');
+  const payment = sourceBetween('async function savePaymentEntry()', '        async function verifyLedgerPayment');
+  const verify = sourceBetween('async function verifyLedgerPayment', '        function ');
+  assert.match(expense, /await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(stock, /await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(booking, /await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(payment, /await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(verify, /await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function editStockItem[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function deleteStockItem[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+});
+test('confirmed Firebase batch persistence restores local state when cloud confirmation fails', async () => {
+  const code = sourceBetween('async function safeSetStorageBatchAndConfirmCloud(entries)', '        function safeSetStorageBatch(entries)');
+  const store = { stock: [{ name: 'Chair', qty: 12 }] };
+  const localStorage = {
+    getItem: key => Object.prototype.hasOwnProperty.call(store, key) ? JSON.stringify(store[key]) : null,
+    setItem: (key, value) => { store[key] = JSON.parse(value); },
+    removeItem: key => { delete store[key]; }
+  };
+  const context = {
+    Map, Promise, JSON, console, localStorage,
+    safeSetStorageBatch: entries => { for (const [key, value] of entries) store[key] = value; return true; },
+    syncToCloud: async () => false,
+    showActionMessage: () => {}
+  };
+  const persist = vm.runInNewContext(code + ';safeSetStorageBatchAndConfirmCloud', context);
+  const ok = await persist([['stock', [{ name: 'Chair', qty: 9 }]]]);
+  assert.equal(ok, false);
+  assert.deepEqual(store.stock, [{ name: 'Chair', qty: 12 }]);
+});
