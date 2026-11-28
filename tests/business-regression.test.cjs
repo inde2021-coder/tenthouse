@@ -2703,6 +2703,20 @@ test('Shraddha AI chat keeps bounded multi-turn context and resets on new chat',
   assert.ok(html.includes('rkAiConversation.length>20'));
 });
 
+test('local ADMIN login uses one masked field and keeps the enrolled six-digit prefix fixed', () => {
+  const gate=sourceBetween('function refreshLocalAdminGate()', '        // Settings persistence:');
+  const panel=html.slice(html.indexOf('id="rkLocalPrefixWrap"')-300,html.indexOf('id="rkLocalPrefixWrap"')+1300);
+  assert.match(panel,/id="rkLocalPasswordInput" type="password"/);
+  assert.equal((html.match(/id="rkLocalPasswordInput"/g)||[]).length,1);
+  assert.match(gate,/input\.maxLength=4/);
+  assert.match(gate,/input\.placeholder='अंतिम 4 अंक'/);
+  assert.match(gate,/input\.maxLength=10/);
+  assert.match(gate,/credential\.prefix\+value/);
+  assert.match(gate,/prefix:value\.slice\(0,6\)/);
+  assert.match(gate,/iterations:250000/);
+  assert.doesNotMatch(html,/CLOUD_KEY_MAP[\s\S]{0,500}rkLocalAdminCredential/);
+});
+
 test('all deployable HTML shells remain byte-identical after the AI chat integration', () => {
   assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8'), html);
   assert.equal(fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'public', 'index.html'), 'utf8'), html);
