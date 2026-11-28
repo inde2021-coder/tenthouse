@@ -1406,7 +1406,7 @@ test('income and expense table summary uses the shared validated totals calculat
 
 
 test('stock item edit rejects fractional quantities and preserves the original record', () => {
-  const code=sourceBetween('async function editStockItem(index)', 'function deleteStockItem');
+  const code=sourceBetween('async function editStockItem(index)', 'async function deleteStockItem');
   let writes=0;
   const row={name:'Chair',qty:10,singleRent:5,setRent:20,missingCharge:100};
   const answers=['Chair','2.5','5','20','100'];
@@ -2399,7 +2399,7 @@ test('GSTR-1 CSV includes a UTF-8 BOM and Windows-compatible row endings', () =>
 
 
 test('daily expense entries use timezone-local ISO dates and consistent positive rounded amounts', () => {
-  const dateCode=sourceBetween('function localISODate(', 'function saveDailyExpense(event)');
+  const dateCode=sourceBetween('function localISODate(', 'async function saveDailyExpense(event)');
   const result=vm.runInNewContext(dateCode+`
     localISODate(new Date(2026,10,27,23,59,59))
   `,{Date,String});
