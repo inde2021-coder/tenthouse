@@ -717,6 +717,17 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
   });
 });
 
+test('dispatch, return, and missing recovery require confirmed Firebase persistence', () => {
+  assert.match(html, /async function safeSetStorageBatchAndConfirmCloud\(entries\)/);
+  assert.match(html, /const results = await Promise\.all\(entries\.map\(\(\[key, value\]\) => syncToCloud\(key, value\)\)\)/);
+  assert.match(html, /if \(results\.every\(Boolean\)\) return true/);
+  assert.match(html, /Critical inventory rollback failed/);
+  assert.equal((html.match(/await safeSetStorageBatchAndConfirmCloud\(/g) || []).length, 3);
+  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
+  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
+  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+});
+
 test('Firebase Realtime Database uses the approved radhe-krishna-online-booking project', () => {
   assert.match(html, /apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I"/);
   assert.match(html, /authDomain: "radhe-krishna-online-booking\.firebaseapp\.com"/);
