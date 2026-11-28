@@ -1482,7 +1482,6 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                           <div class="rk-settings-full"><label for="settingCustomerHeroFile">Customer Website Hero Image</label><input type="file" id="settingCustomerHeroFile" accept="image/png,image/jpeg,image/webp" onchange="handleImageUpload(event, 'customerHeroImage')"><small>टेंट / डेकोरेशन की फोटो चुनें।</small><button type="button" class="action-btn" onclick="removeCustomerHeroImage()">Default Hero वापस लगाएं</button></div>
                         </div></details>
                         <details class="settings-section"><summary><i class="fa-solid fa-database"></i> डेटा बैकअप और सुरक्षा</summary><div class="settings-section-body"><div class="settings-actions"><button type="button" class="glass-btn-green" onclick="exportFullBackup()">पूरा डेटा बैकअप</button><label class="glass-btn-blue file-button">बैकअप रिस्टोर <input type="file" accept=".json,application/json" onchange="restoreFullBackup(event)" style="display:none"></label><button type="button" class="glass-btn-cyan" onclick="resetAllSoftwareData()">लोकल डेटा रीसेट</button></div><small>Backup में API Token, Gateway Key और अन्य secrets शामिल नहीं होंगे। रीसेट से पहले बैकअप लें।</small></div></details>
-                        <input type="hidden" id="backendApiUrlInput"><input type="hidden" id="hostingUrlInput">
                         <div class="rk-settings-footer"><span>बदलाव सेव करने के बाद क्लाउड सिंक उपलब्ध होने पर अपडेट होगा।</span><button type="submit" class="glass-btn-blue"><i class="fa-solid fa-floppy-disk"></i> सभी सेटिंग सेव करें</button></div>
                       </form>
                     </div>
@@ -1675,7 +1674,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const s=safeGetStorage('softwareSettings',{});
             const fields={settingBusinessName:'businessName',settingContactNo:'contactNo',settingUpiId:'upiId',settingPayGatewayKey:'payGatewayKey',settingPayGatewayProvider:'paymentGatewayProvider',settingPayGatewayMode:'paymentGatewayMode',settingSmsProvider:'smsGatewayProvider',settingSmsSenderId:'smsSenderId',settingSmsTemplateId:'smsTemplateId',settingSmsRoute:'smsRoute',settingWaPhoneId:'waPhoneId',settingTermsConditions:'termsConditions'};
             Object.entries(fields).forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.value=s[key]==null?'':String(s[key]);});
-            const extra={otpChannelSetting:s.otpChannel||'off',backendApiUrlInput:s.backendApiUrl||'',hostingUrlInput:s.hostingUrl||location.href};
+            const extra={otpChannelSetting:s.otpChannel||'off'};
             Object.entries(extra).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value;});
             const payment=document.getElementById('paymentGatewayEnabledSetting');if(payment)payment.checked=s.paymentGatewayEnabled===true;
             const sms=document.getElementById('smsGatewayEnabledSetting');if(sms)sms.checked=s.smsGatewayEnabled===true;
@@ -1690,25 +1689,10 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             for(const [id,key] of Object.entries(fields)){const el=document.getElementById(id);if(el)s[key]=String(el.value||'').trim();}
             const payment=document.getElementById('paymentGatewayEnabledSetting');if(payment)s.paymentGatewayEnabled=payment.checked;
             const sms=document.getElementById('smsGatewayEnabledSetting');if(sms)s.smsGatewayEnabled=sms.checked;
-            const backend=document.getElementById('backendApiUrlInput');if(backend&&backend.value.trim())s.backendApiUrl=backend.value.trim().replace(/\/$/,'');
             if(!s.businessName||!s.contactNo){showActionMessage('दुकान का नाम और संपर्क नंबर भरें।','error');return false;}
-            if(s.backendApiUrl&&!/^https:\/\//i.test(s.backendApiUrl)){showActionMessage('Backend API URL https:// से शुरू होना चाहिए।','error');return false;}
             if(!safeSetStorage('softwareSettings',s))return false;
             loadSettingsToUI();renderBusinessCard();showActionMessage('दुकान, Payment Gateway और SMS सेटिंग सेव हो गईं। Gateway/OTP चलाने के लिए backend credentials और provider integration भी जरूरी हैं।','success');return false;
         }
-        function saveSettingsSection(section) {
-            if(section!=='backend'){showActionMessage('सेटिंग सेक्शन पहचाना नहीं गया।','error');return false;}
-            const s=safeGetStorage('softwareSettings',{}),url=document.getElementById('backendApiUrlInput'),channel=document.getElementById('otpChannelSetting');
-            if(url)s.backendApiUrl=url.value.trim().replace(/\/$/,'');if(channel)s.otpChannel=channel.value;
-            if(s.backendApiUrl&&!/^https:\/\//i.test(s.backendApiUrl)){showActionMessage('Backend API URL https:// से शुरू होना चाहिए।','error');return false;}
-            if(!safeSetStorage('softwareSettings',s))return false;showActionMessage('Backend सेटिंग सेव हुई।','success');return true;
-        }
-        function resetSettingsSection(section) {
-            if(section!=='backend')return;if(!confirm('Backend और OTP की लोकल सेटिंग रीसेट करें?'))return;
-            const s=safeGetStorage('softwareSettings',{});['backendApiUrl','otpChannel','hostingUrl'].forEach(k=>delete s[k]);
-            if(safeSetStorage('softwareSettings',s)){loadSettingsToUI();showActionMessage('Backend सेटिंग रीसेट हुई।','success');}
-        }
-
         let customerCart = [];
         let publicCustomerStockCatalog = null;
 
