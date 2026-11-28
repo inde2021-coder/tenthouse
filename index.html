@@ -613,20 +613,34 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 <script id="rk-reference-design-activation-v2">
 (function(){
  'use strict';
- var allowed=['ref1','ref2','ref3','ref4','ref5'],keys=['rk-reference-design','rkDesignPreset'];
- function readSaved(){for(var i=0;i<keys.length;i++){try{var v=localStorage.getItem(keys[i]);if(allowed.indexOf(v)>=0)return v;}catch(e){}}return 'ref1';}
- function apply(theme,save){
-  if(allowed.indexOf(theme)<0)theme='ref1';
-  allowed.forEach(function(v){document.documentElement.classList.remove('rk-'+v);});
-  document.documentElement.classList.add('rk-'+theme);
-  if(save!==false)keys.forEach(function(k){try{localStorage.setItem(k,theme);}catch(e){}});
-  document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(function(b){var active=b.getAttribute('data-rk-theme')===theme;b.classList.toggle('active',active);b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active?'true':'false');});
-  var status=document.getElementById('rkDesignStatus');if(status)status.textContent='सक्रिय डिजाइन: '+theme.toUpperCase()+' · चयन इसी डिवाइस पर सेव है।';
-  return theme;
+ const themes=['ref1','ref2','ref3','ref4','ref5'];
+ function readSaved(){
+  try{const saved=localStorage.getItem('rkDesignPreset');return themes.includes(saved)?saved:'ref1';}
+  catch(error){return 'ref1';}
  }
- window.applyRkDesign=function(theme){return apply(theme,true);};
- function restore(){apply(readSaved(),true);}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});else restore();
+ function apply(selected,save){
+  if(!themes.includes(selected))selected='ref1';
+  themes.forEach(theme=>document.documentElement.classList.toggle('rk-'+theme,theme===selected));
+  if(save!==false){
+   try{
+    localStorage.setItem('rkDesignPreset',selected);
+    localStorage.setItem('rk-reference-design',selected);
+   }catch(error){}
+  }
+  document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(button=>{
+   const active=button.getAttribute('data-rk-theme')===selected;
+   button.classList.toggle('active',active);
+   button.classList.toggle('selected',active);
+   button.setAttribute('aria-pressed',active?'true':'false');
+  });
+  const status=document.getElementById('rkDesignStatus');
+  if(status)status.textContent='सक्रिय डिजाइन: '+selected.toUpperCase()+' · चयन इसी डिवाइस पर सेव है।';
+  return selected;
+ }
+ window.applyRkDesign=(name)=>apply(name,true);
+ function restore(){apply(readSaved(),false);}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});
+ else restore();
 })();
 </script>
 
