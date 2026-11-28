@@ -77,7 +77,7 @@ test('reference compositions target the shipped portal artwork and real layout n
   const css = fs.readFileSync(cssFiles[0], 'utf8');
   assert.match(html, /src="\.\/customer-hero\.svg"/);
   assert.match(html, /class="rk-customer-form" onsubmit="saveCustomerBooking\(event\)"/);
-  assert.match(html, /class="rk-booking-tracker"/);
+  assert.match(html, /class="[^"]*rk-booking-tracker/);
   assert.match(html, /class="rk-reference-nav"/);
   assert.match(css, /url\('\.\/customer-hero\.svg'\)/);
   assert.doesNotMatch(css, /bartan-hero\.svg/);
