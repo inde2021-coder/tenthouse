@@ -703,9 +703,9 @@ html.rk-ref5 #customerFirstPortal .rk-booking-tracker{grid-area:tracking!importa
 html.rk-ref5 #customerFirstPortal .rk-customer-section,html.rk-ref5 #customerFirstPortal .rk-booking-tracker{border-color:#8a6cff!important;background:linear-gradient(145deg,#1c1650,#090b25 78%)!important}
 html.rk-ref5 #customerFirstPortal .rk-customer-brand{border-color:#8c78ff!important}
 html.rk-ref5 #customerFirstPortal .rk-customer-submit{background:linear-gradient(180deg,#20df67,#009d43)!important;color:#04170a!important}
-@media(max-width:820px){
- html.rk-ref1 #customerFirstPortal .rk-customer-shell,html.rk-ref2 #customerFirstPortal .rk-customer-shell,html.rk-ref3 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"booking" "tracking" "footer"!important}
- html.rk-ref1 #customerFirstPortal .rk-customer-form,html.rk-ref2 #customerFirstPortal .rk-customer-form,html.rk-ref3 #customerFirstPortal .rk-customer-form{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"identity" "event" "items" "payment" "submit"!important}
+@media(max-width:720px){
+ html.rk-ref1 #customerFirstPortal .rk-customer-shell,html.rk-ref2 #customerFirstPortal .rk-customer-shell,html.rk-ref3 #customerFirstPortal .rk-customer-shell,html.rk-ref4 #customerFirstPortal .rk-customer-shell,html.rk-ref5 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"booking" "tracking" "footer"!important}
+ html.rk-ref1 #customerFirstPortal .rk-customer-form,html.rk-ref2 #customerFirstPortal .rk-customer-form,html.rk-ref3 #customerFirstPortal .rk-customer-form,html.rk-ref4 #customerFirstPortal .rk-customer-form,html.rk-ref5 #customerFirstPortal .rk-customer-form{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"identity" "event" "items" "payment" "submit"!important}
 }
 @media(max-width:640px){
  #customerFirstPortal .customer-scroll-wrap{padding:7px!important;gap:8px!important}
