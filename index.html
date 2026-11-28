@@ -2187,7 +2187,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         function refreshLocalAdminGate(){
             const credential=safeGetStorage('rkLocalAdminCredential',null),input=document.getElementById('rkLocalPasswordInput'),wrap=document.getElementById('rkLocalPrefixWrap'),prefix=document.getElementById('rkLocalPrefix'),hint=document.getElementById('rkLocalLoginHint');
             if(!input)return;
-            if(credential&&/^\\d{6}$/.test(String(credential.prefix||''))){wrap.style.display='flex';prefix.textContent=credential.prefix;input.maxLength=4;input.placeholder='अंतिम 4 अंक';input.autocomplete='current-password';hint.textContent='पहले 6 अंक लॉक हैं। केवल अंतिम 4 अंक दर्ज करें।';}
+            if(credential&&/^\d{6}$/.test(String(credential.prefix||''))){wrap.style.display='flex';prefix.textContent=credential.prefix;input.maxLength=4;input.placeholder='अंतिम 4 अंक';input.autocomplete='current-password';hint.textContent='पहले 6 अंक लॉक हैं। केवल अंतिम 4 अंक दर्ज करें।';}
             else{wrap.style.display='none';input.maxLength=10;input.placeholder='पहली बार: 10 अंक सेट करें';hint.textContent='पहली बार पूरा 10 अंकों का पासवर्ड सेट होगा। उसके बाद केवल अंतिम 4 अंक भरने होंगे।';}
         }
         async function handleLocalAdminLogin(event){
@@ -2197,13 +2197,13 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             try{
                 if(button){button.disabled=true;button.textContent='जाँच हो रही है…';}
                 if(!credential){
-                    if(!/^\\d{10}$/.test(value))throw new Error('पहली बार सेटअप के लिए 10 अंकों का पासवर्ड दर्ज करें।');
+                    if(!/^\d{10}$/.test(value))throw new Error('पहली बार सेटअप के लिए 10 अंकों का पासवर्ड दर्ज करें।');
                     const salt=crypto.getRandomValues(new Uint8Array(16)),hash=await rkHashLocalPassword(value,salt);
                     const saved={version:1,loginId:'ADMIN',prefix:value.slice(0,6),salt:rkBytesToBase64(salt),hash:rkBytesToBase64(hash),iterations:250000,createdAt:new Date().toISOString()};
                     if(!safeSetStorage('rkLocalAdminCredential',saved))throw new Error('डिवाइस पर पासवर्ड सेट नहीं हो पाया।');
                     showActionMessage('डिवाइस पासवर्ड सेट हो गया। अब इस डिवाइस पर प्रवेश कर सकते हैं।','success');
                 }else{
-                    if(!/^\\d{4}$/.test(value))throw new Error('केवल अंतिम 4 अंक दर्ज करें।');
+                    if(!/^\d{4}$/.test(value))throw new Error('केवल अंतिम 4 अंक दर्ज करें।');
                     const candidate=credential.prefix+value,actual=await rkHashLocalPassword(candidate,rkBase64ToBytes(credential.salt));
                     const expected=rkBase64ToBytes(credential.hash),a=new Uint8Array(actual);
                     if(a.length!==expected.length||!a.every((v,i)=>v===expected[i]))throw new Error('डिवाइस पासवर्ड गलत है।');
