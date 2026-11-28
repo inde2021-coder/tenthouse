@@ -1523,7 +1523,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             softwareSettings: 'settings',
             missingItemsDatabase: 'missingItems',
             quotationDatabase: 'quotations',
-            taxInvoiceDatabase: 'taxInvoices'
+            taxInvoiceDatabase: 'taxInvoices',
+            rkPaymentLedger: 'paymentLedger'
         };
         const CLOUD_TO_LOCAL_KEY = Object.fromEntries(Object.entries(CLOUD_KEY_MAP).map(([local, cloud]) => [cloud, local]));
 
@@ -2986,7 +2987,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const type = document.getElementById('expenseType')?.value || 'Expense';
             if (!desc || !['Income','Expense'].includes(type) || !Number.isFinite(amount) || amount <= 0) { showActionMessage('प्रकार, विवरण और शून्य से अधिक सही राशि भरें', 'error'); return; }
             const list = safeGetStorage('incomeExpenseDatabase', []);
-            list.push({ id: crypto.randomUUID(), date: localISODate(), desc, type, amount: Math.round(amount*100)/100, createdAt: new Date().toISOString() });
+            list.push({ id: 'EXP-' + Date.now(), date: localISODate(), desc, type, amount: Math.round(amount*100)/100, createdAt: new Date().toISOString() });
             if(!await safeSetStorageBatchAndConfirmCloud([['incomeExpenseDatabase', list]]))return;
             event.target.reset();
             loadAllFirebaseData();
