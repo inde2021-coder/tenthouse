@@ -4420,9 +4420,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
    if(!canvas||!url){alert('पहले QR बनाएं।');return}
    const w=window.open('','_blank');if(!w){alert('QR प्रिंट के लिए Pop-up अनुमति दें।');return}
    const data=canvas.toDataURL('image/png'),safe=url.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p>
-
-</body></html>';
+   const page='<!doctype html><html><head><meta charset="utf-8"><title>Hosting QR</title><style>body{text-align:center;font-family:Arial;padding:24px}img{width:260px;height:260px}p{overflow-wrap:anywhere}</style></head><body><h2>Radha Krishna Tent House</h2><img alt="Hosting QR" src="'+data+'"><p>'+safe+'</p></body></html>';
    w.document.open();w.document.write(page);w.document.close();w.onload=()=>{w.focus();w.print()};
  };
  document.querySelectorAll('#hostingUrlInput,#backendApiUrlInput,#otpChannelSetting,#requireItemSelectionSetting,#enableOfflineSetting').forEach(el=>el.addEventListener('change',saveAdvancedSettings));
