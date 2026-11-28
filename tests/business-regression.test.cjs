@@ -2550,3 +2550,26 @@ test('confirmed Firebase batch persistence restores local state when cloud confi
   assert.equal(ok, false);
   assert.deepEqual(store.stock, [{ name: 'Chair', qty: 12 }]);
 });
+
+
+test('purchase, vendor, income-expense, invoice and settings mutations require Firebase confirmation', () => {
+  const checks = [
+    ['async function savePurchaseEntry(event)', 'function loadPurchaseTable()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function editPurchase(index)', 'async function deletePurchase(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function deletePurchase(index)', 'function editIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function editIncomeExpense(index)', 'async function deleteIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function deleteIncomeExpense(index)', 'function loadCustomerList()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveThirdPartyEntry(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveBusinessDocument()', 'function editBusinessDocument', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveBusinessCard()', 'async function printBusinessCard()', /await safeSetStorageBatchAndConfirmCloud/]
+  ];
+  for (const [start, end, pattern] of checks) {
+    const code = sourceBetween(start, end);
+    assert.match(code, pattern, start + ' must await Firebase confirmation');
+  }
+  assert.match(html, /async function editThirdPartyEntry[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function deleteThirdPartyEntry[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function deleteThirdPartyPayment[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function saveSettings[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+});
