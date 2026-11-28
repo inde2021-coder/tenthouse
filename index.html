@@ -610,34 +610,23 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
     <link rel="stylesheet" href="./rk-reference-theme.css?v=9">
-<script id="rk-reference-design-activation-v1">
-/* Activate the supplied reference layout without touching ERP data or business handlers. */
+<script id="rk-reference-design-activation-v2">
 (function(){
-  'use strict';
-  var allowed=['ref1','ref2','ref3','ref4','ref5'];
-  function applyRkDesign(theme){
-    if(allowed.indexOf(theme)<0) theme='ref1';
-    var root=document.documentElement;
-    allowed.forEach(function(name){root.classList.remove('rk-'+name);});
-    root.classList.add('rk-'+theme);
-    try{localStorage.setItem('rk-reference-design',theme);}catch(e){}
-    document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(function(button){
-      var active=button.getAttribute('data-rk-theme')===theme;
-      button.classList.toggle('active',active);button.classList.toggle('selected',active);
-      button.setAttribute('aria-pressed',active?'true':'false');
-    });
-    var status=document.getElementById('rkDesignStatus');
-    if(status) status.textContent='सक्रिय डिजाइन: '+theme.toUpperCase()+' — Reference layout लागू है।';
-    return theme;
-  }
-  window.applyRkDesign=applyRkDesign;
-  function activateSavedDesign(){
-    var saved='ref1';
-    try{var value=localStorage.getItem('rk-reference-design');if(allowed.indexOf(value)>=0)saved=value;}catch(e){}
-    applyRkDesign(saved);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',activateSavedDesign,{once:true});
-  else activateSavedDesign();
+ 'use strict';
+ var allowed=['ref1','ref2','ref3','ref4','ref5'],keys=['rk-reference-design','rkDesignPreset'];
+ function readSaved(){for(var i=0;i<keys.length;i++){try{var v=localStorage.getItem(keys[i]);if(allowed.indexOf(v)>=0)return v;}catch(e){}}return 'ref1';}
+ function apply(theme,save){
+  if(allowed.indexOf(theme)<0)theme='ref1';
+  allowed.forEach(function(v){document.documentElement.classList.remove('rk-'+v);});
+  document.documentElement.classList.add('rk-'+theme);
+  if(save!==false)keys.forEach(function(k){try{localStorage.setItem(k,theme);}catch(e){}});
+  document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(function(b){var active=b.getAttribute('data-rk-theme')===theme;b.classList.toggle('active',active);b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active?'true':'false');});
+  var status=document.getElementById('rkDesignStatus');if(status)status.textContent='सक्रिय डिजाइन: '+theme.toUpperCase()+' · चयन इसी डिवाइस पर सेव है।';
+  return theme;
+ }
+ window.applyRkDesign=function(theme){return apply(theme,true);};
+ function restore(){apply(readSaved(),true);}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});else restore();
 })();
 </script>
 
@@ -4812,28 +4801,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
 </style>
 
-<script>
-/* Exactly five visual presets, each mapped to one of the five supplied ZIP screenshots. */
-(function(){
- const themes=['ref1','ref2','ref3','ref4','ref5'];
- const apply=(name,save=true)=>{
-  const selected=themes.includes(name)?name:'ref1';
-  document.documentElement.classList.remove(...themes.map(t=>'rk-'+t));
-  document.documentElement.classList.add('rk-'+selected);
-  if(save){try{localStorage.setItem('rkDesignPreset',selected)}catch(e){}}
-  document.querySelectorAll('.rk-design-choice').forEach(btn=>{
-   const active=btn.dataset.rkTheme===selected;
-   btn.classList.toggle('active',active);
-   btn.setAttribute('aria-pressed',String(active));
-  });
-  const status=document.getElementById('rkDesignStatus');
-  if(status)status.textContent='संदर्भ इमेज '+selected.slice(3)+' की थीम लागू है।';
- };
- window.applyRkDesign=(name)=>apply(name,true);
- const restore=()=>{let saved='ref1';try{saved=localStorage.getItem('rkDesignPreset')||'ref1'}catch(e){}apply(saved,false)};
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});else restore();
-})();
-</script>
+
 <style id="rk-customer-header-fixed-order-2026-11">
 /* Keep the customer portal masthead and navigation pinned while portal content scrolls. */
 #customerFirstPortal .customer-scroll-wrap{position:relative!important;overflow-y:auto!important;overflow-x:hidden!important;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
