@@ -25,3 +25,29 @@ test('premium responsive Settings refresh is present in every deployable HTML co
   // independently; verify the settings refresh exists in each without requiring
   // unrelated page markup and business logic to be byte-identical.
 });
+
+
+const cssFiles = [
+  path.join(root, 'rk-reference-theme.css'),
+  path.join(root, 'public', 'rk-reference-theme.css'),
+  path.join(root, 'backend', 'public', 'rk-reference-theme.css')
+];
+
+test('five reference CSS is synchronized across all deployable locations', () => {
+  const cssCopies = cssFiles.map(file => fs.readFileSync(file, 'utf8'));
+  assert.equal(new Set(cssCopies).size, 1, 'all deployed CSS copies must be identical');
+  const css = cssCopies[0];
+  assert.match(css, /AUTHORITATIVE FIVE-REFERENCE COMPOSITIONS/);
+  for (const ref of ['ref1', 'ref2', 'ref3', 'ref4', 'ref5']) {
+    assert.match(css, new RegExp('html\\.' + ref + ' #customerFirstPortal'));
+  }
+  assert.match(css, /@media\\(max-width:720px\\)/);
+});
+
+test('all HTML entry points load the cache-busted reference stylesheet', () => {
+  for (const file of files) {
+    const html = fs.readFileSync(file, 'utf8');
+    assert.match(html, /rk-reference-theme\\.css\\?v=11/);
+    assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
+  }
+});
