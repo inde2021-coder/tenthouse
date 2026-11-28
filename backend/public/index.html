@@ -1553,7 +1553,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             row.qty=currentStockQty+qty;item.returnedQty=Math.max(0,Number(item.returnedQty)||0)+qty;item.missingQty=Math.max(0,Number(item.missingQty)||0)-qty;
             record.qty=remaining-qty;record.resolved=record.qty===0;record.penalty=Math.round(Math.max(0,Number(record.unitCharge)||0)*record.qty*100)/100;record.resolvedAt=record.resolved?new Date().toISOString():null;
             booking.returnEntries=Array.isArray(booking.returnEntries)?booking.returnEntries:[];booking.returnEntries.push({date:new Date().toLocaleDateString('en-CA'),mode:'MISSING_RECOVERY',items:[{itemIndex,qty}],createdAt:new Date().toISOString()});
-            if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',vendors],['missingItemsDatabase',rows]])){showActionMessage('Missing Recovery सेव नहीं हुआ; कोई बदलाव लागू नहीं रखा गया','error');return;}
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',vendors],['missingItemsDatabase',rows]])){showActionMessage('Missing Recovery सेव नहीं हुआ; कोई बदलाव लागू नहीं रखा गया','error');return;}
             if(booking.source==='customer-portal'){
                 const remoteSaved=await syncCustomerBookingWorkflow(booking,false);
                 if(!remoteSaved){
@@ -1683,7 +1683,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             ['requireItemSelectionSetting','enableOfflineSetting'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=s[id==='requireItemSelectionSetting'?'requireItemSelection':'enableOffline']!==false;});
             applyCustomerHeroSettings();
         }
-        function saveSettings(event) {
+        async function saveSettings(event) {
             if(event){event.preventDefault();event.stopPropagation();}
             const s=safeGetStorage('softwareSettings',{});
             const fields={settingBusinessName:'businessName',settingContactNo:'contactNo',settingUpiId:'upiId',settingPayGatewayKey:'payGatewayKey',settingPayGatewayProvider:'paymentGatewayProvider',settingPayGatewayMode:'paymentGatewayMode',settingSmsProvider:'smsGatewayProvider',settingSmsSenderId:'smsSenderId',settingSmsTemplateId:'smsTemplateId',settingSmsRoute:'smsRoute',settingWaPhoneId:'waPhoneId',settingTermsConditions:'termsConditions',otpChannelSetting:'otpChannel'};
@@ -1691,8 +1691,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const payment=document.getElementById('paymentGatewayEnabledSetting');if(payment)s.paymentGatewayEnabled=payment.checked;
             const sms=document.getElementById('smsGatewayEnabledSetting');if(sms)s.smsGatewayEnabled=sms.checked;
             if(!s.businessName||!s.contactNo){showActionMessage('दुकान का नाम और संपर्क नंबर भरें।','error');return false;}
-            if(!safeSetStorage('softwareSettings',s))return false;
-            loadSettingsToUI();renderBusinessCard();showActionMessage('दुकान, Payment Gateway और SMS सेटिंग सेव हो गईं। Gateway/OTP चलाने के लिए backend credentials और provider integration भी जरूरी हैं।','success');return false;
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareSettings',s]]))return false;
+            loadSettingsToUI();renderBusinessCard();showActionMessage('दुकान, Payment Gateway और SMS सेटिंग Firebase में सुरक्षित हुईं। Gateway/OTP चलाने के लिए backend credentials और provider integration भी जरूरी हैं।','success');return false;
         }
         let customerCart = [];
         let publicCustomerStockCatalog = null;
@@ -2015,10 +2015,10 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if (image) hero.style.setProperty('--rk-hero-bg', 'url("' + image + '")');
             else hero.style.removeProperty('--rk-hero-bg');
         }
-        function removeCustomerHeroImage() {
+        async function removeCustomerHeroImage() {
             const settings = safeGetStorage('softwareSettings', {});
             delete settings.customerHeroImage;
-            if (!safeSetStorage('softwareSettings', settings)) return;
+            if (!await safeSetStorageBatchAndConfirmCloud([['softwareSettings', settings]])) return;
             applyCustomerHeroSettings();
             const input = document.getElementById('settingCustomerHeroFile');
             if (input) input.value = '';
@@ -2415,7 +2415,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id)),{method:'PUT',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify(patch)});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Backend update failed');Object.assign(b,data.booking||patch);}
                 catch(error){showActionMessage('बुकिंग Backend में अपडेट नहीं हुई: '+error.message,'error');return;}
             }else Object.assign(b,patch);
-            if(!safeSetStorage('softwareBookings',rows))return;loadCustomerList();loadInstallmentsTable();loadAllFirebaseData();showActionMessage('बुकिंग अपडेट हुई','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',rows]]))return;loadCustomerList();loadInstallmentsTable();loadAllFirebaseData();showActionMessage('बुकिंग Firebase में अपडेट हुई','success');
         }
         async function verifyCustomerAdvance(id,verified){
             const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b||!(Number(b.advanceAmount)>0))return;
@@ -2426,7 +2426,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 try{const response=await fetch(api+'/api/customer/bookings/'+encodeURIComponent(String(id))+'/advance',{method:'PATCH',headers:await firebaseAdminHeaders({'Content-Type':'application/json'}),body:JSON.stringify({verified})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||'Payment verification failed');Object.assign(b,data.booking||{});}
                 catch(error){showActionMessage('UTR सत्यापन विफल: '+error.message,'error');return;}
             }else{b.advancePaymentVerified=verified;b.advancePaymentStatus=verified?'verified':'rejected';}
-            if(!safeSetStorage('softwareBookings',rows))return;loadAllFirebaseData();showActionMessage(verified?'Advance भुगतान सत्यापित; जमा राशि में शामिल होगा':'Advance UTR अस्वीकार हुआ','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',rows]]))return;loadAllFirebaseData();showActionMessage(verified?'Advance भुगतान Firebase में सत्यापित; जमा राशि में शामिल होगा':'Advance UTR Firebase में अस्वीकार हुआ','success');
         }
 
         async function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||!Number.isSafeInteger(nums[0])||nums[0]<0||nums.slice(1).some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, पूर्ण संख्या में स्टॉक मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};if(!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',rows]]))return;loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज Firebase में अपडेट हुए','success');}
@@ -2734,7 +2734,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const amount=Number(document.getElementById('portalAdvanceAmount')?.value||0);if(sec)sec.style.display=mode==='UPI'&&amount>0?'block':'none';updateDynamicPaymentQR();
         }
 
-        function addItemToPendingBookingDispatch() {
+        async function addItemToPendingBookingDispatch() {
             let searchId = document.getElementById('dispatchSearchId').value.trim();
             let itemName = document.getElementById('adminAddStockSelect').value;
             const qtyRaw = document.getElementById('adminAddStockQty').value.trim();
@@ -2750,7 +2750,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 const singleRate=!!document.getElementById('dispatchSingleRateToggle')?.checked;
                 const chosenRate=singleRate?Math.max(0,Number(stockItem.singleRent)||0):getItemRentRate(stockItem,qty);
                 b.items.push({ name:itemName, qty, rentPrice:chosenRate>0?chosenRate:500, missingCharge:Math.max(0,Number(stockItem.missingCharge)||0), rateMode:singleRate?'single':(qty>=3?'set':'single'), source:'admin' });
-                if(!safeSetStorage('softwareBookings', bookings)){showActionMessage('सामान बुकिंग में सेव नहीं हुआ; Dispatch सूची अपडेट नहीं की गई।','error');return;}
+                if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings', bookings]])){showActionMessage('सामान Firebase में सेव नहीं हुआ; Dispatch सूची अपडेट नहीं की गई।','error');return;}
                 loadDispatchTable();
                 showActionMessage("सामान आर्डर में जोड़ा गया", "success");
             } else {
@@ -2758,7 +2758,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             }
         }
 
-        function addThirdPartyItemToDispatch() {
+        async function addThirdPartyItemToDispatch() {
             let searchId = document.getElementById('dispatchSearchId').value.trim();
             let itemVal = document.getElementById('tpDispatchItemDropdown').value;
             const qtyRaw = document.getElementById('tpDispatchQty').value.trim();
@@ -2776,7 +2776,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(b) {
                 if(!b.items) b.items = [];
                 b.items.push({ name:itemName,qty,rentPrice:Number(charge)||600,vendorRentRate:Math.max(0,Number(vendorRow.costPrice)||0),vendorMissingCost:Math.max(0,Number(vendorRow.missingCost??vendorRow.vendorMissingCost)||0),missingCharge:Math.max(0,Number(vendorRow.missingCharge)||0),source:'third-party',partyName:selectedParty });
-                if(!safeSetStorage('softwareBookings', bookings)){showActionMessage('वेंडर सामान बुकिंग में सेव नहीं हुआ; Dispatch सूची अपडेट नहीं की गई।','error');return;}
+                if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings', bookings]])){showActionMessage('वेंडर सामान Firebase में सेव नहीं हुआ; Dispatch सूची अपडेट नहीं की गई।','error');return;}
                 loadDispatchTable();
                 showActionMessage("थर्ड-पार्टी सामान डिस्पैच में जोड़ा गया", "success");
             } else {
@@ -2957,7 +2957,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             reader.readAsText(file);
         }
 
-        function savePurchaseEntry(event) {
+        async function savePurchaseEntry(event) {
             event.preventDefault();
             const itemName=document.getElementById('purItemName').value.trim(),qty=Number(document.getElementById('purItemQty').value),price=Number(document.getElementById('purItemPrice').value);
             const optionalAmount=id=>{const value=document.getElementById(id)?.value;return String(value??'').trim()===''?0:Number(value);};
@@ -2967,7 +2967,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             let stock=mergeDuplicateStockRows(safeGetStorage('realStockDatabase',[]));const old=stock.find(x=>String(x.name||x.item||'').trim().toLowerCase()===itemName.toLowerCase());
             if(old){const currentQty=Number(old.qty);if(!Number.isSafeInteger(currentQty)||currentQty<0||!Number.isSafeInteger(currentQty+qty)){showActionMessage('मौजूदा स्टॉक मात्रा सही नहीं है; खरीद सेव नहीं हुई।','error');return;}old.qty=currentQty+qty;old.singleRent=singleRent;old.setRent=setRent;old.missingCharge=missingCharge;old.missingUnitPrice=missingCharge;}else stock.push({name:itemName,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
             const nextStock=mergeDuplicateStockRows(stock);
-            if(!safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return;
+            if(!await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return;
             event.target.reset();document.getElementById('purDate').value=new Date().toLocaleDateString('en-CA');loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड सेव हुआ; उसी सामान की स्टॉक मात्रा मौजूदा रिकॉर्ड में जोड़ी गई','success');
         }
         function loadPurchaseTable() {
@@ -3100,7 +3100,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const unresolved=(Array.isArray(missing)?missing:[]).some(row=>!row.resolved&&(Number(row.qty)||0)>0&&String(row.source||'admin')!=='third-party'&&String(row.item||'').trim().toLowerCase()===key);
             return dispatched||unresolved;
         }
-        function editPurchase(index){
+        async function editPurchase(index){
             const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
             if(purchaseHasDispatchReference(p.itemName)){showActionMessage('इस सामान का Dispatch या Missing रिकॉर्ड मौजूद है। पुराने Purchase को बदलने से हिसाब बिगड़ सकता है; रिकॉर्ड सुरक्षित रखा गया।','error');return;}
             const itemName=prompt('सामान का नाम',p.itemName||'');if(itemName===null)return;
@@ -3125,10 +3125,10 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 else stock.push({name:newName,qty:nQty,setRent:0,singleRent:0,missingCharge:0,missingUnitPrice:0,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
             }
             rows[index]={...p,itemName:newName,qty:nQty,price:nPrice,supplier:supplier.trim()};
-            if(!safeSetStorageBatch([['purchaseDatabase',rows],['realStockDatabase',mergeDuplicateStockRows(stock)]]))return;
+            if(!await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',rows],['realStockDatabase',mergeDuplicateStockRows(stock)]]))return;
             loadAllFirebaseData();showActionMessage('परचेज अपडेट हुई; स्टॉक मात्रा सुरक्षित रूप से समायोजित की गई','success');
         }
-        function deletePurchase(index){
+        async function deletePurchase(index){
             const rows=safeGetStorage('purchaseDatabase',[]),p=rows[index];if(!p)return;
             if(purchaseHasDispatchReference(p.itemName)){showActionMessage('इस सामान का Dispatch या Missing रिकॉर्ड मौजूद है। पुराने Purchase को हटाने से हिसाब बिगड़ सकता है; रिकॉर्ड सुरक्षित रखा गया।','error');return;}
             if(!confirm('यह खरीद रिकॉर्ड हटाएँ और उसकी पूरी मात्रा स्टॉक से घटाएँ?'))return;
@@ -3137,11 +3137,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const available=Number(item?.qty);
             if(!item||!Number.isSafeInteger(qty)||qty<0||!Number.isSafeInteger(available)||available<qty){showActionMessage('इस खरीद की पूरी मात्रा अभी स्टॉक में उपलब्ध नहीं है; Dispatch/उपयोग के बाद रिकॉर्ड हटाने से स्टॉक गलत होगा।','error');return;}
             item.qty=available-qty;rows.splice(index,1);
-            if(!safeSetStorageBatch([['purchaseDatabase',rows],['realStockDatabase',stock]]))return;
+            if(!await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',rows],['realStockDatabase',stock]]))return;
             loadAllFirebaseData();showActionMessage('परचेज रिकॉर्ड हटाया और स्टॉक सही मात्रा से समायोजित हुआ','success');
         }
-        function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<=0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और शून्य से अधिक राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:Math.round(n*100)/100};if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च अपडेट हुआ','success')}
-        function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);if(!safeSetStorage('incomeExpenseDatabase',rows))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड हटाया गया','success')}
+        async function editIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]),x=rows[index];if(!x)return;const date=prompt('तारीख (YYYY-MM-DD)',x.date||'');if(date===null)return;const desc=prompt('विवरण',x.desc||'');if(desc===null)return;const type=prompt('प्रकार: Income या Expense',x.type||'Expense');if(type===null)return;const amount=prompt('राशि ₹',x.amount);if(amount===null)return;const n=Number(amount);if(!isValidCalendarDate(date)||!desc.trim()||!['Income','Expense'].includes(type)||!Number.isFinite(n)||n<=0){showActionMessage('वास्तविक कैलेंडर तारीख, विवरण, प्रकार और शून्य से अधिक राशि सही भरें','error');return}rows[index]={...x,date,desc:desc.trim(),type,amount:Math.round(n*100)/100};if(!await safeSetStorageBatchAndConfirmCloud([['incomeExpenseDatabase',rows]]))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च Firebase में अपडेट हुआ','success')}
+        async function deleteIncomeExpense(index){const rows=safeGetStorage('incomeExpenseDatabase',[]);if(!rows[index])return;if(!confirm('यह आमदनी/खर्च रिकॉर्ड हटाएँ?'))return;rows.splice(index,1);if(!await safeSetStorageBatchAndConfirmCloud([['incomeExpenseDatabase',rows]]))return;loadAllFirebaseData();showActionMessage('आमदनी/खर्च रिकॉर्ड Firebase से हटाया गया','success')}
 
         function loadCustomerList() {
             const bookings=safeGetStorage('softwareBookings',[]), tbody=document.getElementById('customerTableBody');
@@ -3294,7 +3294,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 b.totalPaid = Math.round((previousPaid + amt) * 100) / 100;
                 b.lastInstallmentPayment = { amount: amt, date: new Date().toISOString(), source: 'installments-page' };
                 b.dueAmount = Math.max(0, Math.round((total - b.totalPaid) * 100) / 100);
-                if(!safeSetStorageBatch([['softwareBookings',bookings]])){showActionMessage('किस्त सेव नहीं हुई; बकाया रिकॉर्ड नहीं बदला।','error');return;}
+                if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings]])){showActionMessage('किस्त सेव नहीं हुई; Firebase पुष्टि नहीं मिली। बकाया रिकॉर्ड नहीं बदला।','error');return;}
                 if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
                 amountInput.value = '';
                 loadCustomerList(); loadInstallmentsTable(); loadPaymentLedgerTable(); loadMasterLedgerData();
@@ -3351,7 +3351,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(discount<0||other<0){showActionMessage('डिस्काउंट और अन्य चार्ज नकारात्मक नहीं हो सकते','error');return}
             const base=calculateBookingBaseRent(b);if(discount>base+other){showActionMessage('डिस्काउंट मूल किराये से अधिक नहीं हो सकता','error');return}
             b.discountAmount=discount;b.otherCharges=other;
-            if(!safeSetStorage('softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x))){showActionMessage('बिल बदलाव सेव नहीं हुआ; पुरानी बुकिंग राशि सुरक्षित रखी गई।','error');return;}
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x)]])){showActionMessage('बिल बदलाव सेव नहीं हुआ; Firebase पुष्टि नहीं मिली। पुरानी बुकिंग राशि सुरक्षित रखी गई।','error');return;}
             if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('बिल बदलाव लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             searchBillingCustomer();if(!quiet)showActionMessage('डिस्काउंट/अन्य चार्ज बिल में लागू हुए','success');
         }
@@ -3534,18 +3534,18 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         function addShortageToParty(item,qty){const n=document.getElementById('tpItemName'),q=document.getElementById('tpItemQty');if(n)n.value=item;if(q)q.value=qty;switchTab('third-party',document.querySelector('.menu-item[onclick*="third-party"]'));showActionMessage('कम स्टॉक का सामान और मात्रा थर्ड-पार्टी फॉर्म में भर दी गई; पार्टी चुनकर सेव करें।','success');}
         // Table search is added once by addTableSearch() below; no duplicate sticky search bar.
 
-        function editThirdPartyEntry(partyName,itemName){
+        async function editThirdPartyEntry(partyName,itemName){
             const rows=safeGetStorage('thirdPartyDatabase',[]),r=rows.find(x=>String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName);if(!r){showActionMessage('थर्ड-पार्टी रिकॉर्ड नहीं मिला','error');return;}
             if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/Return अभी खुला है। हिसाब सुरक्षित रखने के लिए मात्रा/दर में बदलाव Return पूरा होने के बाद करें।','error');return;}
             const qty=prompt('मौजूदा स्टॉक मात्रा',String(Number(r.qty)||0));if(qty===null)return;const q=Number(qty);if(!Number.isInteger(q)||q<0){showActionMessage('मात्रा 0 या उससे अधिक पूर्ण संख्या होनी चाहिए','error');return;}
             const cost=prompt('प्रति पीस लागत (₹)',String(Number(r.costPrice)||0));if(cost===null)return;const c=Number(cost);if(!Number.isFinite(c)||c<0){showActionMessage('लागत सही भरें','error');return;}
             const charge=prompt('कस्टमर किराया (₹)',String(Number(r.chargePrice)||0));if(charge===null)return;const ch=Number(charge);if(!Number.isFinite(ch)||ch<0){showActionMessage('किराया सही भरें','error');return;}
-            r.qty=q;r.costPrice=c;r.chargePrice=ch;r.updatedAt=new Date().toISOString();if(safeSetStorage('thirdPartyDatabase',rows)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('थर्ड-पार्टी रिकॉर्ड अपडेट हुआ','success');}
+            r.qty=q;r.costPrice=c;r.chargePrice=ch;r.updatedAt=new Date().toISOString();if(await safeSetStorageBatchAndConfirmCloud([['thirdPartyDatabase',rows]])){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('थर्ड-पार्टी रिकॉर्ड Firebase में अपडेट हुआ','success');}
         }
-        function deleteThirdPartyEntry(partyName,itemName){if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm('यह वेंडर-सामान रिकॉर्ड हटाएँ? पुराने बुकिंग रिकॉर्ड नहीं हटेंगे।'))return;const rows=safeGetStorage('thirdPartyDatabase',[]),next=rows.filter(x=>!(String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName));if(next.length===rows.length){showActionMessage('रिकॉर्ड नहीं मिला','error');return;}if(safeSetStorage('thirdPartyDatabase',next)){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('रिकॉर्ड हटाया गया','success');}}
-        function deleteThirdPartyPayment(id){if(!confirm('यह भुगतान एंट्री हटाएँ?'))return;const rows=safeGetStorage('thirdPartyPayments',[]),next=rows.filter(x=>String(x.id)!==id);if(next.length===rows.length){showActionMessage('भुगतान नहीं मिला','error');return;}if(safeSetStorage('thirdPartyPayments',next)){loadThirdPartyLedger();showActionMessage('भुगतान एंट्री हटाई गई','success');}}
+        async function deleteThirdPartyEntry(partyName,itemName){if(hasOpenStockReturnReference('third-party',itemName,partyName)){showActionMessage('इस Vendor सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm('यह वेंडर-सामान रिकॉर्ड हटाएँ? पुराने बुकिंग रिकॉर्ड नहीं हटेंगे।'))return;const rows=safeGetStorage('thirdPartyDatabase',[]),next=rows.filter(x=>!(String(x.partyName)===partyName&&String(x.item||x.name||'')===itemName));if(next.length===rows.length){showActionMessage('रिकॉर्ड नहीं मिला','error');return;}if(await safeSetStorageBatchAndConfirmCloud([['thirdPartyDatabase',next]])){loadThirdPartyLedger();loadThirdPartyDropdownsForDispatch();showActionMessage('रिकॉर्ड Firebase से हटाया गया','success');}}
+        async function deleteThirdPartyPayment(id){if(!confirm('यह भुगतान एंट्री हटाएँ?'))return;const rows=safeGetStorage('thirdPartyPayments',[]),next=rows.filter(x=>String(x.id)!==id);if(next.length===rows.length){showActionMessage('भुगतान नहीं मिला','error');return;}if(await safeSetStorageBatchAndConfirmCloud([['thirdPartyPayments',next]])){loadThirdPartyLedger();showActionMessage('भुगतान एंट्री Firebase से हटाई गई','success');}}
 
-        function saveThirdPartyEntry(event) {
+        async function saveThirdPartyEntry(event) {
             event.preventDefault();
             let tpList = safeGetStorage('thirdPartyDatabase', []);
             const partyName=document.getElementById('tpPartyName').value.trim(),itemName=document.getElementById('tpItemName').value.trim(),qty=Number(document.getElementById('tpItemQty').value);
@@ -3565,16 +3565,16 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 existing.qty=currentQty+qty;existing.purchasedQty=currentPurchased+qty;existing.source='third-party';
             }
             else tpList.push({partyName,item:itemName,qty,purchasedQty:qty,costPrice,chargePrice,vendorMissingCost,missingCharge,source:'third-party',updatedAt:new Date().toISOString()});
-            if(!safeSetStorage('thirdPartyDatabase', tpList)) return;
+            if(!await safeSetStorageBatchAndConfirmCloud([['thirdPartyDatabase', tpList]])) return;
             event.target.reset(); loadThirdPartyLedger(); loadThirdPartyDropdownsForDispatch();
             showActionMessage('वेंडर सामान सेव हुआ; स्टॉक/वेंडर लेजर अपडेट हुआ','success');
         }
 
-        function recordThirdPartyPayment(event){
+        async function recordThirdPartyPayment(event){
             event.preventDefault();const party=document.getElementById('tpPaymentParty').value,amount=Number(document.getElementById('tpPaymentAmount').value);
             if(!party||!Number.isFinite(amount)||amount<=0){showActionMessage('वेंडर और सही भुगतान राशि चुनें','error');return;}
             const rows=safeGetStorage('thirdPartyPayments',[]);rows.push({id:'TPPAY-'+Date.now(),partyName:party,amount,date:new Date().toISOString(),method:document.getElementById('tpPaymentMethod').value||'Cash',note:document.getElementById('tpPaymentNote').value.trim(),type:'vendor-payment'});
-            if(!safeSetStorage('thirdPartyPayments',rows))return;event.target.reset();loadThirdPartyLedger();showActionMessage('वेंडर भुगतान अलग लेजर में सेव हुआ','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([['thirdPartyPayments',rows]]))return;event.target.reset();loadThirdPartyLedger();showActionMessage('वेंडर भुगतान Firebase में सुरक्षित हुआ','success');
         }
 
         function getVendorLedgerRate(entry,item,rows,kind){
@@ -3831,7 +3831,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const preview=document.getElementById('businessCardPreview');if(!preview)return;
             preview.innerHTML=`<div style="max-width:560px;aspect-ratio:1.75;margin:auto;padding:24px;border-radius:20px;background:linear-gradient(135deg,#0b1730,#173d67 58%,#0e7490);color:#fff;box-shadow:0 16px 38px #0f172a44;display:flex;flex-direction:column;justify-content:space-between"><div style="display:flex;justify-content:space-between;gap:14px"><div><div style="font-size:12px;letter-spacing:2px;color:#a5f3fc">RADHE KRISHN</div><h2 style="margin:8px 0;color:#fff">${escapeHtml(fields.cardBusinessName)}</h2><div style="color:#dbeafe">${escapeHtml(fields.cardTagline)}</div></div><div style="font-size:34px">♛</div></div><div><b>${escapeHtml(fields.cardOwnerName||'Owner')}</b><div>${escapeHtml(fields.cardPhone)}</div><div>${escapeHtml(fields.cardEmail)}</div><div>${escapeHtml(fields.cardAddress)}</div><div style="margin-top:8px;font-size:12px;color:#a5f3fc">UPI: ${escapeHtml(fields.cardUpi)} ${fields.cardGstin?' · GSTIN: '+escapeHtml(fields.cardGstin):''}</div></div></div>`;
         }
-        function saveBusinessCard(){
+        async function saveBusinessCard(){
             const s=safeGetStorage('softwareSettings',{});
             s.businessName=(document.getElementById('cardBusinessName')?.value||'').trim();
             s.businessCardOwner=(document.getElementById('cardOwnerName')?.value||'').trim();
@@ -3842,8 +3842,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             s.upiId=(document.getElementById('cardUpi')?.value||'').trim();
             s.businessCardTagline=(document.getElementById('cardTagline')?.value||'').trim();
             if(!s.businessName||!s.contactNo){showActionMessage('दुकान का नाम और संपर्क नंबर आवश्यक है','error');return;}
-            if(!safeSetStorage('softwareSettings',s))return;
-            loadSettingsToUI();renderBusinessCard();showActionMessage('Business Card सेव हो गया','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareSettings',s]]))return;
+            loadSettingsToUI();renderBusinessCard();showActionMessage('Business Card Firebase में सुरक्षित हुआ','success');
         }
         async function printBusinessCard(){const preview=document.getElementById('businessCardPreview'),area=document.getElementById('printableSlipArea');if(!preview||!preview.innerHTML){showActionMessage('पहले Business Card तैयार करें','error');return;}area.dataset.printRestore='card';area.innerHTML=preview.innerHTML;area.style.display='block';await printWithStampImages();}
         function isBusinessDocumentNumberTaken(type,number,rows,editingId){
@@ -3900,7 +3900,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const taxRows=type==='tax-invoice'?(tax.taxType==='intra'?`<tr><td colspan="5">CGST</td><td>₹${tax.cgst.toFixed(2)}</td></tr><tr><td colspan="5">SGST</td><td>₹${tax.sgst.toFixed(2)}</td></tr>`:`<tr><td colspan="5">IGST</td><td>₹${tax.igst.toFixed(2)}</td></tr>`):'';
             preview.innerHTML=`<article class="rk-slip" style="background:#fff;color:#111;padding:20px;border-radius:12px"><header style="text-align:center;border-bottom:2px solid #1e3a8a;padding-bottom:10px"><h2>${escapeHtml(s.businessName||'राधा कृष्णा टेंट हाउस')}</h2><p>${escapeHtml(s.businessCardAddress||'')} · ${escapeHtml(s.contactNo||'')}</p><h3>${title}</h3></header><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><p><b>Document:</b> ${escapeHtml(number)}<br><b>Date:</b> ${escapeHtml(document.getElementById('docDate')?.value||'-')}</p><p><b>Customer:</b> ${escapeHtml(document.getElementById('docCustomerName')?.value||'-')}<br><b>Mobile:</b> ${escapeHtml(document.getElementById('docCustomerPhone')?.value||'-')}<br><b>Address:</b> ${escapeHtml(document.getElementById('docCustomerAddress')?.value||'-')}</p></div>${type==='tax-invoice'?`<p><b>Seller GSTIN:</b> ${escapeHtml(s.businessGstin||'Not provided')} · <b>Customer GSTIN:</b> ${escapeHtml(document.getElementById('docCustomerGstin')?.value||'Not provided')}</p>`:''}<table style="width:100%;border-collapse:collapse" border="1"><thead><tr><th>Item / सामान</th><th>HSN/SAC</th><th>Qty</th><th>Rate</th><th>GST%</th><th>Amount</th></tr></thead><tbody>${rows||'<tr><td colspan="6">कोई सामान नहीं</td></tr>'}</tbody><tfoot><tr><td colspan="5">Subtotal / उप-योग</td><td>₹${tax.subtotal.toFixed(2)}</td></tr><tr><td colspan="5">Discount / छूट</td><td>₹${tax.discount.toFixed(2)}</td></tr><tr><td colspan="5">Other Charges / अन्य</td><td>₹${tax.other.toFixed(2)}</td></tr>${taxRows}<tr><th colspan="5">Grand Total / कुल राशि</th><th>₹${tax.total.toFixed(2)}</th></tr></tfoot></table>${type==='quotation'?`<p>Valid Until / मान्य तिथि: ${escapeHtml(document.getElementById('docValidUntil')?.value||'-')}</p>`:''}<p style="white-space:pre-wrap">${escapeHtml(s.termsConditions||'धन्यवाद! Thank you for your business.')}</p></article>`;
         }
-        function saveBusinessDocument(){
+        async function saveBusinessDocument(){
             const type=document.getElementById('docType')?.value||'quotation',name=(document.getElementById('docCustomerName')?.value||'').trim(),date=document.getElementById('docDate')?.value||'';
             if(!name||!date||!currentDocumentItems.length){showActionMessage('ग्राहक का नाम, तारीख और कम-से-कम एक सामान आवश्यक है','error');return;}
             const rawDiscount=Number(document.getElementById('docDiscount')?.value),rawOther=Number(document.getElementById('docOtherCharges')?.value),rawGst=Number(document.getElementById('docGstRate')?.value);
@@ -3917,7 +3917,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const totals=businessDocumentTotals();
             const record={id:editingBusinessDocumentId||'DOC-'+Date.now(),documentNumber:number,type,date,validUntil:document.getElementById('docValidUntil')?.value||'',customerName:name,customerPhone:(document.getElementById('docCustomerPhone')?.value||'').trim(),customerAddress:(document.getElementById('docCustomerAddress')?.value||'').trim(),customerGstin:(document.getElementById('docCustomerGstin')?.value||'').trim().toUpperCase(),items:currentDocumentItems.map(item=>({...item})),discount:totals.discount,otherCharges:totals.other,gstRate:totals.rate,taxType:totals.taxType,subtotal:totals.subtotal,total:totals.total,createdAt:new Date().toISOString(),businessName:settings.businessName||''};
             const index=rows.findIndex(item=>String(item.id)===String(record.id));if(index>=0)rows[index]=record;else rows.push(record);
-            if(!safeSetStorage(key,rows))return;editingBusinessDocumentId=record.id;document.getElementById('docNumber').value=number;renderDocumentRecentList();renderBusinessDocumentPreview();showActionMessage(type==='quotation'?'Quotation सेव हो गया':'Tax Invoice सेव हो गया','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([[key,rows]]))return;editingBusinessDocumentId=record.id;document.getElementById('docNumber').value=number;renderDocumentRecentList();renderBusinessDocumentPreview();showActionMessage(type==='quotation'?'Quotation सेव हो गया':'Tax Invoice सेव हो गया','success');
         }
         function loadBusinessDocument(type,id){
             const key=type==='quotation'?'quotationDatabase':'taxInvoiceDatabase',record=safeGetStorage(key,[]).find(item=>String(item.id)===String(id));if(!record)return;

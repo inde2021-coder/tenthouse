@@ -136,7 +136,7 @@ function runRentFunction(functionName, booking, missingRows = []) {
 }
 
 test('manual vendor dispatch preserves replacement cost from either supported vendor field', () => {
-  const start=html.indexOf('function addThirdPartyItemToDispatch()');
+  const start=html.indexOf('async function addThirdPartyItemToDispatch()');
   const end=html.indexOf('function ',start+20);
   const code=html.slice(start,end);
   assert.ok(code.includes('vendorRow.missingCost??vendorRow.vendorMissingCost'));
@@ -332,10 +332,10 @@ test('return and missing recovery fail when the source stock row is absent', () 
 });
 
 test('dispatch order additions report success only after booking storage succeeds', () => {
-  const admin=html.slice(html.indexOf('function addItemToPendingBookingDispatch()'),html.indexOf('function addThirdPartyItemToDispatch()'));
-  const vendor=html.slice(html.indexOf('function addThirdPartyItemToDispatch()'),html.indexOf('function searchDispatchBooking()'));
-  assert.ok(admin.includes("if(!safeSetStorage('softwareBookings', bookings))"),'admin dispatch add must check storage result');
-  assert.ok(vendor.includes("if(!safeSetStorage('softwareBookings', bookings))"),'vendor dispatch add must check storage result');
+  const admin=html.slice(html.indexOf('async function addItemToPendingBookingDispatch()'),html.indexOf('async function addThirdPartyItemToDispatch()'));
+  const vendor=html.slice(html.indexOf('async function addThirdPartyItemToDispatch()'),html.indexOf('function searchDispatchBooking()'));
+  assert.ok(admin.includes("if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings', bookings]]))"),'admin dispatch add must check storage result');
+  assert.ok(vendor.includes("if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings', bookings]]))"),'vendor dispatch add must check storage result');
   assert.ok(!admin.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'admin add must not announce success after unchecked save');
   assert.ok(!vendor.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'vendor add must not announce success after unchecked save');
 });
@@ -469,7 +469,7 @@ test('ERP menu contains 19 modules including Business Card and documents', () =>
   assert.ok(html.includes("quotationDatabase: 'quotations'"));
   assert.ok(html.includes("taxInvoiceDatabase: 'taxInvoices'"));
   assert.ok(html.includes('function saveBusinessCard()'));
-  assert.ok(html.includes('function saveBusinessDocument()'));
+  assert.ok(html.includes('async function saveBusinessDocument()'));
   assert.ok(html.includes('function changeBusinessDocumentType()'));
   assert.ok(html.includes("if(number)number.value=''"));
   assert.ok(html.includes('function printBusinessDocument()'));
@@ -580,7 +580,7 @@ test('customer booking requires at least one selected stock item in both UI and 
 });
 
 test('customer online advance requires UTR and QR uses configured UPI ID plus exact amount', () => {
-  const code = sourceBetween('function updateDynamicPaymentQR()', 'function addItemToPendingBookingDispatch()');
+  const code = sourceBetween('function updateDynamicPaymentQR()', 'async function addItemToPendingBookingDispatch()');
   assert.ok(code.includes('settings.upiId'));
   assert.ok(code.includes('amount.toFixed(2)'));
   assert.ok(code.includes('portalQrHint'));
@@ -790,7 +790,7 @@ test('existing stock rows receive unique persistent barcodes before table render
 });
 
 test('CSV stock import rejects invalid quantities and rates instead of inventing defaults', () => {
-  const code = sourceBetween('function importStockFromCSV(event)', 'function savePurchaseEntry(event)');
+  const code = sourceBetween('function importStockFromCSV(event)', 'async function savePurchaseEntry(event)');
   assert.ok(code.includes('Number.isInteger(qty)'));
   assert.ok(code.includes('skipped++'));
   assert.ok(!code.includes('Number(cols[1]) || 10'));
@@ -798,8 +798,8 @@ test('CSV stock import rejects invalid quantities and rates instead of inventing
 });
 
 test('purchase entry saves purchase and stock together through rollback-capable batch storage', () => {
-  const code = sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("if(!safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return"));
+  const code = sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("if(!await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return"));
   const batch = sourceBetween('function safeSetStorageBatch(entries)', 'function showActionMessage(');
   assert.ok(batch.includes('const snapshots = new Map()'));
   assert.ok(batch.includes('for (const [key, previous] of snapshots)'));
@@ -1340,7 +1340,7 @@ test('admin stock entry rejects fractional and invalid quantities without saving
 });
 
 test('vendor stock entry rejects fractional, negative and malformed quantities without saving', () => {
-  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment');
   for(const qty of ['1.25','0','-4','bad','']) {
     let writes=0,reset=false;
     const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:qty,tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
@@ -1362,7 +1362,7 @@ test('vendor stock entry rejects fractional, negative and malformed quantities w
 });
 
 test('vendor stock entry rejects negative or non-numeric prices without saving', () => {
-  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment');
   for(const field of ['tpItemCost','tpItemCharge','tpVendorMissingCost','tpMissingCharge']) {
     for(const value of ['-1','abc']) {
       let writes=0;
@@ -1417,7 +1417,7 @@ test('stock item edit rejects fractional quantities and preserves the original r
 });
 
 test('purchase entry rejects fractional quantities before changing purchase or stock ledgers', () => {
-  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  const code=sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
   const values={purItemName:'Chair',purItemQty:'1.5',purItemPrice:'100',purSingleRent:'5',purSetRent:'20',purMissingCharge:'100',purDate:'2026-11-26',purSupplier:'Supplier'};
   let writes=0;
   const context={Number,Math,String,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},mergeDuplicateStockRows:rows=>rows};
@@ -1426,7 +1426,7 @@ test('purchase entry rejects fractional quantities before changing purchase or s
 });
 
 test('purchase edit rejects fractional quantities before changing purchase or stock ledgers', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const row={itemName:'Chair',qty:10,price:100};
   const answers=['Chair','2.5','100','Supplier'];
   let writes=0;
@@ -1439,7 +1439,7 @@ test('purchase edit rejects fractional quantities before changing purchase or st
 test('income and expense edit rejects impossible calendar dates', () => {
   const helperStart=html.indexOf('function isValidCalendarDate(value)');
   const helperEnd=html.indexOf('function calculateRentalDays',helperStart);
-  const code=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense');
+  const code=sourceBetween('async function editIncomeExpense(index)', 'async function deleteIncomeExpense');
   const row={date:'2026-02-28',desc:'Rent',type:'Expense',amount:100};
   const answers=['2026-02-30','Rent','Expense','100'];
   let writes=0;
@@ -1451,11 +1451,11 @@ test('income and expense edit rejects impossible calendar dates', () => {
 
 
 test('purchase edit applies only the quantity delta to stock for the same item', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:7}]};
   const answers=['Chair','4','400','A'];
   let writes=0;
-  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
   vm.runInNewContext(code+'\nresult=editPurchase(0);',context);
   assert.equal(writes,1);
   assert.equal(store.realStockDatabase[0].qty,6);
@@ -1463,7 +1463,7 @@ test('purchase edit applies only the quantity delta to stock for the same item',
 });
 
 test('purchase rename is blocked when old purchased stock has already been used', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:3}]};
   const answers=['Table','5','500','A'];
   let writes=0;
@@ -1475,7 +1475,7 @@ test('purchase rename is blocked when old purchased stock has already been used'
 });
 
 test('purchase deletion is blocked if the full purchased quantity is no longer in stock', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:2}]};
   let writes=0;
   const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
@@ -1486,10 +1486,10 @@ test('purchase deletion is blocked if the full purchased quantity is no longer i
 });
 
 test('purchase deletion atomically removes the record and its full available stock quantity', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:8}]};
   let writes=0;
-  const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
   vm.runInNewContext(code+'\nresult=deletePurchase(0);',context);
   assert.equal(writes,1);
   assert.equal(store.purchaseDatabase.length,0);
@@ -1564,7 +1564,7 @@ test('missing item recovery restores stock and reduces missing liability exactly
     realStockDatabase:[],thirdPartyDatabase:[{partyName:'Vendor A',item:'Chair',qty:1}]
   };
   const messages=[];
-  const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '2',safeGetStorage:key=>store[key],safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:(m)=>messages.push(m)};
+  const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '2',safeGetStorage:key=>store[key],safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{for(const [key,value] of entries)store[key]=value;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:(m)=>messages.push(m)};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("b-0");',context);
   await context.result;
@@ -1603,7 +1603,7 @@ test('missing recovery uses the exact item index and records the real recovery d
 
 test('legacy missing recovery refuses ambiguous duplicate item identities', async () => {
   const store={missingItemsDatabase:[{id:'old',bookingId:90,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:90,items:[{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'},{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
-  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(code+'\nresult=resolveMissingItem("old");',context);
   await context.result;
@@ -1611,7 +1611,7 @@ test('legacy missing recovery refuses ambiguous duplicate item identities', asyn
 });
 test('missing recovery rejects a stale item index that points to a different item', async () => {
   const store={missingItemsDatabase:[{id:'stale',bookingId:91,itemIndex:0,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:91,items:[{name:'Table',qty:1,returnedQty:0,missingQty:0,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
-  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(code+'\nresult=resolveMissingItem("stale");',context);
   await context.result;
@@ -1619,7 +1619,7 @@ test('missing recovery rejects a stale item index that points to a different ite
 });
 test('customer portal missing recovery rolls local stock and ledgers back when cloud sync fails', async () => {
   const store={missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'admin',qty:1,resolved:false}],softwareBookings:[{id:88,source:'customer-portal',items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:4}],thirdPartyDatabase:[]};
-  let reloads=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],localStorage:mockStorageForBatch(store),safeSetStorage:(key,value)=>{localStorage.setItem(key,JSON.stringify(value));return true;},safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},syncCustomerBookingWorkflow:async()=>false,loadAllFirebaseData:()=>{reloads++},renderMissingItems:()=>{},showActionMessage:()=>{}};
+  let reloads=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],localStorage:mockStorageForBatch(store),safeSetStorage:(key,value)=>{localStorage.setItem(key,JSON.stringify(value));return true;},safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{for(const [key,value] of entries)store[key]=value;return true;},syncCustomerBookingWorkflow:async()=>false,loadAllFirebaseData:()=>{reloads++},renderMissingItems:()=>{},showActionMessage:()=>{}};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(code+'\nresult=resolveMissingItem("b-0");',context);
   await context.result;
@@ -1660,7 +1660,7 @@ test('vendor partial return adds only received quantity back to the matching ven
 });
 
 test('purchase entry rejects invalid quantities and amounts before writing', () => {
-  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  const code=sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
   for(const [field,values] of Object.entries({purItemQty:['1.5','0','-2','abc',''],purItemPrice:['','-1','abc'],purSingleRent:['-1','abc'],purSetRent:['-1','abc'],purMissingCharge:['-1','abc']})) {
     for(const value of values) {
       let writes=0,reset=false;
@@ -1674,12 +1674,12 @@ test('purchase entry rejects invalid quantities and amounts before writing', () 
   }
 });
 test('purchase and stock are persisted through one rollback-capable batch', () => {
-  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]])"));
+  const code=sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',pur],['realStockDatabase',nextStock]])"));
 });
 test('daily expense edit and delete stop when storage persistence fails', () => {
-  const code=sourceBetween('function editIncomeExpense(index)', 'function loadCustomerList()');
-  assert.equal((code.match(/if\(!safeSetStorage\('incomeExpenseDatabase',rows\)\)return/g)||[]).length,2);
+  const code=sourceBetween('async function editIncomeExpense(index)', 'function loadCustomerList()');
+  assert.equal((code.match(/if\(!await safeSetStorageBatchAndConfirmCloud\(\[\['incomeExpenseDatabase',rows\]\]\)\)return/g)||[]).length,2);
 });
 
 
@@ -1930,7 +1930,7 @@ test('dispatch refuses fractional existing stock without saving', async () => {
 test('return refuses fractional existing stock without saving booking quantities', async () => {
   const store={softwareBookings:[{id:402,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:2,returnedQty:0,source:'admin'}],dispatchEntries:[{itemIndex:0,qty:2,date:'2026-11-01'}]}],missingItemsDatabase:[],realStockDatabase:[{name:'Chair',qty:1.5}],thirdPartyDatabase:[]};
   const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
-  const context={activeReturnBookingId:402,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  const context={activeReturnBookingId:402,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
   const code=sourceBetween('async function completeManualReturnProcess()','        let currentDocumentItems = []');
   vm.runInNewContext(code+'\nresult=completeManualReturnProcess();',context);await context.result;
   assert.equal(writes,0);assert.equal(store.softwareBookings[0].items[0].returnedQty,0);assert.equal(store.realStockDatabase[0].qty,1.5);
@@ -1948,7 +1948,7 @@ test('return and missing recovery reject blank or malformed legacy stock quantit
   for(const invalid of ['', 'bad', null]) {
     const store={softwareBookings:[{id:410,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:2,returnedQty:0,source:'admin',missingQty:1}],dispatchEntries:[{itemIndex:0,qty:2,date:'2026-11-01'}]}],missingItemsDatabase:[{id:'m2',bookingId:410,item:'Chair',qty:1,source:'admin'}],realStockDatabase:[{name:'Chair',qty:invalid}],thirdPartyDatabase:[]};
     const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
-    const returnContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+    const returnContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
     const returnCode=sourceBetween('async function completeManualReturnProcess()','        window.onload = function()');
     vm.runInNewContext(returnCode+'\nresult=completeManualReturnProcess();',returnContext);await returnContext.result;
     assert.equal(writes,0,'return must reject '+String(invalid));
@@ -2156,6 +2156,7 @@ test('cash installments persist safely and update the booking due exactly once',
     document: { getElementById: id => id === 'inst_amt_71' ? input : ({paymentLedgerTableBody:{innerHTML:''},totalCashSum:{textContent:''},totalOnlineSum:{textContent:''},totalOnlinePendingSum:{textContent:''},ledgerBookingTableBody:{innerHTML:''}}[id] || null), addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: entries => { for (const [key,value] of entries) store[key] = value; return true; },
+    safeSetStorageBatchAndConfirmCloud: async entries => { for (const [key,value] of entries) store[key] = value; return true; },
     getBookingPaidAmount: b => Math.max(Number(b.totalPaid)||0,(b.partPayments||[]).reduce((n,p)=>n+(Number(p.amount)||0),0)),
     escapeHtml: value => String(value), phoneCallLink: value => String(value),
     calculateBookingTotalRent: b => 1000,
@@ -2184,6 +2185,7 @@ test('failed installment persistence does not report success or mutate stored bo
     document: { getElementById: id => id === 'inst_amt_72' ? input : null, addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: () => false,
+    safeSetStorageBatchAndConfirmCloud: async () => false,
     getBookingPaidAmount: b => Number(b.totalPaid)||0,
     calculateBookingTotalRent: () => 1000,
     syncCustomerBookingWorkflow: async () => true,
@@ -2241,6 +2243,7 @@ test('bill discount and other-charge changes stop when booking persistence fails
     safeGetStorage: key => key === 'softwareBookings' ? [JSON.parse(JSON.stringify(original))] : {},
     calculateBookingBaseRent: () => 1000,
     safeSetStorage: () => false,
+    safeSetStorageBatchAndConfirmCloud: async () => false,
     syncCustomerBookingWorkflow: async () => true,
     searchBillingCustomer: () => { throw new Error('must not refresh invoice after failed save'); },
     showActionMessage: message => messages.push(message),
@@ -2334,7 +2337,7 @@ test('Quotation and Tax Invoice document numbers are unique within their documen
   assert.ok(result.generated.startsWith('QTN-'));
 });
 test('business document save rejects duplicate numbers and invalid stored item/tax values', () => {
-  const save=sourceBetween('function saveBusinessDocument()', 'function loadBusinessDocument(type,id)');
+  const save=sourceBetween('async function saveBusinessDocument()', 'function loadBusinessDocument(type,id)');
   assert.match(save,/isBusinessDocumentNumberTaken\(type,number,rows,editingBusinessDocumentId\)/);
   assert.match(save,/Number\.isSafeInteger\(Number\(item\.qty\)\)/);
   assert.match(save,/rawGst>28/);
@@ -2342,7 +2345,7 @@ test('business document save rejects duplicate numbers and invalid stored item/t
   assert.match(save,/यह Document Number पहले से उपयोग में है/);
 });
 test('business document preview generates a collision-resistant full timestamp number', () => {
-  const preview=sourceBetween('function renderBusinessDocumentPreview()', 'function saveBusinessDocument()');
+  const preview=sourceBetween('function renderBusinessDocumentPreview()', 'async function saveBusinessDocument()');
   assert.match(preview,/createUniqueBusinessDocumentNumber\(type,numberRows\)/);
   assert.doesNotMatch(preview,/String\(Date\.now\(\)\)\.slice\(-5\)/);
 });
@@ -2407,27 +2410,27 @@ test('daily expense entries use timezone-local ISO dates and consistent positive
   const save=sourceBetween('async function saveDailyExpense(event)', 'function renderRoyalDashboardMetrics()');
   assert.match(save,/date: localISODate\(\)/);
   assert.match(save,/Math\.round\(amount\*100\)\/100/);
-  const edit=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense(index)');
+  const edit=sourceBetween('async function editIncomeExpense(index)', 'async function deleteIncomeExpense(index)');
   assert.match(edit,/n<=0/);
   assert.match(edit,/Math\.round\(n\*100\)\/100/);
 });
 
 
 test('purchase history cannot be edited or deleted after related dispatch or unresolved missing records', () => {
-  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'async function editPurchase(index)');
   assert.match(helper,/booking\.dispatchEntries/);
   assert.match(helper,/itemIndex\)===index/);
   assert.match(helper,/Partially Returned/);
   assert.match(helper,/missingItemsDatabase/);
-  const edit=sourceBetween('function editPurchase(index)', 'function deletePurchase(index)');
-  const del=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  const edit=sourceBetween('async function editPurchase(index)', 'async function deletePurchase(index)');
+  const del=sourceBetween('async function deletePurchase(index)', 'async function editIncomeExpense(index)');
   assert.match(edit,/purchaseHasDispatchReference\(p\.itemName\)/);
   assert.match(del,/purchaseHasDispatchReference\(p\.itemName\)/);
 });
 
 
 test('purchase dispatch guard blocks only matching admin stock references and unresolved missing rows', () => {
-  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'async function editPurchase(index)');
   const context={String,Array,Number,safeGetStorage:(key)=>key==='softwareBookings'?[{
     status:'Partially Returned',items:[{name:'Chair',source:'admin'},{name:'Tent',source:'third-party'}],
     dispatchEntries:[{itemIndex:0,qty:4}]
@@ -2440,12 +2443,12 @@ test('purchase dispatch guard blocks only matching admin stock references and un
 
 
 test('vendor stock edit is blocked while dispatch or return is still open', () => {
-  const edit=sourceBetween('function editThirdPartyEntry(partyName,itemName)', 'function deleteThirdPartyEntry(');
+  const edit=sourceBetween('async function editThirdPartyEntry(partyName,itemName)', 'async function deleteThirdPartyEntry(');
   assert.match(edit,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
   assert.match(edit,/Dispatch\/Return अभी खुला है/);
 });
 test('adding vendor stock rejects invalid existing quantities and safe-integer overflow', () => {
-  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  const save=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment(event)');
   assert.match(save,/Number\.isSafeInteger\(currentQty\)/);
   assert.match(save,/Number\.isSafeInteger\(currentPurchased\)/);
   assert.match(save,/Number\.isSafeInteger\(currentQty\+qty\)/);
@@ -2455,7 +2458,7 @@ test('adding vendor stock rejects invalid existing quantities and safe-integer o
 
 
 test('adding vendor stock during open dispatch cannot rewrite historical vendor rates', () => {
-  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  const save=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment(event)');
   assert.match(save,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
   assert.match(save,/const sameRates=/);
   assert.match(save,/नई खरीद जोड़ सकते हैं, लेकिन पुराने रिकॉर्ड की दरें बदल नहीं सकते/);
@@ -2549,4 +2552,27 @@ test('confirmed Firebase batch persistence restores local state when cloud confi
   const ok = await persist([['stock', [{ name: 'Chair', qty: 9 }]]]);
   assert.equal(ok, false);
   assert.deepEqual(store.stock, [{ name: 'Chair', qty: 12 }]);
+});
+
+
+test('purchase, vendor, income-expense, invoice and settings mutations require Firebase confirmation', () => {
+  const checks = [
+    ['async function savePurchaseEntry(event)', 'function loadPurchaseTable()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function editPurchase(index)', 'async function deletePurchase(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function deletePurchase(index)', 'async function editIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function editIncomeExpense(index)', 'async function deleteIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function deleteIncomeExpense(index)', 'function loadCustomerList()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveThirdPartyEntry(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveBusinessDocument()', 'function loadBusinessDocument', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveBusinessCard()', 'async function printBusinessCard()', /await safeSetStorageBatchAndConfirmCloud/]
+  ];
+  for (const [start, end, pattern] of checks) {
+    const code = sourceBetween(start, end);
+    assert.match(code, pattern, start + ' must await Firebase confirmation');
+  }
+  assert.match(html, /async function editThirdPartyEntry[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function deleteThirdPartyEntry[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function deleteThirdPartyPayment[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /async function saveSettings[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
 });
