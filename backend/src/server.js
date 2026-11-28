@@ -918,7 +918,7 @@ app.put('/api/customer/bookings/:id/workflow', authAdmin, requireDurableStore, a
     partyName:z.string().max(120).optional().default(''),createdAt:z.string().optional()
   });
   const returnSchema=z.object({
-    date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),mode:z.enum(['FINAL','PARTIAL']),
+    date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/),mode:z.enum(['FINAL','PARTIAL','MISSING_RECOVERY']),
     items:z.array(z.object({itemIndex:z.number().int().min(0),qty:z.number().int().min(0)})).max(100),
     createdAt:z.string().optional()
   });

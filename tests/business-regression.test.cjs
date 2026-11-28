@@ -6,6 +6,14 @@ const vm = require('node:vm');
 const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
 const backend = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'src', 'server.js'), 'utf8');
 
+test('customer booking workflow accepts missing-item recovery mode used by the UI', () => {
+  const workflowStart = backend.indexOf("app.put('/api/customer/bookings/:id/workflow'");
+  assert.notEqual(workflowStart, -1);
+  const workflowRoute = backend.slice(workflowStart, backend.indexOf("app.get('/api/customer/bookings/:id/status'", workflowStart));
+  assert.match(workflowRoute, /mode:z\.enum\(\['FINAL','PARTIAL','MISSING_RECOVERY'\]\)/);
+  assert.match(html, /mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
+});
+
 test('Firebase settings sync strips admin tokens, API keys, and payment gateway secrets', () => {
   const code=sourceBetween('function sanitizeCloudSettings(settings)', '        // Keep local writes immediate');
   const context={Object,Array};
