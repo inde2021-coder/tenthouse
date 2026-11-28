@@ -2604,3 +2604,8 @@ test('backup restore and uploaded settings images wait for confirmed Firebase pe
   assert.match(image, /img\.onload = async/);
   assert.match(image, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareSettings', settings\]\]\)/);
 });
+
+
+test('final-return missing records remain isolated by booking item index', () => {
+  assert.ok(html.includes("m.itemIndex!==undefined&&m.itemIndex!==null&&Number(m.itemIndex)===idx"));
+});
