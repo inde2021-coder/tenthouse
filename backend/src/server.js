@@ -445,8 +445,8 @@ app.get('/api/diagnostics/providers', authAdmin, (_req, res) => {
   }});
 });
 
-async function sendWhatsAppText(to, body) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN, phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+async function sendWhatsAppText(to, body, phoneIdOverride) {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN, phoneId = String(phoneIdOverride || process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
   if (!token || !phoneId) throw new Error('WhatsApp Cloud API credentials are not configured on the server.');
   const version = process.env.WHATSAPP_API_VERSION || 'v23.0';
   const response = await fetch(`https://graph.facebook.com/${version}/${phoneId}/messages`, {
@@ -457,10 +457,11 @@ async function sendWhatsAppText(to, body) {
   if (!response.ok) throw new Error(data?.error?.message || `WhatsApp provider returned ${response.status}`);
   return data;
 }
-async function sendOtpProvider(phone, otp, channel) {
-  const provider = process.env.OTP_PROVIDER || 'none';
+async function sendOtpProvider(phone, otp, channel, settings = {}) {
+  const hasSavedProvider = Object.prototype.hasOwnProperty.call(settings, 'smsGatewayProvider');
+  const provider = String(hasSavedProvider ? settings.smsGatewayProvider : (process.env.OTP_PROVIDER || 'none')).trim().toLowerCase();
   const msg = `आपका Radha Krishna Tent House verification OTP ${otp} है। यह ${process.env.OTP_TTL_SECONDS || 300} सेकंड में समाप्त होगा। इसे किसी से साझा न करें।`;
-  if (channel === 'whatsapp') return sendWhatsAppText(phone, msg);
+  if (channel === 'whatsapp') return sendWhatsAppText(phone, msg, settings.waPhoneId);
   if (provider === 'twilio') {
     const sid = process.env.TWILIO_ACCOUNT_SID, token = process.env.TWILIO_AUTH_TOKEN, from = process.env.TWILIO_FROM_NUMBER;
     if (!sid || !token || !from) throw new Error('Twilio SMS credentials are not configured.');
@@ -469,8 +470,7 @@ async function sendOtpProvider(phone, otp, channel) {
     if (!r.ok) throw new Error('SMS provider rejected the request.'); return r.json();
   }
   if (provider === 'msg91') {
-    // MSG91 template/flow setup varies by account; use the provider's approved OTP API template.
-    const key = process.env.MSG91_AUTH_KEY, template = process.env.MSG91_TEMPLATE_ID;
+    const key = process.env.MSG91_AUTH_KEY, template = String(settings.smsTemplateId || process.env.MSG91_TEMPLATE_ID || '').trim();
     if (!key || !template) throw new Error('MSG91 Auth Key and approved template ID are required.');
     const r = await fetch('https://control.msg91.com/api/v5/otp', { method:'POST', signal:AbortSignal.timeout(20_000), headers:{ authkey:key, 'Content-Type':'application/json' }, body:JSON.stringify({ template_id:template, mobile:phone.replace('+',''), otp }) });
     if (!r.ok) throw new Error('MSG91 rejected the request.'); return r.json();
@@ -480,12 +480,28 @@ async function sendOtpProvider(phone, otp, channel) {
     if (testDelay) await new Promise(resolve => setTimeout(resolve, testDelay));
     return { demo: true };
   }
-  throw new Error('OTP provider is not configured. Configure an approved SMS/WhatsApp provider in backend .env.');
+  throw new Error('OTP provider is not configured. Select MSG91 or Twilio and configure its server credentials.');
 }
 app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   const parsed = z.object({ phone: phoneSchema, channel: z.enum(['sms','whatsapp','both']).default('sms') }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Valid international phone number and channel are required.' });
-  const { phone, channel } = parsed.data; const otp = String(crypto.randomInt(0, 1_000_000)).padStart(6,'0');
+  const { phone, channel } = parsed.data;
+  let otpSettings = null;
+  try { otpSettings = await storeGet('settings'); }
+  catch { return res.status(503).json({ error: 'OTP configuration could not be loaded from the persistent settings store.' }); }
+  if (otpSettings && typeof otpSettings === 'object') {
+    const configuredChannel = String(otpSettings.otpChannel || 'off').toLowerCase();
+    if (configuredChannel === 'off' || configuredChannel === 'demo' || configuredChannel !== channel) {
+      return res.status(409).json({ error: 'ग्राहक OTP चैनल Settings में सक्रिय नहीं है या अनुरोध चुने गए चैनल से मेल नहीं खाता।' });
+    }
+    if ((channel === 'sms' || channel === 'both') && otpSettings.smsGatewayEnabled !== true) {
+      return res.status(503).json({ error: 'SMS Gateway Settings में सक्रिय नहीं है।' });
+    }
+    if ((channel === 'sms' || channel === 'both') && !['msg91','twilio'].includes(String(otpSettings.smsGatewayProvider || '').toLowerCase())) {
+      return res.status(503).json({ error: 'चुना गया SMS provider समर्थित नहीं है। MSG91 या Twilio चुनें।' });
+    }
+  }
+  const otp = String(crypto.randomInt(0, 1_000_000)).padStart(6,'0');
   const hmacSecret = process.env.OTP_HMAC_SECRET || '';
   if (hmacSecret.length < 32 || /replace_with|unsafe-dev/i.test(hmacSecret)) return res.status(503).json({ error: 'OTP_HMAC_SECRET सेट नहीं है या बहुत कमजोर है; कम-से-कम 32 अक्षरों का अलग secret सेट करें।' });
   const digest = crypto.createHmac('sha256', hmacSecret).update(`${phone}:${otp}`).digest('hex');
@@ -499,7 +515,7 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
     // before its matching digest is available for verification.
     await storeSet(otpPath, otpRecord);
     const channels = channel === 'both' ? ['sms','whatsapp'] : [channel];
-    const outcomes = await Promise.allSettled(channels.map(ch => sendOtpProvider(phone, otp, ch)));
+    const outcomes = await Promise.allSettled(channels.map(ch => sendOtpProvider(phone, otp, ch, otpSettings || {})));
     const sent = outcomes.map((o, i) => ({ channel: channels[i], ok: o.status === 'fulfilled', error: o.status === 'rejected' ? o.reason?.message : undefined }));
     if (!sent.some(x => x.ok)) {
       // Do not leave a code active when every delivery channel failed. Only
