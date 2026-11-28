@@ -2523,6 +2523,7 @@ test('critical stock, booking, expense and payment writes wait for Firebase conf
   const payment = sourceBetween('async function savePaymentEntry()', '        async function verifyLedgerPayment');
   const verify = sourceBetween('async function verifyLedgerPayment', '        function ');
   assert.match(expense, /await safeSetStorageBatchAndConfirmCloud/);
+  assert.match(html, /rkPaymentLedger:\s*'paymentLedger'/);
   assert.match(stock, /await safeSetStorageBatchAndConfirmCloud/);
   assert.match(booking, /await safeSetStorageBatchAndConfirmCloud/);
   assert.match(payment, /await safeSetStorageBatchAndConfirmCloud/);
