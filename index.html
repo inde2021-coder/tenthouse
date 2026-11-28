@@ -1528,6 +1528,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         const DEFAULT_BACKEND_API_URL = isHostedWebOrigin ? window.location.origin : 'https://tenthouse2026.vercel.app';
         function getBackendApiUrl(settings = {}) {
             const configured = String(settings.backendApiUrl || '').trim().replace(/\/$/, '');
+            // Hosted pages must call their own deployment; stale saved URLs can break Admin session validation.
+            if (isHostedWebOrigin) return window.location.origin;
             return !configured || configured === 'https://tenthouse2026.vercel.app' ? DEFAULT_BACKEND_API_URL : configured;
         }
         const firebaseConfig = {
