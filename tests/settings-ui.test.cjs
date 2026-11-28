@@ -47,7 +47,7 @@ test('five reference CSS is synchronized across all deployable locations', () =>
 test('all HTML entry points load the cache-busted reference stylesheet', () => {
   for (const file of files) {
     const html = fs.readFileSync(file, 'utf8');
-    assert.match(html, /rk-reference-theme\.css\?v=11/);
+    assert.match(html, /rk-reference-theme\.css\?v=12/);
     assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
   }
 });
