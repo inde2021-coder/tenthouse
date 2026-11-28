@@ -2647,3 +2647,18 @@ test('third-party ledger derives vendor costs, payment due and margin from actua
   assert.equal(Math.max(0, vendorCost - paid), 190);
   assert.equal(customerRent - vendorCost, 110);
 });
+
+test('Android WebView uses the live production backend rather than the retired hostname', () => {
+  assert.match(html, /const DEFAULT_BACKEND_API_URL = isHostedWebOrigin \? window\.location\.origin : 'https:\/\/tenthouse2026\.vercel\.app'/);
+  assert.match(html, /configured === 'https:\/\/tenthouse2026\.vercel\.app' \? DEFAULT_BACKEND_API_URL : configured/);
+  assert.doesNotMatch(html, /https:\/\/tenthouse\.vercel\.app/);
+});
+
+test('backend Node engine matches the Node version used by CI and Docker', () => {
+  const packageJson = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'package.json'), 'utf8'));
+  const docker = fs.readFileSync(require('node:path').join(__dirname, '..', 'backend', 'Dockerfile'), 'utf8');
+  const workflow = fs.readFileSync(require('node:path').join(__dirname, '..', '.github', 'workflows', 'ci.yml'), 'utf8');
+  assert.equal(packageJson.engines.node, '22.x');
+  assert.match(docker, /FROM node:22-alpine/);
+  assert.match(workflow, /node-version: 22/);
+});
