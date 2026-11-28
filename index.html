@@ -5082,7 +5082,25 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
 })();
 
 </script>
+<script id="rk-mobile-duplicate-search-guard-2026-11">
+(function(){
+ 'use strict';
+ function dedupeCustomerSearch(){
+  const root=document.getElementById('customerFirstPortal');if(!root)return;
+  const seen=new Set();
+  root.querySelectorAll('input[type="search"]').forEach(input=>{
+   const key=[(input.getAttribute('placeholder')||'').trim().toLowerCase(),(input.getAttribute('aria-label')||'').trim().toLowerCase()].join('|');
+   if(!key.replace('|',''))return;
+   if(seen.has(key)){const wrapper=input.closest('.search-box,.search-wrap,.search-container,.rk-search-field')||input.parentElement;if(wrapper&&wrapper!==root&&wrapper.querySelectorAll('input[type="search"]').length===1)wrapper.remove();else input.remove();}
+   else seen.add(key);
+  });
+ }
+ function init(){dedupeCustomerSearch();const root=document.getElementById('customerFirstPortal');if(root&&window.MutationObserver){let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;dedupeCustomerSearch();});}).observe(root,{childList:true,subtree:true});}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 <style id="rk-admin-dark-controls-final">
+/* rk-mobile-viewport-and-visibility-2026-11 */
 /* Final admin control theme: defeat legacy light-theme and browser autofill rules. */
 #adminPanel,#welcomeOverlay,[role="dialog"],.modal-content{color-scheme:dark}
 #adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
@@ -5236,23 +5254,4 @@ html,body{width:100%;max-width:100%;min-width:0;height:100%;min-height:100%;over
  #adminPanel #pageTitle{font-size:12px!important}
 }
 </style>
-
-
-<script id="rk-mobile-duplicate-search-guard-2026-11">
-(function(){
- 'use strict';
- function dedupeCustomerSearch(){
-  const root=document.getElementById('customerFirstPortal');if(!root)return;
-  const seen=new Set();
-  root.querySelectorAll('input[type="search"]').forEach(input=>{
-   const key=[(input.getAttribute('placeholder')||'').trim().toLowerCase(),(input.getAttribute('aria-label')||'').trim().toLowerCase()].join('|');
-   if(!key.replace('|',''))return;
-   if(seen.has(key)){const wrapper=input.closest('.search-box,.search-wrap,.search-container,.rk-search-field')||input.parentElement;if(wrapper&&wrapper!==root&&wrapper.querySelectorAll('input[type="search"]').length===1)wrapper.remove();else input.remove();}
-   else seen.add(key);
-  });
- }
- function init(){dedupeCustomerSearch();const root=document.getElementById('customerFirstPortal');if(root&&window.MutationObserver){let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;dedupeCustomerSearch();});}).observe(root,{childList:true,subtree:true});}}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();
-</script>
 </body></html>
