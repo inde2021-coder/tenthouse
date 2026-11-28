@@ -615,7 +615,7 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
  'use strict';
  const themes=['ref1','ref2','ref3','ref4','ref5'];
  function readSaved(){
-  try{const saved=localStorage.getItem('rkDesignPreset');return themes.includes(saved)?saved:'ref1';}
+  try{const saved=localStorage.getItem('rkDesignPreset')||localStorage.getItem('rk-reference-design');return themes.includes(saved)?saved:'ref1';}
   catch(error){return 'ref1';}
  }
  function apply(selected,save){
