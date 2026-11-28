@@ -136,7 +136,7 @@ function runRentFunction(functionName, booking, missingRows = []) {
 }
 
 test('manual vendor dispatch preserves replacement cost from either supported vendor field', () => {
-  const start=html.indexOf('function addThirdPartyItemToDispatch()');
+  const start=html.indexOf('async function addThirdPartyItemToDispatch()');
   const end=html.indexOf('function ',start+20);
   const code=html.slice(start,end);
   assert.ok(code.includes('vendorRow.missingCost??vendorRow.vendorMissingCost'));
@@ -332,10 +332,10 @@ test('return and missing recovery fail when the source stock row is absent', () 
 });
 
 test('dispatch order additions report success only after booking storage succeeds', () => {
-  const admin=html.slice(html.indexOf('function addItemToPendingBookingDispatch()'),html.indexOf('function addThirdPartyItemToDispatch()'));
-  const vendor=html.slice(html.indexOf('function addThirdPartyItemToDispatch()'),html.indexOf('function searchDispatchBooking()'));
-  assert.ok(admin.includes("if(!safeSetStorage('softwareBookings', bookings))"),'admin dispatch add must check storage result');
-  assert.ok(vendor.includes("if(!safeSetStorage('softwareBookings', bookings))"),'vendor dispatch add must check storage result');
+  const admin=html.slice(html.indexOf('async function addItemToPendingBookingDispatch()'),html.indexOf('async function addThirdPartyItemToDispatch()'));
+  const vendor=html.slice(html.indexOf('async function addThirdPartyItemToDispatch()'),html.indexOf('function searchDispatchBooking()'));
+  assert.ok(admin.includes("if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings', bookings]]))"),'admin dispatch add must check storage result');
+  assert.ok(vendor.includes("if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings', bookings]]))"),'vendor dispatch add must check storage result');
   assert.ok(!admin.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'admin add must not announce success after unchecked save');
   assert.ok(!vendor.includes("safeSetStorage('softwareBookings', bookings);\n                loadDispatchTable();"),'vendor add must not announce success after unchecked save');
 });
@@ -469,7 +469,7 @@ test('ERP menu contains 19 modules including Business Card and documents', () =>
   assert.ok(html.includes("quotationDatabase: 'quotations'"));
   assert.ok(html.includes("taxInvoiceDatabase: 'taxInvoices'"));
   assert.ok(html.includes('function saveBusinessCard()'));
-  assert.ok(html.includes('function saveBusinessDocument()'));
+  assert.ok(html.includes('async function saveBusinessDocument()'));
   assert.ok(html.includes('function changeBusinessDocumentType()'));
   assert.ok(html.includes("if(number)number.value=''"));
   assert.ok(html.includes('function printBusinessDocument()'));
@@ -580,7 +580,7 @@ test('customer booking requires at least one selected stock item in both UI and 
 });
 
 test('customer online advance requires UTR and QR uses configured UPI ID plus exact amount', () => {
-  const code = sourceBetween('function updateDynamicPaymentQR()', 'function addItemToPendingBookingDispatch()');
+  const code = sourceBetween('function updateDynamicPaymentQR()', 'async function addItemToPendingBookingDispatch()');
   assert.ok(code.includes('settings.upiId'));
   assert.ok(code.includes('amount.toFixed(2)'));
   assert.ok(code.includes('portalQrHint'));
@@ -790,7 +790,7 @@ test('existing stock rows receive unique persistent barcodes before table render
 });
 
 test('CSV stock import rejects invalid quantities and rates instead of inventing defaults', () => {
-  const code = sourceBetween('function importStockFromCSV(event)', 'function savePurchaseEntry(event)');
+  const code = sourceBetween('function importStockFromCSV(event)', 'async function savePurchaseEntry(event)');
   assert.ok(code.includes('Number.isInteger(qty)'));
   assert.ok(code.includes('skipped++'));
   assert.ok(!code.includes('Number(cols[1]) || 10'));
@@ -798,8 +798,8 @@ test('CSV stock import rejects invalid quantities and rates instead of inventing
 });
 
 test('purchase entry saves purchase and stock together through rollback-capable batch storage', () => {
-  const code = sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("if(!safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return"));
+  const code = sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("if(!await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',pur],['realStockDatabase',nextStock]]))return"));
   const batch = sourceBetween('function safeSetStorageBatch(entries)', 'function showActionMessage(');
   assert.ok(batch.includes('const snapshots = new Map()'));
   assert.ok(batch.includes('for (const [key, previous] of snapshots)'));
@@ -1340,7 +1340,7 @@ test('admin stock entry rejects fractional and invalid quantities without saving
 });
 
 test('vendor stock entry rejects fractional, negative and malformed quantities without saving', () => {
-  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
   for(const qty of ['1.25','0','-4','bad','']) {
     let writes=0,reset=false;
     const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:qty,tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
@@ -1362,7 +1362,7 @@ test('vendor stock entry rejects fractional, negative and malformed quantities w
 });
 
 test('vendor stock entry rejects negative or non-numeric prices without saving', () => {
-  const code=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
   for(const field of ['tpItemCost','tpItemCharge','tpVendorMissingCost','tpMissingCharge']) {
     for(const value of ['-1','abc']) {
       let writes=0;
@@ -1417,7 +1417,7 @@ test('stock item edit rejects fractional quantities and preserves the original r
 });
 
 test('purchase entry rejects fractional quantities before changing purchase or stock ledgers', () => {
-  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  const code=sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
   const values={purItemName:'Chair',purItemQty:'1.5',purItemPrice:'100',purSingleRent:'5',purSetRent:'20',purMissingCharge:'100',purDate:'2026-11-26',purSupplier:'Supplier'};
   let writes=0;
   const context={Number,Math,String,Date,document:{getElementById:id=>({value:values[id]})},safeGetStorage:()=>[],safeSetStorage:()=>{writes++;return true;},showActionMessage:()=>{},mergeDuplicateStockRows:rows=>rows};
@@ -1426,7 +1426,7 @@ test('purchase entry rejects fractional quantities before changing purchase or s
 });
 
 test('purchase edit rejects fractional quantities before changing purchase or stock ledgers', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const row={itemName:'Chair',qty:10,price:100};
   const answers=['Chair','2.5','100','Supplier'];
   let writes=0;
@@ -1439,7 +1439,7 @@ test('purchase edit rejects fractional quantities before changing purchase or st
 test('income and expense edit rejects impossible calendar dates', () => {
   const helperStart=html.indexOf('function isValidCalendarDate(value)');
   const helperEnd=html.indexOf('function calculateRentalDays',helperStart);
-  const code=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense');
+  const code=sourceBetween('async function editIncomeExpense(index)', 'function deleteIncomeExpense');
   const row={date:'2026-02-28',desc:'Rent',type:'Expense',amount:100};
   const answers=['2026-02-30','Rent','Expense','100'];
   let writes=0;
@@ -1451,7 +1451,7 @@ test('income and expense edit rejects impossible calendar dates', () => {
 
 
 test('purchase edit applies only the quantity delta to stock for the same item', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:7}]};
   const answers=['Chair','4','400','A'];
   let writes=0;
@@ -1463,7 +1463,7 @@ test('purchase edit applies only the quantity delta to stock for the same item',
 });
 
 test('purchase rename is blocked when old purchased stock has already been used', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:3}]};
   const answers=['Table','5','500','A'];
   let writes=0;
@@ -1475,7 +1475,7 @@ test('purchase rename is blocked when old purchased stock has already been used'
 });
 
 test('purchase deletion is blocked if the full purchased quantity is no longer in stock', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:2}]};
   let writes=0;
   const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
@@ -1486,7 +1486,7 @@ test('purchase deletion is blocked if the full purchased quantity is no longer i
 });
 
 test('purchase deletion atomically removes the record and its full available stock quantity', () => {
-  const code=sourceBetween('function purchaseHasDispatchReference(', 'function editIncomeExpense(index)');
+  const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:8}]};
   let writes=0;
   const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
@@ -1660,7 +1660,7 @@ test('vendor partial return adds only received quantity back to the matching ven
 });
 
 test('purchase entry rejects invalid quantities and amounts before writing', () => {
-  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  const code=sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
   for(const [field,values] of Object.entries({purItemQty:['1.5','0','-2','abc',''],purItemPrice:['','-1','abc'],purSingleRent:['-1','abc'],purSetRent:['-1','abc'],purMissingCharge:['-1','abc']})) {
     for(const value of values) {
       let writes=0,reset=false;
@@ -1674,11 +1674,11 @@ test('purchase entry rejects invalid quantities and amounts before writing', () 
   }
 });
 test('purchase and stock are persisted through one rollback-capable batch', () => {
-  const code=sourceBetween('function savePurchaseEntry(event)', 'function loadPurchaseTable()');
-  assert.ok(code.includes("safeSetStorageBatch([['purchaseDatabase',pur],['realStockDatabase',nextStock]])"));
+  const code=sourceBetween('async function savePurchaseEntry(event)', 'function loadPurchaseTable()');
+  assert.ok(code.includes("await safeSetStorageBatchAndConfirmCloud([['purchaseDatabase',pur],['realStockDatabase',nextStock]])"));
 });
 test('daily expense edit and delete stop when storage persistence fails', () => {
-  const code=sourceBetween('function editIncomeExpense(index)', 'function loadCustomerList()');
+  const code=sourceBetween('async function editIncomeExpense(index)', 'function loadCustomerList()');
   assert.equal((code.match(/if\(!safeSetStorage\('incomeExpenseDatabase',rows\)\)return/g)||[]).length,2);
 });
 
@@ -2334,7 +2334,7 @@ test('Quotation and Tax Invoice document numbers are unique within their documen
   assert.ok(result.generated.startsWith('QTN-'));
 });
 test('business document save rejects duplicate numbers and invalid stored item/tax values', () => {
-  const save=sourceBetween('function saveBusinessDocument()', 'function loadBusinessDocument(type,id)');
+  const save=sourceBetween('async function saveBusinessDocument()', 'function loadBusinessDocument(type,id)');
   assert.match(save,/isBusinessDocumentNumberTaken\(type,number,rows,editingBusinessDocumentId\)/);
   assert.match(save,/Number\.isSafeInteger\(Number\(item\.qty\)\)/);
   assert.match(save,/rawGst>28/);
@@ -2342,7 +2342,7 @@ test('business document save rejects duplicate numbers and invalid stored item/t
   assert.match(save,/यह Document Number पहले से उपयोग में है/);
 });
 test('business document preview generates a collision-resistant full timestamp number', () => {
-  const preview=sourceBetween('function renderBusinessDocumentPreview()', 'function saveBusinessDocument()');
+  const preview=sourceBetween('function renderBusinessDocumentPreview()', 'async function saveBusinessDocument()');
   assert.match(preview,/createUniqueBusinessDocumentNumber\(type,numberRows\)/);
   assert.doesNotMatch(preview,/String\(Date\.now\(\)\)\.slice\(-5\)/);
 });
@@ -2407,27 +2407,27 @@ test('daily expense entries use timezone-local ISO dates and consistent positive
   const save=sourceBetween('async function saveDailyExpense(event)', 'function renderRoyalDashboardMetrics()');
   assert.match(save,/date: localISODate\(\)/);
   assert.match(save,/Math\.round\(amount\*100\)\/100/);
-  const edit=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense(index)');
+  const edit=sourceBetween('async function editIncomeExpense(index)', 'async function deleteIncomeExpense(index)');
   assert.match(edit,/n<=0/);
   assert.match(edit,/Math\.round\(n\*100\)\/100/);
 });
 
 
 test('purchase history cannot be edited or deleted after related dispatch or unresolved missing records', () => {
-  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'async function editPurchase(index)');
   assert.match(helper,/booking\.dispatchEntries/);
   assert.match(helper,/itemIndex\)===index/);
   assert.match(helper,/Partially Returned/);
   assert.match(helper,/missingItemsDatabase/);
-  const edit=sourceBetween('function editPurchase(index)', 'function deletePurchase(index)');
-  const del=sourceBetween('function deletePurchase(index)', 'function editIncomeExpense(index)');
+  const edit=sourceBetween('async function editPurchase(index)', 'async function deletePurchase(index)');
+  const del=sourceBetween('async function deletePurchase(index)', 'async function editIncomeExpense(index)');
   assert.match(edit,/purchaseHasDispatchReference\(p\.itemName\)/);
   assert.match(del,/purchaseHasDispatchReference\(p\.itemName\)/);
 });
 
 
 test('purchase dispatch guard blocks only matching admin stock references and unresolved missing rows', () => {
-  const helper=sourceBetween('function purchaseHasDispatchReference(', 'function editPurchase(index)');
+  const helper=sourceBetween('function purchaseHasDispatchReference(', 'async function editPurchase(index)');
   const context={String,Array,Number,safeGetStorage:(key)=>key==='softwareBookings'?[{
     status:'Partially Returned',items:[{name:'Chair',source:'admin'},{name:'Tent',source:'third-party'}],
     dispatchEntries:[{itemIndex:0,qty:4}]
@@ -2440,12 +2440,12 @@ test('purchase dispatch guard blocks only matching admin stock references and un
 
 
 test('vendor stock edit is blocked while dispatch or return is still open', () => {
-  const edit=sourceBetween('function editThirdPartyEntry(partyName,itemName)', 'function deleteThirdPartyEntry(');
+  const edit=sourceBetween('async function editThirdPartyEntry(partyName,itemName)', 'async function deleteThirdPartyEntry(');
   assert.match(edit,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
   assert.match(edit,/Dispatch\/Return अभी खुला है/);
 });
 test('adding vendor stock rejects invalid existing quantities and safe-integer overflow', () => {
-  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  const save=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment(event)');
   assert.match(save,/Number\.isSafeInteger\(currentQty\)/);
   assert.match(save,/Number\.isSafeInteger\(currentPurchased\)/);
   assert.match(save,/Number\.isSafeInteger\(currentQty\+qty\)/);
@@ -2455,7 +2455,7 @@ test('adding vendor stock rejects invalid existing quantities and safe-integer o
 
 
 test('adding vendor stock during open dispatch cannot rewrite historical vendor rates', () => {
-  const save=sourceBetween('function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment(event)');
+  const save=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment(event)');
   assert.match(save,/hasOpenStockReturnReference\('third-party',itemName,partyName\)/);
   assert.match(save,/const sameRates=/);
   assert.match(save,/नई खरीद जोड़ सकते हैं, लेकिन पुराने रिकॉर्ड की दरें बदल नहीं सकते/);
@@ -2554,14 +2554,14 @@ test('confirmed Firebase batch persistence restores local state when cloud confi
 
 test('purchase, vendor, income-expense, invoice and settings mutations require Firebase confirmation', () => {
   const checks = [
-    ['async function savePurchaseEntry(event)', 'function loadPurchaseTable()', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function editPurchase(index)', 'async function deletePurchase(index)', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function deletePurchase(index)', 'function editIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function editIncomeExpense(index)', 'async function deleteIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function deleteIncomeExpense(index)', 'function loadCustomerList()', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function saveThirdPartyEntry(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async function saveBusinessDocument()', 'function editBusinessDocument', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function savePurchaseEntry(event)', 'function loadPurchaseTable()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function editPurchase(index)', 'async async function deletePurchase(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function deletePurchase(index)', 'async function editIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function editIncomeExpense(index)', 'async async function deleteIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function deleteIncomeExpense(index)', 'function loadCustomerList()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function saveThirdPartyEntry(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async async function saveBusinessDocument()', 'function editBusinessDocument', /await safeSetStorageBatchAndConfirmCloud/],
     ['async function saveBusinessCard()', 'async function printBusinessCard()', /await safeSetStorageBatchAndConfirmCloud/]
   ];
   for (const [start, end, pattern] of checks) {
