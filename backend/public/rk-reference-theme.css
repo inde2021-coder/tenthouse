@@ -851,3 +851,16 @@ html.rk-ref2 #customerFirstPortal .rk-reference-benefits,html.rk-ref2 #customerF
 @media(max-width:720px){
  html.rk-ref2 #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"booking" "tracking" "footer"!important}
 }
+
+
+/* Explicitly map existing booking form sections into each named grid area. */
+html.rk-ref1 #customerFirstPortal .rk-customer-identity{grid-area:identity!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-event{grid-area:event!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-items{grid-area:items!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-payment{grid-area:payment!important}
+html.rk-ref1 #customerFirstPortal .rk-customer-submit{grid-area:submit!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-identity{grid-area:identity!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-event{grid-area:event!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-items{grid-area:items!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-payment{grid-area:payment!important}
+html.rk-ref2 #customerFirstPortal .rk-customer-submit{grid-area:submit!important}
