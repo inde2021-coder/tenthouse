@@ -41,13 +41,13 @@ test('five reference CSS is synchronized across all deployable locations', () =>
   for (const ref of ['ref1', 'ref2', 'ref3', 'ref4', 'ref5']) {
     assert.match(css, new RegExp('html\\.' + ref + ' #customerFirstPortal'));
   }
-  assert.match(css, /@media\\(max-width:720px\\)/);
+  assert.match(css, /@media\(max-width:720px\)/);
 });
 
 test('all HTML entry points load the cache-busted reference stylesheet', () => {
   for (const file of files) {
     const html = fs.readFileSync(file, 'utf8');
-    assert.match(html, /rk-reference-theme\\.css\\?v=11/);
+    assert.match(html, /rk-reference-theme\.css\?v=11/);
     assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
   }
 });
