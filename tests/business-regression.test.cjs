@@ -1679,7 +1679,7 @@ test('purchase and stock are persisted through one rollback-capable batch', () =
 });
 test('daily expense edit and delete stop when storage persistence fails', () => {
   const code=sourceBetween('async function editIncomeExpense(index)', 'function loadCustomerList()');
-  assert.equal((code.match(/if\(!safeSetStorage\('incomeExpenseDatabase',rows\)\)return/g)||[]).length,2);
+  assert.equal((code.match(/if\(!await safeSetStorageBatchAndConfirmCloud\(\[\['incomeExpenseDatabase',rows\]\]\)\)return/g)||[]).length,2);
 });
 
 
