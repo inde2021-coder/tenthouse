@@ -63,10 +63,10 @@ test('five reference theme choices are persistent and restore without changing b
     assert.match(html, /window\.applyRkDesign=\(name\)=>apply\(name,true\)/);
     assert.match(html, /function restore\(\)\{apply\(readSaved\(\),false\);\}/);
     assert.match(html, /id="rkDesignStatus"/);
-    assert.match(html, /id="customerBookingForm"/);
-    assert.match(html, /id="bookingItems"/);
-    assert.match(html, /id="bookingAdvance"/);
-    assert.match(html, /id="bookingTrackingForm"/);
+    assert.match(html, /class="rk-customer-form" onsubmit="saveCustomerBooking\(event\)"/);
+    assert.match(html, /id="portalCartTableBody"/);
+    assert.match(html, /id="portalAdvanceAmount"/);
+    assert.match(html, /id="rkTrackBookingId"/);
     assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
   }
 });
