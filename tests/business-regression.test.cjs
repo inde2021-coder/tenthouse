@@ -913,9 +913,9 @@ test('customer booking stock validation includes admin and portal reservations w
 
 test('dispatch, return and missing recovery use rollback-capable multi-key persistence', () => {
   assert.match(html, /function safeSetStorageBatch\(entries\)/);
-  assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
-  assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
-  assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
+  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
+  assert.match(html, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
   assert.match(html, /Storage rollback failed/);
 });
 
