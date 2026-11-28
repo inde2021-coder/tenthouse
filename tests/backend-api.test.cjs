@@ -652,3 +652,12 @@ test('untrusted cross-origin browser origins are not granted API access', async 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('access-control-allow-origin'), null);
 });
+
+
+test('hosted ERP ignores stale saved backend URLs so Gmail admin login checks the current deployment', async () => {
+  const response = await request('/');
+  assert.equal(response.status, 200);
+  const markup = await response.text();
+  assert.match(markup, /if \(isHostedWebOrigin\) return window\.location\.origin;/);
+  assert.match(markup, /Old localStorage values may/);
+});
