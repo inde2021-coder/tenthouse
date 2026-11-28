@@ -23,8 +23,8 @@ All supplied screenshots are 1536 x 1024 px.
    - Footer with copyright and social icons.
    - Reference includes an Admin Login concept, but implementation must use Gmail/Google sign-in only; never expose secret key/token login.
 
-3. **Reference 3 — Duplicate of Reference 1**
-   - Same image/layout as Reference 1; keep its own theme selector entry and make it visually identical to Reference 1.
+3. **Reference 3 — Separate source image**
+   - This PNG has a different Git blob SHA from References 1 and 2, so it must remain a distinct selector option. Its precise pixel geometry still requires a rendered visual comparison against the PNG; do not treat it as a duplicate of Reference 1.
 
 4. **Reference 4 — RK crown logo, split booking and tracking**
    - Black/navy base with bright blue borders/glow, purple admin accent, gold/yellow text.
@@ -35,14 +35,8 @@ All supplied screenshots are 1536 x 1024 px.
    - Tracking panel shows search, booking result card, document buttons and progress rail.
    - Admin access must be Gmail-only despite the old reference's token/password visual.
 
-5. **Reference 5 — Compact header, banner, three-column lower layout**
-   - Dark navy background, electric blue highlights, gold/yellow accent.
-   - Compact top brand/nav header with Login dropdown.
-   - Wide utensil/event hero banner with premium gold promotional copy.
-   - Lower row: Booking panel left, Tracking panel center, Quick Access and customer support cards right.
-   - Booking side uses a light form surface and visible payment QR panel.
-   - Tracking side has progress steps and dispatch/return/bill actions.
-   - Footer with copyright and service highlights.
+5. **Reference 5 — Exact duplicate of Reference 4**
+   - GitHub confirms this PNG has the same blob SHA and byte size as Reference 4. Keep a separate fifth selector entry as requested, but render it identically to Reference 4; do not invent a different fifth design.
 
 ## Non-negotiable implementation rules
 
