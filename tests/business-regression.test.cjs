@@ -2627,11 +2627,11 @@ test('third-party ledger derives vendor costs, payment due and margin from actua
   assert.notEqual(ledgerStart, -1);
   assert.ok(ledgerEnd > ledgerStart);
   const code = html.slice(ledgerStart, ledgerEnd);
-  assert.match(code, /getDispatchEntryRentalSlices\\(booking\\)/);
-  assert.match(code, /getVendorLedgerRate\\(e,item,tpList,'rent'\\)/);
-  assert.match(code, /getVendorLedgerRate\\(null,item,tpList,'missing'\\)/);
-  assert.match(code, /const vendorCost=vendorRentCost\\+vendorMissingLiability/);
-  assert.match(code, /const due=Math\\.max\\(0,vendorCost-paid\\)/);
+  assert.match(code, /getDispatchEntryRentalSlices\(booking\)/);
+  assert.match(code, /getVendorLedgerRate\(e,item,tpList,'rent'\)/);
+  assert.match(code, /getVendorLedgerRate\(null,item,tpList,'missing'\)/);
+  assert.match(code, /const vendorCost=vendorRentCost\+vendorMissingLiability/);
+  assert.match(code, /const due=Math\.max\(0,vendorCost-paid\)/);
   assert.match(code, /const margin=customerRent-vendorCost/);
   assert.match(code, /वेंडर को कुल देय/);
   assert.match(code, /बाकी देय/);
