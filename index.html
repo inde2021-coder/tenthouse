@@ -2887,11 +2887,13 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             finally{event.target.value='';}
         }
 
-        function loadRealStockList() {
-            let stock = mergeDuplicateStockRows(safeGetStorage('realStockDatabase', []));
+        async function loadRealStockList() {
+            const rawStock=safeGetStorage('realStockDatabase', []);
+            const originalSnapshot=JSON.stringify(rawStock);
+            let stock = mergeDuplicateStockRows(rawStock);
             const usedBarcodes=new Set(stock.map(item=>String(item.barcode||'').trim()).filter(Boolean));
             stock.forEach(item=>{if(!String(item.barcode||'').trim()||stock.filter(other=>other!==item&&String(other.barcode||'').trim()===String(item.barcode||'').trim()).length){let code='';do{code='ITM-'+Math.floor(100000+Math.random()*900000)}while(usedBarcodes.has(code));item.barcode=code;usedBarcodes.add(code);}});
-            if(!safeSetStorage('realStockDatabase',stock)){showActionMessage('Barcode सहित स्टॉक सेव नहीं हुआ; प्रिंट से पहले स्टोरेज ठीक करें।','error');return;}
+            if(JSON.stringify(stock)!==originalSnapshot&&!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',stock]])){showActionMessage('Barcode/स्टॉक परिवर्तन Firebase में सुरक्षित नहीं हुआ; सूची अपडेट नहीं की गई।','error');return;}
             let tbody = document.getElementById('stockTableBody');
             if(tbody) tbody.innerHTML = stock.length === 0 ? `<tr><td colspan="8" style="text-align:center;">कोई स्टॉक नहीं</td></tr>` : stock.map((s, i) => `
                 <tr>
@@ -2937,7 +2939,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             let file = event.target.files[0];
             if(!file) return;
             let reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 let lines = e.target.result.split('\n');
                 let stock = safeGetStorage('realStockDatabase', []);
                 let imported=0,skipped=0;
@@ -2949,10 +2951,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                     stock.push({name,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
                     imported++;
                 }
-                if(!imported){showActionMessage('कोई वैध CSV पंक्ति नहीं मिली; स्टॉक में बदलाव नहीं हुआ।','error');return;}
-                if(!safeSetStorage('realStockDatabase',mergeDuplicateStockRows(stock)))return;
+                if(!imported){showActionMessage('कोई वैध CSV पंक्ति नहीं मिली; स्टॉक में बदलाव नहीं हुआ।','error');event.target.value='';return;}
+                if(!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',mergeDuplicateStockRows(stock)]])){event.target.value='';return;}
+                event.target.value='';
                 loadAllFirebaseData();
-                showActionMessage(imported+' स्टॉक रिकॉर्ड इम्पोर्ट हुए; '+skipped+' गलत पंक्तियाँ छोड़ी गईं।','success');
+                showActionMessage(imported+' स्टॉक रिकॉर्ड Firebase में इम्पोर्ट हुए; '+skipped+' गलत पंक्तियाँ छोड़ी गईं।','success');
             };
             reader.readAsText(file);
         }
