@@ -110,3 +110,14 @@ test('first three Settings groups are converted to accessible collapsible detail
   assert.match(html, /rk-settings-collapsible/);
   assert.match(html, /aria-expanded/);
 });
+
+test('mobile viewport, admin header controls and customer hero fit within device bounds', () => {
+  for (const file of ['index.html', 'public/index.html', 'backend/public/index.html']) {
+    const html = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    assert.match(html, /rk-mobile-viewport-and-visibility-2026-11/);
+    assert.match(html, /#adminPanel #menuToggleBtn\{display:inline-flex!important;visibility:visible!important/);
+    assert.match(html, /#customerFirstPortal \.rk-hero-image\{display:block!important;width:min\(100%,520px\)!important/);
+    assert.match(html, /rk-mobile-duplicate-search-guard-2026-11/);
+    assert.match(html, /new MutationObserver/);
+  }
+});
