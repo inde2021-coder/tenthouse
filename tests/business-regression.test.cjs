@@ -75,23 +75,20 @@ test('production readiness requires a successful bounded Firebase RTDB read', as
     set(key,value) { this.headers[key]=value; return this; },
     json(value) { this.body=value; return this; }
   });
-  const makeHandler = adminDb => vm.runInNewContext(code + '; readinessCheck', {
-    adminDb, isProd:true, deploymentEnvironment:'production', console,
+  let probePath = '';
+  const makeHandler = (adminDb, firebaseRead) => vm.runInNewContext(code + '; readinessCheck', {
+    adminDb, firebaseRestGet: firebaseRead, isProd:true,
+    deploymentEnvironment:'production', console,
     Promise, Error, setTimeout, clearTimeout
   });
-  let probePath = '';
   const successResponse = makeResponse();
-  const successHandler = makeHandler({
-    ref(path) { probePath=path; return { orderByKey(){return this;}, limitToFirst(){return this;}, get:async()=>({exists:()=>true}) }; }
-  });
+  const successHandler = makeHandler({}, async path => { probePath=path; return []; });
   await successHandler({}, successResponse);
-  assert.equal(probePath,'tent_erp_data');
+  assert.equal(probePath,'tent_erp_data/stock');
   assert.equal(successResponse.code,200);
   assert.equal(successResponse.body.databaseProbe,'passed');
   const failedResponse = makeResponse();
-  const failedHandler = makeHandler({
-    ref() { return { orderByKey(){return this;}, limitToFirst(){return this;}, get:async()=>{throw new Error('permission denied');} }; }
-  });
+  const failedHandler = makeHandler({}, async () => { throw new Error('permission denied'); });
   await failedHandler({}, failedResponse);
   assert.equal(failedResponse.code,503);
   assert.equal(failedResponse.body.persistentDatabaseReady,false);
@@ -722,7 +719,7 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
 
 test('Firebase Realtime Database uses the approved radhe-krishna-online-booking project', () => {
   assert.match(html, /apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I"/);
-  assert.match(html, /authDomain: "tenthouse2026\.vercel\.app"/);
+  assert.match(html, /authDomain: "radhe-krishna-online-booking\.firebaseapp\.com"/);
   assert.match(html, /databaseURL: "https:\/\/radhe-krishna-online-booking-default-rtdb\.firebaseio\.com"/);
   assert.match(html, /projectId: "radhe-krishna-online-booking"/);
   assert.match(html, /appId: "1:1010400653483:web:fb2a78ec593b3c2888c7ee"/);

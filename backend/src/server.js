@@ -755,7 +755,9 @@ app.post('/api/customer/bookings', bookingLimiter, requireDurableStore, async (r
 });
 app.get('/api/customer/stock', requireDurableStore, async (_req,res) => {
   try {
-    const value=await firebaseRestGet('tent_erp_data/stock', { timeoutMs: 12000 });
+    const value=isProd
+      ? await firebaseRestGet('tent_erp_data/stock', { timeoutMs: 12000 })
+      : await storeGet('tent_erp_data/stock');
     const rows=Array.isArray(value)?value:Object.values(value||{});
     const items=rows.filter(row=>row&&typeof row==='object'&&String(row.name||row.item||'').trim()&&Math.max(0,Number(row.qty)||0)>0)
       .map(row=>({
