@@ -39,7 +39,7 @@ test('five reference CSS is synchronized across all deployable locations', () =>
   const css = cssCopies[0];
   assert.match(css, /AUTHORITATIVE FIVE-REFERENCE COMPOSITIONS/);
   for (const ref of ['ref1', 'ref2', 'ref3', 'ref4', 'ref5']) {
-    assert.match(css, new RegExp('html\\.' + ref + ' #customerFirstPortal'));
+    assert.match(css, new RegExp('html\\.rk-' + ref + ' #customerFirstPortal'));
   }
   assert.match(css, /@media\(max-width:720px\)/);
 });
