@@ -794,7 +794,7 @@ test('existing stock rows receive unique persistent barcodes before table render
   const code = sourceBetween('function loadRealStockList()', 'function printSingleBarcode');
   assert.ok(code.includes('const usedBarcodes=new Set'));
   assert.ok(code.includes("item.barcode=code"));
-  assert.ok(code.includes("safeSetStorage('realStockDatabase',stock)"));
+  assert.ok(code.includes("await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',stock]])"));
 });
 
 test('CSV stock import rejects invalid quantities and rates instead of inventing defaults', () => {
