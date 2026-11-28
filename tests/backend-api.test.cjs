@@ -647,6 +647,8 @@ test('untrusted cross-origin browser origins are not granted API access', async 
       'Access-Control-Request-Headers': 'authorization,content-type'
     }
   });
-  assert.equal(response.status, 204);
+  // Express automatically answers unsupported OPTIONS requests with 200;
+  // the security assertion is that no Access-Control-Allow-Origin is emitted.
+  assert.equal(response.status, 200);
   assert.equal(response.headers.get('access-control-allow-origin'), null);
 });
