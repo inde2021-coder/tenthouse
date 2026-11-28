@@ -1935,7 +1935,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             }
             updateRkSyncStatus();return true;
         }
-        window.addEventListener('online',()=>{updateRkSyncStatus();flushPendingCloudSync();flushPendingCustomerWorkflowSync();});
+        window.addEventListener('online', () => { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); });
+        window.addEventListener('online', updateRkSyncStatus);
         window.addEventListener('offline',updateRkSyncStatus);
         document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateRkSyncStatus();flushPendingCloudSync();flushPendingCustomerWorkflowSync();}});
         window.addEventListener('storage',e=>{if(e.key==='rkPendingCloudSync')updateRkSyncStatus();});
@@ -1979,8 +1980,9 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if (!safeSetStorageBatch(entries)) return false;
             // Offline/local-only sessions may complete the transaction on this device.
             // The full datasets remain queued; online cloud sync is required before another device sees them.
-            const authenticated=!!(navigator.onLine&&window.firebase&&firebase.apps.length&&firebase.auth().currentUser&&firebaseConfig.databaseURL);
-            if(!authenticated){updateRkSyncStatus();showActionMessage(navigator.onLine?'बदलाव इस डिवाइस में सेव हैं। क्लाउड सिंक के लिए अलग Gmail लॉगिन करें।':'ऑफलाइन बदलाव इस डिवाइस में सुरक्षित सेव हैं; इंटरनेट आने पर सिंक करें।','success');return true;}
+            const browserOnline=typeof navigator==='undefined'?true:navigator.onLine;
+            const authenticated=!!(browserOnline&&typeof navigator!=='undefined'&&window.firebase&&firebase.apps.length&&firebase.auth().currentUser&&firebaseConfig.databaseURL);
+            if(typeof navigator!=='undefined'&&!authenticated){updateRkSyncStatus();showActionMessage(navigator.onLine?'बदलाव इस डिवाइस में सेव हैं। क्लाउड सिंक के लिए अलग Gmail लॉगिन करें।':'ऑफलाइन बदलाव इस डिवाइस में सुरक्षित सेव हैं; इंटरनेट आने पर सिंक करें।','success');return true;}
             const results = await Promise.all(entries.map(([key, value]) => syncToCloud(key, value)));
             if (results.every(Boolean)) return true;
             for (const [key, previous] of snapshots) {
