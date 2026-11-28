@@ -70,3 +70,16 @@ test('five reference theme choices are persistent and restore without changing b
     assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
   }
 });
+
+
+test('reference compositions target the shipped portal artwork and real layout nodes', () => {
+  const html = fs.readFileSync(files[0], 'utf8');
+  const css = fs.readFileSync(cssFiles[0], 'utf8');
+  assert.match(html, /src="\.\/customer-hero\.svg"/);
+  assert.match(html, /class="rk-customer-form" onsubmit="saveCustomerBooking\(event\)"/);
+  assert.match(html, /class="rk-booking-tracker"/);
+  assert.match(html, /class="rk-reference-nav"/);
+  assert.match(css, /url\('\.\/customer-hero\.svg'\)/);
+  assert.doesNotMatch(css, /bartan-hero\.svg/);
+  assert.match(css, /html\.rk-ref2 #customerFirstPortal \.rk-customer-shell\{grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
+});
