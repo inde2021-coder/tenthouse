@@ -2609,3 +2609,62 @@ test('backup restore and uploaded settings images wait for confirmed Firebase pe
 test('final-return missing records remain isolated by booking item index', () => {
   assert.ok(html.includes("m.itemIndex!==undefined&&m.itemIndex!==null&&Number(m.itemIndex)===idx"));
 });
+
+
+test('third-party payment entry writes only to the separate Firebase-confirmed vendor payment ledger', async () => {
+  const code = sourceBetween('async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate(');
+  const store = { thirdPartyPayments: [] };
+  const values = { tpPaymentParty: { value: 'Vendor A' }, tpPaymentAmount: { value: '100' }, tpPaymentMethod: { value: 'Cash' }, tpPaymentNote: { value: 'Advance' } };
+  const context = {
+    document: { getElementById: id => values[id] || null },
+    safeGetStorage: key => store[key] || [],
+    safeSetStorageBatchAndConfirmCloud: async entries => { for (const [key,value] of entries) store[key] = value; return true; },
+    loadThirdPartyLedger: () => {},
+    showActionMessage: () => {},
+    Math, Number, String, Array, Date
+  };
+  await vm.runInNewContext(`(async()=>{${code}
+    await recordThirdPartyPayment({preventDefault(){},target:{reset(){}}});
+  })()`, context);
+  assert.equal(store.thirdPartyPayments.length, 1);
+  assert.equal(store.thirdPartyPayments[0].partyName, 'Vendor A');
+  assert.equal(store.thirdPartyPayments[0].amount, 100);
+  assert.equal(store.thirdPartyPayments[0].type, 'vendor-payment');
+  assert.equal(store.thirdPartyPayments[0].method, 'Cash');
+  assert.equal(store.thirdPartyPayments[0].note, 'Advance');
+  assert.equal(store.softwareBookings, undefined);
+  assert.equal(store.rkPaymentLedger, undefined);
+});
+
+test('third-party ledger calculates vendor cost, missing liability, payment due and margin from actual dispatch data', () => {
+  const booking = {
+    id: 123, name: 'Customer A', address: 'Test Address', eventType: 'Wedding',
+    date: '2026-11-01', returnDate: '2026-11-05',
+    items: [{ name: 'Tent', qty: 2, source: 'third-party', partyName: 'Vendor A', vendorRentRate: 60, vendorMissingCost: 50, missingQty: 1 }],
+    dispatchEntries: [{ itemIndex: 0, itemName: 'Tent', qty: 2, date: '2026-11-01', unitRent: 100, vendorRentRate: 60, source: 'third-party', partyName: 'Vendor A' }]
+  };
+  const store = {
+    thirdPartyDatabase: [{ partyName: 'Vendor A', item: 'Tent', qty: 3, purchasedQty: 4, costPrice: 60, chargePrice: 100 }],
+    thirdPartyPayments: [{ id: 'TPPAY-1', partyName: 'Vendor A', amount: 100, date: '2026-11-02', method: 'Cash', note: 'Advance' }],
+    softwareBookings: [booking]
+  };
+  const nodes = { tpPaymentParty: { value: '', innerHTML: '' }, partyWiseTablesContainer: { innerHTML: '' }, thirdPartyPaymentBody: { innerHTML: '' } };
+  const code = sourceBetween('function loadThirdPartyLedger()', '// Removed an orphaned speech-recognition fragment');
+  const context = {
+    safeGetStorage: key => store[key],
+    document: { getElementById: id => nodes[id] || null },
+    getDispatchEntryRentalSlices: () => [{ entry: booking.dispatchEntries[0], qty: 2, endDate: '2026-11-03' }],
+    calculateRentalDays: () => 2,
+    escapeHtml: value => String(value??''),
+    Math, Number, String, Array, Date, JSON
+  };
+  vm.runInNewContext(code + '\\nloadThirdPartyLedger();', context);
+  assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹240.00'));
+  assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹50.00'));
+  assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹290.00'));
+  assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹400.00'));
+  assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹190.00'));
+  assert.ok(nodes.partyWiseTablesContainer.innerHTML.includes('₹110.00'));
+  assert.ok(nodes.thirdPartyPaymentBody.innerHTML.includes('TPPAY-1'));
+  assert.ok(nodes.tpPaymentParty.innerHTML.includes('Vendor A'));
+});
