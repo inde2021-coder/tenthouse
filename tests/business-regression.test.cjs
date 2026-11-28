@@ -24,7 +24,7 @@ test('Firebase sync, pending queue, and initial sync sanitize software settings'
   const sync=sourceBetween('function sanitizeCloudSettings(settings)', "        window.addEventListener('online'");
   assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)/);
   assert.match(html,/sanitizeCloudValue\(cloudKey, JSON.parse\(raw\)\)/);
-  assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)\); delete q\[cloudKey\]/);
+  assert.match(sync,/JSON\.stringify\(latest\[cloudKey\]\)===JSON\.stringify\(value\)/);\n  assert.match(sync,/delete latest\[cloudKey\]/);
   assert.match(html,/Firebase secret cleanup failed/);
   assert.match(html,/existingLocal\[secretKey\]/);
   assert.match(html,/JSON\.stringify\(cloudSafeSettings\) !== JSON\.stringify\(cloudData\[cloudKey\]\)/);
