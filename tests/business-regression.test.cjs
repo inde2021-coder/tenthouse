@@ -32,7 +32,13 @@ test('Firebase sync, pending queue, and initial sync sanitize software settings'
   assert.match(html,/dbRef\.child\(cloudKey\)\.set\(cloudSafeSettings\)/);
 });
 
-test('offline and local-only transactions enqueue every changed dataset for later Firebase sync', () => {\n  const transaction=sourceBetween('async function safeSetStorageBatchAndConfirmCloud(entries)', '        function safeSetStorageBatch(entries)');\n  assert.match(transaction,/if\\(typeof navigator!==\\'undefined\\'&&!authenticated\\)\\{entries\\.forEach\\(\\(\\[key,value\\]\\)=>\\{syncToCloud\\(key,value\\);\\}\\)/);\n  assert.match(transaction,/syncToCloud\\(key,value\\)/);\n});\n\ntest('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
+test('offline and local-only transactions enqueue every changed dataset for later Firebase sync', () => {
+  const transaction=sourceBetween('async function safeSetStorageBatchAndConfirmCloud(entries)', '        function safeSetStorageBatch(entries)');
+  assert.ok(transaction.includes("if(typeof navigator!=='undefined'&&!authenticated){entries.forEach(([key,value])=>{syncToCloud(key,value);})"));
+  assert.ok(transaction.includes('syncToCloud(key,value)'));
+});
+
+test('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
   const rules = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '..', 'database.rules.json'), 'utf8')).rules;
   assert.equal(rules['.read'], false);
   assert.equal(rules['.write'], false);
