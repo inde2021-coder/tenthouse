@@ -2417,12 +2417,12 @@ test('barcode camera scanner is async because it awaits supported formats, camer
 
 
 test('every inline classic JavaScript block in the ERP HTML parses successfully', () => {
-  const scripts=[...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)];
+  const scripts=[...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
   let checked=0;
   scripts.forEach((match,index)=>{
     const attrs=match[1]||'',body=match[2]||'';
-    if(/\\bsrc\\s*=/.test(attrs)||!body.trim())return;
-    const type=(attrs.match(/\\btype\\s*=\\s*["']([^"']+)["']/i)||[])[1]||'text/javascript';
+    if(/\bsrc\s*=/.test(attrs)||!body.trim())return;
+    const type=(attrs.match(/\btype\s*=\s*["']([^"']+)["']/i)||[])[1]||'text/javascript';
     if(!['text/javascript','application/javascript'].includes(type.toLowerCase()))return;
     assert.doesNotThrow(()=>new vm.Script(body,{filename:'inline-script-'+index+'.js'}),`inline script ${index} must parse`);
     checked++;
