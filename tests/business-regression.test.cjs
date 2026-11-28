@@ -2515,7 +2515,7 @@ test('invoice base rent and customer booking tracker use stable local ISO dates'
   assert.match(tracker,/getFullYear\(\).*getMonth\(\).*getDate\(\)/s);
   assert.doesNotMatch(tracker,/toLocaleDateString\('en-CA'\)/);
 });
-\n
+
 test('critical stock, booking, expense and payment writes wait for Firebase confirmation', () => {
   const expense = sourceBetween('async function saveDailyExpense(event)', '        function renderRoyalDashboardMetrics()');
   const stock = sourceBetween('async function saveStockItemReal(event)', '        function mergeDuplicateStockRows');
