@@ -2584,3 +2584,13 @@ test('purchase, vendor, income-expense, invoice and settings mutations require F
   assert.match(html, /async function deleteThirdPartyPayment[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
   assert.match(html, /async function saveSettings[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
 });
+
+
+test('barcode generation and CSV stock import require confirmed Firebase persistence', () => {
+  const barcode = sourceBetween('async function loadRealStockList()', '        function printSingleBarcode');
+  const csv = sourceBetween('function importStockFromCSV(event)', '        async function savePurchaseEntry');
+  assert.match(barcode, /await safeSetStorageBatchAndConfirmCloud\(\[\['realStockDatabase',stock\]\]\)/);
+  assert.match(barcode, /JSON\.stringify\(stock\)!==originalSnapshot/);
+  assert.match(csv, /reader\.onload = async function/);
+  assert.match(csv, /await safeSetStorageBatchAndConfirmCloud\(\[\['realStockDatabase',mergeDuplicateStockRows\(stock\)\]\]\)/);
+});
