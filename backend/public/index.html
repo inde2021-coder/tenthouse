@@ -237,6 +237,10 @@ button:focus-visible, input[type="button"]:focus-visible, input[type="submit"]:f
  #actionToast.error{background:#991b1b!important;color:#fff!important;border:2px solid #fecaca!important;font-weight:800}
  #actionToast.success{background:#065f46!important;color:#fff!important;border:2px solid #a7f3d0!important;font-weight:800}
  #welcomeOverlay{z-index:2147483000!important;backdrop-filter:blur(5px)!important}
+ #rkSyncStatus{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:2147482500;padding:7px 11px;border-radius:999px;background:#142238eF;border:1px solid #6684aa66;color:#dceaff;font:700 11px/1.2 system-ui;box-shadow:0 5px 18px #0005;max-width:calc(100vw - 20px);pointer-events:none}
+ #rkSyncStatus[data-state="offline"]{color:#ffe1a6;border-color:#d99b3c88}
+ #rkSyncStatus[data-state="pending"]{color:#bdeaff;border-color:#4daedb88}
+ #rkSyncStatus[data-state="online"]{color:#b8f5ce;border-color:#4bbd7c88}
 @media(max-width:600px){.calendar-grid-header{gap:4px;padding:8px}.calendar-grid-header .action-btn{padding:6px 7px!important;font-size:11px!important;margin:0;min-height:34px}.calendar-grid-header h3{font-size:14px!important}.calendar-weekdays,.calendar-days-grid{gap:3px}.calendar-days-grid{padding:4px}.calendar-day-cell{min-height:62px;padding:4px 3px;border-radius:7px}.calendar-day-number{font-size:12px}.calendar-booking-tag{font-size:9px;padding:2px 3px}.calendar-weekdays>*{font-size:10px;padding:5px 0}}
 
 </style>
@@ -922,6 +926,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 
 
     <div id="actionToast"></div>
+    <div id="rkSyncStatus" data-state="offline" role="status" aria-live="polite">स्थानीय मोड तैयार</div>
 
     <!-- Secret admin gate: revealed only by Alt+Shift+K or a deliberate long-press on the developer mark. -->
     <div id="welcomeOverlay" role="dialog" aria-modal="true" aria-labelledby="rkAdminGateTitle" style="display:none;position:fixed;inset:0;background:rgba(2,7,15,.88);backdrop-filter:blur(22px);justify-content:center;align-items:center;z-index:2147483000;padding:18px">
@@ -932,7 +937,19 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         <button id="rkGoogleLoginBtn" type="button" onclick="handleGoogleAdminLogin(event)" style="width:100%;min-height:50px;border:1px solid rgba(130,175,255,.5);border-radius:12px;background:linear-gradient(135deg,#315b9c,#19365f);color:#fff;font-weight:800">
           <i class="fa-brands fa-google" style="margin-right:8px"></i> Google / Gmail से लॉगिन करें
         </button>
-        <p id="rkGoogleLoginHint" style="font-size:12px;line-height:1.5;color:#b9c8df;margin:12px 0 4px">एक बार Gmail चुनें। अलग API टोकन की जरूरत नहीं है।</p>
+        <p id="rkGoogleLoginHint" style="font-size:12px;line-height:1.5;color:#b9c8df;margin:12px 0 4px">Gmail लॉगिन ऑनलाइन क्लाउड एडमिन सत्यापन के लिए अलग रहेगा।</p>
+        <div style="height:1px;background:rgba(160,185,220,.2);margin:16px 0"></div>
+        <div style="text-align:left;background:rgba(8,18,34,.72);border:1px solid rgba(130,175,255,.22);border-radius:14px;padding:14px">
+          <div style="font-weight:800;color:#eaf2ff;margin-bottom:8px">डिवाइस पासवर्ड लॉगिन</div>
+          <div style="font-size:12px;color:#aebed5;margin-bottom:10px">Login ID: <b style="color:#fff">ADMIN</b> · यह लॉगिन Google verification के बिना इस डिवाइस पर काम करता है।</div>
+          <div id="rkLocalPrefixWrap" style="display:none;align-items:center;gap:8px;margin-bottom:9px">
+            <span id="rkLocalPrefix" style="padding:12px 10px;border-radius:10px;background:#1c2c43;color:#d8e8ff;font-weight:900;letter-spacing:2px"></span>
+            <span style="font-size:11px;color:#aebed5">स्थायी कोड</span>
+          </div>
+          <input id="rkLocalPasswordInput" type="password" inputmode="numeric" autocomplete="current-password" maxlength="10" pattern="[0-9]{4,10}" placeholder="पहली बार: 10 अंक सेट करें" style="width:100%;margin:4px 0 10px;text-align:center;letter-spacing:5px;font-size:19px" />
+          <button id="rkLocalLoginBtn" type="button" onclick="handleLocalAdminLogin(event)" style="width:100%;background:linear-gradient(135deg,#167b70,#10544f);color:#fff;font-weight:800">डिवाइस पासवर्ड से प्रवेश करें</button>
+          <p id="rkLocalLoginHint" style="font-size:11px;line-height:1.45;color:#91a5c2;margin:9px 0 0">पहली बार पूरा 10 अंकों का पासवर्ड सेट होगा। उसके बाद स्थायी पहले 6 अंक दिखेंगे और केवल अंतिम 4 अंक भरने होंगे।</p>
+        </div>
         <button type="button" onclick="closeWelcomeOverlay()" class="action-btn rk-admin-cancel">बंद करें</button>
       </div>
     </div>
@@ -1652,7 +1669,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 // Only attach the shared business-data listener after a signed-in user exists.
                 firebase.auth().onAuthStateChanged((user) => {
                     if (!user) return;
-                    flushPendingCloudSync();
+                    flushPendingCloudSync();updateRkSyncStatus();
                     if (!dbRef || cloudListenerAttached) return;
                     cloudListenerAttached = true;
                     dbRef.on('value', async (snapshot) => {
@@ -1660,6 +1677,8 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                         applyingCloudSnapshot = true;
                         try {
                             for (const [localKey, cloudKey] of Object.entries(CLOUD_KEY_MAP)) {
+                                const pendingCloud=safeGetStorage('rkPendingCloudSync',{});
+                                if (Object.prototype.hasOwnProperty.call(pendingCloud,cloudKey)) continue;
                                 if (Object.prototype.hasOwnProperty.call(cloudData, cloudKey) && cloudData[cloudKey] !== null) {
                                     if (localKey === 'softwareSettings') {
                                         const existingLocal = safeGetStorage('softwareSettings', {});
@@ -1871,31 +1890,57 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         function sanitizeCloudValue(cloudKey, value) {
             return cloudKey === 'settings' ? sanitizeCloudSettings(value) : value;
         }
+        // Offline-first persistence: local data is authoritative on this device until a queued
+        // dataset is acknowledged by Firebase. Never overwrite a pending local dataset with an older snapshot.
+        function updateRkSyncStatus() {
+            const el=document.getElementById('rkSyncStatus'); if(!el)return;
+            const pending=Object.keys(safeGetStorage('rkPendingCloudSync',{})).length;
+            const online=navigator.onLine===true;
+            const signedIn=!!(window.firebase&&firebase.apps.length&&firebase.auth().currentUser);
+            if(!online){el.dataset.state='offline';el.textContent='ऑफलाइन · डिवाइस में सेव';}
+            else if(pending){el.dataset.state='pending';el.textContent='सिंक बाकी · '+pending+' डेटा सेट';}
+            else if(signedIn){el.dataset.state='online';el.textContent='ऑनलाइन · क्लाउड सिंक';}
+            else{el.dataset.state='offline';el.textContent='ऑनलाइन · लोकल मोड (Gmail सिंक हेतु लॉगिन)';}
+        }
         // Keep local writes immediate, then mirror only non-secret datasets to Firebase.
         function syncToCloud(key, value) {
             if (applyingCloudSnapshot) return Promise.resolve(false);
             const cloudKey = CLOUD_KEY_MAP[key];
             if (!cloudKey) return Promise.resolve(false);
             const safeValue = sanitizeCloudValue(cloudKey, value);
-            // Keep the latest sanitized value queued for upload when internet/auth returns.
-            try { const q = safeGetStorage('rkPendingCloudSync', {}); q[cloudKey] = safeValue; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); } catch (_) {}
+            try { const q=safeGetStorage('rkPendingCloudSync',{});q[cloudKey]=safeValue;localStorage.setItem('rkPendingCloudSync',JSON.stringify(q)); } catch (_) {}
+            updateRkSyncStatus();
             if (!firebaseConfig.databaseURL || !navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return Promise.resolve(false);
-            if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
-            return dbRef.child(cloudKey).set(safeValue).then(() => {
-                const q = safeGetStorage('rkPendingCloudSync', {}); delete q[cloudKey]; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); return true;
-            }).catch((error) => { console.error('Firebase write failed:', key, error); showActionMessage('लोकल सेव सुरक्षित है; इंटरनेट/ Firebase अनुमति मिलने पर दोबारा सिंक होगा।','error'); return false; });
+            if (!dbRef) dbRef=firebase.database().ref('tent_erp_data');
+            return dbRef.child(cloudKey).set(safeValue).then(()=>{
+                const q=safeGetStorage('rkPendingCloudSync',{});
+                if(JSON.stringify(q[cloudKey])===JSON.stringify(safeValue))delete q[cloudKey];
+                localStorage.setItem('rkPendingCloudSync',JSON.stringify(q));updateRkSyncStatus();return true;
+            }).catch(error=>{
+                console.error('Firebase write failed:',key,error);
+                updateRkSyncStatus();
+                showActionMessage('डिवाइस में डेटा सेव है; इंटरनेट/अनुमति मिलते ही क्लाउड सिंक दोबारा होगा।','error');return false;
+            });
         }
         async function flushPendingCloudSync() {
-            if (!firebaseConfig.databaseURL || !navigator.onLine || !window.firebase || !firebase.apps.length || !firebase.auth().currentUser) return;
-            if (!dbRef) dbRef = firebase.database().ref('tent_erp_data');
-            const q = safeGetStorage('rkPendingCloudSync', {});
-            for (const [cloudKey, value] of Object.entries(q)) {
-                try { await dbRef.child(cloudKey).set(sanitizeCloudValue(cloudKey, value)); delete q[cloudKey]; localStorage.setItem('rkPendingCloudSync', JSON.stringify(q)); }
-                catch (e) { console.warn('Pending sync remains queued', cloudKey, e); break; }
+            if(!firebaseConfig.databaseURL||!navigator.onLine||!window.firebase||!firebase.apps.length||!firebase.auth().currentUser){updateRkSyncStatus();return false;}
+            if(!dbRef)dbRef=firebase.database().ref('tent_erp_data');
+            const q=safeGetStorage('rkPendingCloudSync',{});
+            for(const [cloudKey,value] of Object.entries(q)){
+                try{
+                    await dbRef.child(cloudKey).set(sanitizeCloudValue(cloudKey,value));
+                    const latest=safeGetStorage('rkPendingCloudSync',{});
+                    if(JSON.stringify(latest[cloudKey])===JSON.stringify(value)){delete latest[cloudKey];localStorage.setItem('rkPendingCloudSync',JSON.stringify(latest));}
+                }catch(e){console.warn('Pending sync remains queued',cloudKey,e);updateRkSyncStatus();return false;}
             }
+            updateRkSyncStatus();return true;
         }
         window.addEventListener('online', () => { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); });
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) { flushPendingCloudSync(); flushPendingCustomerWorkflowSync(); } });
+        window.addEventListener('online', updateRkSyncStatus);
+        window.addEventListener('offline',updateRkSyncStatus);
+        document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateRkSyncStatus();flushPendingCloudSync();flushPendingCustomerWorkflowSync();}});
+        window.addEventListener('storage',e=>{if(e.key==='rkPendingCloudSync')updateRkSyncStatus();});
+        document.addEventListener('DOMContentLoaded',updateRkSyncStatus);
 
         function safeGetStorage(key, defaultValue) {
             try {
@@ -1933,6 +1978,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 return false;
             }
             if (!safeSetStorageBatch(entries)) return false;
+            // Offline/local-only sessions may complete the transaction on this device.
+            // The full datasets remain queued; online cloud sync is required before another device sees them.
+            const browserOnline=typeof navigator==='undefined'?true:navigator.onLine;
+            const authenticated=!!(browserOnline&&typeof navigator!=='undefined'&&window.firebase&&firebase.apps.length&&firebase.auth().currentUser&&firebaseConfig.databaseURL);
+            if(typeof navigator!=='undefined'&&!authenticated){updateRkSyncStatus();showActionMessage(navigator.onLine?'बदलाव इस डिवाइस में सेव हैं। क्लाउड सिंक के लिए अलग Gmail लॉगिन करें।':'ऑफलाइन बदलाव इस डिवाइस में सुरक्षित सेव हैं; इंटरनेट आने पर सिंक करें।','success');return true;}
             const results = await Promise.all(entries.map(([key, value]) => syncToCloud(key, value)));
             if (results.every(Boolean)) return true;
             for (const [key, previous] of snapshots) {
@@ -2118,6 +2168,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const gate=document.getElementById('welcomeOverlay');
             if(!gate)return false;
             gate.style.display='flex';gate.style.visibility='visible';gate.style.opacity='1';
+            refreshLocalAdminGate();
             return false;
         }
         function openCustomerLogin(event){if(event){event.preventDefault();event.stopPropagation();}return revealAdminGate();}
@@ -2126,7 +2177,49 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const gate=document.getElementById('welcomeOverlay');if(gate)gate.style.display='none';
             const portal=document.getElementById('customerFirstPortal');if(portal)portal.style.display='flex';
         }
-        async function handleGoogleAdminLogin(event){
+        // Device-local convenience lock. This is not server authentication and must never
+        // be used to authorize protected backend endpoints.
+        function rkBytesToBase64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes)));}
+        function rkBase64ToBytes(value){return Uint8Array.from(atob(value),c=>c.charCodeAt(0));}
+        async function rkHashLocalPassword(password,salt){
+            if(!window.crypto||!crypto.subtle)throw new Error('इस ब्राउज़र में सुरक्षित डिवाइस पासवर्ड उपलब्ध नहीं है। HTTPS पर खोलें।');
+            const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
+            return crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},material,256);
+        }
+        function refreshLocalAdminGate(){
+            const credential=safeGetStorage('rkLocalAdminCredential',null),input=document.getElementById('rkLocalPasswordInput'),wrap=document.getElementById('rkLocalPrefixWrap'),prefix=document.getElementById('rkLocalPrefix'),hint=document.getElementById('rkLocalLoginHint');
+            if(!input)return;
+            if(credential&&/^\d{6}$/.test(String(credential.prefix||''))){wrap.style.display='flex';prefix.textContent=credential.prefix;input.maxLength=4;input.placeholder='अंतिम 4 अंक';input.autocomplete='current-password';hint.textContent='पहले 6 अंक लॉक हैं। केवल अंतिम 4 अंक दर्ज करें।';}
+            else{wrap.style.display='none';input.maxLength=10;input.placeholder='पहली बार: 10 अंक सेट करें';hint.textContent='पहली बार पूरा 10 अंकों का पासवर्ड सेट होगा। उसके बाद केवल अंतिम 4 अंक भरने होंगे।';}
+        }
+        async function handleLocalAdminLogin(event){
+            if(event){event.preventDefault();event.stopPropagation();}
+            const input=document.getElementById('rkLocalPasswordInput'),button=document.getElementById('rkLocalLoginBtn');
+            const value=String(input?.value||'').trim(),credential=safeGetStorage('rkLocalAdminCredential',null);
+            try{
+                if(button){button.disabled=true;button.textContent='जाँच हो रही है…';}
+                if(!credential){
+                    if(!/^\d{10}$/.test(value))throw new Error('पहली बार सेटअप के लिए 10 अंकों का पासवर्ड दर्ज करें।');
+                    const salt=crypto.getRandomValues(new Uint8Array(16)),hash=await rkHashLocalPassword(value,salt);
+                    const saved={version:1,loginId:'ADMIN',prefix:value.slice(0,6),salt:rkBytesToBase64(salt),hash:rkBytesToBase64(hash),iterations:250000,createdAt:new Date().toISOString()};
+                    if(!safeSetStorage('rkLocalAdminCredential',saved))throw new Error('डिवाइस पर पासवर्ड सेट नहीं हो पाया।');
+                    showActionMessage('डिवाइस पासवर्ड सेट हो गया। अब इस डिवाइस पर प्रवेश कर सकते हैं।','success');
+                }else{
+                    if(!/^\d{4}$/.test(value))throw new Error('केवल अंतिम 4 अंक दर्ज करें।');
+                    const candidate=credential.prefix+value,actual=await rkHashLocalPassword(candidate,rkBase64ToBytes(credential.salt));
+                    const expected=rkBase64ToBytes(credential.hash),a=new Uint8Array(actual);
+                    if(a.length!==expected.length||!a.every((v,i)=>v===expected[i]))throw new Error('डिवाइस पासवर्ड गलत है।');
+                }
+                const gate=document.getElementById('welcomeOverlay');if(gate)gate.style.display='none';
+                const portal=document.getElementById('customerFirstPortal');if(portal)portal.style.display='none';
+                const panel=document.getElementById('adminPanel');if(panel)panel.style.display='block';
+                if(input)input.value='';
+                loadAllFirebaseData();updateRkSyncStatus();
+                showActionMessage('डिवाइस लोकल लॉगिन सफल। क्लाउड सिंक के लिए अलग Gmail लॉगिन आवश्यक है।','success');return true;
+            }catch(error){showActionMessage(error.message||'डिवाइस लॉगिन विफल।','error');return false;}
+            finally{if(button){button.disabled=false;button.textContent='डिवाइस पासवर्ड से प्रवेश करें';}}
+        }
+                async function handleGoogleAdminLogin(event){
             if(event){event.preventDefault();event.stopPropagation();}
             const button=document.getElementById('rkGoogleLoginBtn');
             if(button){button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Gmail लॉगिन जारी…';}
