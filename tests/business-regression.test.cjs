@@ -1507,7 +1507,7 @@ test('daily income entry confirms income and expense totals ignore invalid ledge
   assert.equal(result.validRows,3);
   assert.equal(result.ignoredRows,3);
   const save=sourceBetween('function saveDailyExpense(event) {','function renderDashboardLineGraph()');
-  assert.match(save,/type==='Income'\?'आमदनी दर्ज हुई':'खर्च दर्ज हुआ'/);
+  assert.match(save,/type==='Income'\?'आमदनी Firebase में सुरक्षित हुई':'खर्च Firebase में सुरक्षित हुआ'/);
 });
 
 test('daily income and expense form records the selected ledger type', () => {
