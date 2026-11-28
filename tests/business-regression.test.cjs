@@ -1340,7 +1340,7 @@ test('admin stock entry rejects fractional and invalid quantities without saving
 });
 
 test('vendor stock entry rejects fractional, negative and malformed quantities without saving', () => {
-  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment');
   for(const qty of ['1.25','0','-4','bad','']) {
     let writes=0,reset=false;
     const values={tpPartyName:'Vendor A',tpItemName:'Chair',tpItemQty:qty,tpItemCost:'10',tpItemCharge:'20',tpVendorMissingCost:'5',tpMissingCharge:'30'};
@@ -1362,7 +1362,7 @@ test('vendor stock entry rejects fractional, negative and malformed quantities w
 });
 
 test('vendor stock entry rejects negative or non-numeric prices without saving', () => {
-  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'function recordThirdPartyPayment');
+  const code=sourceBetween('async function saveThirdPartyEntry(event)', 'async function recordThirdPartyPayment');
   for(const field of ['tpItemCost','tpItemCharge','tpVendorMissingCost','tpMissingCharge']) {
     for(const value of ['-1','abc']) {
       let writes=0;
@@ -1439,7 +1439,7 @@ test('purchase edit rejects fractional quantities before changing purchase or st
 test('income and expense edit rejects impossible calendar dates', () => {
   const helperStart=html.indexOf('function isValidCalendarDate(value)');
   const helperEnd=html.indexOf('function calculateRentalDays',helperStart);
-  const code=sourceBetween('async function editIncomeExpense(index)', 'function deleteIncomeExpense');
+  const code=sourceBetween('async function editIncomeExpense(index)', 'async function deleteIncomeExpense');
   const row={date:'2026-02-28',desc:'Rent',type:'Expense',amount:100};
   const answers=['2026-02-30','Rent','Expense','100'];
   let writes=0;
