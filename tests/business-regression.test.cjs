@@ -2712,6 +2712,7 @@ test('SMS settings expose only providers implemented by the backend and persist 
   assert.doesNotMatch(settings, /value="(?:2factor|fast2sms|custom)"/);
   assert.match(backend, /const hasSavedProvider = Object\.prototype\.hasOwnProperty\.call\(settings, 'smsGatewayProvider'\)/);
   assert.match(backend, /otpSettings\.smsGatewayEnabled !== true/);
+  assert.match(backend, /storeGet\('tent_erp_data\/settings'\)/);
   assert.match(backend, /otpSettings\.otpChannel/);
   assert.match(backend, /settings\.smsTemplateId \|\| process\.env\.MSG91_TEMPLATE_ID/);
 });

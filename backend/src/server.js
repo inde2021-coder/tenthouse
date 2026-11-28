@@ -487,7 +487,7 @@ app.post('/api/otp/send', otpLimiter, requireDurableStore, async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: 'Valid international phone number and channel are required.' });
   const { phone, channel } = parsed.data;
   let otpSettings = null;
-  try { otpSettings = await storeGet('settings'); }
+  try { otpSettings = await storeGet('tent_erp_data/settings'); }
   catch { return res.status(503).json({ error: 'OTP configuration could not be loaded from the persistent settings store.' }); }
   if (otpSettings && typeof otpSettings === 'object') {
     const configuredChannel = String(otpSettings.otpChannel || 'off').toLowerCase();
