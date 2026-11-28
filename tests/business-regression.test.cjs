@@ -1455,7 +1455,7 @@ test('purchase edit applies only the quantity delta to stock for the same item',
   const store={purchaseDatabase:[{itemName:'Chair',qty:5,price:500,supplier:'A'}],realStockDatabase:[{name:'Chair',qty:7}]};
   const answers=['Chair','4','400','A'];
   let writes=0;
-  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  const context={Number,Math,String,Array,Map,Date,prompt:()=>answers.shift(),safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
   vm.runInNewContext(code+'\nresult=editPurchase(0);',context);
   assert.equal(writes,1);
   assert.equal(store.realStockDatabase[0].qty,6);
@@ -1489,7 +1489,7 @@ test('purchase deletion atomically removes the record and its full available sto
   const code=sourceBetween('function purchaseHasDispatchReference(', 'async function editIncomeExpense(index)');
   const store={purchaseDatabase:[{itemName:'Chair',qty:5}],realStockDatabase:[{name:'Chair',qty:8}]};
   let writes=0;
-  const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
+  const context={Number,Math,String,Array,Map,Date,confirm:()=>true,safeGetStorage:key=>store[key],mergeDuplicateStockRows:rows=>rows,safeSetStorageBatch:entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{writes++;entries.forEach(([key,value])=>store[key]=value);return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{}};
   vm.runInNewContext(code+'\nresult=deletePurchase(0);',context);
   assert.equal(writes,1);
   assert.equal(store.purchaseDatabase.length,0);
@@ -1564,7 +1564,7 @@ test('missing item recovery restores stock and reduces missing liability exactly
     realStockDatabase:[],thirdPartyDatabase:[{partyName:'Vendor A',item:'Chair',qty:1}]
   };
   const messages=[];
-  const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '2',safeGetStorage:key=>store[key],safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:(m)=>messages.push(m)};
+  const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '2',safeGetStorage:key=>store[key],safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{for(const [key,value] of entries)store[key]=value;return true;},loadAllFirebaseData:()=>{},renderMissingItems:()=>{},showActionMessage:(m)=>messages.push(m)};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(storageBatchSource()+'\n'+code+'\nresult=resolveMissingItem("b-0");',context);
   await context.result;
@@ -1603,7 +1603,7 @@ test('missing recovery uses the exact item index and records the real recovery d
 
 test('legacy missing recovery refuses ambiguous duplicate item identities', async () => {
   const store={missingItemsDatabase:[{id:'old',bookingId:90,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:90,items:[{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'},{name:'Chair',qty:1,returnedQty:0,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
-  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(code+'\nresult=resolveMissingItem("old");',context);
   await context.result;
@@ -1611,7 +1611,7 @@ test('legacy missing recovery refuses ambiguous duplicate item identities', asyn
 });
 test('missing recovery rejects a stale item index that points to a different item', async () => {
   const store={missingItemsDatabase:[{id:'stale',bookingId:91,itemIndex:0,item:'Chair',source:'admin',qty:1}],softwareBookings:[{id:91,items:[{name:'Table',qty:1,returnedQty:0,missingQty:0,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:0}],thirdPartyDatabase:[]};
-  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  let writes=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(code+'\nresult=resolveMissingItem("stale");',context);
   await context.result;
@@ -1619,7 +1619,7 @@ test('missing recovery rejects a stale item index that points to a different ite
 });
 test('customer portal missing recovery rolls local stock and ledgers back when cloud sync fails', async () => {
   const store={missingItemsDatabase:[{id:'b-0',bookingId:88,itemIndex:0,item:'Chair',source:'admin',qty:1,resolved:false}],softwareBookings:[{id:88,source:'customer-portal',items:[{name:'Chair',qty:2,returnedQty:1,missingQty:1,source:'admin'}]}],realStockDatabase:[{name:'Chair',qty:4}],thirdPartyDatabase:[]};
-  let reloads=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],localStorage:mockStorageForBatch(store),safeSetStorage:(key,value)=>{localStorage.setItem(key,JSON.stringify(value));return true;},safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},syncCustomerBookingWorkflow:async()=>false,loadAllFirebaseData:()=>{reloads++},renderMissingItems:()=>{},showActionMessage:()=>{}};
+  let reloads=0;const context={Math,Number,String,Array,Date,JSON,console,prompt:()=> '1',safeGetStorage:key=>store[key],localStorage:mockStorageForBatch(store),safeSetStorage:(key,value)=>{localStorage.setItem(key,JSON.stringify(value));return true;},safeSetStorageBatch:entries=>{for(const [key,value] of entries)store[key]=value;return true;},safeSetStorageBatchAndConfirmCloud:async entries=>{for(const [key,value] of entries)store[key]=value;return true;},syncCustomerBookingWorkflow:async()=>false,loadAllFirebaseData:()=>{reloads++},renderMissingItems:()=>{},showActionMessage:()=>{}};
   const code=sourceBetween('async function resolveMissingItem(missingId)', 'function exportFullBackup()');
   vm.runInNewContext(code+'\nresult=resolveMissingItem("b-0");',context);
   await context.result;
@@ -1930,7 +1930,7 @@ test('dispatch refuses fractional existing stock without saving', async () => {
 test('return refuses fractional existing stock without saving booking quantities', async () => {
   const store={softwareBookings:[{id:402,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:2,returnedQty:0,source:'admin'}],dispatchEntries:[{itemIndex:0,qty:2,date:'2026-11-01'}]}],missingItemsDatabase:[],realStockDatabase:[{name:'Chair',qty:1.5}],thirdPartyDatabase:[]};
   const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
-  const context={activeReturnBookingId:402,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+  const context={activeReturnBookingId:402,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
   const code=sourceBetween('async function completeManualReturnProcess()','        let currentDocumentItems = []');
   vm.runInNewContext(code+'\nresult=completeManualReturnProcess();',context);await context.result;
   assert.equal(writes,0);assert.equal(store.softwareBookings[0].items[0].returnedQty,0);assert.equal(store.realStockDatabase[0].qty,1.5);
@@ -1948,7 +1948,7 @@ test('return and missing recovery reject blank or malformed legacy stock quantit
   for(const invalid of ['', 'bad', null]) {
     const store={softwareBookings:[{id:410,status:'Dispatched',date:'2026-11-01',returnDate:'2026-11-05',items:[{name:'Chair',qty:2,returnedQty:0,source:'admin',missingQty:1}],dispatchEntries:[{itemIndex:0,qty:2,date:'2026-11-01'}]}],missingItemsDatabase:[{id:'m2',bookingId:410,item:'Chair',qty:1,source:'admin'}],realStockDatabase:[{name:'Chair',qty:invalid}],thirdPartyDatabase:[]};
     const input={dataset:{returnIndex:'0'},value:'1'};let writes=0;
-    const returnContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
+    const returnContext={activeReturnBookingId:410,Math,Number,String,Array,Date,JSON,prompt:(()=>{const a=['2026-11-03','PARTIAL'];return()=>a.shift();})(),document:{querySelectorAll:()=>[input],getElementById:()=>({style:{display:'block'}})},isValidCalendarDate:()=>true,safeGetStorage:key=>store[key],safeSetStorageBatch:()=>{writes++;return true;},safeSetStorageBatchAndConfirmCloud:async()=>{writes++;return true;},showActionMessage:()=>{},loadAllFirebaseData:()=>{},renderMissingItems:()=>{}};
     const returnCode=sourceBetween('async function completeManualReturnProcess()','        window.onload = function()');
     vm.runInNewContext(returnCode+'\nresult=completeManualReturnProcess();',returnContext);await returnContext.result;
     assert.equal(writes,0,'return must reject '+String(invalid));
@@ -2156,6 +2156,7 @@ test('cash installments persist safely and update the booking due exactly once',
     document: { getElementById: id => id === 'inst_amt_71' ? input : ({paymentLedgerTableBody:{innerHTML:''},totalCashSum:{textContent:''},totalOnlineSum:{textContent:''},totalOnlinePendingSum:{textContent:''},ledgerBookingTableBody:{innerHTML:''}}[id] || null), addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: entries => { for (const [key,value] of entries) store[key] = value; return true; },
+    safeSetStorageBatchAndConfirmCloud: async entries => { for (const [key,value] of entries) store[key] = value; return true; },
     getBookingPaidAmount: b => Math.max(Number(b.totalPaid)||0,(b.partPayments||[]).reduce((n,p)=>n+(Number(p.amount)||0),0)),
     escapeHtml: value => String(value), phoneCallLink: value => String(value),
     calculateBookingTotalRent: b => 1000,
@@ -2184,6 +2185,7 @@ test('failed installment persistence does not report success or mutate stored bo
     document: { getElementById: id => id === 'inst_amt_72' ? input : null, addEventListener: () => {} },
     safeGetStorage: key => JSON.parse(JSON.stringify(store[key] || [])),
     safeSetStorageBatch: () => false,
+    safeSetStorageBatchAndConfirmCloud: async () => false,
     getBookingPaidAmount: b => Number(b.totalPaid)||0,
     calculateBookingTotalRent: () => 1000,
     syncCustomerBookingWorkflow: async () => true,
@@ -2241,6 +2243,7 @@ test('bill discount and other-charge changes stop when booking persistence fails
     safeGetStorage: key => key === 'softwareBookings' ? [JSON.parse(JSON.stringify(original))] : {},
     calculateBookingBaseRent: () => 1000,
     safeSetStorage: () => false,
+    safeSetStorageBatchAndConfirmCloud: async () => false,
     syncCustomerBookingWorkflow: async () => true,
     searchBillingCustomer: () => { throw new Error('must not refresh invoice after failed save'); },
     showActionMessage: message => messages.push(message),
@@ -2554,14 +2557,14 @@ test('confirmed Firebase batch persistence restores local state when cloud confi
 
 test('purchase, vendor, income-expense, invoice and settings mutations require Firebase confirmation', () => {
   const checks = [
-    ['async async function savePurchaseEntry(event)', 'function loadPurchaseTable()', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function editPurchase(index)', 'async async function deletePurchase(index)', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function deletePurchase(index)', 'async function editIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function editIncomeExpense(index)', 'async async function deleteIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function deleteIncomeExpense(index)', 'function loadCustomerList()', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function saveThirdPartyEntry(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
-    ['async async function saveBusinessDocument()', 'function editBusinessDocument', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function savePurchaseEntry(event)', 'function loadPurchaseTable()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function editPurchase(index)', 'async function deletePurchase(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function deletePurchase(index)', 'async function editIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function editIncomeExpense(index)', 'async function deleteIncomeExpense(index)', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function deleteIncomeExpense(index)', 'function loadCustomerList()', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveThirdPartyEntry(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function recordThirdPartyPayment(event)', 'function getVendorLedgerRate', /await safeSetStorageBatchAndConfirmCloud/],
+    ['async function saveBusinessDocument()', 'function loadBusinessDocument', /await safeSetStorageBatchAndConfirmCloud/],
     ['async function saveBusinessCard()', 'async function printBusinessCard()', /await safeSetStorageBatchAndConfirmCloud/]
   ];
   for (const [start, end, pattern] of checks) {
