@@ -51,3 +51,22 @@ test('all HTML entry points load the cache-busted reference stylesheet', () => {
     assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
   }
 });
+
+
+test('five reference theme choices are persistent and restore without changing booking handlers', () => {
+  const htmlCopies = files.map(file => fs.readFileSync(file, 'utf8'));
+  for (const html of htmlCopies) {
+    assert.match(html, /const themes=\['ref1','ref2','ref3','ref4','ref5'\]/);
+    assert.match(html, /localStorage\.setItem\('rkDesignPreset',selected\)/);
+    assert.match(html, /localStorage\.getItem\('rkDesignPreset'\)/);
+    assert.match(html, /document\.documentElement\.classList\.toggle\('rk-'\+theme/);
+    assert.match(html, /window\.applyRkDesign=\(name\)=>apply\(name,true\)/);
+    assert.match(html, /function restore\(\)\{apply\(readSaved\(\),false\);\}/);
+    assert.match(html, /id="rkDesignStatus"/);
+    assert.match(html, /id="customerBookingForm"/);
+    assert.match(html, /id="bookingItems"/);
+    assert.match(html, /id="bookingAdvance"/);
+    assert.match(html, /id="bookingTrackingForm"/);
+    assert.equal((html.match(/data-rk-theme="ref[1-5]"/g) || []).length, 5);
+  }
+});
