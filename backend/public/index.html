@@ -2470,6 +2470,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
 
         async function completeDispatch(id) {
+            const persistInventoryBatch = typeof safeSetStorageBatchAndConfirmCloud === 'function' ? safeSetStorageBatchAndConfirmCloud : safeSetStorageBatch;
             if(globalThis.__rkDispatchInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
             globalThis.__rkDispatchInProgress=true;
             try {
@@ -2569,7 +2570,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             b.items=items;
             b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,vendorMissingCost:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorMissingCost)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
-            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty]])){return;}
+            if(!await persistInventoryBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty]])){return;}
             if(b.source==='customer-portal'){
                 const remoteSaved=await syncCustomerBookingWorkflow(b,false);
                 if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock]]);loadAllFirebaseData();return;}
@@ -3706,6 +3707,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
         function renderMissingRecoveryRows(b){const body=document.getElementById('missingRecoveryBody');if(!body)return;const rows=safeGetStorage('missingItemsDatabase',[]).filter(m=>String(m.bookingId)===String(b.id)&&!m.resolved&&(Number(m.qty)||0)>0);body.innerHTML=rows.length?rows.map((m,i)=>`<tr><td>${escapeHtml(m.item)}<small style="display:block">${m.source==='third-party'?'वेंडर: '+escapeHtml(m.partyName||'-'):'एडमिन स्टॉक'}</small></td><td>${Number(m.qty)||0}</td><td><input type="number" min="1" max="${Number(m.qty)||0}" step="1" id="recoverMissingQty_${i}" value="${Number(m.qty)||0}" style="width:85px"></td><td><button type="button" class="action-btn" onclick="recoverMissingItem('${String(m.id)}',${i})">वापसी दर्ज करें</button></td></tr>`).join(''):'<tr><td colspan="4">इस बुकिंग में वापस मिलने वाला खुला मिसिंग सामान नहीं है</td></tr>';}
         async function recoverMissingItem(recordId,rowIndex){
+            const persistInventoryBatch = typeof safeSetStorageBatchAndConfirmCloud === 'function' ? safeSetStorageBatchAndConfirmCloud : safeSetStorageBatch;
             const bId=activeReturnBookingId;if(bId==null)return;
             if(globalThis.__rkMissingRecoveryInProgress)return;
             globalThis.__rkMissingRecoveryInProgress=true;
@@ -3731,7 +3733,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             m.recoveryEntries.push({qty,date:recoveryDate,createdAt:recoveredAt});
             b.returnEntries=Array.isArray(b.returnEntries)?b.returnEntries:[];b.returnEntries.push({date:recoveryDate,mode:'MISSING_RECOVERY',items:[{itemIndex,qty}],createdAt:recoveredAt});
             row.qty=currentStockQty+qty;
-            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){return;}
+            if(!await persistInventoryBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){return;}
             if(b.source==='customer-portal'){
                 const remoteSaved=await syncCustomerBookingWorkflow(b,false);
                 if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['missingItemsDatabase',previousState.missing],[stockKey,previousState.stock]]);loadAllFirebaseData();return;}
@@ -3741,6 +3743,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             } finally { globalThis.__rkMissingRecoveryInProgress=false; }
         }
         async function completeManualReturnProcess(){
+            const persistInventoryBatch = typeof safeSetStorageBatchAndConfirmCloud === 'function' ? safeSetStorageBatchAndConfirmCloud : safeSetStorageBatch;
             if(globalThis.__rkReturnInProgress){showActionMessage('यह प्रक्रिया पहले से चल रही है; कृपया प्रतीक्षा करें','warning');return;}
             globalThis.__rkReturnInProgress=true;
             try {
@@ -3807,7 +3810,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             b.returnEntries.push({date:returnDate,mode,items:inputs.map(input=>{const item=b.items[Number(input.dataset.returnIndex)]||{};return {itemIndex:Number(input.dataset.returnIndex),itemName:item.name||'',source:item.source==='third-party'?'third-party':'admin',partyName:item.partyName||'',qty:Number(input.value)};}),createdAt:new Date().toISOString()});
             if(fullyReturned){b.status='Returned';b.fullyReturnedAt=new Date().toISOString();b.returnProcessedAt=b.fullyReturnedAt;}
             else{b.status='Partially Returned';delete b.fullyReturnedAt;delete b.returnProcessedAt;}
-            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])){return;}
+            if(!await persistInventoryBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])){return;}
             if(b.source==='customer-portal'){
               const remoteSaved=await syncCustomerBookingWorkflow(b,false);
               if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock],['missingItemsDatabase',previousState.missing]]);loadAllFirebaseData();return;}
