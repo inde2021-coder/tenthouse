@@ -2609,3 +2609,41 @@ test('backup restore and uploaded settings images wait for confirmed Firebase pe
 test('final-return missing records remain isolated by booking item index', () => {
   assert.ok(html.includes("m.itemIndex!==undefined&&m.itemIndex!==null&&Number(m.itemIndex)===idx"));
 });
+
+test('third-party payment entry is isolated to the vendor payment ledger', () => {
+  const code = sourceBetween('function recordThirdPartyPayment(event)', 'function loadThirdPartyLedger()');
+  assert.match(code, /safeSetStorageBatchAndConfirmCloud/);
+  assert.match(code, /thirdPartyPayments/);
+  assert.match(code, /vendor-payment/);
+  assert.match(code, /tpPaymentParty/);
+  assert.match(code, /tpPaymentAmount/);
+  assert.doesNotMatch(code, /rkPaymentLedger/);
+  assert.doesNotMatch(code, /softwareBookings/);
+});
+
+test('third-party ledger derives vendor costs, payment due and margin from actual dispatch data', () => {
+  const ledgerStart = html.indexOf('function loadThirdPartyLedger()');
+  const ledgerEnd = html.indexOf('// Removed an orphaned speech-recognition fragment', ledgerStart);
+  assert.notEqual(ledgerStart, -1);
+  assert.ok(ledgerEnd > ledgerStart);
+  const code = html.slice(ledgerStart, ledgerEnd);
+  assert.match(code, /getDispatchEntryRentalSlices\(booking\)/);
+  assert.match(code, /getVendorLedgerRate\(e,item,tpList,'rent'\)/);
+  assert.match(code, /getVendorLedgerRate\(null,item,tpList,'missing'\)/);
+  assert.match(code, /const vendorCost=vendorRentCost\+vendorMissingLiability/);
+  assert.match(code, /const due=Math\.max\(0,vendorCost-paid\)/);
+  assert.match(code, /margin=customerRent-vendorCost/);
+  assert.match(code, /वेंडर को कुल देय/);
+  assert.match(code, /बाकी देय/);
+  const vendorRentCost = 2 * 60 * 2;
+  const vendorMissingLiability = 1 * 50;
+  const vendorCost = vendorRentCost + vendorMissingLiability;
+  const customerRent = 2 * 100 * 2;
+  const paid = 100;
+  assert.equal(vendorRentCost, 240);
+  assert.equal(vendorMissingLiability, 50);
+  assert.equal(vendorCost, 290);
+  assert.equal(customerRent, 400);
+  assert.equal(Math.max(0, vendorCost - paid), 190);
+  assert.equal(customerRent - vendorCost, 110);
+});
