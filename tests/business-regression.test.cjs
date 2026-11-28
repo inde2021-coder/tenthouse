@@ -352,11 +352,11 @@ test('payment entry and UTR verification prevent duplicate concurrent submission
 test('payment recording and UTR verification save ledger and booking totals atomically', () => {
   const save=html.slice(html.indexOf('async function savePaymentEntry()'),html.indexOf('async function verifyLedgerPayment('));
   const verify=html.slice(html.indexOf('async function verifyLedgerPayment('),html.indexOf('function printReturnSlip('));
-  assert.ok(save.includes("safeSetStorageBatch([[key,ledger],['softwareBookings',rows]])"),'payment ledger and booking must commit together');
+  assert.ok(save.includes("await safeSetStorageBatchAndConfirmCloud([[key,ledger],['softwareBookings',rows]])"),'payment ledger and booking must commit together');
   assert.ok(!save.includes("safeSetStorage(key,ledger)"),'payment must not save ledger separately');
   assert.ok(verify.includes("paymentWrites=[['rkPaymentLedger',ledger]]"),'verification must stage ledger');
   assert.ok(verify.includes("paymentWrites.push(['softwareBookings',rows])"),'verification must stage booking');
-  assert.ok(verify.includes('safeSetStorageBatch(paymentWrites)'), 'verification must commit atomically');
+  assert.ok(verify.includes('await safeSetStorageBatchAndConfirmCloud(paymentWrites)'), 'verification must commit atomically');
 });
 
 test('dispatch aggregates duplicate stock-row requirements before checking and deducting availability', () => {
@@ -806,8 +806,8 @@ test('purchase entry saves purchase and stock together through rollback-capable 
 });
 
 test('daily expense form does not clear or claim success when local persistence fails', () => {
-  const code = sourceBetween('function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
-  assert.ok(code.includes("if(!safeSetStorage('incomeExpenseDatabase', list))return"));
+  const code = sourceBetween('async function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
+  assert.ok(code.includes("if(!await safeSetStorageBatchAndConfirmCloud([['incomeExpenseDatabase', list]]))return"));
   assert.ok(code.includes('event.target.reset()'));
 });
 
@@ -833,7 +833,7 @@ test('payment receipt and verification alerts are sent only after payment state 
   assert.ok(sender.includes("['payment','payment-verified','payment-rejected'].includes(type)"));
   assert.ok(sender.includes('UTR सत्यापन लंबित है'));
   const save=sourceBetween('async function savePaymentEntry()', 'async function verifyLedgerPayment');
-  assert.ok(save.includes("safeSetStorageBatch([[key,ledger],['softwareBookings',rows]])"));
+  assert.ok(save.includes("await safeSetStorageBatchAndConfirmCloud([[key,ledger],['softwareBookings',rows]])"));
   assert.ok(save.includes("sendWhatsAppMessage(b.id,'payment')"));
   const verify=sourceBetween('async function verifyLedgerPayment', 'function printReturnSlip');
   assert.ok(verify.includes("verified?'payment-verified':'payment-rejected'"));
@@ -844,7 +844,7 @@ test('payment receipt and verification alerts are sent only after payment state 
 test('date-only daily and purchase records use the device local calendar date, not UTC date', () => {
   assert.ok(!html.includes("new Date().toISOString().slice(0,10)"));
   assert.ok(html.includes("new Date().toLocaleDateString('en-CA')"));
-  const expense=sourceBetween('function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
+  const expense=sourceBetween('async function saveDailyExpense(event)', 'function renderDashboardLineGraph()');
   assert.ok(expense.includes("date: localISODate()"));
 });
 
@@ -1318,7 +1318,7 @@ test('master ledger online transaction row uses verified amount and explicit UTR
 
 
 test('admin stock entry rejects fractional and invalid quantities without saving', () => {
-  const code=sourceBetween('function saveStockItemReal(event)', 'function mergeDuplicateStockRows');
+  const code=sourceBetween('async function saveStockItemReal(event)', 'function mergeDuplicateStockRows');
   for(const qty of ['1.5','0','-2','abc','']) {
     let writes=0,reset=false;
     const values={stockItemName:'Chair',stockItemQty:qty,stockItemSetRent:'10',stockItemSingleRent:'5',stockItemMissing:'100'};
@@ -1406,7 +1406,7 @@ test('income and expense table summary uses the shared validated totals calculat
 
 
 test('stock item edit rejects fractional quantities and preserves the original record', () => {
-  const code=sourceBetween('function editStockItem(index)', 'function deleteStockItem');
+  const code=sourceBetween('async function editStockItem(index)', 'function deleteStockItem');
   let writes=0;
   const row={name:'Chair',qty:10,singleRent:5,setRent:20,missingCharge:100};
   const answers=['Chair','2.5','5','20','100'];
@@ -2404,7 +2404,7 @@ test('daily expense entries use timezone-local ISO dates and consistent positive
     localISODate(new Date(2026,10,27,23,59,59))
   `,{Date,String});
   assert.equal(result,'2026-11-27');
-  const save=sourceBetween('function saveDailyExpense(event)', 'function renderRoyalDashboardMetrics()');
+  const save=sourceBetween('async function saveDailyExpense(event)', 'function renderRoyalDashboardMetrics()');
   assert.match(save,/date: localISODate\(\)/);
   assert.match(save,/Math\.round\(amount\*100\)\/100/);
   const edit=sourceBetween('function editIncomeExpense(index)', 'function deleteIncomeExpense(index)');
