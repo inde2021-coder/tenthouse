@@ -3294,7 +3294,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 b.totalPaid = Math.round((previousPaid + amt) * 100) / 100;
                 b.lastInstallmentPayment = { amount: amt, date: new Date().toISOString(), source: 'installments-page' };
                 b.dueAmount = Math.max(0, Math.round((total - b.totalPaid) * 100) / 100);
-                if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings]])){showActionMessage('किस्त Firebase में सेव नहीं हुई; बकाया रिकॉर्ड नहीं बदला।','error');return;}
+                if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings]])){showActionMessage('किस्त सेव नहीं हुई; Firebase पुष्टि नहीं मिली। बकाया रिकॉर्ड नहीं बदला।','error');return;}
                 if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
                 amountInput.value = '';
                 loadCustomerList(); loadInstallmentsTable(); loadPaymentLedgerTable(); loadMasterLedgerData();
@@ -3351,7 +3351,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(discount<0||other<0){showActionMessage('डिस्काउंट और अन्य चार्ज नकारात्मक नहीं हो सकते','error');return}
             const base=calculateBookingBaseRent(b);if(discount>base+other){showActionMessage('डिस्काउंट मूल किराये से अधिक नहीं हो सकता','error');return}
             b.discountAmount=discount;b.otherCharges=other;
-            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x)]])){showActionMessage('बिल बदलाव Firebase में सेव नहीं हुआ; पुरानी बुकिंग राशि सुरक्षित रखी गई।','error');return;}
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings.map(x=>String(x.id)===String(b.id)?b:x)]])){showActionMessage('बिल बदलाव सेव नहीं हुआ; Firebase पुष्टि नहीं मिली। पुरानी बुकिंग राशि सुरक्षित रखी गई।','error');return;}
             if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('बिल बदलाव लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             searchBillingCustomer();if(!quiet)showActionMessage('डिस्काउंट/अन्य चार्ज बिल में लागू हुए','success');
         }
