@@ -794,7 +794,7 @@ test('existing stock rows receive unique persistent barcodes before table render
   const code = sourceBetween('function loadRealStockList()', 'function printSingleBarcode');
   assert.ok(code.includes('const usedBarcodes=new Set'));
   assert.ok(code.includes("item.barcode=code"));
-  assert.ok(code.includes("safeSetStorage('realStockDatabase',stock)"));
+  assert.ok(code.includes("await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',stock]])"));
 });
 
 test('CSV stock import rejects invalid quantities and rates instead of inventing defaults', () => {
@@ -2583,4 +2583,24 @@ test('purchase, vendor, income-expense, invoice and settings mutations require F
   assert.match(html, /async function deleteThirdPartyEntry[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
   assert.match(html, /async function deleteThirdPartyPayment[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
   assert.match(html, /async function saveSettings[\s\S]*?await safeSetStorageBatchAndConfirmCloud/);
+});
+
+
+test('barcode generation and CSV stock import require confirmed Firebase persistence', () => {
+  const barcode = sourceBetween('async function loadRealStockList()', '        function printSingleBarcode');
+  const csv = sourceBetween('function importStockFromCSV(event)', '        async function savePurchaseEntry');
+  assert.match(barcode, /await safeSetStorageBatchAndConfirmCloud\(\[\['realStockDatabase',stock\]\]\)/);
+  assert.match(barcode, /JSON\.stringify\(stock\)!==originalSnapshot/);
+  assert.match(csv, /reader\.onload = async function/);
+  assert.match(csv, /await safeSetStorageBatchAndConfirmCloud\(\[\['realStockDatabase',mergeDuplicateStockRows\(stock\)\]\]\)/);
+});
+
+
+test('backup restore and uploaded settings images wait for confirmed Firebase persistence', () => {
+  const restore = sourceBetween('function restoreFullBackup(event)', '        function resetAllSoftwareData');
+  const image = sourceBetween('async function handleImageUpload(event, fieldName)', '        // Browser print may start');
+  assert.match(restore, /reader\.onload=async/);
+  assert.match(restore, /await safeSetStorageBatchAndConfirmCloud\(entries\)/);
+  assert.match(image, /img\.onload = async/);
+  assert.match(image, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareSettings', settings\]\]\)/);
 });

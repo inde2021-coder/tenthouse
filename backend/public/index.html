@@ -1564,7 +1564,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             loadAllFirebaseData();renderMissingItems();showActionMessage(record.resolved?'Missing सामान वापस मिला और रिकॉर्ड बंद हुआ':'आंशिक Missing सामान वापस मिला; बाकी मात्रा खुली है','success');
         }
         function exportFullBackup(){const keys=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'],data={app:'Radha Krishna Tent House ERP',version:2,exportedAt:new Date().toISOString(),data:{}};keys.forEach(k=>data.data[k]=k==='softwareSettings'?sanitizeCloudSettings(safeGetStorage(k,{})):safeGetStorage(k,[]));const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='tent-house-backup-'+new Date().toLocaleDateString('en-CA')+'.json';a.click();URL.revokeObjectURL(url);showActionMessage('बैकअप डाउनलोड शुरू हुआ','success');}
-        function restoreFullBackup(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(file.size>25*1024*1024){showActionMessage('बैकअप फ़ाइल 25 MB से बड़ी है','error');event.target.value='';return}const reader=new FileReader();reader.onload=()=>{try{const p=JSON.parse(reader.result),allowed=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'];if(!p||!p.data||typeof p.data!=='object'||Array.isArray(p.data))throw Error('अमान्य बैकअप फ़ाइल');if(p.app&& !String(p.app).toLowerCase().includes('tent house'))throw Error('यह किसी दूसरे ऐप का बैकअप लगता है');const entries=Object.entries(p.data).filter(([k])=>allowed.includes(k)).map(([k,v])=>[k,k==='softwareSettings'?sanitizeCloudSettings(v):v]);if(!entries.length)throw Error('इस बैकअप में पहचानने योग्य डेटा नहीं है');for(const [k,v] of entries){if(k==='softwareSettings'){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Settings डेटा गलत है')}else if(!Array.isArray(v))throw Error(k+' डेटा सूची के रूप में नहीं है')}if(!confirm('मौजूदा डेटा बैकअप से बदलेगा। Master Ledger को नहीं बदला जाएगा। पहले अलग बैकअप रखना उचित है। जारी रखें?'))return;entries.forEach(([k,v])=>safeSetStorage(k,v));loadAllFirebaseData();renderMissingItems();showActionMessage('बैकअप रिस्टोर हुआ; Master Ledger अलग सुरक्षित रखा गया','success');}catch(e){showActionMessage('रिस्टोर विफल: '+e.message,'error')}finally{event.target.value=''}};reader.readAsText(file);}
+        function restoreFullBackup(event){const file=event.target.files&&event.target.files[0];if(!file)return;if(file.size>25*1024*1024){showActionMessage('बैकअप फ़ाइल 25 MB से बड़ी है','error');event.target.value='';return}const reader=new FileReader();reader.onload=async()=>{try{const p=JSON.parse(reader.result),allowed=['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'];if(!p||!p.data||typeof p.data!=='object'||Array.isArray(p.data))throw Error('अमान्य बैकअप फ़ाइल');if(p.app&& !String(p.app).toLowerCase().includes('tent house'))throw Error('यह किसी दूसरे ऐप का बैकअप लगता है');const entries=Object.entries(p.data).filter(([k])=>allowed.includes(k)).map(([k,v])=>[k,k==='softwareSettings'?sanitizeCloudSettings(v):v]);if(!entries.length)throw Error('इस बैकअप में पहचानने योग्य डेटा नहीं है');for(const [k,v] of entries){if(k==='softwareSettings'){if(!v||typeof v!=='object'||Array.isArray(v))throw Error('Settings डेटा गलत है')}else if(!Array.isArray(v))throw Error(k+' डेटा सूची के रूप में नहीं है')}if(!confirm('मौजूदा डेटा बैकअप से बदलेगा। Master Ledger को नहीं बदला जाएगा। पहले अलग बैकअप रखना उचित है। जारी रखें?'))return;if(!await safeSetStorageBatchAndConfirmCloud(entries))throw Error('Firebase में बैकअप डेटा सुरक्षित होने की पुष्टि नहीं मिली; पुराना डेटा वापस रखा गया');loadAllFirebaseData();renderMissingItems();showActionMessage('बैकअप Firebase में सुरक्षित हुआ; Master Ledger अलग सुरक्षित रखा गया','success');}catch(e){showActionMessage('रिस्टोर विफल: '+e.message,'error')}finally{event.target.value=''}};reader.readAsText(file);}
         function resetAllSoftwareData(){if(!confirm('सभी लोकल सॉफ्टवेयर डेटा मिट जाएगा। पहले बैकअप लें। जारी रखें?'))return;['softwareBookings','realStockDatabase','thirdPartyDatabase','thirdPartyPayments','purchaseDatabase','incomeExpenseDatabase','softwareSettings','missingItemsDatabase','rkPaymentLedger','quotationDatabase','taxInvoiceDatabase'].forEach(k=>localStorage.removeItem(k));loadAllFirebaseData();showActionMessage('लोकल डेटा रीसेट हुआ','success');}
         function toggleAppMenu(forceOpen){
             const shell=document.querySelector('.admin-container'); if(!shell)return;
@@ -2026,7 +2026,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
         }
 
         // Image upload: preserve stamps and compress customer hero photos for cloud sync.
-        function handleImageUpload(event, fieldName) {
+        async function handleImageUpload(event, fieldName) {
             const file = event && event.target && event.target.files && event.target.files[0];
             if (!file) return;
             if (!/^image\//i.test(file.type || '')) { showActionMessage('कृपया PNG, JPG या WEBP इमेज चुनें।','error'); return; }
@@ -2035,7 +2035,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             reader.onload = () => {
                 const img = new Image();
                 img.onerror = () => showActionMessage('इमेज खुल नहीं सकी। PNG या JPG इस्तेमाल करें।','error');
-                img.onload = () => {
+                img.onload = async () => {
                     try {
                         const maxSide = fieldName === 'customerHeroImage' ? 1600 : 900, scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
                         const canvas = document.createElement('canvas');
@@ -2048,10 +2048,10 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                         const dataUrl = fieldName === 'customerHeroImage' ? canvas.toDataURL('image/jpeg', 0.78) : canvas.toDataURL('image/png');
                         const settings = safeGetStorage('softwareSettings', {});
                         settings[fieldName] = dataUrl;
-                        if (!safeSetStorage('softwareSettings', settings)) throw new Error('सेटिंग सेव नहीं हो सकी; इमेज छोटी करके फिर कोशिश करें');
+                        if (!await safeSetStorageBatchAndConfirmCloud([['softwareSettings', settings]])) throw new Error('इमेज Firebase में सुरक्षित नहीं हुई; पुरानी सेटिंग बरकरार रखी गई');
                         if (fieldName === 'customerHeroImage') {
                             applyCustomerHeroSettings();
-                            showActionMessage('Customer Hero इमेज सेव और क्लाउड सिंक के लिए भेज दी गई।','success');
+                            showActionMessage('Customer Hero इमेज Firebase में सुरक्षित हुई।','success');
                         } else {
                             showActionMessage('स्टाम्प इमेज सेव हो गई। प्रिंट से पहले Preview जाँचें।','success');
                         }
@@ -2887,11 +2887,13 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             finally{event.target.value='';}
         }
 
-        function loadRealStockList() {
-            let stock = mergeDuplicateStockRows(safeGetStorage('realStockDatabase', []));
+        async function loadRealStockList() {
+            const rawStock=safeGetStorage('realStockDatabase', []);
+            const originalSnapshot=JSON.stringify(rawStock);
+            let stock = mergeDuplicateStockRows(rawStock);
             const usedBarcodes=new Set(stock.map(item=>String(item.barcode||'').trim()).filter(Boolean));
             stock.forEach(item=>{if(!String(item.barcode||'').trim()||stock.filter(other=>other!==item&&String(other.barcode||'').trim()===String(item.barcode||'').trim()).length){let code='';do{code='ITM-'+Math.floor(100000+Math.random()*900000)}while(usedBarcodes.has(code));item.barcode=code;usedBarcodes.add(code);}});
-            if(!safeSetStorage('realStockDatabase',stock)){showActionMessage('Barcode सहित स्टॉक सेव नहीं हुआ; प्रिंट से पहले स्टोरेज ठीक करें।','error');return;}
+            if(JSON.stringify(stock)!==originalSnapshot&&!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',stock]])){showActionMessage('Barcode/स्टॉक परिवर्तन Firebase में सुरक्षित नहीं हुआ; सूची अपडेट नहीं की गई।','error');return;}
             let tbody = document.getElementById('stockTableBody');
             if(tbody) tbody.innerHTML = stock.length === 0 ? `<tr><td colspan="8" style="text-align:center;">कोई स्टॉक नहीं</td></tr>` : stock.map((s, i) => `
                 <tr>
@@ -2937,7 +2939,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             let file = event.target.files[0];
             if(!file) return;
             let reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 let lines = e.target.result.split('\n');
                 let stock = safeGetStorage('realStockDatabase', []);
                 let imported=0,skipped=0;
@@ -2949,10 +2951,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                     stock.push({name,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
                     imported++;
                 }
-                if(!imported){showActionMessage('कोई वैध CSV पंक्ति नहीं मिली; स्टॉक में बदलाव नहीं हुआ।','error');return;}
-                if(!safeSetStorage('realStockDatabase',mergeDuplicateStockRows(stock)))return;
+                if(!imported){showActionMessage('कोई वैध CSV पंक्ति नहीं मिली; स्टॉक में बदलाव नहीं हुआ।','error');event.target.value='';return;}
+                if(!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',mergeDuplicateStockRows(stock)]])){event.target.value='';return;}
+                event.target.value='';
                 loadAllFirebaseData();
-                showActionMessage(imported+' स्टॉक रिकॉर्ड इम्पोर्ट हुए; '+skipped+' गलत पंक्तियाँ छोड़ी गईं।','success');
+                showActionMessage(imported+' स्टॉक रिकॉर्ड Firebase में इम्पोर्ट हुए; '+skipped+' गलत पंक्तियाँ छोड़ी गईं।','success');
             };
             reader.readAsText(file);
         }
