@@ -24,11 +24,18 @@ test('Firebase sync, pending queue, and initial sync sanitize software settings'
   const sync=sourceBetween('function sanitizeCloudSettings(settings)', "        window.addEventListener('online'");
   assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)/);
   assert.match(html,/sanitizeCloudValue\(cloudKey, JSON.parse\(raw\)\)/);
-  assert.match(sync,/sanitizeCloudValue\(cloudKey, value\)\); delete q\[cloudKey\]/);
+  assert.match(sync,/JSON\.stringify\(latest\[cloudKey\]\)===JSON\.stringify\(value\)/);
+  assert.match(sync,/delete latest\[cloudKey\]/);
   assert.match(html,/Firebase secret cleanup failed/);
   assert.match(html,/existingLocal\[secretKey\]/);
   assert.match(html,/JSON\.stringify\(cloudSafeSettings\) !== JSON\.stringify\(cloudData\[cloudKey\]\)/);
   assert.match(html,/dbRef\.child\(cloudKey\)\.set\(cloudSafeSettings\)/);
+});
+
+test('offline and local-only transactions enqueue every changed dataset for later Firebase sync', () => {
+  const transaction=sourceBetween('async function safeSetStorageBatchAndConfirmCloud(entries)', '        function safeSetStorageBatch(entries)');
+  assert.ok(transaction.includes("if(typeof navigator!=='undefined'&&!authenticated){entries.forEach(([key,value])=>{syncToCloud(key,value);})"));
+  assert.ok(transaction.includes('syncToCloud(key,value)'));
 });
 
 test('Firebase rules allow an authenticated admin to read only their own UID grant', () => {
@@ -2694,6 +2701,20 @@ test('Shraddha AI chat keeps bounded multi-turn context and resets on new chat',
   assert.ok(html.includes('...rkAiConversation.slice(-20)'));
   assert.ok(html.includes('rkAiConversation=[];'));
   assert.ok(html.includes('rkAiConversation.length>20'));
+});
+
+test('local ADMIN login uses one masked field and keeps the enrolled six-digit prefix fixed', () => {
+  const gate=sourceBetween('function refreshLocalAdminGate()', '                async function handleGoogleAdminLogin(event){');
+  const panel=html.slice(html.indexOf('id="rkLocalPrefixWrap"')-300,html.indexOf('id="rkLocalPrefixWrap"')+1300);
+  assert.match(panel,/id="rkLocalPasswordInput" type="password"/);
+  assert.equal((html.match(/id="rkLocalPasswordInput"/g)||[]).length,1);
+  assert.match(gate,/input\.maxLength=4/);
+  assert.match(gate,/input\.placeholder='अंतिम 4 अंक'/);
+  assert.match(gate,/input\.maxLength=10/);
+  assert.match(gate,/credential\.prefix\+value/);
+  assert.match(gate,/prefix:value\.slice\(0,6\)/);
+  assert.match(gate,/iterations:250000/);
+  assert.doesNotMatch(html,/CLOUD_KEY_MAP[\s\S]{0,500}rkLocalAdminCredential/);
 });
 
 test('all deployable HTML shells remain byte-identical after the AI chat integration', () => {
