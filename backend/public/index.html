@@ -1886,6 +1886,32 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
 
 
 
+        // Critical inventory transitions must not report success until every Firebase write is confirmed.
+        // On any failed write, restore the exact local snapshot and queue the restored values for cloud retry.
+        async function safeSetStorageBatchAndConfirmCloud(entries) {
+            const snapshots = new Map();
+            try {
+                for (const [key] of entries) snapshots.set(key, localStorage.getItem(key));
+            } catch (error) {
+                showActionMessage('स्टॉक अपडेट से पहले पुराना डेटा सुरक्षित नहीं पढ़ा जा सका; कोई बदलाव नहीं किया गया।', 'error');
+                return false;
+            }
+            if (!safeSetStorageBatch(entries)) return false;
+            const results = await Promise.all(entries.map(([key, value]) => syncToCloud(key, value)));
+            if (results.every(Boolean)) return true;
+            for (const [key, previous] of snapshots) {
+                try {
+                    if (previous === null) localStorage.removeItem(key);
+                    else localStorage.setItem(key, previous);
+                    syncToCloud(key, previous === null ? null : JSON.parse(previous));
+                } catch (rollbackError) {
+                    console.error('Critical inventory rollback failed:', key, rollbackError);
+                }
+            }
+            showActionMessage('Firebase में स्टॉक/बुकिंग सेव होने की पुष्टि नहीं मिली। बदलाव वापस किए गए हैं और पुराने डेटा की Sync कतार सुरक्षित रखी गई है।', 'error');
+            return false;
+        }
+
         // Best-effort multi-key persistence: restore every prior local value if any write fails.
         // Cloud sync is also re-issued for restored values so a partial local save is not left as final state.
         function safeSetStorageBatch(entries) {
@@ -2543,7 +2569,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             b.items=items;
             b.dispatchEntries=history.concat(chosen.map(x=>({itemIndex:x.index,itemName:x.it.name,qty:x.qty,date:dispatchDate,unitRent:Math.max(0,Number(x.it.rentPrice??500)),vendorRentRate:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorRentRate)||0):0,vendorMissingCost:x.it.source==='third-party'?Math.max(0,Number(x.it.vendorMissingCost)||0):0,source:x.it.source==='third-party'?'third-party':'admin',partyName:x.it.partyName||'',createdAt:new Date().toISOString()})));
             b.status='Dispatched';b.lastDispatchDate=dispatchDate;b.dispatchStockProcessed=true;
-            if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty]])){showActionMessage('Dispatch सेव नहीं हुआ; कोई आंशिक अपडेट लागू नहीं रखा गया।','error');return;}
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty]])){return;}
             if(b.source==='customer-portal'){
                 const remoteSaved=await syncCustomerBookingWorkflow(b,false);
                 if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock]]);loadAllFirebaseData();return;}
@@ -3705,7 +3731,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             m.recoveryEntries.push({qty,date:recoveryDate,createdAt:recoveredAt});
             b.returnEntries=Array.isArray(b.returnEntries)?b.returnEntries:[];b.returnEntries.push({date:recoveryDate,mode:'MISSING_RECOVERY',items:[{itemIndex,qty}],createdAt:recoveredAt});
             row.qty=currentStockQty+qty;
-            if(!safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){showActionMessage('Missing Recovery सेव नहीं हुई; आंशिक अपडेट वापस करने की कोशिश की गई।','error');return;}
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])){return;}
             if(b.source==='customer-portal'){
                 const remoteSaved=await syncCustomerBookingWorkflow(b,false);
                 if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['missingItemsDatabase',previousState.missing],[stockKey,previousState.stock]]);loadAllFirebaseData();return;}
@@ -3781,9 +3807,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             b.returnEntries.push({date:returnDate,mode,items:inputs.map(input=>{const item=b.items[Number(input.dataset.returnIndex)]||{};return {itemIndex:Number(input.dataset.returnIndex),itemName:item.name||'',source:item.source==='third-party'?'third-party':'admin',partyName:item.partyName||'',qty:Number(input.value)};}),createdAt:new Date().toISOString()});
             if(fullyReturned){b.status='Returned';b.fullyReturnedAt=new Date().toISOString();b.returnProcessedAt=b.fullyReturnedAt;}
             else{b.status='Partially Returned';delete b.fullyReturnedAt;delete b.returnProcessedAt;}
-            if(!safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])){
-              showActionMessage('Return सेव नहीं हुआ; कोई आंशिक अपडेट लागू नहीं रखा गया।','error');return;
-            }
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])){return;}
             if(b.source==='customer-portal'){
               const remoteSaved=await syncCustomerBookingWorkflow(b,false);
               if(!remoteSaved){safeSetStorageBatch([['softwareBookings',previousState.bookings],['realStockDatabase',previousState.adminStock],['thirdPartyDatabase',previousState.vendorStock],['missingItemsDatabase',previousState.missing]]);loadAllFirebaseData();return;}
