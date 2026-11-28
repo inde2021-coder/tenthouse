@@ -609,35 +609,40 @@ body{background:radial-gradient(ellipse at 12% 0%,rgba(43,91,155,.25),transparen
 @media(max-width:720px){#customerFirstPortal .rk-customer-hero.has-custom-image::after{top:auto;left:0;right:0;bottom:0;width:100%;height:44%;border-radius:0 0 23px 23px;background-image:linear-gradient(180deg,#111a35 0%,rgba(17,26,53,.18) 55%),var(--rk-hero-bg)}#customerFirstPortal .rk-customer-hero.has-custom-image .rk-hero-copy{max-width:100%;padding-bottom:125px}}
 @media(prefers-reduced-motion:reduce){#customerFirstPortal .rk-hero-cta{transition:none}}
 </style>
-    <link rel="stylesheet" href="./rk-reference-theme.css?v=9">
-<script id="rk-reference-design-activation-v1">
-/* Activate the supplied reference layout without touching ERP data or business handlers. */
+    <link rel="stylesheet" href="./rk-reference-theme.css?v=12">
+<script id="rk-reference-design-activation-v2">
 (function(){
-  'use strict';
-  var allowed=['ref1','ref2','ref3','ref4','ref5'];
-  function applyRkDesign(theme){
-    if(allowed.indexOf(theme)<0) theme='ref1';
-    var root=document.documentElement;
-    allowed.forEach(function(name){root.classList.remove('rk-'+name);});
-    root.classList.add('rk-'+theme);
-    try{localStorage.setItem('rk-reference-design',theme);}catch(e){}
-    document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(function(button){
-      var active=button.getAttribute('data-rk-theme')===theme;
-      button.classList.toggle('active',active);button.classList.toggle('selected',active);
-      button.setAttribute('aria-pressed',active?'true':'false');
-    });
-    var status=document.getElementById('rkDesignStatus');
-    if(status) status.textContent='सक्रिय डिजाइन: '+theme.toUpperCase()+' — Reference layout लागू है।';
-    return theme;
+ 'use strict';
+ const themes=['ref1','ref2','ref3','ref4','ref5'];
+ function readSaved(){
+  try{
+   const saved=localStorage.getItem('rkDesignPreset')||localStorage.getItem('rk-reference-design');
+   return themes.includes(saved)?saved:'ref1';
+  }catch(error){return 'ref1';}
+ }
+ function apply(selected,save){
+  if(!themes.includes(selected))selected='ref1';
+  themes.forEach(theme=>document.documentElement.classList.toggle('rk-'+theme,theme===selected));
+  if(save!==false){
+   try{
+    localStorage.setItem('rkDesignPreset',selected);
+    localStorage.setItem('rk-reference-design',selected);
+   }catch(error){}
   }
-  window.applyRkDesign=applyRkDesign;
-  function activateSavedDesign(){
-    var saved='ref1';
-    try{var value=localStorage.getItem('rk-reference-design');if(allowed.indexOf(value)>=0)saved=value;}catch(e){}
-    applyRkDesign(saved);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',activateSavedDesign,{once:true});
-  else activateSavedDesign();
+  document.querySelectorAll('.rk-design-choice[data-rk-theme]').forEach(button=>{
+   const active=button.getAttribute('data-rk-theme')===selected;
+   button.classList.toggle('active',active);
+   button.classList.toggle('selected',active);
+   button.setAttribute('aria-pressed',active?'true':'false');
+  });
+  const status=document.getElementById('rkDesignStatus');
+  if(status)status.textContent='सक्रिय डिजाइन: '+selected.toUpperCase()+' · चयन इसी डिवाइस पर सेव है।';
+  return selected;
+ }
+ window.applyRkDesign=(name)=>apply(name,true);
+ function restore(){apply(readSaved(),false);}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});
+ else restore();
 })();
 </script>
 
@@ -1520,11 +1525,11 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                           <div><label for="settingSmsRoute">SMS Route (यदि लागू हो)</label><select id="settingSmsRoute"><option value="transactional">Transactional</option><option value="otp">OTP</option><option value="promotional">Promotional</option></select></div><div><label for="settingWaPhoneId">WhatsApp Phone Number ID (वैकल्पिक)</label><input type="text" id="settingWaPhoneId" placeholder="Meta Phone Number ID"></div>
                         </div><div class="rk-settings-note"><i class="fa-solid fa-shield-halved"></i><span>SMS API Key, Auth Token और WhatsApp Token ब्राउज़र में सेव नहीं होते। इन्हें Vercel Environment Variables में रखें। DLT/Template approval और backend provider support जरूरी है।</span></div></section>
                         <details class="settings-section"><summary><i class="fa-solid fa-palette"></i> ऐप की दृश्य थीम</summary><div class="settings-section-body"><div class="rk-design-options" role="group" aria-label="दृश्य थीम">
-                          <button type="button" class="rk-design-choice" data-rk-theme="ref1" onclick="applyRkDesign('ref1')"><span class="rk-design-swatch royal"></span>Luxury Dashboard</button>
-                          <button type="button" class="rk-design-choice" data-rk-theme="ref2" onclick="applyRkDesign('ref2')"><span class="rk-design-swatch ocean"></span>Booking + QR</button>
-                          <button type="button" class="rk-design-choice" data-rk-theme="ref3" onclick="applyRkDesign('ref3')"><span class="rk-design-swatch neon"></span>Booking Status</button>
-                          <button type="button" class="rk-design-choice" data-rk-theme="ref4" onclick="applyRkDesign('ref4')"><span class="rk-design-swatch purple"></span>Booking + Tracking</button>
-                          <button type="button" class="rk-design-choice" data-rk-theme="ref5" onclick="applyRkDesign('ref5')"><span class="rk-design-swatch emerald"></span>Alternate Booking</button>
+                          <button type="button" class="rk-design-choice" data-rk-theme="ref1" onclick="applyRkDesign('ref1')"><span class="rk-design-swatch royal"></span>Reference 1 · Gold / QR</button>
+                          <button type="button" class="rk-design-choice" data-rk-theme="ref2" onclick="applyRkDesign('ref2')"><span class="rk-design-swatch ocean"></span>Reference 2 · Blue / 3-Column</button>
+                          <button type="button" class="rk-design-choice" data-rk-theme="ref3" onclick="applyRkDesign('ref3')"><span class="rk-design-swatch neon"></span>Reference 3 · Blue Luxury</button>
+                          <button type="button" class="rk-design-choice" data-rk-theme="ref4" onclick="applyRkDesign('ref4')"><span class="rk-design-swatch purple"></span>Reference 4 · RK Split</button>
+                          <button type="button" class="rk-design-choice" data-rk-theme="ref5" onclick="applyRkDesign('ref5')"><span class="rk-design-swatch emerald"></span>Reference 5 · Same Artwork as 4</button>
                         </div><small id="rkDesignStatus">चुनी गई थीम इसी डिवाइस पर सेव होगी।</small></div></details>
                         <details class="settings-section"><summary><i class="fa-solid fa-file-image"></i> लोगो और प्रिंट स्टैम्प</summary><div class="settings-section-body rk-settings-files">
                           <div><label for="settingDispatchStampFile">Dispatch Stamp / Logo</label><input type="file" id="settingDispatchStampFile" accept="image/*" onchange="handleImageUpload(event, 'dispatchStamp')"></div><div><label for="settingReturnStampFile">Return Stamp</label><input type="file" id="settingReturnStampFile" accept="image/*" onchange="handleImageUpload(event, 'returnStamp')"></div><div><label for="settingPaidStampFile">Paid Bill Stamp</label><input type="file" id="settingPaidStampFile" accept="image/*" onchange="handleImageUpload(event, 'paidStamp')"></div>
@@ -4812,28 +4817,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
       @media(prefers-reduced-motion:reduce){.rk-customer-submit{transition:none!important}}
 </style>
 
-<script>
-/* Exactly five visual presets, each mapped to one of the five supplied ZIP screenshots. */
-(function(){
- const themes=['ref1','ref2','ref3','ref4','ref5'];
- const apply=(name,save=true)=>{
-  const selected=themes.includes(name)?name:'ref1';
-  document.documentElement.classList.remove(...themes.map(t=>'rk-'+t));
-  document.documentElement.classList.add('rk-'+selected);
-  if(save){try{localStorage.setItem('rkDesignPreset',selected)}catch(e){}}
-  document.querySelectorAll('.rk-design-choice').forEach(btn=>{
-   const active=btn.dataset.rkTheme===selected;
-   btn.classList.toggle('active',active);
-   btn.setAttribute('aria-pressed',String(active));
-  });
-  const status=document.getElementById('rkDesignStatus');
-  if(status)status.textContent='संदर्भ इमेज '+selected.slice(3)+' की थीम लागू है।';
- };
- window.applyRkDesign=(name)=>apply(name,true);
- const restore=()=>{let saved='ref1';try{saved=localStorage.getItem('rkDesignPreset')||'ref1'}catch(e){}apply(saved,false)};
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restore,{once:true});else restore();
-})();
-</script>
+
 <style id="rk-customer-header-fixed-order-2026-11">
 /* Keep the customer portal masthead and navigation pinned while portal content scrolls. */
 #customerFirstPortal .customer-scroll-wrap{position:relative!important;overflow-y:auto!important;overflow-x:hidden!important;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 112px)!important;}
@@ -5034,7 +5018,89 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
 </style>
 
 
+<script id="rk-customer-task-navigation-2026-11">
+
+/* Accessible customer task switcher + scroll-aware navigation. */
+(function(){
+  function initCustomerTaskNavigation(){
+    const portal=document.getElementById('customerFirstPortal');
+    const wrap=portal?.querySelector('.customer-scroll-wrap');
+    const nav=portal?.querySelector('.rk-reference-nav');
+    const brand=portal?.querySelector('.rk-customer-brand');
+    if(!portal||!wrap||!nav||nav.dataset.rkTaskReady==='1')return;
+    nav.dataset.rkTaskReady='1';
+    const toggle=document.createElement('button');
+    toggle.type='button';toggle.className='rk-nav-menu-toggle';
+    toggle.innerHTML='<i class="fa-solid fa-bars" aria-hidden="true"></i><span>मेन्यू</span>';
+    toggle.setAttribute('aria-expanded','true');
+    toggle.addEventListener('click',()=>{const hidden=nav.classList.toggle('rk-nav-hidden');toggle.setAttribute('aria-expanded',String(!hidden));});
+    brand?.appendChild(toggle);
+    function setView(view){
+      portal.classList.remove('rk-view-home','rk-view-booking','rk-view-track');
+      portal.classList.add('rk-view-'+view);
+      nav.querySelectorAll('a').forEach(a=>a.removeAttribute('aria-current'));
+      const active=nav.querySelector(view==='home'?'.rk-nav-home':view==='booking'?'.rk-nav-book':'.rk-nav-track');
+      active?.setAttribute('aria-current','page');
+      nav.classList.remove('rk-nav-hidden');toggle.setAttribute('aria-expanded','true');
+      if(wrap.scrollTo)wrap.scrollTo({top:0,behavior:'smooth'});else window.scrollTo({top:0,behavior:'smooth'});
+      if(view==='booking')setTimeout(()=>document.getElementById('portalCustName')?.focus({preventScroll:true}),260);
+    }
+    nav.addEventListener('click',event=>{
+      const link=event.target.closest('a');if(!link)return;
+      if(link.classList.contains('rk-nav-contact'))return;
+      event.preventDefault();
+      setView(link.classList.contains('rk-nav-home')?'home':link.classList.contains('rk-nav-track')?'track':'booking');
+    });
+    let last=wrap.scrollTop||0,scrollTimer;
+    const onScroll=()=>{
+      const current=wrap.scrollTop||0,delta=current-last;
+      if(Math.abs(delta)>5){
+        if(current>100&&delta>0){nav.classList.add('rk-nav-hidden');toggle.setAttribute('aria-expanded','false');}
+        else if(delta<0){nav.classList.remove('rk-nav-hidden');toggle.setAttribute('aria-expanded','true');}
+        else if(current<40){nav.classList.remove('rk-nav-hidden');toggle.setAttribute('aria-expanded','true');}
+      }
+      last=current;
+      clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{if(current<40){nav.classList.remove('rk-nav-hidden');toggle.setAttribute('aria-expanded','true');}},180);
+    };
+    wrap.addEventListener('scroll',onScroll,{passive:true});
+    setView('booking');
+  }
+  function makeSettingsGroupsCollapsible(){
+    const form=document.querySelector('#setting form.rk-settings-v2');if(!form||form.dataset.rkCollapseReady==='1')return;
+    form.dataset.rkCollapseReady='1';
+    form.querySelectorAll(':scope > .rk-settings-card').forEach((card,index)=>{
+      const heading=card.querySelector('h4');
+      const title=(heading?.textContent||['दुकान की जानकारी','Payment Gateway','SMS Gateway / Customer OTP'][index]||'सेटिंग').trim();
+      const details=document.createElement('details');details.className='settings-section rk-settings-collapsible';
+      const summary=document.createElement('summary');summary.textContent=title;
+      const body=document.createElement('div');body.className='rk-settings-collapse-body';
+      card.parentNode.insertBefore(details,card);details.append(summary,body);body.appendChild(card);
+    });
+  }
+  function initLayoutFixes(){initCustomerTaskNavigation();makeSettingsGroupsCollapsible();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initLayoutFixes,{once:true});else initLayoutFixes();
+})();
+
+</script>
+<script id="rk-mobile-duplicate-search-guard-2026-11">
+(function(){
+ 'use strict';
+ function dedupeCustomerSearch(){
+  const root=document.getElementById('customerFirstPortal');if(!root)return;
+  const seen=new Set();
+  root.querySelectorAll('input[type="search"]').forEach(input=>{
+   const key=[(input.getAttribute('placeholder')||'').trim().toLowerCase(),(input.getAttribute('aria-label')||'').trim().toLowerCase()].join('|');
+   if(!key.replace('|',''))return;
+   if(seen.has(key)){const wrapper=input.closest('.search-box,.search-wrap,.search-container,.rk-search-field')||input.parentElement;if(wrapper&&wrapper!==root&&wrapper.querySelectorAll('input[type="search"]').length===1)wrapper.remove();else input.remove();}
+   else seen.add(key);
+  });
+ }
+ function init(){dedupeCustomerSearch();const root=document.getElementById('customerFirstPortal');if(root&&window.MutationObserver){let queued=false;new MutationObserver(()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;dedupeCustomerSearch();});}).observe(root,{childList:true,subtree:true});}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 <style id="rk-admin-dark-controls-final">
+/* rk-mobile-viewport-and-visibility-2026-11 */
 /* Final admin control theme: defeat legacy light-theme and browser autofill rules. */
 #adminPanel,#welcomeOverlay,[role="dialog"],.modal-content{color-scheme:dark}
 #adminPanel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
@@ -5065,6 +5131,127 @@ html.rk-ref5 #customerFirstPortal .rk-customer-shell:after{content:"✦ Quick Ac
 #adminPanel input:-webkit-autofill,#adminPanel input:-webkit-autofill:hover,#adminPanel input:-webkit-autofill:focus,
 #welcomeOverlay input:-webkit-autofill,[role="dialog"] input:-webkit-autofill,.modal-content input:-webkit-autofill{
   -webkit-text-fill-color:#edf5ff!important;-webkit-box-shadow:0 0 0 1000px #0d1929 inset!important;transition:background-color 99999s ease-out 0s!important
+}
+
+
+/* Customer navigation: selected task only; compact auto-hiding menu. */
+#customerFirstPortal .rk-customer-brand{position:sticky!important;top:0!important;z-index:1200!important}
+#customerFirstPortal .rk-reference-nav{max-height:80px;opacity:1;overflow:hidden;transition:max-height .22s ease,opacity .18s ease,transform .22s ease;will-change:max-height}
+#customerFirstPortal .rk-reference-nav.rk-nav-hidden{max-height:0!important;opacity:0!important;pointer-events:none!important;transform:translateY(-8px)!important;margin-block:0!important}
+#customerFirstPortal .rk-nav-menu-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 11px;border:1px solid #6b86b9;border-radius:999px;background:linear-gradient(180deg,#20375d,#09162a);color:#f4f8ff;font-weight:800;font-size:11px;cursor:pointer}
+#customerFirstPortal .rk-reference-nav a[aria-current="page"]{outline:2px solid #f6d365!important;outline-offset:2px;filter:brightness(1.12)}
+#customerFirstPortal.rk-view-home .rk-customer-hero{display:grid!important}
+#customerFirstPortal.rk-view-home .rk-customer-shell{display:none!important}
+#customerFirstPortal.rk-view-booking .rk-customer-hero,#customerFirstPortal.rk-view-track .rk-customer-hero{display:none!important}
+#customerFirstPortal.rk-view-booking .rk-customer-form{display:grid!important}
+#customerFirstPortal.rk-view-booking .rk-booking-tracker,#customerFirstPortal.rk-view-track .rk-customer-form{display:none!important}
+#customerFirstPortal.rk-view-booking .rk-developer-footer,#customerFirstPortal.rk-view-track .rk-developer-footer{display:none!important}
+#customerFirstPortal.rk-view-track .rk-booking-tracker{display:block!important;grid-area:auto!important;width:100%!important;max-width:900px!important;margin:0 auto!important}
+#customerFirstPortal.rk-view-track .rk-customer-shell{display:block!important}
+#customerFirstPortal.rk-view-track .rk-customer-shell:after{display:none!important;content:none!important}
+#customerFirstPortal.rk-view-track .rk-reference-benefits,#customerFirstPortal.rk-view-track .rk-reference-quick{display:none!important}
+#customerFirstPortal.rk-view-booking .rk-customer-shell{display:block!important}
+#customerFirstPortal.rk-view-booking .rk-reference-benefits,#customerFirstPortal.rk-view-booking .rk-reference-quick{display:none!important}
+@media(max-width:700px){
+ #customerFirstPortal .rk-nav-menu-toggle{min-height:34px;padding:6px 10px}
+ #customerFirstPortal .rk-reference-nav{max-height:180px}
+}
+
+/* Dispatch: keep every option visible, aligned and touch-friendly on narrow screens. */
+#dispatch,#dispatch>.glass-card-blue,#dispatch .dispatch-search-top,#dispatch .form-grid{min-width:0;max-width:100%;box-sizing:border-box}
+#dispatch .dispatch-search-top{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:10px!important;align-items:end!important;background:rgba(10,25,45,.72)!important;border-color:#34547d!important}
+#dispatch .dispatch-rate-toggle{display:flex!important;align-items:center;flex-wrap:wrap;gap:9px;min-height:42px;padding:10px 12px;margin:10px 0!important;border:1px solid #42658f!important;border-radius:11px;background:rgba(26,54,88,.55)!important;color:#eaf3ff!important;white-space:normal!important}
+#dispatch #useThirdPartyToggle{flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important;accent-color:#38bdf8}
+#dispatch #thirdPartyDispatchSection,#dispatch #adminStockDispatchSection{display:block;min-width:0;max-width:100%;box-sizing:border-box;padding:13px!important;border-radius:13px!important}
+#dispatch #thirdPartyDispatchSection[style*="display: none"]{display:none!important}
+#dispatch #adminStockDispatchSection .form-grid,#dispatch #thirdPartyDispatchSection .form-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+#dispatch #adminStockDispatchSection label,#dispatch #thirdPartyDispatchSection label{display:block!important;margin-bottom:6px!important;color:#e7f0ff!important;font-size:12px!important;font-weight:800!important}
+#dispatch #adminStockDispatchSection input,#dispatch #adminStockDispatchSection select,#dispatch #thirdPartyDispatchSection input,#dispatch #thirdPartyDispatchSection select{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;min-height:42px!important}
+#dispatch .table-responsive{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+#dispatch table{min-width:760px!important;width:100%!important;table-layout:auto!important}
+#dispatch td,#dispatch th{overflow-wrap:anywhere;vertical-align:middle}
+#dispatch td:last-child{min-width:190px}
+@media(max-width:650px){
+ #dispatch .dispatch-search-top{grid-template-columns:minmax(0,1fr)!important}
+ #dispatch #adminStockDispatchSection .form-grid,#dispatch #thirdPartyDispatchSection .form-grid{grid-template-columns:minmax(0,1fr)!important}
+ #dispatch #adminStockDispatchSection button,#dispatch #thirdPartyDispatchSection button{width:100%!important}
+}
+
+/* Quotation / invoice tables scroll inside their own card, never the page. */
+#documents,#documents>.glass-card-blue,#documents .form-grid,#documents .table-responsive{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+#documents .table-responsive{display:block!important;width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;border-radius:10px}
+#documents .table-responsive table{width:max-content!important;min-width:720px!important;max-width:none!important;table-layout:auto!important}
+#documents .table-responsive th,#documents .table-responsive td{white-space:nowrap!important}
+#documents #businessDocumentPreview{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+#documents #businessDocumentPreview table{width:100%!important;min-width:640px!important;border-collapse:collapse!important}
+#documents #businessDocumentPreview{overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+#documents #businessDocumentRecentList>div{min-width:0!important;flex-wrap:wrap!important;overflow-wrap:anywhere}
+#documents #businessDocumentRecentList>div>span{min-width:0!important;flex:1 1 220px!important;overflow-wrap:anywhere}
+@media(max-width:650px){#documents>.glass-card-blue{padding:10px!important}#documents .form-grid{grid-template-columns:minmax(0,1fr)!important}#documents .settings-actions{display:grid;grid-template-columns:minmax(0,1fr)!important}#documents .settings-actions button{width:100%!important}}
+
+/* First three Settings groups are collapsible, with visible open/closed state. */
+#setting .rk-settings-collapsible{display:block!important;margin:0!important;padding:0!important;border:1px solid rgba(125,166,220,.22)!important;border-radius:15px!important;background:rgba(18,31,51,.7)!important;overflow:hidden}
+#setting .rk-settings-collapsible>summary{display:flex;align-items:center;gap:10px;min-height:50px;padding:13px 16px!important;color:#e7f0ff!important;font-size:13px;font-weight:850;cursor:pointer;list-style:none;background:linear-gradient(100deg,rgba(36,68,108,.45),rgba(14,26,44,.35))}
+#setting .rk-settings-collapsible>summary::-webkit-details-marker{display:none}
+#setting .rk-settings-collapsible>summary:after{content:'＋';margin-left:auto;color:#7dd3fc;font-size:19px}
+#setting .rk-settings-collapsible[open]>summary:after{content:'−'}
+#setting .rk-settings-collapsible[open]>summary{border-bottom:1px solid rgba(148,163,184,.17)}
+#setting .rk-settings-collapsible>.rk-settings-collapse-body{padding:14px}
+#setting .rk-settings-collapsible .rk-settings-card{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important}
+#setting .rk-settings-collapsible .rk-settings-card>h4{display:none!important}
+@media(max-width:650px){#setting .rk-settings-collapsible>summary{min-height:46px;padding:11px 12px!important}#setting .rk-settings-collapsible>.rk-settings-collapse-body{padding:10px}}
+
+
+
+/* Mobile viewport and visibility overrides */
+
+/* Device viewport: respect Android status/navigation bars and prevent clipped controls. */
+:root{--rk-safe-top:env(safe-area-inset-top,0px);--rk-safe-bottom:env(safe-area-inset-bottom,0px)}
+html,body{width:100%;max-width:100%;min-width:0;height:100%;min-height:100%;overflow:hidden}
+#customerFirstPortal,#adminPanel{position:fixed!important;inset:var(--rk-safe-top) 0 var(--rk-safe-bottom) 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+#customerFirstPortal .customer-scroll-wrap{height:100%!important;min-height:0!important;max-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:contain!important;padding-top:10px!important;padding-bottom:18px!important;scrollbar-gutter:stable}
+#customerFirstPortal .rk-customer-brand{width:100%;min-width:0;max-width:100%;flex-wrap:wrap!important;gap:8px!important}
+#customerFirstPortal .rk-customer-brand>*{min-width:0;max-width:100%}
+#customerFirstPortal .rk-customer-hero{width:100%!important;max-width:100%!important;min-width:0!important;min-height:clamp(150px,34vh,360px)!important;height:auto!important;max-height:none!important;overflow:hidden!important;box-sizing:border-box!important}
+#customerFirstPortal .rk-hero-copy{min-width:0!important;max-width:100%!important;overflow-wrap:anywhere}
+#customerFirstPortal .rk-hero-copy h2{font-size:clamp(23px,6.5vw,52px)!important;line-height:1.12!important;overflow-wrap:anywhere}
+#customerFirstPortal .rk-hero-description{max-width:65ch!important;overflow-wrap:anywhere}
+#customerFirstPortal .rk-hero-art{width:100%!important;min-width:0!important;min-height:0!important;max-height:clamp(110px,26vh,280px)!important;overflow:hidden!important}
+#customerFirstPortal .rk-hero-image{display:block!important;width:min(100%,520px)!important;height:auto!important;max-width:100%!important;max-height:clamp(100px,24vh,250px)!important;aspect-ratio:auto!important;object-fit:contain!important;object-position:center!important;transform:none!important;margin-inline:auto!important}
+#customerFirstPortal .rk-reference-nav{max-width:100%!important;min-width:0!important;flex-wrap:wrap!important;overflow-x:hidden!important}
+#customerFirstPortal .rk-reference-nav a,#customerFirstPortal .rk-nav-menu-toggle{max-width:100%!important;min-width:0!important;white-space:normal!important;overflow-wrap:anywhere}
+#customerFirstPortal .rk-customer-shell,#customerFirstPortal .rk-customer-form,#customerFirstPortal .rk-customer-section,#customerFirstPortal .rk-booking-tracker{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+#customerFirstPortal button,#adminPanel button,#adminPanel input[type=button],#adminPanel input[type=submit]{visibility:visible!important;opacity:1;max-width:100%;min-width:0;flex-shrink:0;overflow:visible;text-overflow:clip}
+#adminPanel{display:none;width:100%;background:#090f1b!important}
+#adminPanel .admin-container{width:100%;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+#adminPanel .main-content{min-width:0!important;min-height:0!important;width:100%;height:100%!important;overflow:hidden!important}
+#adminPanel .main-content>.header{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;flex-wrap:nowrap!important;width:100%!important;min-width:0!important;min-height:56px!important;height:auto!important;padding:6px 10px!important;overflow:visible!important}
+#adminPanel #pageTitle{min-width:0!important;max-width:calc(100vw - 100px)!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:clamp(12px,3.4vw,16px)!important}
+#adminPanel #menuToggleBtn{display:inline-flex!important;visibility:visible!important;opacity:1!important;flex:0 0 44px!important;width:44px!important;min-width:44px!important;min-height:44px!important;align-items:center!important;justify-content:center!important;position:relative!important;z-index:1500!important}
+#adminPanel .content-body{width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important;padding:12px 10px 22px!important;overscroll-behavior:contain}
+#adminPanel .page-section{width:100%;min-width:0;max-width:100%;overflow:visible}
+#adminPanel .page-section button,#adminPanel .page-section .action-btn{visibility:visible!important;opacity:1!important}
+#adminPanel .sidebar{padding-bottom:var(--rk-safe-bottom)!important}
+#adminPanel .menu-list{padding-bottom:calc(18px + var(--rk-safe-bottom))!important}
+@media(max-width:760px){
+ #customerFirstPortal .customer-scroll-wrap{padding-left:10px!important;padding-right:10px!important;gap:12px!important}
+ #customerFirstPortal .rk-customer-brand{position:relative!important;top:auto!important;padding:10px!important;border-radius:12px!important}
+ #customerFirstPortal .rk-customer-hero{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"copy" "art"!important;gap:8px!important;padding:clamp(14px,4vw,22px)!important;border-radius:16px!important}
+ #customerFirstPortal .rk-hero-copy{text-align:center!important}
+ #customerFirstPortal .rk-hero-description{margin-inline:auto!important}
+ #customerFirstPortal .rk-hero-art{display:grid!important;min-height:0!important}
+ #customerFirstPortal .rk-customer-shell{grid-template-columns:minmax(0,1fr)!important}
+ #adminPanel .header{padding-left:8px!important;padding-right:8px!important}
+ #adminPanel .content-body{padding-left:8px!important;padding-right:8px!important}
+ #adminPanel .form-grid{grid-template-columns:minmax(0,1fr)!important}
+ #adminPanel .page-section .settings-actions,#adminPanel .page-section .button-row{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+ #adminPanel .page-section .settings-actions button,#adminPanel .page-section .button-row button{flex:1 1 130px;min-width:0}
+}
+@media(max-width:390px){
+ #customerFirstPortal .rk-hero-copy h2{font-size:clamp(21px,7vw,30px)!important}
+ #customerFirstPortal .rk-hero-art{max-height:150px!important}
+ #customerFirstPortal .rk-hero-image{max-height:145px!important}
+ #adminPanel #pageTitle{font-size:12px!important}
 }
 </style>
 </body></html>
