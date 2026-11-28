@@ -2594,3 +2594,13 @@ test('barcode generation and CSV stock import require confirmed Firebase persist
   assert.match(csv, /reader\.onload = async function/);
   assert.match(csv, /await safeSetStorageBatchAndConfirmCloud\(\[\['realStockDatabase',mergeDuplicateStockRows\(stock\)\]\]\)/);
 });
+
+
+test('backup restore and uploaded settings images wait for confirmed Firebase persistence', () => {
+  const restore = sourceBetween('function restoreFullBackup(event)', '        function resetAllSoftwareData');
+  const image = sourceBetween('async function handleImageUpload(event, fieldName)', '        // Browser print may start');
+  assert.match(restore, /reader\.onload=async/);
+  assert.match(restore, /await safeSetStorageBatchAndConfirmCloud\(entries\)/);
+  assert.match(image, /img\.onload = async/);
+  assert.match(image, /await safeSetStorageBatchAndConfirmCloud\(\[\['softwareSettings', settings\]\]\)/);
+});
