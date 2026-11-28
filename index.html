@@ -2383,20 +2383,20 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const bookings=safeGetStorage('softwareBookings',[]),b=bookings.find(x=>String(x.id)===String(id));if(!b)return;
             if(b.source==='customer-portal'&&!await updateRemoteCustomerBookingStatus(id,'Confirmed')){showActionMessage('Backend पर बुकिंग Confirm नहीं हुई; दोबारा प्रयास करें','error');return;}
             b.status='Confirmed';b.confirmedAt=b.confirmedAt||new Date().toISOString();b.updatedAt=new Date().toISOString();
-            if(!safeSetStorage('softwareBookings',bookings))return;loadAllFirebaseData();showActionMessage('बुकिंग कन्फर्म हो गई; अब Dispatch में उपलब्ध है','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',bookings]]))return;loadAllFirebaseData();showActionMessage('बुकिंग Firebase में कन्फर्म हुई; अब Dispatch में उपलब्ध है','success');
         }
         async function rejectBooking(id){
             const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;
             if(!confirm(`बुकिंग #${id} रिजेक्ट करें?`))return;
             if(b.source==='customer-portal'&&!await updateRemoteCustomerBookingStatus(id,'Rejected')){showActionMessage('Backend पर बुकिंग Reject नहीं हुई; दोबारा प्रयास करें','error');return;}
-            b.status='Rejected';b.updatedAt=new Date().toISOString();if(!safeSetStorage('softwareBookings',rows))return;loadAllFirebaseData();showActionMessage('बुकिंग रिजेक्ट हुई','success');
+            b.status='Rejected';b.updatedAt=new Date().toISOString();if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',rows]]))return;loadAllFirebaseData();showActionMessage('बुकिंग Firebase में रिजेक्ट हुई','success');
         }
         async function deleteBooking(id){
             const rows=safeGetStorage('softwareBookings',[]),b=rows.find(x=>String(x.id)===String(id));if(!b)return;
             if(!confirm(`बुकिंग #${id} स्थायी रूप से हटाएँ? इससे इस बुकिंग के Cash/Online भुगतान रिकॉर्ड भी हटेंगे। यह क्रिया वापस नहीं होगी।`))return;
             if(b.source==='customer-portal'&&!await updateRemoteCustomerBookingStatus(id,'Cancelled')){showActionMessage('Backend पर बुकिंग Cancel नहीं हुई; रिकॉर्ड नहीं हटाया गया','error');return;}
             const nextBookings=rows.filter(x=>String(x.id)!==String(id)),ledger=safeGetStorage('rkPaymentLedger',[]).filter(x=>String(x.bookingId)!==String(id));
-            if(!safeSetStorage('softwareBookings',nextBookings)||!safeSetStorage('rkPaymentLedger',ledger))return;
+            if(!await safeSetStorageBatchAndConfirmCloud([['softwareBookings',nextBookings],['rkPaymentLedger',ledger]]))return;
             loadCustomerList();loadInstallmentsTable();loadPaymentLedgerTable();loadMasterLedgerData();loadAllFirebaseData();showActionMessage('बुकिंग और उससे जुड़े भुगतान रिकॉर्ड हटाए गए','success');
         }
         async function editBooking(id){
@@ -2428,7 +2428,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             if(!safeSetStorage('softwareBookings',rows))return;loadAllFirebaseData();showActionMessage(verified?'Advance भुगतान सत्यापित; जमा राशि में शामिल होगा':'Advance UTR अस्वीकार हुआ','success');
         }
 
-        function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||!Number.isSafeInteger(nums[0])||nums[0]<0||nums.slice(1).some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, पूर्ण संख्या में स्टॉक मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};if(!safeSetStorage('realStockDatabase',rows))return;loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज अपडेट हुए','success');}
+        async function editStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;const name=prompt('सामान का नाम',item.name||'');if(name===null)return;const qty=prompt('स्टॉक मात्रा',item.qty??0);if(qty===null)return;const single=prompt('Single rent ₹',item.singleRent??0);if(single===null)return;const set=prompt('Set/Bulk rent ₹',item.setRent??0);if(set===null)return;const missing=prompt('मिसिंग चार्ज प्रति पीस ₹',item.missingCharge??item.missingUnitPrice??0);if(missing===null)return;const nums=[qty,single,set,missing].map(Number);if(!name.trim()||!Number.isSafeInteger(nums[0])||nums[0]<0||nums.slice(1).some(v=>!Number.isFinite(v)||v<0)){showActionMessage('नाम, पूर्ण संख्या में स्टॉक मात्रा, किराया और मिसिंग चार्ज सही भरें','error');return}rows[index]={...item,name:name.trim(),qty:nums[0],singleRent:nums[1],setRent:nums[2],missingCharge:nums[3],missingUnitPrice:nums[3]};if(!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',rows]]))return;loadAllFirebaseData();showActionMessage('स्टॉक और मिसिंग चार्ज Firebase में अपडेट हुए','success');}
         function hasOpenStockReturnReference(source,itemName,partyName=''){
             const bookings=safeGetStorage('softwareBookings',[]),missing=safeGetStorage('missingItemsDatabase',[]);
             const sourceKey=source==='third-party'?'third-party':'admin';
@@ -2445,7 +2445,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             return referenced||openMissing;
         }
 
-                function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;if(hasOpenStockReturnReference('admin',item.name)){showActionMessage('इस सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। स्टॉक रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm(`स्टॉक आइटम “${item.name}” हटाएँ?`))return;rows.splice(index,1);if(!safeSetStorage('realStockDatabase',rows))return;loadAllFirebaseData();showActionMessage('स्टॉक आइटम हटाया गया','success');}
+                async function deleteStockItem(index){const rows=safeGetStorage('realStockDatabase',[]),item=rows[index];if(!item)return;if(hasOpenStockReturnReference('admin',item.name)){showActionMessage('इस सामान का Dispatch/मिसिंग Return अभी खुला है; पहले Return या Missing Recovery पूरी करें। स्टॉक रिकॉर्ड सुरक्षित रखा गया।','error');return;}if(!confirm(`स्टॉक आइटम “${item.name}” हटाएँ?`))return;rows.splice(index,1);if(!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',rows]]))return;loadAllFirebaseData();showActionMessage('स्टॉक आइटम Firebase से हटाया गया','success');}
 
         function loadDispatchTable() {
             let bookings = safeGetStorage('softwareBookings', []);
@@ -2792,7 +2792,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             else showActionMessage("कोई बुकिंग नहीं मिली", "error");
         }
 
-        function saveStockItemReal(event) {
+        async function saveStockItemReal(event) {
             event.preventDefault();
             const name=document.getElementById('stockItemName').value.trim();
             const qty=Number(document.getElementById('stockItemQty').value);
@@ -2807,7 +2807,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 existing.qty=Math.max(0,Number(existing.qty)||0)+qty; existing.setRent=setRent; existing.singleRent=singleRent; existing.missingCharge=missingCharge; existing.missingUnitPrice=missingCharge;
             }else stock.push({name,qty,setRent,singleRent,missingCharge,missingUnitPrice:missingCharge,barcode:'ITM-'+Math.floor(100000+Math.random()*900000)});
             stock=mergeDuplicateStockRows(stock);
-            if(!safeSetStorage('realStockDatabase',stock))return;event.target.reset();loadAllFirebaseData();showActionMessage(existing?'मौजूदा सामान का स्टॉक बढ़ाया और दरें अपडेट की गईं':'नया स्टॉक सेव हुआ','success');
+            if(!await safeSetStorageBatchAndConfirmCloud([['realStockDatabase',stock]]))return;event.target.reset();loadAllFirebaseData();showActionMessage(existing?'मौजूदा सामान Firebase में अपडेट हुआ':'नया स्टॉक Firebase में सुरक्षित हुआ','success');
         }
         function mergeDuplicateStockRows(rows){
             const merged=[],byName=new Map();
@@ -2979,18 +2979,18 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
             return y+'-'+m+'-'+d;
         }
-        function saveDailyExpense(event) {
+        async function saveDailyExpense(event) {
             event.preventDefault();
             const desc = document.getElementById('expenseDesc').value.trim();
             const amount = Number(document.getElementById('expenseAmount').value);
             const type = document.getElementById('expenseType')?.value || 'Expense';
             if (!desc || !['Income','Expense'].includes(type) || !Number.isFinite(amount) || amount <= 0) { showActionMessage('प्रकार, विवरण और शून्य से अधिक सही राशि भरें', 'error'); return; }
             const list = safeGetStorage('incomeExpenseDatabase', []);
-            list.push({ date: localISODate(), desc, type, amount: Math.round(amount*100)/100 });
-            if(!safeSetStorage('incomeExpenseDatabase', list))return;
+            list.push({ id: crypto.randomUUID(), date: localISODate(), desc, type, amount: Math.round(amount*100)/100, createdAt: new Date().toISOString() });
+            if(!await safeSetStorageBatchAndConfirmCloud([['incomeExpenseDatabase', list]]))return;
             event.target.reset();
             loadAllFirebaseData();
-            showActionMessage(type==='Income'?'आमदनी दर्ज हुई':'खर्च दर्ज हुआ', 'success');
+            showActionMessage(type==='Income'?'आमदनी Firebase में सुरक्षित हुई':'खर्च Firebase में सुरक्षित हुआ', 'success');
         }
 
         function renderRoyalDashboardMetrics() {
@@ -3440,7 +3440,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
             ledger.push(rec);
             b.totalPaid=verifiedPaid;b.dueAmount=rec.due;
             const rows=safeGetStorage('softwareBookings',[]).map(x=>String(x.id)===String(b.id)?b:x);
-            if(!safeSetStorageBatch([[key,ledger],['softwareBookings',rows]]))return;
+            if(!await safeSetStorageBatchAndConfirmCloud([[key,ledger],['softwareBookings',rows]]))return;
             if(b.source==='customer-portal'){const remoteSaved=await syncCustomerBookingWorkflow(b,true);if(!remoteSaved){showActionMessage('पेमेंट लोकल सेव है; Customer Portal अपडेट सिंक कतार में रखा गया है।','error');return;}}
             if(typeof searchBillingCustomer==='function'){const q=document.getElementById('billSearchInput');if(q)q.value=String(b.id);searchBillingCustomer();}
             const ca=document.getElementById('paymentCashAmount');if(ca)ca.value='';
@@ -3470,7 +3470,7 @@ html.rk-ref5 #customerFirstPortal .rk-reference-quick{display:block!important;gr
                 }
                 const paymentWrites=[['rkPaymentLedger',ledger]];
                 if(b)paymentWrites.push(['softwareBookings',rows]);
-                if(!safeSetStorageBatch(paymentWrites))return;
+                if(!await safeSetStorageBatchAndConfirmCloud(paymentWrites))return;
                 if(b&&b.source==='customer-portal'){
                     const remoteSaved=await syncCustomerBookingWorkflow(b,true);
                     if(!remoteSaved){showActionMessage('पेमेंट सत्यापन दर्ज है; Customer Portal बकाया अपडेट सिंक कतार में रखा गया है।','error');return;}
