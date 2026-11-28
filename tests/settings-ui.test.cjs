@@ -87,7 +87,7 @@ test('reference compositions target the shipped portal artwork and real layout n
 test('customer task navigation isolates Home, Booking and Tracking and auto-hides its menu', () => {
   for (const file of ['index.html', 'public/index.html', 'backend/public/index.html']) {
     const html = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-    assert.match(html, /rk-customer-task-layout-fixes-2026-11/);
+    assert.match(html, /rk-nav-menu-toggle/);
     assert.match(html, /rk-view-home/);
     assert.match(html, /rk-view-booking/);
     assert.match(html, /rk-view-track/);
