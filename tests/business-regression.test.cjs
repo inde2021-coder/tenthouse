@@ -325,8 +325,8 @@ test('return and missing recovery fail when the source stock row is absent', () 
   const code = sourceBetween('async function completeManualReturnProcess()', 'window.onload = function()');
   assert.ok(code.includes('if(!row){showActionMessage(\'Return stock record नहीं मिला: \'+item.name'));
   assert.ok(html.includes("if(!row){showActionMessage('संबंधित स्टॉक रिकॉर्ड नहीं मिला"));
-  assert.ok(code.includes("safeSetStorageBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])"));
-  assert.ok(html.includes("safeSetStorageBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])"));
+  assert.ok(code.includes("persistInventoryBatch([['softwareBookings',bookings],['realStockDatabase',stock],['thirdPartyDatabase',thirdParty],['missingItemsDatabase',missing]])"));
+  assert.ok(html.includes("persistInventoryBatch([['softwareBookings',bookings],['missingItemsDatabase',missing],[stockKey,stock]])"));
   assert.ok(html.includes('m.penalty=0;'));
   assert.ok(!html.includes('m.qty*Math.max(0,Number(it.missingCharge'));
 });
@@ -717,6 +717,17 @@ test('all inline frontend JavaScript blocks parse without syntax errors', () => 
   });
 });
 
+test('dispatch, return, and missing recovery require confirmed Firebase persistence', () => {
+  assert.match(html, /async function safeSetStorageBatchAndConfirmCloud\(entries\)/);
+  assert.match(html, /const results = await Promise\.all\(entries\.map\(\(\[key, value\]\) => syncToCloud\(key, value\)\)\)/);
+  assert.match(html, /if \(results\.every\(Boolean\)\) return true/);
+  assert.match(html, /Critical inventory rollback failed/);
+  assert.equal((html.match(/await persistInventoryBatch\(/g) || []).length, 3);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+});
+
 test('Firebase Realtime Database uses the approved radhe-krishna-online-booking project', () => {
   assert.match(html, /apiKey: "AIzaSyCH5pXri5I6Mo8ccCM9tsq2PupHIjxne_I"/);
   assert.match(html, /authDomain: "radhe-krishna-online-booking\.firebaseapp\.com"/);
@@ -902,9 +913,9 @@ test('customer booking stock validation includes admin and portal reservations w
 
 test('dispatch, return and missing recovery use rollback-capable multi-key persistence', () => {
   assert.match(html, /function safeSetStorageBatch\(entries\)/);
-  assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
-  assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
-  assert.match(html, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['realStockDatabase',stock\],\['thirdPartyDatabase',thirdParty\],\['missingItemsDatabase',missing\]\]\)/);
+  assert.match(html, /await persistInventoryBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
   assert.match(html, /Storage rollback failed/);
 });
 
@@ -1902,7 +1913,7 @@ test('missing recovery validates the outstanding balance and updates stock plus 
   assert.match(code, /m\.recoveryEntries\.push\(\{qty,date:recoveryDate/);
   assert.match(code, /mode:'MISSING_RECOVERY',items:\[\{itemIndex,qty\}\]/);
   assert.match(code, /row\.qty=currentStockQty\+qty/);
-  assert.match(code, /safeSetStorageBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
+  assert.match(code, /persistInventoryBatch\(\[\['softwareBookings',bookings\],\['missingItemsDatabase',missing\],\[stockKey,stock\]\]\)/);
 });
 
 
